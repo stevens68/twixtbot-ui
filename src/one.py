@@ -8,12 +8,12 @@ import twixt
 parser = argparse.ArgumentParser(description='One twixt position.')
 parser.add_argument('--moves', '-m', type=str)
 parser.add_argument('--check_draw', '-D', action='store_true')
-parser.add_argument('--display', '-d', action='store_true')
 parser.add_argument('--nneval', type=str)
 parser.add_argument('--thinker', '-t', type=str)
 parser.add_argument('--think_report', '-T', action='store_true')
 parser.add_argument('--show_game_state', '-G', action='store_true')
 parser.add_argument('-r', '--resource', type=str, action='append')
+parser.add_argument('--selfplay', '-s', action='store_true')
 args = parser.parse_args()
 
 if args.resource:
@@ -57,17 +57,28 @@ if args.nneval:
 
 if args.thinker:
     thinker = twixt.get_thinker(args.thinker, resources)
-    tup = thinker.pick_move(game)
-    if type(tup) == tuple:
-        m, n = thinker.pick_move(game)
-    else:
-        m = tup
-    print(m)
-    if m != "resign":
-        game.play(m)
+    moves = "" + args.moves
+    movecount = len(moves.split(','))
+    while True:
+        print("history:", moves)
+        print("calculating next move...")
+        tup = thinker.pick_move(game)
+        if type(tup) == tuple:
+            m, n = thinker.pick_move(game)
+        else:
+            m = tup
 
-    if args.think_report:
-        print(thinker.report)
+        movecount += 1
+        print(movecount, ":", m)
+        if m != "resign":
+            game.play(m)
+
+        moves = moves + "," + str(m)
+        if args.think_report:
+            print(thinker.report)
+
+        if not args.selfplay or m == "resign":
+            break
 
 if args.show_game_state:
     print("currently", game.COLOR_NAME[game.turn], "to play")
@@ -88,11 +99,6 @@ if args.show_game_state:
         elif count == 2:
             print("Game Drawn")
 
-if args.display:
-    import ui
-    w = ui.TwixtBoardWindow()
-    w.set_game(game)
-    w.win.getMouse()
 
 if args.check_draw:
     if game.just_won():

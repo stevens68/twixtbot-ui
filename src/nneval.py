@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import os
+
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
@@ -9,31 +11,16 @@ class NNEvaluater:
 
         self.model = model
 
-        if self.model.endswith("model"):
-            self.sess = tf.Session()
-            tf.saved_model.loader.load(
-                sess=self.sess,
-                tags=[tf.saved_model.tag_constants.SERVING],
-                export_dir=self.model)
-            graph = tf.get_default_graph()
-            prefix = ""
-
-        elif self.model[-3:] == ".pb":
-            with tf.gfile.GFile(self.model, "rb") as f:
-                graph_def = tf.GraphDef()
-                graph_def.ParseFromString(f.read())
-
-            with tf.Graph().as_default() as graph:
-                tf.import_graph_def(graph_def, name="mynn")
-            prefix = "mynn/"
-            self.sess = tf.Session(graph=graph)
-
-        else:
-            self.sess = tf.Session()
-            saver = tf.train.import_meta_graph(self.model + ".meta")
-            saver.restore(self.sess, self.model)
-            graph = tf.get_default_graph()
-            prefix = ""
+        export_dir = os.path.join(os.getcwd(), self.model)
+        print("loading model in ", export_dir)
+        self.sess = tf.Session()
+        tf.saved_model.loader.load(
+            sess=self.sess,
+            tags=[tf.saved_model.tag_constants.SERVING],
+            export_dir=export_dir)
+        print("model loaded")
+        graph = tf.get_default_graph()
+        prefix = ""
 
         self.pegx_t = graph.get_tensor_by_name(prefix + "pegx:0")
         self.linkx_t = graph.get_tensor_by_name(prefix + "linkx:0")
