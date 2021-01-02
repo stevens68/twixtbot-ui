@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 import math
 import numpy
+import sys
 
 import naf
 import twixt
+from tqdm import tqdm
 
 
 class EvalNode:
@@ -130,7 +132,7 @@ class NeuralMCTS:
 
         move = naf.policy_index_point(game.turn, index)
 
-        if top and self.verbosity >= 3:
+        if top and self.verbosity >= 3 and U:
             for i in range(len(U)):
                 _ = naf.policy_index_point(game.turn, i)
 
@@ -200,8 +202,17 @@ class NeuralMCTS:
                for index in indices[-3:]]
         return ":" + ",".join(pts)
 
+    def eval_game(self, game):
+
+        self.compute_root(game)
+        assert self.root == None
+        self.root = self.expand_leaf(game)
+        top_ixs = numpy.argsort(self.root.P)[-5:]
+        return self.root.score, [(naf.policy_index_point(game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs]
+
     def mcts(self, game, trials):
         """ Using the neural net, compute the move visit count vector """
+
         self.compute_root(game)
         if self.root == None:
             self.root = self.expand_leaf(game)
@@ -212,9 +223,8 @@ class NeuralMCTS:
                     game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs])))
 
         if not self.root.proven:
-            for i in range(trials):
+            for i in tqdm(range(trials), ncols=100, desc="processing", file=sys.stdout):
                 assert not self.root.proven
-
                 self.visit_node(game, self.root, True, trials - i)
                 if self.root.proven:
                     break
@@ -224,10 +234,10 @@ class NeuralMCTS:
                 self.report = "fwin" + self.top_moves_str(game)
                 return self.root.winning_move
             elif self.root.drawing_move:
-                self.report = "fdraw" + self.top_moves_str(game)
+                self.report = "fdraw"
                 return self.root.drawing_move
             else:
-                self.report = "flose" + self.top_moves_str(game)
+                self.report = "flose"
                 return "resign"
 
         if self.verbosity >= 2:

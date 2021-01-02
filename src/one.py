@@ -56,15 +56,19 @@ if args.nneval:
     # mpui.show_game_with_p(game, P)
 
 if args.thinker:
+    print("initializing player...")
     thinker = twixt.get_thinker(args.thinker, resources)
     moves = "" + args.moves
     movecount = len(moves.split(','))
     while True:
         print("history:", moves)
-        print("calculating next move...")
+        score, best_moves = thinker.nm.eval_game(game)
+        best_move = best_moves[-1][0]
+        print(score, best_moves)
         tup = thinker.pick_move(game)
         if type(tup) == tuple:
-            m, n = thinker.pick_move(game)
+            #m, n = thinker.pick_move(game)
+            m, n = tup
         else:
             m = tup
 
@@ -72,6 +76,9 @@ if args.thinker:
         print(movecount, ":", m)
         if m != "resign":
             game.play(m)
+            if m != best_move:
+                print(">>>>>>>>>>>> nn best move:",
+                      best_move, 'mcts best move:', m)
 
         moves = moves + "," + str(m)
         if args.think_report:

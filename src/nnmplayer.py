@@ -19,7 +19,7 @@ class Player:
         self.temperature = float(kwargs.get('temperature', 0))
         self.num_trials = int(kwargs.get('trials', 100))
         self.verbosity = int(kwargs.get('verbosity', 0))
-        self.random_rotation = int(kwargs.get('random_rotation', 1))
+        self.random_rotation = int(kwargs.get('random_rotation', 0))
         self.smart_root = int(kwargs.get('smart_root', 1))
         self.use_swap = int(kwargs.get('use_swap', 0))
 
