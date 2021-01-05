@@ -14,7 +14,7 @@ class NNEvaluater:
         export_dir = os.path.join(os.getcwd(), self.model)
         print("loading model in ", export_dir)
         self.sess = tf.Session()
-        tf.saved_model.loader.load(
+        tf.saved_model.load(
             sess=self.sess,
             tags=[tf.saved_model.tag_constants.SERVING],
             export_dir=export_dir)

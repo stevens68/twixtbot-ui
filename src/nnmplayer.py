@@ -68,8 +68,11 @@ class Player:
         self.nm = nnmcts.NeuralMCTS(
             nnfunc, add_noise=self.add_noise, smart_root=self.smart_root, verbosity=self.verbosity)
 
-    def pick_move(self, game):
+    def pick_move(self, game, ctrlWindow=None):
         if self.use_swap and len(game.history) < 2:
+            if ctrlWindow:
+                ctrlWindow.updateProgress(0, self.trials, None)
+
             if len(game.history) == 0:
                 self.report = "swapmodel"
                 return swapmodel.choose_first_move()
@@ -78,7 +81,7 @@ class Player:
                 return "swap"
             # else didn't want swap so compute a regular move
 
-        N = self.nm.mcts(game, self.num_trials)
+        N = self.nm.mcts(game, self.num_trials, ctrlWindow)
         self.report = self.nm.report
 
         # When a forcing win or forcing draw move is found, there's no policy

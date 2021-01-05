@@ -210,7 +210,7 @@ class NeuralMCTS:
         top_ixs = numpy.argsort(self.root.P)[-5:]
         return self.root.score, [(naf.policy_index_point(game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs]
 
-    def mcts(self, game, trials):
+    def mcts(self, game, trials, ctrlWindow=None):
         """ Using the neural net, compute the move visit count vector """
 
         self.compute_root(game)
@@ -225,6 +225,10 @@ class NeuralMCTS:
         if not self.root.proven:
             for i in tqdm(range(trials), ncols=100, desc="processing", file=sys.stdout):
                 assert not self.root.proven
+                if (ctrlWindow != None and (i == 0 or (i + 1) % 20 == 0)):
+                    # good_moves = numpy.where(
+                    #    self.root.Nf == self.root.Nf.max())
+                    ctrlWindow.updateProgress(i + 1, trials, None)
                 self.visit_node(game, self.root, True, trials - i)
                 if self.root.proven:
                     break
