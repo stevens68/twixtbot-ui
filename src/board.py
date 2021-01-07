@@ -1,17 +1,12 @@
+import PySimpleGUI as sg
 import math
 import twixt
 
-
 # constants
-COLOR_PLAYER1 = "red"
-COLOR_PLAYER2 = "black"
-COLOR_BOARD = "lightgrey"
-COLOR_LABELS = "black"
-FONT_LABELS = "Arial"
-SIZE_LABELS = 9
-COLOR_PEGHOLES = "grey"
-COLOR_GUIDELINES = "#b3b3b3"
-
+LABEL_COLOR = "black"
+LABEL_FONT = ("Arial", 9)
+PEGHOLE_COLOR = "grey"
+GUIDELINE_COLOR = "#b3b3b3"
 
 # helper
 
@@ -31,82 +26,94 @@ class TBWHistory:
 
 class TwixtBoard:
 
-    def __init__(self, graph):
-        self.graph = graph
-        self.size = twixt.Game.SIZE
-        self.cell_width = self.graph.Size[0] / (twixt.Game.SIZE + 4)
-        self.peg_radius = self.cell_width / 4
-        self.hole_radius = 2
+    def __init__(self, settings):
 
+        self.settings = settings
+        self.size = twixt.Game.SIZE
         self.history = []
         self.known_moves = set()
 
-        self.draw_endlines()
-        self.draw_pegholes()
-        self.draw_labels()
-        self.draw_guidelines()
+        bs = self.settings['-BOARD_SIZE-']
+        self.cell_width = bs / (twixt.Game.SIZE + 4)
+        self.peg_radius = self.cell_width / 4
+        self.hole_radius = self.cell_width / 10
+        self.graph = sg.Graph(canvas_size=(bs, bs),
+                              graph_bottom_left=(0, 0),
+                              graph_top_right=(bs, bs),
+                              background_color='lightgrey',
+                              key='-BOARD-',
+                              enable_events=True)
 
-    def draw_labels(self):
-        for i in range(self.size):
-            row_label = "%d" % (self.size - i)
-            # left row label
-            self.graph.DrawText(row_label,
-                                (1.5 * self.cell_width,  (i + 2.5) * self.cell_width), COLOR_LABELS, (FONT_LABELS, SIZE_LABELS))
-            # right row label
-            self.graph.DrawText(row_label,
-                                ((self.size + 2.5) * self.cell_width,
-                                 (i + 2.5) * self.cell_width), COLOR_LABELS, (FONT_LABELS, SIZE_LABELS))
+    def draw(self):
 
-        for i in range(self.size):
-            col_label = chr(ord('A') + i)
-            # top column label
-            self.graph.DrawText(col_label,
-                                ((i + 2.5) * self.cell_width,
-                                 1.5 * self.cell_width), COLOR_LABELS, (FONT_LABELS, SIZE_LABELS))
-            # bottom column label
-            self.graph.DrawText(col_label,
-                                ((i + 2.5) * self.cell_width,
-                                 (self.size + 2.5) * self.cell_width), COLOR_LABELS, (FONT_LABELS, SIZE_LABELS))
+        self._draw_endlines()
+        self._draw_pegholes()
+        self._draw_labels()
+        self._draw_guidelines()
 
-    def draw_pegholes(self):
+    def _draw_labels(self):
+        if self.settings['-SHOW_LABELS-']:
+            for i in range(self.size):
+                row_label = "%d" % (self.size - i)
+                # left row label
+                self.graph.DrawText(row_label,
+                                    (1.5 * self.cell_width,  (i + 2.5) * self.cell_width), LABEL_COLOR, LABEL_FONT)
+                # right row label
+                self.graph.DrawText(row_label,
+                                    ((self.size + 2.5) * self.cell_width,
+                                     (i + 2.5) * self.cell_width), LABEL_COLOR, LABEL_FONT)
+
+            for i in range(self.size):
+                col_label = chr(ord('A') + i)
+                # top column label
+                self.graph.DrawText(col_label,
+                                    ((i + 2.5) * self.cell_width,
+                                     1.5 * self.cell_width), LABEL_COLOR, LABEL_FONT)
+                # bottom column label
+                self.graph.DrawText(col_label,
+                                    ((i + 2.5) * self.cell_width,
+                                     (self.size + 2.5) * self.cell_width), LABEL_COLOR, LABEL_FONT)
+
+    def _draw_pegholes(self):
         offset = 2.5
         for x in range(self.size):
             for y in range(self.size):
                 if x in (0, self.size - 1) and y in (0, self.size - 1):
                     continue
 
-                circle = self.graph.DrawCircle(
+                self.graph.DrawCircle(
                     ((x + offset) * self.cell_width,
                      (y + offset) * self.cell_width),
-                    self.hole_radius, COLOR_PEGHOLES, COLOR_PEGHOLES)
+                    self.hole_radius, PEGHOLE_COLOR, PEGHOLE_COLOR)
 
-    def draw_endlines(self):
+    def _draw_endlines(self):
         o = 2 * self.cell_width
         s = self.size - 1
         w = self.cell_width
         self.graph.DrawLine((o + 1 * w, o + 1 * w + w / 3),
-                            (o + 1 * w, o + s * w - w / 3), COLOR_PLAYER2, 3)
+                            (o + 1 * w, o + s * w - w / 3), self.settings['-PLAYER2_COLOR-'], 3)
         self.graph.DrawLine((o + s * w, o + 1 * w + w / 3),
-                            (o + s * w, o + s * w - w / 3), COLOR_PLAYER2, 3)
+                            (o + s * w, o + s * w - w / 3), self.settings['-PLAYER2_COLOR-'], 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + 1 * w),
-                            (o + s * w - w / 3, o + 1 * w), COLOR_PLAYER1, 3)
+                            (o + s * w - w / 3, o + 1 * w), self.settings['-PLAYER1_COLOR-'], 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + s * w),
-                            (o + s * w - w / 3, o + s * w), COLOR_PLAYER1, 3)
+                            (o + s * w - w / 3, o + s * w), self.settings['-PLAYER1_COLOR-'], 3)
 
-    def draw_guidelines(self):
-        offset = 2.5
-        for p in [((1,  1), (15,  8)),
-                  ((15,  8), (22, 22)),
-                  ((22, 22), (8, 15)),
-                  ((8, 15), (1, 1)),
-                  ((1, 22), (15, 15)),
-                  ((15, 15), (22,  1)),
-                  ((22,  1), (8,  8)),
-                  ((8,  8), (1, 22))]:
-            self.graph.DrawLine(((p[0][0] + offset) * self.cell_width, (p[0][1] + offset) * self.cell_width),
-                                ((p[1][0] + offset) * self.cell_width,
-                                 (p[1][1] + offset) * self.cell_width),
-                                COLOR_GUIDELINES, .5)
+    def _draw_guidelines(self):
+        if self.settings['-SHOW_GUIDELINES-']:
+            offset = 2.5
+            for p in [((1,  1), (15,  8)),
+                      ((15,  8), (22, 22)),
+                      ((22, 22), (8, 15)),
+                      ((8, 15), (1, 1)),
+                      ((1, 22), (15, 15)),
+                      ((15, 15), (22,  1)),
+                      ((22,  1), (8,  8)),
+                      ((8,  8), (1, 22))]:
+                self.graph.DrawLine(((p[0][0] + offset) * self.cell_width, (p[0][1] + offset) * self.cell_width),
+                                    ((p[1][0] + offset) * self.cell_width,
+                                     (p[1][1] + offset) * self.cell_width),
+                                    GUIDELINE_COLOR, .5)
 
     def set_game(self, game):
         i = 0
@@ -260,7 +267,8 @@ class TwixtBoard:
 
     def _create_drawn_link(self, p1, p2, color):
         #carray = [gr.color_rgb(0,0,0), gr.color_rgb(150,150,150), gr.color_rgb(255,0,0)]
-        carray = [COLOR_PLAYER2, COLOR_PLAYER1, COLOR_PLAYER1]
+        carray = [self.settings['-PLAYER2_COLOR-'],
+                  self.settings['-PLAYER1_COLOR-'], self.settings['-PLAYER1_COLOR-']]
         c1 = self.center(*p1)
         c2 = self.center(*p2)
         dx = c2.x - c1.x
