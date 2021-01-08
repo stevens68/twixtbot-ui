@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 import math
 import twixt
 
+
 # constants
 LABEL_COLOR = "black"
 LABEL_FONT = ("Arial", 9)
@@ -35,8 +36,9 @@ class TwixtBoard:
 
         bs = self.settings['-BOARD_SIZE-']
         self.cell_width = bs / (twixt.Game.SIZE + 4)
-        self.peg_radius = self.cell_width / 4
+        self.peg_radius = self.cell_width / 3.8
         self.hole_radius = self.cell_width / 10
+        self.offset_factor = 2.5
         self.graph = sg.Graph(canvas_size=(bs, bs),
                               graph_bottom_left=(0, 0),
                               graph_top_right=(bs, bs),
@@ -44,46 +46,63 @@ class TwixtBoard:
                               key='-BOARD-',
                               enable_events=True)
 
-    def draw(self):
+    def draw(self, game=None):
 
+        self.graph.erase()
         self._draw_endlines()
         self._draw_pegholes()
         self._draw_labels()
         self._draw_guidelines()
+
+        for p, idx in enumerate(game.history) or []:
+            color = 1 - idx % 2
+            self._create_drawn_peg(self._point_to_move(p), color)
+
+    def _point_to_move(self, point):
+        if isinstance(point, twixt.Point):
+            return chr(ord('a') + point[0]) + "%d" % (twixt.Game.SIZE - point[1])
+        else:
+            # swap case
+            return point
+
+    def _point_to_coords(self, point):
+        return ((point[0] + self.offset_factor) * self.cell_width,
+                ((self.size - point[1] - 1) + self.offset_factor) * self.cell_width)
+
+    def _move_to_point(self, move):
+        return twixt.Point(ord(move[0]) - ord('a'), int(move[1:]) - 1)
 
     def _draw_labels(self):
         if self.settings['-SHOW_LABELS-']:
             for i in range(self.size):
                 row_label = "%d" % (self.size - i)
                 # left row label
-                self.graph.DrawText(row_label,
-                                    (1.5 * self.cell_width,  (i + 2.5) * self.cell_width), LABEL_COLOR, LABEL_FONT)
+                self.graph.DrawText(row_label, ((self.offset_factor - 1) * self.cell_width,
+                                                (i + self.offset_factor) * self.cell_width), LABEL_COLOR, LABEL_FONT)
                 # right row label
-                self.graph.DrawText(row_label,
-                                    ((self.size + 2.5) * self.cell_width,
-                                     (i + 2.5) * self.cell_width), LABEL_COLOR, LABEL_FONT)
+                self.graph.DrawText(row_label, ((self.size + self.offset_factor) * self.cell_width,
+                                                (i + self.offset_factor) * self.cell_width), LABEL_COLOR, LABEL_FONT)
 
             for i in range(self.size):
                 col_label = chr(ord('A') + i)
                 # top column label
                 self.graph.DrawText(col_label,
-                                    ((i + 2.5) * self.cell_width,
-                                     1.5 * self.cell_width), LABEL_COLOR, LABEL_FONT)
+                                    ((i + self.offset_factor) * self.cell_width,
+                                     (self.offset_factor - 1) * self.cell_width), LABEL_COLOR, LABEL_FONT)
                 # bottom column label
                 self.graph.DrawText(col_label,
-                                    ((i + 2.5) * self.cell_width,
-                                     (self.size + 2.5) * self.cell_width), LABEL_COLOR, LABEL_FONT)
+                                    ((i + self.offset_factor) * self.cell_width,
+                                     (self.size + self.offset_factor) * self.cell_width), LABEL_COLOR, LABEL_FONT)
 
     def _draw_pegholes(self):
-        offset = 2.5
         for x in range(self.size):
             for y in range(self.size):
                 if x in (0, self.size - 1) and y in (0, self.size - 1):
                     continue
 
                 self.graph.DrawCircle(
-                    ((x + offset) * self.cell_width,
-                     (y + offset) * self.cell_width),
+                    ((x + self.offset_factor) * self.cell_width,
+                     (y + self.offset_factor) * self.cell_width),
                     self.hole_radius, PEGHOLE_COLOR, PEGHOLE_COLOR)
 
     def _draw_endlines(self):
@@ -101,7 +120,6 @@ class TwixtBoard:
 
     def _draw_guidelines(self):
         if self.settings['-SHOW_GUIDELINES-']:
-            offset = 2.5
             for p in [((1,  1), (15,  8)),
                       ((15,  8), (22, 22)),
                       ((22, 22), (8, 15)),
@@ -110,9 +128,10 @@ class TwixtBoard:
                       ((15, 15), (22,  1)),
                       ((22,  1), (8,  8)),
                       ((8,  8), (1, 22))]:
-                self.graph.DrawLine(((p[0][0] + offset) * self.cell_width, (p[0][1] + offset) * self.cell_width),
-                                    ((p[1][0] + offset) * self.cell_width,
-                                     (p[1][1] + offset) * self.cell_width),
+                self.graph.DrawLine(((p[0][0] + self.offset_factor) * self.cell_width,
+                                     (p[0][1] + self.offset_factor) * self.cell_width),
+                                    ((p[1][0] + self.offset_factor) * self.cell_width,
+                                     (p[1][1] + self.offset_factor) * self.cell_width),
                                     GUIDELINE_COLOR, .5)
 
     def set_game(self, game):
@@ -232,14 +251,19 @@ class TwixtBoard:
         nho.objects = objs
         # end set_nn_inputs
 
-    def _create_drawn_peg(self, point, color):
-        peg = self.graph.DrawCircle(self.center(
-            point.x, point.y), self.peg_radius, color, color)
+    def _create_drawn_peg(self, point, coloridx):
+        if coloridx == 1:
+            color = self.settings['-PLAYER1_COLOR-']
+        else:
+            color = self.settings['-PLAYER2_COLOR-']
+
+        peg = self.graph.DrawCircle(self._point_to_coords(
+            point), self.peg_radius, color, color)
         return peg
 
     def create_move_objects(self, game, index):
         move = game.history[index]
-        if (not isinstance(move, twixt.Point)):
+        if not isinstance(move, twixt.Point):
             # swap case: flip first move
             c1 = self.history.pop().objects[0]
             self.graph.delete(c1)
@@ -268,17 +292,43 @@ class TwixtBoard:
     def _create_drawn_link(self, p1, p2, color):
         #carray = [gr.color_rgb(0,0,0), gr.color_rgb(150,150,150), gr.color_rgb(255,0,0)]
         carray = [self.settings['-PLAYER2_COLOR-'],
-                  self.settings['-PLAYER1_COLOR-'], self.settings['-PLAYER1_COLOR-']]
-        c1 = self.center(*p1)
-        c2 = self.center(*p2)
-        dx = c2.x - c1.x
-        dy = c2.y - c1.y
-        hypot = math.hypot(dx, dy)
-        cos = dx / hypot
-        sin = dy / hypot
-        lx1 = int(c1.x + cos * self.peg_radius + 0.5)
-        ly1 = int(c1.y + sin * self.peg_radius + 0.5)
-        lx2 = int(c2.x - cos * self.peg_radius + 0.5)
-        ly2 = int(c2.y - sin * self.peg_radius + 0.5)
-        line = self.graph.DrawLine((lx1, ly1), (lx2, ly2), carray[color], 5)
+                  self.settings['-PLAYER1_COLOR-'],
+                  self.settings['-PLAYER1_COLOR-']]
+
+        line = self.graph.DrawLine(self._point_to_coords(
+            p1), self._point_to_coords(p2), carray[color], 5)
         return line
+
+    def getMove(self, game, coords):
+
+        offset = self.offset_factor * self.cell_width
+        x = (coords[0] - offset) / self.cell_width
+        y = (coords[1] - offset) / self.cell_width
+
+        # click distance tolerance
+        maxgap = 0.3
+        xgap = abs(x - round(x))
+        ygap = abs(y - round(y))
+        if xgap > maxgap or ygap > maxgap:
+            # click not on hole
+            return None
+
+        x = round(x)
+        y = round(y)
+
+        if x < 0 or x > self.size - 1 or y < 0 or y > self.size - 1:
+            # overboard click
+            return None
+        elif (x == 0 or x == self.size - 1) and (y == 0 or y == self.size - 1):
+            # corner click
+            return None
+        elif ((x == 0 or x == self.size - 1) and len(game.history) % 2 == 0) or ((y == 0 or y == self.size - 1) and len(game.history) % 2 == 1):
+            # black clicked white's end line or vice versa
+            return None
+
+        move = chr(ord('a') + x) + "%d" % (self.size - y)
+        if self._move_to_point(move) in game.history:
+            # click on peg
+            return None
+
+        return move

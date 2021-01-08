@@ -4,7 +4,9 @@ from json import (load as jsonload, dump as jsondump)
 
 
 BOARD_SIZE = [400, 500, 600, 700, 800]
-PLAYER_TYPE = ['human', 'bot']
+TYPE_HUMAN = 'human'
+TYPE_BOT = 'bot'
+
 COLORS = ["black", "blue", "brown", "cyan", "green", "orange", "lightblue",
           "lightgreen", "lightred", "pink", "purple", "red", "yellow", "white"]
 SETTINGS_FILE = path.join(path.dirname(__file__), r'settings.cfg')
@@ -14,10 +16,10 @@ MODEL_DIR = path.normpath(path.join(path.dirname(__file__), '..\model\pb'))
 SETTINGS = {
     '-MODEL_FOLDER-': [MODEL_DIR, 'folder'],
     '-LOAD_MODEL_AT_START-': [True, 'load at start'],
-    '-PLAYER1_TYPE-': [PLAYER_TYPE[0], 'type'],
+    '-PLAYER1_TYPE-': [TYPE_HUMAN, 'type'],
     '-PLAYER1_NAME-': ['Player 1', 'name'],
     '-PLAYER1_COLOR-': ['red', 'color'],
-    '-PLAYER2_TYPE-': [PLAYER_TYPE[1], 'type'],
+    '-PLAYER2_TYPE-': [TYPE_BOT, 'type'],
     '-PLAYER2_NAME-': ['Player 2', 'name'],
     '-PLAYER2_COLOR-': ['black', 'color'],
     '-ALLOW_SWAP-': [True, 'allow swap'],
@@ -86,7 +88,7 @@ def createSettingsWindow(settings):
                     sg.Checkbox(text=None, default=False, key='-SELF_CROSSING_LINKS-')]
                 ]
     tab_player1 = [[TextLabel(SETTINGS['-PLAYER1_TYPE-'][1]),
-                    sg.Combo(PLAYER_TYPE, PLAYER_TYPE[0], size=(15, 1), key='-PLAYER1_TYPE-', readonly=True)],
+                    sg.Combo([TYPE_HUMAN, TYPE_BOT], TYPE_HUMAN, size=(15, 1), key='-PLAYER1_TYPE-', readonly=True)],
                    [TextLabel(SETTINGS['-PLAYER1_COLOR-'][1]),
                     sg.Combo(COLORS, SETTINGS['-PLAYER1_COLOR-'][0], size=(15, 1), key='-PLAYER1_COLOR-', readonly=True)],
                    [TextLabel(SETTINGS['-PLAYER1_NAME-'][1]),
@@ -94,7 +96,7 @@ def createSettingsWindow(settings):
                    ]
 
     tab_player2 = [[TextLabel(SETTINGS['-PLAYER2_TYPE-'][1]),
-                    sg.Combo(PLAYER_TYPE, PLAYER_TYPE[0], size=(15, 1), key='-PLAYER2_TYPE-', readonly=True)],
+                    sg.Combo([TYPE_HUMAN, TYPE_BOT], TYPE_BOT, size=(15, 1), key='-PLAYER2_TYPE-', readonly=True)],
                    [TextLabel(SETTINGS['-PLAYER2_COLOR-'][1]),
                     sg.Combo(COLORS, SETTINGS['-PLAYER2_COLOR-'][0], size=(15, 1), key='-PLAYER2_COLOR-', readonly=True)],
                    [TextLabel(SETTINGS['-PLAYER2_NAME-'][1]),
