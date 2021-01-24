@@ -148,7 +148,7 @@ class Game:
               (2, 1), (1, 2), (-1, 2), (-2, 1)]
     COLOR_NAME = ("BLACK", "WHITE")
 
-    def __init__(self):
+    def __init__(self, allow_swap, allow_scl):
 
         self.history = []
         self.pegs = [numpy.zeros((Game.SIZE, Game.SIZE), numpy.int8)
@@ -159,6 +159,8 @@ class Game:
         self.open_pegs = [SelectSet(), SelectSet()]
         self.reachable = [set(), set()]
         self.reachable_history = []
+        self.allow_swap = allow_swap
+        self.allow_scl = allow_scl
 
         for x in range(Game.SIZE):
             for y in range(Game.SIZE):
@@ -706,20 +708,3 @@ def get_thinker(spec, resources={}):
     thinker.name = spec
     thinker.report = "-"
     return thinker
-
-
-def get_resource(spec):
-    colon = spec.find(':')
-    if colon == -1:
-        modname = spec
-        kwargs = dict()
-    else:
-        modname = spec[:colon]
-        kwargs = {arg.split("=")[0]: arg.split("=")[1]
-                  for arg in spec[colon + 1:].split(",")}
-
-    mod = importlib.import_module(modname)
-    cls = getattr(mod, 'Resource')
-    resource = cls(**kwargs)
-    resource.spec = spec
-    return resource

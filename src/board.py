@@ -54,9 +54,8 @@ class TwixtBoard:
         self._draw_labels()
         self._draw_guidelines()
 
-        for p, idx in enumerate(game.history) or []:
-            color = 1 - idx % 2
-            self._create_drawn_peg(self._point_to_move(p), color)
+        for idx in range(len(game.history)):
+            self.create_move_objects(game, idx)
 
     def _point_to_move(self, point):
         if isinstance(point, twixt.Point):
@@ -110,13 +109,13 @@ class TwixtBoard:
         s = self.size - 1
         w = self.cell_width
         self.graph.DrawLine((o + 1 * w, o + 1 * w + w / 3),
-                            (o + 1 * w, o + s * w - w / 3), self.settings['-PLAYER2_COLOR-'], 3)
+                            (o + 1 * w, o + s * w - w / 3), self.settings['-P2_COLOR-'], 3)
         self.graph.DrawLine((o + s * w, o + 1 * w + w / 3),
-                            (o + s * w, o + s * w - w / 3), self.settings['-PLAYER2_COLOR-'], 3)
+                            (o + s * w, o + s * w - w / 3), self.settings['-P2_COLOR-'], 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + 1 * w),
-                            (o + s * w - w / 3, o + 1 * w), self.settings['-PLAYER1_COLOR-'], 3)
+                            (o + s * w - w / 3, o + 1 * w), self.settings['-P1_COLOR-'], 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + s * w),
-                            (o + s * w - w / 3, o + s * w), self.settings['-PLAYER1_COLOR-'], 3)
+                            (o + s * w - w / 3, o + s * w), self.settings['-P1_COLOR-'], 3)
 
     def _draw_guidelines(self):
         if self.settings['-SHOW_GUIDELINES-']:
@@ -253,9 +252,9 @@ class TwixtBoard:
 
     def _create_drawn_peg(self, point, coloridx):
         if coloridx == 1:
-            color = self.settings['-PLAYER1_COLOR-']
+            color = self.settings['-P1_COLOR-']
         else:
-            color = self.settings['-PLAYER2_COLOR-']
+            color = self.settings['-P2_COLOR-']
 
         peg = self.graph.DrawCircle(self._point_to_coords(
             point), self.peg_radius, color, color)
@@ -266,7 +265,7 @@ class TwixtBoard:
         if not isinstance(move, twixt.Point):
             # swap case: flip first move
             c1 = self.history.pop().objects[0]
-            self.graph.delete(c1)
+            self.graph.delete_figure(c1)
             self.known_moves.clear()
             m1 = game.history[0]
             move = twixt.Point(m1.y, m1.x)
@@ -291,13 +290,34 @@ class TwixtBoard:
 
     def _create_drawn_link(self, p1, p2, color):
         #carray = [gr.color_rgb(0,0,0), gr.color_rgb(150,150,150), gr.color_rgb(255,0,0)]
-        carray = [self.settings['-PLAYER2_COLOR-'],
-                  self.settings['-PLAYER1_COLOR-'],
-                  self.settings['-PLAYER1_COLOR-']]
+        carray = [self.settings['-P2_COLOR-'],
+                  self.settings['-P1_COLOR-'],
+                  self.settings['-P1_COLOR-']]
 
         line = self.graph.DrawLine(self._point_to_coords(
             p1), self._point_to_coords(p2), carray[color], 5)
         return line
+
+    def validSpot(self, move, game):
+
+        p = self._move_to_point(move)
+        if len(game.history) >= 2 and game.history[1] == "swap":
+            # game is swapped
+            if p in game.history[2:]:
+                # spot occupied after swap
+                return False
+            elif twixt.Point(p.y, p.x) == game.history[0]:
+                # spot occupied on swap (flip)
+                return False
+            else:
+                return True
+        else:
+            # game is not swapped
+            if p in game.history:
+                # spot occupied
+                return False
+
+        return True
 
     def getMove(self, game, coords):
 
@@ -315,6 +335,10 @@ class TwixtBoard:
 
         x = round(x)
         y = round(y)
+        move = chr(ord('a') + x) + "%d" % (self.size - y)
+        if len(game.history) == 1 and self._move_to_point(
+                move) == game.history[0] and game.allow_swap:
+            return "swap"
 
         if x < 0 or x > self.size - 1 or y < 0 or y > self.size - 1:
             # overboard click
@@ -322,13 +346,14 @@ class TwixtBoard:
         elif (x == 0 or x == self.size - 1) and (y == 0 or y == self.size - 1):
             # corner click
             return None
-        elif ((x == 0 or x == self.size - 1) and len(game.history) % 2 == 0) or ((y == 0 or y == self.size - 1) and len(game.history) % 2 == 1):
-            # black clicked white's end line or vice versa
+        elif ((x == 0 or x == self.size - 1) and len(game.history) % 2 == 0):
+            # white clicked on black's end line
+            return None
+        elif ((y == 0 or y == self.size - 1) and len(game.history) % 2 == 1):
+            # black clicked white's end line
             return None
 
-        move = chr(ord('a') + x) + "%d" % (self.size - y)
-        if self._move_to_point(move) in game.history:
-            # click on peg
+        if not self.validSpot(move, game):
             return None
 
         return move

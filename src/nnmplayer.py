@@ -14,7 +14,6 @@ class Player:
     def __init__(self, **kwargs):
 
         self.model = kwargs.get('model', None)
-        self.resource = kwargs.get('resource', None)
         self.add_noise = float(kwargs.get('add_noise', 0))
         self.temperature = float(kwargs.get('temperature', 0))
         self.num_trials = int(kwargs.get('trials', 100))
@@ -47,31 +46,14 @@ class Player:
                 if len(ml) == 1:
                     ml = ml[0]
                 return pw, ml
-        elif self.resource:
-            nncli = kwargs.get("resources").get(self.resource)
-            assert nncli != None
-
-            def nnfunc(game):
-
-                nips = naf.NetInputs(game)
-                rot = random.randint(0, 3) if self.random_rotation else 0
-                nips.rotate(rot)
-                pw, ml_r = nncli.eval(nips)
-                if type(pw) != numpy.float32:
-                    assert pw.shape[0] == 3
-                    pw = naf.three_to_one(pw)
-                ml_0 = naf.rotate_policy_array(ml_r, rot)
-                return pw, ml_0
         else:
             raise Exception("Specify model or resource")
 
         self.nm = nnmcts.NeuralMCTS(
             nnfunc, add_noise=self.add_noise, smart_root=self.smart_root, verbosity=self.verbosity)
 
-    def pick_move(self, game, ctrlWindow=None):
+    def pick_move(self, game):
         if self.use_swap and len(game.history) < 2:
-            if ctrlWindow:
-                ctrlWindow.updateProgress(0, self.trials, None)
 
             if len(game.history) == 0:
                 self.report = "swapmodel"
@@ -81,7 +63,7 @@ class Player:
                 return "swap"
             # else didn't want swap so compute a regular move
 
-        N = self.nm.mcts(game, self.num_trials, ctrlWindow)
+        N = self.nm.mcts(game, self.num_trials)
         self.report = self.nm.report
 
         # When a forcing win or forcing draw move is found, there's no policy

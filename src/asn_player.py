@@ -43,7 +43,6 @@ class Player:
         self.async_calls = int(kwargs.pop('async_calls', 8))
         self.quiet = int(kwargs.pop('quiet', 0))
         self.use_swap = int(kwargs.pop('use_swap', 1))
-        kwargs.pop('resources')
 
         if kwargs:
             raise TypeError("unprocessed options", kwargs)
