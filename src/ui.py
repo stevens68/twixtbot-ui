@@ -47,6 +47,22 @@ def updateTurnIndicator(window, game):
     window['-P2_TURNINDICATOR-'].Update(turn[1])
 
 
+def updateHistory(window, game):
+
+    text = ""
+    for i, move in enumerate(game.history):
+        text += "\n" if i > 0 and i % 2 == 0 else ""
+        text += str(i + 1).rjust(2, ' ') + '. ' + str(move).upper()
+
+        if move == "swap":
+            m1 = game.history[0]
+            text += " " + chr(m1.y + ord('A')) + str(m1.x + 1)
+
+        text += "\t\t" if i % 2 == 0 else ""
+
+    window['-HISTORY-'].Update(text)
+
+
 def applySettings(window, board, settings, game):
 
     board.draw(game)
@@ -167,7 +183,10 @@ control_col = sg.Column([[TextLabel('turn'),
                          [TextLabel('eval')],
                          [sg.HSeparator()],
                          # [sg.Output(size=(13, 20), key='-HISTORY-')],
-                         [sg.Text('history:', font="Any 10")]], vertical_alignment='top')
+                         [TextLabel('history'), sg.Multiline(default_text='', font=("Courier", 10),
+                                                             background_color='lightgrey', autoscroll=True,
+                                                             key='-HISTORY-', disabled=True, size=(30, 6))]],
+                        vertical_alignment='top')
 
 layout = [
     [sg.Menu(menu_def, tearoff=False)],
@@ -194,13 +213,14 @@ applySettings(window, board, settings, game)
 
 thinker = [None, None]
 
-#thinker[1] = st.loadModel(1, settings)
-#thinker[0] = st.loadModel(2, settings)
+thinker[1] = st.loadModel(1, settings)
+thinker[0] = st.loadModel(2, settings)
 
 
 # Event Loop
 while True:
     updateTurnIndicator(window, game)
+    updateHistory(window, game)
     event, values = window.read()
     print(event, values)
     if event == sg.WIN_CLOSED or event == 'Exit':
@@ -211,6 +231,13 @@ while True:
         boardEvent()
     elif event == 'Reset':
         game = twixt.Game(settings['-ALLOW_SWAP-'], settings['-ALLOW_SCL-'])
+        board.draw(game)
+    elif event == 'Undo Move':
+        if len(game.history) > 1:
+            game.undo()
+        elif len(game.history) == 1:
+            game = twixt.Game(settings['-ALLOW_SWAP-'],
+                              settings['-ALLOW_SCL-'])
         board.draw(game)
 
 

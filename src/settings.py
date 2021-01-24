@@ -15,7 +15,7 @@ DELAY_SEC = [0, .1, .2, .3, .5, 1, 2, 3, 5, 10]
 SETTINGS_FILE = path.join(path.dirname(__file__), r'settings.cfg')
 MODEL_DIR = path.normpath(path.join(path.dirname(__file__), '..\model\pb'))
 TEMPERATURE = [0.0, 0.5, 1.0]
-POPUP_COLOR = "grey"
+POPUP_COLOR = "darkblue"
 
 
 SETTINGS = {
@@ -23,9 +23,9 @@ SETTINGS = {
     '-ALLOW_SCL-': [False, 'allow self-crossing links'],
     '-DELAY_SEC-': [DELAY_SEC[4], 'auto move delay [s]'],
 
-    '-P1_NAME-': ['Player 1', 'name'],
+    '-P1_NAME-': ['Tom', 'name'],
     '-P1_COLOR-': ['red', 'color'],
-    '-P1_AUTO_MOVE-': [True, 'auto move'],
+    '-P1_AUTO_MOVE-': [False, 'auto move'],
     '-P1_MODEL_FOLDER-': [MODEL_DIR, 'model folder'],
     '-P1_RANDOM_ROTATION-': [False, 'random rotation'],
     '-P1_TRIALS-': [0, 'trials'],
@@ -33,7 +33,7 @@ SETTINGS = {
     '-P1_TEMPERATURE-': [TEMPERATURE[1], 'temperature'],
     '-P1_SMART_ROOT-': [False, 'smart root'],
 
-    '-P2_NAME-': ['Player 2', 'name'],
+    '-P2_NAME-': ['Jerry', 'name'],
     '-P2_COLOR-': ['black', 'color'],
     '-P2_AUTO_MOVE-': [True, 'auto move'],
     '-P2_MODEL_FOLDER-': [MODEL_DIR, 'model folder'],
@@ -55,8 +55,8 @@ THINKER_ARGS = 'nnmplayer:trials=100,verbosity=0,model=model/pb'
 
 def loadModel(player, settings):
     p = str(player)
-    sg.popup_quick_message('Loading model ' + p + '/2 in ' +
-                           settings['-P' + p + '_MODEL_FOLDER-'] + '  ...', keep_on_top=True, line_width=200, background_color=POPUP_COLOR)
+    sg.popup_quick_message('Loading model ' + p + ' ...', keep_on_top=True, line_width=200,
+                           background_color=POPUP_COLOR)
     thinkerArgs = 'nnmplayer:trials=' + \
         str(settings['-P' + p + '_TRIALS-'])
     thinkerArgs += ',verbosity=0,model=' + \
