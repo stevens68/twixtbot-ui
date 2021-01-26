@@ -691,7 +691,7 @@ class Game:
         return out + "\n"
 
 
-def get_thinker(spec, resources={}):
+def get_thinker(spec):
     colon = spec.find(':')
     if colon == -1:
         modname = spec
@@ -701,7 +701,6 @@ def get_thinker(spec, resources={}):
         kwargs = {arg.split("=")[0]: arg.split("=")[1]
                   for arg in spec[colon + 1:].split(",")}
 
-    kwargs["resources"] = resources
     mod = importlib.import_module(modname)
     cls = getattr(mod, 'Player')
     thinker = cls(**kwargs)

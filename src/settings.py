@@ -13,7 +13,6 @@ DELAY_SEC = [0, .1, .2, .3, .5, 1, 2, 3, 5, 10]
 SETTINGS_FILE = path.join(path.dirname(__file__), r'settings.cfg')
 MODEL_DIR = path.normpath(path.join(path.dirname(__file__), '..\model\pb'))
 TEMPERATURE = [0.0, 0.5, 1.0]
-POPUP_COLOR = "orange"
 
 
 SETTINGS = {
@@ -21,45 +20,58 @@ SETTINGS = {
     '-ALLOW_SCL-': [False, 'allow self-crossing links'],
     '-DELAY_SEC-': [DELAY_SEC[4], 'auto move delay [s]'],
 
+    # PLAYER 1
+
     '-P1_NAME-': ['Tom', 'name'],
     '-P1_COLOR-': ['red', 'color'],
     '-P1_AUTO_MOVE-': [False, 'auto move'],
+
+    # MODEL 1
     '-P1_MODEL_FOLDER-': [MODEL_DIR, 'model folder'],
     '-P1_RANDOM_ROTATION-': [False, 'random rotation'],
-    '-P1_TRIALS-': [0, 'trials'],
-    '-P1_NOISE-': [False, 'add_noise'],
     '-P1_TEMPERATURE-': [TEMPERATURE[1], 'temperature'],
+    '-P1_EVAL_BEFORE-': [True, 'eval before turn'],
+
+    # MCTS 1
+    '-P1_TRIALS-': [0, 'trials'],
+    '-P1_CPUCT-': [1.0, 'cpuct'],
+    '-P1_ADD_NOISE-': [0.25, 'add noise'],
     '-P1_SMART_ROOT-': [False, 'smart root'],
+    '-P1_SMART_INIT-': [False, 'smart init'],
+
+    # PLAYER 2
 
     '-P2_NAME-': ['Jerry', 'name'],
     '-P2_COLOR-': ['black', 'color'],
     '-P2_AUTO_MOVE-': [True, 'auto move'],
+
+    # MODEL 2
     '-P2_MODEL_FOLDER-': [MODEL_DIR, 'model folder'],
     '-P2_RANDOM_ROTATION-': [False, 'random rotation'],
-    '-P2_TRIALS-': [0, 'trials'],
-    '-P2_NOISE-': [False, 'add_noise'],
-    '-P2_TEMPERATURE-': [TEMPERATURE[1], 'temperature'],
-    '-P2_SMART_ROOT-': [False, 'smart root'],
+    '-P2_TEMPERATURE-': [TEMPERATURE[0], 'temperature'],
+    '-P2_EVAL_BEFORE-': [True, 'eval before turn'],
 
+    # MCTS 2
+    '-P2_TRIALS-': [0, 'trials'],
+    '-P2_CPUCT-': [1.0, 'cpuct'],
+    '-P2_ADD_NOISE-': [0.25, 'add noise'],
+    '-P2_SMART_ROOT-': [False, 'smart root'],
+    '-P2_SMART_INIT-': [False, 'smart init'],
+
+    # APPEARANCE
     '-SHOW_LABELS-': [True, 'show labels'],
     '-SHOW_GUIDELINES-': [False, 'show guidelines'],
-    #'-THEME-': ['DarkBlue3', 'theme'],
     '-BOARD_SIZE-': [BOARD_SIZE[3], 'board size'],
 }
-
-# constants
-THINKER_ARGS = 'nnmplayer:trials=100,verbosity=0,model=model/pb'
 
 
 def load_model(player, settings):
     p = str(player)
-    sg.popup_quick_message('Loading model ... ', keep_on_top=True, line_width=200,
-                           background_color=POPUP_COLOR)
-    thinkerArgs = 'nnmplayer:trials=' + \
-        str(settings['-P' + p + '_TRIALS-'])
-    thinkerArgs += ',verbosity=0,model=' + \
-        settings['-P' + p + '_MODEL_FOLDER-']
-    return twixt.get_thinker(thinkerArgs, dict())
+
+    thinker_args = 'nnmplayer:trials={},verbosity=0,model={}'.format(
+        settings['-P' + p + '_TRIALS-'], settings['-P' + p + '_MODEL_FOLDER-'])
+
+    return twixt.get_thinker(thinker_args)
 
 
 def load_settings():
@@ -119,21 +131,27 @@ def create_settings_window(settings):
                     sg.Input(SETTINGS['-P1_NAME-'][0], size=(15, 1), key='-P1_NAME-')],
                    [text_label(SETTINGS['-P1_AUTO_MOVE-'][1]),
                     sg.Checkbox(text=None, default=SETTINGS['-P1_AUTO_MOVE-'][0], key='-P1_AUTO_MOVE-')],
+                   [text_label(SETTINGS['-P1_EVAL_BEFORE-'][1]),
+                    sg.Checkbox(text=None, default=SETTINGS['-P1_EVAL_BEFORE-'][0], key='-P1_EVAL_BEFORE-')],
                    [text_label(SETTINGS['-P1_MODEL_FOLDER-'][1]), sg.Input(key='-P1_MODEL_FOLDER-'),
                     sg.FolderBrowse(target='-P1_MODEL_FOLDER-',
-                                    initial_folder=MODEL_DIR),
-                    sg.Button('Load', key='-P1_LOAD-')],
+                                    initial_folder=MODEL_DIR), sg.Text('requires restart')],
                    [text_label(SETTINGS['-P1_TRIALS-'][1]),
                     sg.Input(SETTINGS['-P1_TRIALS-'][0], size=(10, 1), key='-P1_TRIALS-')],
-                   [text_label('temperature'),
+                   [text_label(SETTINGS['-P1_TEMPERATURE-'][1]),
                     sg.Combo(TEMPERATURE, settings['-P1_TEMPERATURE-'], size=(5, 1), key='-P1_TEMPERATURE-', readonly=True)],
-                   [text_label('noise'),
-                    sg.Input(default_text=settings['-P1_NOISE-'], size=(7, 1), enable_events=True, key='-P1_NOISE-')],
+                   [text_label(SETTINGS['-P1_ADD_NOISE-'][1]),
+                    sg.Input(default_text=settings['-P1_ADD_NOISE-'], size=(7, 1), enable_events=True, key='-P1_ADD_NOISE-')],
+                   [text_label(SETTINGS['-P1_CPUCT-'][1]),
+                    sg.Input(default_text=settings['-P1_CPUCT-'], size=(7, 1), enable_events=True, key='-P1_CPUCT-')],
                    [text_label(SETTINGS['-P1_RANDOM_ROTATION-'][1]),
                     sg.Checkbox(text=None, default=SETTINGS['-P1_RANDOM_ROTATION-'][0], key='-P1_RANDOM_ROTATION-')],
-                   [text_label('smart root'),
+                   [text_label(SETTINGS['-P1_SMART_ROOT-'][1]),
                     sg.Checkbox(
-                       text="", default=settings['-P1_SMART_ROOT-'], key='-P1_SMART_ROOT-', size=(7, 1))]
+                       text="", default=settings['-P1_SMART_ROOT-'], key='-P1_SMART_ROOT-', size=(7, 1))],
+                   [text_label(SETTINGS['-P1_SMART_INIT-'][1]),
+                    sg.Checkbox(
+                       text="", default=settings['-P1_SMART_INIT-'], key='-P1_SMART_INIT-', size=(7, 1))]
                    ]
 
     tab_player2 = [[sg.Text("")], [text_label(SETTINGS['-P2_COLOR-'][1]),
@@ -142,26 +160,30 @@ def create_settings_window(settings):
                     sg.Input(SETTINGS['-P2_NAME-'][0], size=(15, 1), key='-P2_NAME-')],
                    [text_label(SETTINGS['-P2_AUTO_MOVE-'][1]),
                     sg.Checkbox(text=None, default=SETTINGS['-P2_AUTO_MOVE-'][0], key='-P2_AUTO_MOVE-')],
+                   [text_label(SETTINGS['-P2_EVAL_BEFORE-'][1]),
+                    sg.Checkbox(text=None, default=SETTINGS['-P2_EVAL_BEFORE-'][0], key='-P2_EVAL_BEFORE-')],
                    [text_label(SETTINGS['-P2_MODEL_FOLDER-'][1]), sg.Input(key='-P2_MODEL_FOLDER-'),
                     sg.FolderBrowse(target='-P2_MODEL_FOLDER-',
-                                    initial_folder=MODEL_DIR),
-                    sg.Button('Load', key='-P2_LOAD-')],
+                                    initial_folder=MODEL_DIR), sg.Text('requires restart')],
                    [text_label(SETTINGS['-P2_TRIALS-'][1]),
                     sg.Input(SETTINGS['-P2_TRIALS-'][0], size=(10, 1), key='-P2_TRIALS-')],
-                   [text_label('temperature'),
+                   [text_label(SETTINGS['-P2_TEMPERATURE-'][1]),
                     sg.Combo(TEMPERATURE, settings['-P2_TEMPERATURE-'], size=(5, 1), key='-P2_TEMPERATURE-', readonly=True)],
-                   [text_label('noise'),
-                    sg.Input(default_text=settings['-P2_NOISE-'], size=(7, 1), enable_events=True, key='-P2_NOISE-')],
-                   [text_label(SETTINGS['-P1_RANDOM_ROTATION-'][1]),
+                   [text_label(SETTINGS['-P2_ADD_NOISE-'][1]),
+                    sg.Input(default_text=settings['-P2_ADD_NOISE-'], size=(7, 1), enable_events=True, key='-P2_ADD_NOISE-')],
+                   [text_label(SETTINGS['-P2_CPUCT-'][1]),
+                    sg.Input(default_text=settings['-P2_CPUCT-'], size=(7, 1), enable_events=True, key='-P2_CPUCT-')],
+                   [text_label(SETTINGS['-P2_RANDOM_ROTATION-'][1]),
                     sg.Checkbox(text=None, default=SETTINGS['-P2_RANDOM_ROTATION-'][0], key='-P2_RANDOM_ROTATION-')],
-                   [text_label('smart root'),
+                   [text_label(SETTINGS['-P2_SMART_ROOT-'][1]),
                     sg.Checkbox(
-                       text="", default=settings['-P2_SMART_ROOT-'], key='-P2_SMART_ROOT-', size=(7, 1))]
+                       text="", default=settings['-P2_SMART_ROOT-'], key='-P2_SMART_ROOT-', size=(7, 1))],
+                   [text_label(SETTINGS['-P2_SMART_INIT-'][1]),
+                    sg.Checkbox(
+                       text="", default=settings['-P2_SMART_INIT-'], key='-P2_SMART_INIT-', size=(7, 1))]
                    ]
 
-    tab_appearence = [  # [text_label(SETTINGS['-THEME-'][1]),
-        # sg.Combo(sg.theme_list(), size=(15, 1), key='-THEME-'),
-        # sg.Text('requires restart')],
+    tab_appearence = [
         [sg.Text("")],
         [text_label(SETTINGS['-BOARD_SIZE-'][1]),
          sg.Combo(BOARD_SIZE, SETTINGS['-BOARD_SIZE-'][0], size=(15, 1), key='-BOARD_SIZE-', readonly=True), sg.Text('requires restart')],

@@ -39,6 +39,18 @@ class NeuralMCTS:
         self.root = None
         self.history_at_root = None
 
+    def set_cpuct(self, cpuct):
+        self.cpuct = cpuct
+
+    def set_add_noise(self, add_noise):
+        self.add_noise = add_noise
+
+    def set_smart_root(self, smart_root):
+        self.smart_root = smart_root
+
+    def set_smart_init(self, smart_init):
+        self.smart_root = smart_init
+
     def expand_leaf(self, game):
         """ Create a brand new leaf node for the current game state
             and return it. """
