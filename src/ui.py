@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 import board
 import settings as st
-import twixt
+from backend import twixt
 from os import path
 
 # constants
@@ -110,11 +110,21 @@ def update_evals():
             window['-P2_CURRENT_BEST-'].Update('')
 
 
+def update_thinkers():
+
+    for t in [0, 1]:
+        if thinker[t]:
+            p = str(2 - t)
+            thinker[t].set_temperature(
+                float(settings['-P' + p + '_TEMPERATURE-']))
+            thinker[t].set_num_trials(int(settings['-P' + p + '_TRIALS-']))
+
+
 def apply_settings():
 
     board.draw(game)
-    # sg.ChangeLookAndFeel(settings['-THEME-'])
 
+    # update settings area
     window['-P1_NAME-'].Update(settings['-P1_NAME-'])
     window['-P1_PEGSQUARE-'].erase()
     window['-P1_PEGSQUARE-'].DrawCircle((7, 9), 6,
@@ -135,6 +145,8 @@ def apply_settings():
     window['-P2_TRIALS-'].Update(settings['-P2_TRIALS-'])
 
     update_turn_indicator()
+
+    update_thinkers()
 
 
 def settings_dialog():
@@ -203,9 +215,9 @@ def row_player_names():
 def row_auto_moves():
     return [text_label('auto move'),
             sg.Checkbox(
-        text="", default=settings['-P1_AUTO_MOVE-'], key='-P1_AUTO_MOVE-', size=(7 + OFFSET, 1)),
+        text="", enable_events=True, default=settings['-P1_AUTO_MOVE-'], key='-P1_AUTO_MOVE-', size=(7 + OFFSET, 1)),
         sg.Checkbox(
-        text="", default=settings['-P2_AUTO_MOVE-'], key='-P2_AUTO_MOVE-', size=(7 + OFFSET, 1))]
+        text="", enable_events=True, default=settings['-P2_AUTO_MOVE-'], key='-P2_AUTO_MOVE-', size=(7 + OFFSET, 1))]
 
 
 def row_model_folders():
@@ -279,16 +291,32 @@ def init_bots():
     thinker[1] = st.load_model(1, settings)
     thinker[0] = st.load_model(2, settings)
     # warm-up bot1 before first move
+    thinker[0].nm.eval_game(game)
     thinker[1].nm.eval_game(game)
 
 
 def bot_move():
-    print("bot_move: ", game.turn)
     tup = thinker[game.turn].pick_move(game)
     m = tup[0] if type(tup) == tuple else tup
-
+    print("bot_move: ", game.turn, m)
     return m
 
+
+def undo_move():
+    global game
+    if len(game.history) > 1:
+        game.undo()
+    elif len(game.history) == 1:
+        game = twixt.Game(settings['-ALLOW_SWAP-'],
+                          settings['-ALLOW_SCL-'])
+    # switch of auto move
+    if settings['-P' + str(2 - game.turn) + '_AUTO_MOVE-']:
+        settings['-P' + str(2 - game.turn) + '_AUTO_MOVE-'] = False
+        apply_settings()
+
+
+def update_settings(event, values):
+    settings[event] = values[event]
 
 ##### main window ##################################
 
@@ -310,15 +338,15 @@ control_col = sg.Column([row_turn_indicators(),
                          row_peg_icons(),
                          row_player_names(),
                          row_auto_moves(),
-                         row_model_folders(),
-                         [sg.HSeparator()],
                          row_trials(),
-                         row_progress(),
-                         row_time(),
                          [sg.HSeparator()],
+                         row_model_folders(),
                          row_eval_bars(),
                          row_eval_numbers(),
                          row_current_best(),
+                         [sg.HSeparator()],
+                         row_progress(),
+                         row_time(),
                          [sg.HSeparator()],
                          row_history()],
                         vertical_alignment='top')
@@ -342,13 +370,16 @@ window.Finalize()
 # draw twixt board
 game = twixt.Game(settings['-ALLOW_SWAP-'], settings['-ALLOW_SCL-'])
 
+
 apply_settings()
 window.refresh()
 
 init_bots()
 
+
 # Event Loop
 while True:
+    board.draw(game)
     update_turn_indicator()
     update_history()
     update_evals()
@@ -357,6 +388,9 @@ while True:
         move = bot_move()
         execute_move(move)
         board.draw(game)
+        update_turn_indicator()
+        update_history()
+        update_evals()
 
     event, values = window.read()
     print(event, values)
@@ -368,14 +402,9 @@ while True:
         board_event()
     elif event == 'Reset':
         game = twixt.Game(settings['-ALLOW_SWAP-'], settings['-ALLOW_SCL-'])
-        board.draw(game)
     elif event == 'Undo Move':
-        if len(game.history) > 1:
-            game.undo()
-        elif len(game.history) == 1:
-            game = twixt.Game(settings['-ALLOW_SWAP-'],
-                              settings['-ALLOW_SCL-'])
-        board.draw(game)
-
+        undo_move()
+    elif event in ['-P1_AUTO_MOVE-', '-P2_AUTO_MOVE-']:
+        update_settings(event, values)
 
 window.close()

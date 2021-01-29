@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 import math
-import twixt
+from backend import twixt
 
 
 # constants

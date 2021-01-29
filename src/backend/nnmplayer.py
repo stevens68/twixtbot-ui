@@ -2,11 +2,11 @@
 import numpy
 import random
 
-import naf
-import nneval
-import nnmcts
-import swapmodel
-import twixt
+from backend import naf
+from backend import nneval
+from backend import nnmcts
+from backend import swapmodel
+from backend import twixt
 
 
 class Player:
@@ -73,7 +73,12 @@ class Player:
             elif swapmodel.want_swap(game.history[0]):
                 self.report = "swapmodel"
                 return "swap"
-            # else didn't want swap so compute a regular move
+            # else didn't want swap so compute a regular move^
+
+        if self.num_trials == 0:
+            # don't use MCTS but just eval and return best move
+            _, best_moves = self.nm.eval_game(game)
+            return best_moves[-1][0]
 
         N = self.nm.mcts(game, self.num_trials)
         self.report = self.nm.report

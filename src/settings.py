@@ -3,14 +3,14 @@ from os import path
 from json import (load as jsonload, dump as jsondump)
 
 
-import twixt
+from backend import twixt
 
 
 BOARD_SIZE = [400, 500, 600, 700, 800]
 COLORS = ["black", "blue", "brown", "cyan", "green", "orange", "lightblue",
           "lightgreen", "lightred", "pink", "purple", "red", "yellow", "white"]
 DELAY_SEC = [0, .1, .2, .3, .5, 1, 2, 3, 5, 10]
-SETTINGS_FILE = path.join(path.dirname(__file__), r'settings.cfg')
+SETTINGS_FILE = path.join(path.dirname(__file__), r'config.json')
 MODEL_DIR = path.normpath(path.join(path.dirname(__file__), '..\model\pb'))
 TEMPERATURE = [0.0, 0.5, 1.0]
 
@@ -69,7 +69,8 @@ def load_model(player, settings):
     p = str(player)
 
     thinker_args = 'nnmplayer:trials={},verbosity=0,model={}'.format(
-        settings['-P' + p + '_TRIALS-'], settings['-P' + p + '_MODEL_FOLDER-'])
+        settings['-P' + p + '_TRIALS-'],
+        settings['-P' + p + '_MODEL_FOLDER-'])
 
     return twixt.get_thinker(thinker_args)
 
@@ -79,7 +80,7 @@ def load_settings():
         with open(SETTINGS_FILE, 'r') as f:
             settings = jsonload(f)
     except Exception:
-        sg.popup('No settings file found.\nCreating settings.cfg with default settings.',
+        sg.popup('No settings file found.\nCreating ' + SETTINGS_FILE + ' with default settings.',
                  keep_on_top=True)
 
         settings = {}
@@ -103,7 +104,7 @@ def save_settings(settings, values):
                     f'Problem updating settings from window values. Key = {key}: {e}')
 
     with open(SETTINGS_FILE, 'w') as f:
-        jsondump(settings, f)
+        jsondump(settings, f, indent=4, sort_keys=True)
 
     settings['-BOARD_SIZE-'] = old_board_size or settings['-BOARD_SIZE-']
     #sg.popup('Settings saved')

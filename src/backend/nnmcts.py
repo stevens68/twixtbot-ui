@@ -3,8 +3,8 @@ import math
 import numpy
 import sys
 
-import naf
-import twixt
+from backend import naf
+from backend import twixt
 from tqdm import tqdm
 
 

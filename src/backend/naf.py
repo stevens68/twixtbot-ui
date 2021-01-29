@@ -3,7 +3,7 @@ import math
 import numpy
 import sys
 
-import twixt
+from backend import twixt
 
 
 class NetInputs:

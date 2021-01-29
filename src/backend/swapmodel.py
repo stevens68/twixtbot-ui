@@ -4,7 +4,7 @@ import math
 import numpy
 import random
 import sys
-import twixt
+from backend import twixt
 
 
 def _xy_predictors(xres, yres):
