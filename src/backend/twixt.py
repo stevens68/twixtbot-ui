@@ -5,6 +5,10 @@ import operator
 from collections import namedtuple
 
 
+SWAP = "swap"
+RESIGN = "resign"
+
+
 class Point(namedtuple('Point', 'x y')):
 
     def __new__(cls, *args):
@@ -25,7 +29,7 @@ class Point(namedtuple('Point', 'x y')):
 
         raise ValueError("Bad initializer")
 
-    def addIt(self, other):
+    def add_it(self, other):
 
         if isinstance(other, Point):
             return Point(operator.add(self.x, other.x), operator.add(self.y, other.y))
@@ -34,9 +38,9 @@ class Point(namedtuple('Point', 'x y')):
         else:
             raise ValueError("Cannot add")
 
-    __add__ = addIt
+    __add__ = add_it
 
-    def subtractIt(self, other):
+    def subtract_it(self, other):
 
         if isinstance(other, Point):
             return Point(operator.sub(self.x, other.x), operator.sub(self.y, other.y))
@@ -45,25 +49,25 @@ class Point(namedtuple('Point', 'x y')):
         else:
             raise ValueError("Cannot subtract")
 
-    __sub__ = subtractIt
+    __sub__ = subtract_it
 
-    def raddIt(self, other):
+    def radd_it(self, other):
 
         if len(other) == 2:
             return Point(operator.add(other[0], self.x), operator.add(other[1], self.y))
         else:
             raise ValueError("Cannot add")
 
-    __radd__ = raddIt
+    __radd__ = radd_it
 
-    def rsubtractIt(self, other):
+    def rsubtract_it(self, other):
 
         if len(other) == 2:
             return Point(operator.sub(other[0], self.x), operator.sub(other[1], self.y))
         else:
             raise ValueError("Cannot subtract")
 
-    __rsub__ = rsubtractIt
+    __rsub__ = rsubtract_it
 
     def __mul__(self, other):
 
@@ -150,6 +154,7 @@ class Game:
 
     def __init__(self, allow_swap, allow_scl):
 
+        self.result = None
         self.history = []
         self.pegs = [numpy.zeros((Game.SIZE, Game.SIZE), numpy.int8)
                      for _ in range(2)]
@@ -276,7 +281,7 @@ class Game:
 
         out = []
         if len(self.history) == 1:
-            out.append('swap')
+            out.append(SWAP)
 
         if self.turn == Game.WHITE:
             xr = list(range(1, Game.SIZE - 1))
@@ -301,7 +306,7 @@ class Game:
         b = Point(a.y, a.x)
         self.pegs[Game.WHITE][a] = 0
         self.pegs[Game.BLACK][b] = 1
-        self.history.append('swap')
+        self.history.append(SWAP)
         self.turn = Game.WHITE
 
         self.reachable[Game.BLACK] = set()
@@ -330,7 +335,7 @@ class Game:
 
     def play(self, move):
 
-        if move in ('swap', 'SWAP'):
+        if move == SWAP:
             self.play_swap()
             return
 
@@ -552,7 +557,7 @@ class Game:
         assert len(self.history) > 0
         uturn = 1 - self.turn
         umove = self.history[-1]
-        if umove in ('SWAP', 'swap'):
+        if umove == SWAP:
             self.undo_swap()
             return
 

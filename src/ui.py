@@ -7,7 +7,8 @@ from os import path
 # constants
 OFFSET = 5
 POPUP_COLOR = "blue"
-
+RO_BACKGROUND = "slate grey"
+RO_TEXT = "white"
 # globals:
 
 # bot1: thinker[1]
@@ -37,7 +38,7 @@ def pad(s):
 
 
 def text_output(key, length):
-    return sg.Input(size=(length, 1), disabled_readonly_background_color="lightgrey", readonly=True,
+    return sg.Input(size=(length, 1), disabled_readonly_background_color=RO_BACKGROUND, text_color=RO_TEXT, readonly=True,
                     key=key)
 
 
@@ -54,10 +55,17 @@ def get_peg_icon(size, key):
 
 def update_turn_indicator():
 
-    if game.turn == 1:
-        turn = ['x', ' ']
+    turn = ["", ""]
+    if game.result == twixt.RESIGN:
+        turn[game.turn] = ""
+        turn[1 - game.turn] = "resigned"
+    elif game.just_won():
+        turn[game.turn] = "won"
+        turn[1 - game.turn] = ""
+    elif game.turn == 1:
+        turn = ['X', '']
     else:
-        turn = [' ', 'x']
+        turn = ['', 'X']
 
     window['-P1_TURNINDICATOR-'].Update(turn[0])
     window['-P2_TURNINDICATOR-'].Update(turn[1])
@@ -70,7 +78,7 @@ def update_history():
         text += "\n" if i > 0 and i % 2 == 0 else ""
         text += str(i + 1).rjust(2, ' ') + '. ' + str(move).upper()
 
-        if move == "swap":
+        if move == twixt.SWAP:
             m1 = game.history[0]
             text += " " + chr(m1.y + ord('A')) + str(m1.x + 1)
 
@@ -145,7 +153,6 @@ def apply_settings():
     window['-P2_TRIALS-'].Update(settings['-P2_TRIALS-'])
 
     update_turn_indicator()
-
     update_thinkers()
 
 
@@ -162,42 +169,59 @@ def settings_dialog():
     dialog.close()
 
 
-def game_over_message(game):
+def game_over(game):
+
     if game.just_won():
-        sg.popup_quick_message('Game over: ' + settings['-P' + str(1 + game.turn) + '_NAME-'] + ' has won!',
-                               keep_on_top=True, line_width=200, background_color=POPUP_COLOR)
+        message = 'Game over: ' + \
+            settings['-P' + str(1 + game.turn) + '_NAME-'] + ' has won!'
+        sg.popup_quick_message(message, keep_on_top=True,
+                               line_width=200, background_color=POPUP_COLOR)
+        return True
+    elif game.result == twixt.RESIGN:
+        message = 'Game over: ' + \
+            settings['-P' + str(2 - game.turn) + '_NAME-'] + ' has resigned!'
+        sg.popup_quick_message(message, keep_on_top=True,
+                               line_width=200, background_color=POPUP_COLOR)
         return True
     return False
 
 
 def execute_move(move):
-    if move == "resign":
-        game_over_message(game)
+    if move == twixt.RESIGN:
+        game.result = twixt.RESIGN
+        game_over(game)
         return
-    elif move == "swap":
+    elif move == twixt.SWAP:
         game.play_swap()
     else:
         game.play(move)
     board.create_move_objects(game, len(game.history) - 1)
-    game_over_message(game)
+    game_over(game)
     print(game.turn)
 
 
 def board_event():
 
-    if game_over_message(game):
+    if game_over(game):
         return
-    move = board.getMove(game, values['-BOARD-'])
-    print("move: ", move)
+    move = board.get_move(game, values['-BOARD-'])
     if move:
         execute_move(move)
 
 
+def resign():
+
+    if game_over(game):
+        return
+    execute_move(twixt.RESIGN)
+
+
 def row_turn_indicators():
     return [text_label('turn'),
-            sg.Text(' ', key='-P1_TURNINDICATOR-',
-                    text_color="yellow"), pad(13),
-            sg.Text(' ', key='-P2_TURNINDICATOR-', text_color="yellow")]
+            sg.Input(size=(14, 1), disabled_readonly_background_color=RO_BACKGROUND, readonly=True,
+                     key='-P1_TURNINDICATOR-', text_color="yellow"), pad(1),
+            sg.Input(size=(14, 1), disabled_readonly_background_color=RO_BACKGROUND, readonly=True,
+                     key='-P2_TURNINDICATOR-', text_color="yellow")]
 
 
 def row_peg_icons():
@@ -208,8 +232,6 @@ def row_player_names():
     return [text_label('name'),
             text_output('-P1_NAME-', 14), pad(1),
             text_output('-P2_NAME-', 14)]
-    #text_field(settings['-P1_NAME-'], key='-P1_NAME-'),
-    # text_field(settings['-P2_NAME-'], key='-P2_NAME-')]
 
 
 def row_auto_moves():
@@ -231,11 +253,24 @@ def row_model_folders():
 
 
 def row_trials():
+    """
+    sg.Input(default_text=settings['-P1_TRIALS-'], size=(7, 1), enable_events=True,
+             key='-P1_TRIALS-'), pad(2 + OFFSET),
+    sg.Input(default_text=settings['-P2_TRIALS-'], size=(7, 1), enable_events=True,
+             key='-P2_TRIALS-')]
+    """
+
     return [text_label('trials'),
-            sg.Input(default_text=settings['-P1_TRIALS-'], size=(7, 1), enable_events=True,
-                     key='-P1_TRIALS-'), pad(2 + OFFSET),
-            sg.Input(default_text=settings['-P2_TRIALS-'], size=(7, 1), enable_events=True,
-                     key='-P2_TRIALS-')]
+            sg.Slider(range=(0, 50000), default_value=settings['-P1_TRIALS-'], resolution=20, tick_interval=None, orientation='horizontal',
+                      disable_number_display=False, border_width=None, relief=None, change_submits=False,
+                      enable_events=True, disabled=False, size=(11, 20), font=None, background_color=None,
+                      text_color=None, key='-P1_TRIALS-', k=None, pad=None, tooltip=None, visible=True, metadata=None),
+            pad(2),
+            sg.Slider(range=(0, 50000), default_value=settings['-P1_TRIALS-'], resolution=20, tick_interval=None, orientation='horizontal',
+                      disable_number_display=False, border_width=None, relief=None, change_submits=False,
+                      enable_events=True, disabled=False, size=(11, 20), font=None, background_color=None,
+                      text_color=None, key='-P2_TRIALS-', k=None, pad=None, tooltip=None, visible=True, metadata=None)
+            ]
 
 
 def row_progress():
@@ -260,8 +295,8 @@ def row_current_best():
 def row_eval_bars():
     colors = (settings['-P1_COLOR-'], settings['-P2_COLOR-'])
     if same_models():
-        return [text_label(''), sg.ProgressBar(2000, orientation='h', size=(21.5, 8), key='-P1_EVAL_BAR-',
-                                               bar_color=colors)]
+        return [text_label('eval'), sg.ProgressBar(2000, orientation='h', size=(21.5, 8), key='-P1_EVAL_BAR-',
+                                                   bar_color=colors)]
     else:
         return [text_label(''), sg.ProgressBar(2000, orientation='h', size=(9.3, 8), key='-P1_EVAL_BAR-', bar_color=colors), pad(1),
                 sg.ProgressBar(2000, orientation='h', size=(
@@ -271,7 +306,7 @@ def row_eval_bars():
 
 def row_eval_numbers():
     if same_models():
-        return [text_label('eval'),
+        return [text_label(''),
                 text_output('-P1_EVAL_NUM-', 14)]
     else:
         return [text_label('eval'),
@@ -334,20 +369,19 @@ menu_def = [['File', ['Settings...', 'Exit']],
             ['Help', 'About...']]
 board_col = sg.Column([[board.graph]])
 
-control_col = sg.Column([row_turn_indicators(),
-                         row_peg_icons(),
+control_col = sg.Column([row_peg_icons(),
                          row_player_names(),
+                         row_turn_indicators(),
                          row_auto_moves(),
                          row_trials(),
-                         [sg.HSeparator()],
+                         [sg.HSeparator(pad=(0, 20))],
                          row_model_folders(),
                          row_eval_bars(),
                          row_eval_numbers(),
                          row_current_best(),
-                         [sg.HSeparator()],
                          row_progress(),
                          row_time(),
-                         [sg.HSeparator()],
+                         [sg.HSeparator(pad=(0, 20))],
                          row_history()],
                         vertical_alignment='top')
 
@@ -358,6 +392,7 @@ layout = [
         sg.Button('Bot Move', size=(10, 1)),
         sg.Button('Stop Bot', size=(10, 1)),
         sg.Button('Undo Move', size=(10, 1)),
+        sg.Button('Resign', size=(10, 1)),
         sg.Button('Reset', size=(10, 1)),
         sg.Button('Exit', size=(10, 1))]
 ]
@@ -400,11 +435,14 @@ while True:
         settings_dialog()
     elif event == '-BOARD-':
         board_event()
+    elif event == 'Resign':
+        resign()
     elif event == 'Reset':
         game = twixt.Game(settings['-ALLOW_SWAP-'], settings['-ALLOW_SCL-'])
     elif event == 'Undo Move':
         undo_move()
-    elif event in ['-P1_AUTO_MOVE-', '-P2_AUTO_MOVE-']:
+    elif event in ['-P1_AUTO_MOVE-', '-P2_AUTO_MOVE-', '-P1_TRIALS-', '-P2_TRIALS-']:
         update_settings(event, values)
+        update_thinkers()
 
 window.close()
