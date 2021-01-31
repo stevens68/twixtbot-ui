@@ -18,10 +18,10 @@ class Player:
         self.temperature = float(kwargs.get('temperature', 0))
         self.random_rotation = int(kwargs.get('random_rotation', 0))
 
-        # mcts
         self.smart_root = int(kwargs.get('smart_root', 1))
-        self.use_swap = int(kwargs.get('use_swap', 0))
+        self.allow_swap = int(kwargs.get('allow_swap', 1))
         self.add_noise = float(kwargs.get('add_noise', 0))
+        self.cpuct = float(kwargs.get('cpuct', 1))
 
         self.verbosity = int(kwargs.get('verbosity', 0))
 
@@ -53,7 +53,7 @@ class Player:
             raise Exception("Specify model or resource")
 
         self.nm = nnmcts.NeuralMCTS(
-            nnfunc, add_noise=self.add_noise, smart_root=self.smart_root, verbosity=self.verbosity)
+            nnfunc, add_noise=self.add_noise, smart_root=self.smart_root, verbosity=self.verbosity, cpuct=self.cpuct)
 
     def set_num_trials(self, num_trials):
         self.num_trials = num_trials
@@ -65,7 +65,7 @@ class Player:
         self.random_rotation = random_rotation
 
     def pick_move(self, game):
-        if self.use_swap and len(game.history) < 2:
+        if self.allow_swap and len(game.history) < 2:
 
             if len(game.history) == 0:
                 self.report = "swapmodel"

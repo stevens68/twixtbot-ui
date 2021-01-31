@@ -1,5 +1,4 @@
 import PySimpleGUI as sg
-import math
 from backend import twixt
 
 
@@ -269,7 +268,7 @@ class TwixtBoard:
             self.known_moves.clear()
             m1 = game.history[0]
             move = twixt.Point(m1.y, m1.x)
-            game.use_swap = True
+            #game.use_swap = True
 
         color = (index + 1) & 1
 

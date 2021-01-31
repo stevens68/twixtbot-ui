@@ -235,6 +235,8 @@ class Game:
                     continue
                 if self.any_crossing_links(p, q, enemy):
                     continue
+                if not self.allow_scl and self.any_crossing_links(p, q, 1 - enemy):
+                    continue
                 unvisited.append(q)
         return False
 
@@ -356,6 +358,8 @@ class Game:
             if (not Game.inbounds(pt)) or self.pegs[self.turn][pt] == 0:
                 continue
             if self.any_crossing_links(move, pt, 1 - self.turn):
+                continue
+            if not self.allow_scl and self.any_crossing_links(move, pt, self.turn):
                 continue
 
             self.set_link(move, pt, self.turn, 1)
