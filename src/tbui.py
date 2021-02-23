@@ -299,7 +299,7 @@ class TwixtbotUI():
             for m in moves:
                 self.execute_move(m)
         except:
-            lt.popoup("invalid move: " + m)
+            lt.popup("invalid move: " + str(m))
 
         self.update_after_move()
 

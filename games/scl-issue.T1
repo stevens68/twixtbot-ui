@@ -1,0 +1,56 @@
+# 
+#
+#
+P1 # 
+P2 # 
+#
+#
+# black should play ...44: N12
+# but plays N10 - probably mislead
+# because network was trained with
+# self crossing links allowed.
+#
+#
+q23
+swap
+c21
+a17
+d19
+c18
+b18
+e17
+d14
+g18
+d10
+f20
+h17
+g22
+i19
+h16
+h14
+i18
+j15
+k17
+m13
+l15
+p12
+k13
+p16
+l11
+h10
+n11
+j9
+o9
+l10
+m8
+n9
+q8
+u8
+s9
+t10
+t11
+u12
+u13
+v14
+v15
+w16
