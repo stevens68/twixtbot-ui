@@ -9,23 +9,23 @@ def get_file_content():
     file_name = sg.PopupGetFile('Choose file', file_types=(
         ("All Files", "*.*"), ("T1j Files", "*.T1")), no_window=True)
     if file_name is None:
-        return None
+        return None, None
 
     try:
         with open(file_name, "tr") as f:
             f.read()
     except Exception:
         lt.popup(file_name + " seems to be a binary file.")
-        return None
+        return None, None
 
     content = []
     with open(file_name) as f:
         content = [line.rstrip() for line in f]
 
-    return content
+    return file_name, content
 
 
-def get_moves(content):
+def get_moves(file_name, content):
     moves = []
     for i, m in enumerate(content[LINE_OFFSET:]):
         if m.lower() == twixt.SWAP and len(moves) == 1:
@@ -52,8 +52,8 @@ def get_moves(content):
 
 def get_game():
 
-    content = get_file_content()
-    if content is None:
+    file_name, content = get_file_content()
+    if file_name is None:
         return None, None
 
     # basic file format check
@@ -68,7 +68,7 @@ def get_game():
         lt.popup(file_name + ": cannot read player names from line 4 and 5.")
         return None, None
 
-    moves = get_moves(content)
+    moves = get_moves(file_name, content)
     if moves is None:
         return None, None
 
