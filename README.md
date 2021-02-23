@@ -135,11 +135,11 @@ resign
  
 ### Planned enhancements...
 
-+ Load littlegolem game files (*.tsgf)
-+ Save games 
-+ Show evaluation history plot
++ load littlegolem game files (*.tsgf)
++ save games 
++ show evaluation history plot
 + draw current best MCTS move on board (dotted)
-+ best moves heatmap
++ best moves heat map
 
 
 

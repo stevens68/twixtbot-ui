@@ -117,7 +117,7 @@ class UiBoard(board.TwixtBoard):
         y = round(y)
         move = chr(ord('a') + x) + "%d" % (self.size - y)
         if len(self.game.history) == 1 and self._move_to_point(
-                move) == self.game.history[0] and self.game.allow_swap:
+                move) == self.game.history[0] and self.stgs.get_setting(ct.K_ALLOW_SWAP[1]):
             return twixt.SWAP
 
         if x < 0 or x > self.size - 1 or y < 0 or y > self.size - 1:
