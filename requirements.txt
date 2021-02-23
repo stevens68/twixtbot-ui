@@ -46,7 +46,6 @@ pyparsing==3.0.0a2
 PySimpleGUI==4.33.0
 python-dateutil==2.8.1
 python-magic==0.4.13
-python-magic-bin==0.4.14
 python-utils==2.4.0
 pytz==2020.5
 pywin32-ctypes==0.2.0

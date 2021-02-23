@@ -11,7 +11,7 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 ## Get started
 
-clone or download this repository and make sure you have Python 3.6 or 3.7 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
+clone or download this repository and make sure you have Python 3.6, 3.7 or 3.8 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
 
 ```
 python -m pip install -r requirements.txt
