@@ -33,7 +33,8 @@ class Settings():
             self.settings[event] = values[event]
 
     def same_models(self):
-        return pathlib.Path(self.get_setting(ct.K_MODEL_FOLDER[1])).absolute() == pathlib.Path(self.get_setting(ct.K_MODEL_FOLDER[2])).absolute()
+        return pathlib.Path(self.get_setting(ct.K_MODEL_FOLDER[1])).absolute() == \
+            pathlib.Path(self.get_setting(ct.K_MODEL_FOLDER[2])).absolute()
 
     def load(self):
         try:

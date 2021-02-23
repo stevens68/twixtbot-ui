@@ -53,11 +53,13 @@ class UiBoard(board.TwixtBoard):
                 # top column label
                 self.graph.DrawText(col_label,
                                     ((i + self.offset_factor) * self.cell_width,
-                                     (self.offset_factor - 1) * self.cell_width), ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
+                                     (self.offset_factor - 1) * self.cell_width),
+                                    ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
                 # bottom column label
                 self.graph.DrawText(col_label,
                                     ((i + self.offset_factor) * self.cell_width,
-                                     (self.size + self.offset_factor) * self.cell_width), ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
+                                     (self.size + self.offset_factor) * self.cell_width),
+                                    ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
 
     def _draw_pegholes(self):
         for x in range(self.size):

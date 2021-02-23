@@ -2,10 +2,6 @@
 import PySimpleGUI as sg
 import threading
 
-
-import numpy as np
-
-#import backend.nnmplayer as nnmplayer
 import backend.twixt as twixt
 
 import util.pmeter as pmeter
@@ -194,7 +190,9 @@ class TwixtbotUI():
                 self.stgs.get_setting(ct.K_NAME[p]))
             self.get_control(ct.K_COLOR, p).erase()
             self.get_control(ct.K_COLOR, p).DrawCircle((7, 9), 6,
-                                                       self.stgs.get_setting(ct.K_COLOR[p]), self.stgs.get_setting(ct.K_COLOR[p]))
+                                                       self.stgs.get_setting(
+                                                           ct.K_COLOR[p]),
+                                                       self.stgs.get_setting(ct.K_COLOR[p]))
             self.get_control(ct.K_AUTO_MOVE, p).Update(
                 self.stgs.get_setting(ct.K_AUTO_MOVE[p]))
             self.get_control(ct.K_TRIALS, p).Update(
@@ -437,9 +435,56 @@ class TwixtbotUI():
                 break
         dialog.close()
 
+    def get_event(self):
+        if self.thread_is_alive():
+            self.get_control(ct.K_SPINNER).UpdateAnimation(ct.SPINNER_IMAGE)
+            # frequent read to update progress gif
+            return self.window.read(timeout=200)
+        else:
+            # blocking read when no bot is processing
+            return self.window.read()
 
-##### main #####
+    def handle_event(self, evet, values):
+        if event == ct.ITEM_SETTINGS:
+            if self.settings_dialog() == ct.B_APPLY_SAVE:
+                self.update_settings_changed()
+        elif event == ct.ITEM_ABOUT:
+            self.about_dialog()
+        elif event == ct.ITEM_OPEN_FILE:
+            self.handle_open_file()
+        elif st.key_like(event,  ['AUTO_MOVE', 'TRIALS']):
+            # handle trials sliders and auto-move check boxes
+            self.stgs.update(event, values)
+            self.update_bots()
+        elif event == ct.K_THREAD[1]:
+            # handle event sent from bot
+            self.handle_thread_event(values[ct.K_THREAD[1]])
 
+        if self.thread_is_alive():
+            # while bot is processing: handle Accept and Cancel
+            self.handle_accept_and_cancel(event)
+        else:
+            # unless bot is processing: handle click on board and buttons other
+            # than Accept, Cancel
+            if event == ct.K_BOARD[1]:
+                self.handle_board_click(values)
+                self.update_after_move()
+
+            elif event == ct.B_BOT_MOVE:
+                if not self.game_over():
+                    # clear move statistics
+                    self.visit_plot.update()
+                    self.update_progress()
+                    self.launch_bot()
+            elif event == ct.B_UNDO:
+                self.handle_undo()
+                self.update_after_move()
+            elif event == ct.B_RESIGN:
+                self.handle_resign()
+                self.update_turn_indicators()
+            elif event == ct.B_RESET:
+                self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+                self.update_after_move()
 
 
 # initialize settings from config.json
@@ -454,6 +499,7 @@ board = uiboard.UiBoard(game, stgs)
 # initialize ui
 ui = TwixtbotUI(game, stgs, board)
 
+
 # Event Loop
 while True:
     if not ui.game_over(False) and ui.get_current(ct.K_AUTO_MOVE):
@@ -462,61 +508,15 @@ while True:
             ui.update_progress()
             ui.launch_bot()
 
-    if ui.thread_is_alive():
-        ui.get_control(ct.K_SPINNER).UpdateAnimation(ct.SPINNER_IMAGE)
-        # frequent read to update progress gif
-        event, values = ui.window.read(timeout=200)
-    else:
-        # blocking read when no bot is processing
-        event, values = ui.window.read()
+    event, values = ui.get_event()
 
     if event == "__TIMEOUT__":
         continue
-
-    if event == sg.WIN_CLOSED or event == ct.B_EXIT:
+    elif event == sg.WIN_CLOSED or event == ct.B_EXIT:
         # exiting or closed
         break
-    elif event == ct.ITEM_SETTINGS:
-        #
-        if ui.settings_dialog() == ct.B_APPLY_SAVE:
-            ui.update_settings_changed()
-    elif event == ct.ITEM_ABOUT:
-        ui.about_dialog()
-    elif event == ct.ITEM_OPEN_FILE:
-        ui.handle_open_file()
-    elif st.key_like(event,  ['AUTO_MOVE', 'TRIALS']):
-        # handle trials sliders and auto-move check boxes
-        ui.stgs.update(event, values)
-        ui.update_bots()
-    elif event == ct.K_THREAD[1]:
-        # handle event sent from bot
-        ui.handle_thread_event(values[ct.K_THREAD[1]])
 
-    if ui.thread_is_alive():
-        # while bot is processing: handle Accept and Cancel
-        ui.handle_accept_and_cancel(event)
-    else:
-        # unless bot is processing: handle click on board and buttons other
-        # than Accept, Cancel
-        if event == ct.K_BOARD[1]:
-            ui.handle_board_click(values)
-            ui.update_after_move()
-
-        elif event == ct.B_BOT_MOVE:
-            if not ui.game_over():
-                # clear move statistics
-                ui.visit_plot.update()
-                ui.update_progress()
-                ui.launch_bot()
-        elif event == ct.B_UNDO:
-            ui.handle_undo()
-            ui.update_after_move()
-        elif event == ct.B_RESIGN:
-            ui.handle_resign()
-            ui.update_turn_indicators()
-        elif event == ct.B_RESET:
-            ui.game.__init__(ui.stgs.get_setting(ct.K_ALLOW_SCL[1]))
-            ui.update_after_move()
+    ui.handle_event(event, values)
 
 
 del ui

@@ -36,7 +36,7 @@ SEPARATOR_FONT = ("Arial", 9, "italic")
 # files and folders
 SETINGS_FILE_NAME = "config.json"
 SETTINGS_FILE = path.join(path.dirname(__file__), SETINGS_FILE_NAME)
-MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), '..\model\pb'))
+MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), '../model/pb'))
 SPINNER_IMAGE = str(pathlib.Path(__file__).parent.joinpath(
     r'../img/wheel.gif'))
 
