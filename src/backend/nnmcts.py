@@ -53,7 +53,7 @@ class NeuralMCTS:
         leaf.LMnz = leaf.LM.nonzero()
 
         if not leaf.LM.any():
-            #assert False
+            # assert False
             leaf.proven = True
             leaf.score = 0
             leaf.LMnz = "just_drew"
@@ -72,7 +72,7 @@ class NeuralMCTS:
         # stevens68: set P to 0 for non-legal moves. Otherwise
         # illegal move might become best move in upcoming draws (move #100+)
         leaf.P[numpy.where(leaf.LM == 0)[0]] = 0
-        #leaf.P *= leaf.LM
+        # leaf.P *= leaf.LM
 
         if self.verbosity >= 3:
             print("LMnz:", leaf.LMnz)
@@ -208,16 +208,17 @@ class NeuralMCTS:
     def eval_game(self, game, window=None):
 
         self.compute_root(game)
-        #assert self.root == None
+        # assert self.root == None
         self.root = self.expand_leaf(game)
         top_ixs = numpy.argsort(self.root.P)[-twixt.MAXBEST:]
         if window:
             moves = [naf.policy_index_point(game, ix) for ix in top_ixs][::-1]
             P = [int(round(self.root.P[ix] * 1000)) for ix in top_ixs][::-1]
-            #print("moves: ", moves, ", idx: ",  top_ixs)
+            # print("moves: ", moves, ", idx: ",  top_ixs)
             return self.root.score, moves, P
         else:
-            return self.root.score, [(naf.policy_index_point(game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs][::-1]
+            return self.root.score, [(naf.policy_index_point(game, ix),
+                                      int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs][::-1]
 
     def proven_result(self, game):
         if self.root.winning_move:
@@ -250,7 +251,7 @@ class NeuralMCTS:
                 resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]
                 resp["P"] = [int(round(p * 1000))
                              for p in self.root.P[indices].tolist()]
-                #resp["Q"] = self.root.Q[indices].tolist()
+                # resp["Q"] = self.root.Q[indices].tolist()
             else:
                 resp["moves"] = moves
 
@@ -260,7 +261,7 @@ class NeuralMCTS:
         """ Using the neural net, compute the move visit count vector """
 
         self.compute_root(game)
-        if self.root == None:
+        if self.root is None:
             self.root = self.expand_leaf(game)
             self.history_at_root = list(game.history)
             if self.verbosity >= 1:
@@ -268,13 +269,11 @@ class NeuralMCTS:
                 print("eval=%.3f  %s" % (self.root.score, " ".join(["%s:%d" % (naf.policy_index_point(
                     game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs])))
 
-        break_trials = 0
         if not self.root.proven:
             # for i in tqdm(range(trials), ncols=100, desc="processing",
             # file=sys.stdout):
             for i in range(trials):
                 assert not self.root.proven
-                break_trials = i
                 self.visit_node(game, self.root, True,
                                 trials - i)
 

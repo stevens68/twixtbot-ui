@@ -171,9 +171,9 @@ class Game:
         for x in range(Game.SIZE):
             for y in range(Game.SIZE):
                 p = Point(x, y)
-                if not x in (0, Game.SIZE - 1):
+                if x not in (0, Game.SIZE - 1):
                     self.open_pegs[Game.WHITE].add(p)
-                if not y in (0, Game.SIZE - 1):
+                if y not in (0, Game.SIZE - 1):
                     self.open_pegs[Game.BLACK].add(p)
         # end __init__
 
@@ -212,14 +212,14 @@ class Game:
 
             def endcheck(pt): return pt.y == Game.SIZE - 1
 
-            def boundcheck(pt): return not pt.x in (0, Game.SIZE - 1)
+            def boundcheck(pt): return pt.x not in (0, Game.SIZE - 1)
         else:
             assert color == Game.BLACK
             starts = [Point(0, y) for y in range(1, Game.SIZE - 1)]
 
             def endcheck(pt): return pt.x == Game.SIZE - 1
 
-            def boundcheck(pt): return not pt.y in (0, Game.SIZE - 1)
+            def boundcheck(pt): return pt.y not in (0, Game.SIZE - 1)
 
         unvisited = starts
         while unvisited:
@@ -423,7 +423,8 @@ class Game:
             assert chk in my_reachable
             for dlink in Game.DLINKS:
                 other = chk + dlink
-                if self.inbounds(other) and not other in my_reachable and self.get_peg(other, color) and self.get_link(chk, other, color):
+                if self.inbounds(other) and other not in my_reachable \
+                        and self.get_peg(other, color) and self.get_link(chk, other, color):
                     added.append(other)
                     unvisited.append(other)
                     my_reachable.add(other)
@@ -455,7 +456,7 @@ class Game:
     def get_link(self, a, b, color):
 
         ix1, ix2 = self.get_link_index(a, b, color)
-        #print("x1,x2", ix1, ix2)
+        # print("x1,x2", ix1, ix2)
         return self.links[ix1][ix2]
 
     def set_link(self, a, b, color, value):
@@ -595,9 +596,9 @@ class Game:
             assert p in self.reachable[uturn], (p)
             self.reachable[uturn].remove(p)
 
-        if not umove.x in (0, Game.SIZE - 1):
+        if umove.x not in (0, Game.SIZE - 1):
             self.open_pegs[Game.WHITE].add(umove)
-        if not umove.y in (0, Game.SIZE - 1):
+        if umove.y not in (0, Game.SIZE - 1):
             self.open_pegs[Game.BLACK].add(umove)
         # end undo
 

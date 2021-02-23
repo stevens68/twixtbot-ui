@@ -1,5 +1,4 @@
 import tensorflow.compat.v1 as tf
-import os
 
 # Python 2.7 only!
 # this script reads ./six-917000 and writes ./newmodel/saved_model.pbtxt + ./newmodel/variables

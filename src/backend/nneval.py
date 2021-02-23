@@ -10,13 +10,13 @@ class NNEvaluater:
         self.model = model
 
         export_dir = os.path.join(os.getcwd(), self.model)
-        #print("loading model in ", export_dir)
+        # print("loading model in ", export_dir)
         self.sess = tf.Session()
         tf.saved_model.loader.load(
             sess=self.sess,
             tags=[tf.saved_model.tag_constants.SERVING],
             export_dir=export_dir)
-        #print("model loaded")
+        # print("model loaded")
         graph = tf.get_default_graph()
         prefix = ""
 

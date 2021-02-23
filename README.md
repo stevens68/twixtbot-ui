@@ -11,7 +11,7 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 ## Get started
 
-clone or download this repository and make sure you have Python3 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
+clone or download this repository and make sure you have Python 3.6, 3.7 or 3.8 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
 
 ```
 python -m pip install -r requirements.txt
@@ -107,7 +107,7 @@ Decrease c<sub>puct</sub> to move the needle towards exploitation, i.e reduce th
 
 ### File | Open File...
 
-You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (*.T1). After the game is loaded and displayed, you can continue to play as usual or undo (but not redo) moves. twixtbot-ui only reads the move history and the player names, i.e. all other settings like *starting player* and *pierule?* are ignored. Each game is cosidered "unswapped" with player 1 to start.
+You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (*.T1). After the game is loaded and displayed, you can continue to play as usual or undo (but not redo) moves. twixtbot-ui only reads the move history and the player names, i.e. all other settings like *starting player* and *pierule?* are ignored. Each game is considered "unswapped" with player 1 to start.
 
 You can also prepare files in an editor: The first 13 lines need to be comments except lines 4 and 5 for the player names. Append one line per move in upper or lower case with *swap* and *resign* being valid moves. See sample files in folder `./games`. Note that these files cannot be read by T1j.
 

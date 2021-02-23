@@ -27,8 +27,8 @@ def text_field(text, key=None):
 
 
 def text_output(key, length, pad=None):
-    return sg.Input(size=(length, 1), disabled_readonly_background_color=ct.OUTPUT_BACKGROUND_COLOR, text_color=ct.OUTPUT_TEXT_COLOR, readonly=True,
-                    key=key, pad=pad)
+    return sg.Input(size=(length, 1), disabled_readonly_background_color=ct.OUTPUT_BACKGROUND_COLOR,
+                    text_color=ct.OUTPUT_TEXT_COLOR, readonly=True, key=key, pad=pad)
 
 
 def pad(s):
@@ -85,17 +85,18 @@ def row_auto_moves():
 
 def row_trials():
     return [text_label(ct.K_TRIALS[0]),
-            sg.Slider(range=(0, ct.TRIALS_MAX), default_value=0, resolution=ct.TRIALS_RESOLUTION, orientation='horizontal',
-                      enable_events=True, size=(11, 20), key=ct.K_TRIALS[1]),
+            sg.Slider(range=(0, ct.TRIALS_MAX), default_value=0, resolution=ct.TRIALS_RESOLUTION,
+                      orientation='horizontal', enable_events=True, size=(11, 20), key=ct.K_TRIALS[1]),
             pad(2),
-            sg.Slider(range=(0, ct.TRIALS_MAX), default_value=0, resolution=ct.TRIALS_RESOLUTION, orientation='horizontal',
-                      enable_events=True, size=(11, 20), key=ct.K_TRIALS[2]),
+            sg.Slider(range=(0, ct.TRIALS_MAX), default_value=0, resolution=ct.TRIALS_RESOLUTION,
+                      orientation='horizontal', enable_events=True, size=(11, 20), key=ct.K_TRIALS[2]),
             ]
 
 
 def get_progress_bar():
     return sg.ProgressBar(1000, orientation='h', size=(21.5, 20),
-                          key=ct.K_PROGRESS_BAR[1], relief='RELIEF_RIDGE', bar_color=(ct.PROGRESS_BAR_COLOR, ct.OUTPUT_BACKGROUND_COLOR))
+                          key=ct.K_PROGRESS_BAR[1], relief='RELIEF_RIDGE',
+                          bar_color=(ct.PROGRESS_BAR_COLOR, ct.OUTPUT_BACKGROUND_COLOR))
 
 
 def row_progress_bar():
@@ -115,9 +116,10 @@ def row_visits():
 
 
 def row_history():
-    return [text_label(ct.K_HISTORY[0]), sg.Multiline(default_text='', font=ct.HISTORY_FONT,
-                                                      background_color=ct.OUTPUT_BACKGROUND_COLOR, text_color=ct.OUTPUT_TEXT_COLOR, autoscroll=True,
-                                                      key=ct.K_HISTORY[1], disabled=True, size=(28, 6))]
+    return [text_label(ct.K_HISTORY[0]),
+            sg.Multiline(default_text='', font=ct.HISTORY_FONT, background_color=ct.OUTPUT_BACKGROUND_COLOR,
+                         text_color=ct.OUTPUT_TEXT_COLOR, autoscroll=True,
+                         key=ct.K_HISTORY[1], disabled=True, size=(28, 6))]
 
 
 class MainWindowLayout():

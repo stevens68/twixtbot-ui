@@ -25,11 +25,11 @@ class Player:
 
         self.verbosity = int(kwargs.get('verbosity', 0))
 
-        if not self.temperature in (0.0, 0.5, 1.0):
+        if self.temperature not in (0.0, 0.5, 1.0):
             raise ValueError("Unsupported temperature")
 
         if self.model:
-            #assert not self.socket
+            # assert not self.socket
             nneval_ = nneval.NNEvaluater(self.model)
 
             def nnfunc(game):

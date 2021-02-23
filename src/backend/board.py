@@ -176,7 +176,7 @@ class TwixtBoard:
             self.known_moves.clear()
             m1 = game.history[0]
             move = twixt.Point(m1.y, m1.x)
-            #game.use_swap = True
+            # game.use_swap = True
 
         color = (index + 1) & 1
 
@@ -196,7 +196,7 @@ class TwixtBoard:
         # end create_move_objects()
 
     def _create_drawn_link(self, p1, p2, color):
-        #carray = [gr.color_rgb(0,0,0), gr.color_rgb(150,150,150), gr.color_rgb(255,0,0)]
+        # carray = [gr.color_rgb(0,0,0), gr.color_rgb(150,150,150), gr.color_rgb(255,0,0)]
         carray = [self.stgs.get_setting(ct.K_COLOR[2]),
                   self.stgs.get_setting(ct.K_COLOR[1]),
                   self.stgs.get_setting(ct.K_COLOR[1])]
