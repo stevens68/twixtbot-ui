@@ -10,6 +10,7 @@ chardet==3.0.4
 cycler==0.10.0
 Django==3.1.4
 django-tinymce4-lite==1.8.0
+flatbuffers==1.12
 future==0.18.2
 gast==0.3.3
 google-auth==1.22.1
@@ -28,7 +29,7 @@ Markdown==3.3.2
 matplotlib==3.3.2
 mysqlclient==2.0.1
 naf==0.3.2
-numpy==1.18.5
+numpy==1.19.5
 oauthlib==3.1.0
 opt-einsum==3.3.0
 pefile==2019.4.18
@@ -55,13 +56,14 @@ rsa==4.6
 six==1.15.0
 soupsieve==2.0.1
 sqlparse==0.4.1
-tensorboard==2.3.0
+tensorboard==2.4.1
 tensorboard-plugin-wit==1.7.0
-tensorflow==2.3.1
-tensorflow-estimator==2.3.0
+tensorflow==2.4.1
+tensorflow-estimator==2.4.0
 termcolor==1.1.0
 tk==0.1.0
 tqdm==4.55.0
+typing-extensions==3.7.4.3
 urllib3==1.25.8
 Werkzeug==1.0.1
 wrapt==1.12.1
