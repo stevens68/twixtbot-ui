@@ -34,7 +34,7 @@ class ETA(object):
         self.points = list()
         self.max_point = max_point
         self.max_seconds = max_seconds
-        self.points.append([time.clock(), 0])
+        self.points.append([time.perf_counter(), 0])
         self.eta = 'N/A'
 
     def _cleanup(self):
@@ -51,7 +51,7 @@ class ETA(object):
             return 1
 
     def update(self, cursize):
-        self.points.append([time.clock(), cursize])
+        self.points.append([time.perf_counter(), cursize])
         if not self._cleanup():
             return
 
@@ -123,7 +123,7 @@ class ProgressMeter(object):
         self.outstream.flush()
         self.prev_message = message
 
-        self.last_update_time = time.clock()
+        self.last_update_time = time.perf_counter()
 
     def update_left(self, left):
         '''
@@ -144,7 +144,7 @@ class ProgressMeter(object):
             self._rawupdate(cursize)
             self.needrefresh = 0
         else:
-            delta = time.clock() - self.last_update_time
+            delta = time.perf_counter() - self.last_update_time
             if delta < self.min_update_delta:
                 pass
             else:
