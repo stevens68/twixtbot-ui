@@ -5,7 +5,7 @@ developed by Jordan Lampe. It uses [AlphaZero](https://en.wikipedia.org/wiki/Alp
 
 twixtbot-ui brings twixtbot to your desktop in a simple standalone python program. You can play against the bot, have it evaluate past games or have two bots play against each other using different settings.
 
-twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend` so there is no dependency to the twixtbot repository. 
+twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend` so there is no dependency to the twixtbot repository. The twixtbot code runs as part of twixtbot-ui; no server needs to be started beforehand.   
 
 ![A Twixt game](img/A-Game.JPG)
 
@@ -13,9 +13,15 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 clone or download this repository and make sure you have Python 3.6, 3.7 or 3.8 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
 
+
 ```
 python -m pip install -r requirements.txt
 ```
+
+> Note for Ubuntu users: If you see errors, you might need to execute the following steps and try again:<br>
+> `sudo apt-get install mysql-client`<br>
+> `sudo apt-get install libmysqlclient-dev`<br>
+> `sudo apt-get install python3-tk`<br>
 
 Change to directory `./src` and start twixtbot-ui:
 
@@ -24,6 +30,8 @@ python tbui.py
 ```
 
 Ignore the tensorflow warnings and confirm the pop-up message that says that a settings file will be created. Wait a few seconds until the bots have been initialized. You should see the GUI with a clean TwixT board and the control bar on the right:
+
+
 
 
 ![Empty TwixT board](img/EmptyBoard.JPG)
@@ -107,9 +115,13 @@ Decrease c<sub>puct</sub> to move the needle towards exploitation, i.e reduce th
 
 ### File | Open File...
 
-You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (*.T1). After the game is loaded and displayed, you can continue to play as usual or undo (but not redo) moves. twixtbot-ui only reads the move history and the player names, i.e. all other settings like *starting player* and *pierule?* are ignored. Each game is considered "unswapped" with player 1 to start.
+You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (*.T1). After game is loaded, the player names and the board are updated and you can continue to play as usual or undo (but not redo) moves. See sample files in folder `./games`. 
 
-You can also prepare files in an editor: The first 13 lines need to be comments except lines 4 and 5 for the player names. Append one line per move in upper or lower case with *swap* and *resign* being valid moves. See sample files in folder `./games`. Note that these files cannot be read by T1j.
+#### *.T1j
+
+twixtbot-ui only reads the move history and the player names, i.e. all other settings like *starting player* and *pierule?* are ignored. Each game is considered "unswapped" with player 1 to start.
+
+You can also prepare T1j-like files in an editor: The first 13 lines need to be comments except lines 4 and 5 for the player names. Append one line per move in upper or lower case with *swap* and *resign* being valid moves. Note that these files cannot be read by T1j.
 
 ```
 #
@@ -133,13 +145,18 @@ P12
 resign
 ```
  
+#### *.tsgf
+
+*coming soon*
+ 
 ### Planned enhancements...
 
-+ load littlegolem game files (*.tsgf)
 + save games 
 + show evaluation history plot
 + draw current best MCTS move on board (dotted)
 + best moves heat map
 
 
+### known bugs
 
+* undo of first move not possible
