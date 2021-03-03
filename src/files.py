@@ -83,7 +83,7 @@ def parse_t1_file(content):
         players = [content[linenr].split(COMMENT_CHAR)[0]
                    for linenr in PLAYER_LINES]
     except:
-        raise ValueError("Can't read player names from T1 file.")
+        raise ValueError("Can't read player names from T1 file")
 
     try:
         moves = [str2twixt(move) for move in content[MOVES_STARTLINE:]
@@ -122,7 +122,7 @@ def parse_tsgf_file(content):
         players = [content[0][idx + 3:content[0].find(']', idx)]
                    for idx in player_idx]
     except:
-        raise ValueError("Can't read player names from tsgf file.")
+        raise ValueError("Can't read player names from tsgf file")
         
     try:
         raw_moves = [line[2:4] for line in content[0].split(';')
@@ -164,16 +164,19 @@ def get_game():
     try:
         with open(file_name, "tr") as f:
             content = list(map(lambda s: s.strip(), f.readlines()))
-    except Exception:
-        lt.popup(f"Can't open {file_name} as a valid Twixt file.")
+    except:
+        sg.popup_ok(f"Can't open {file_name} as a valid Twixt file.")
         return None, None
 
     # Parse file
-    if file_name[-2:].upper() == 'T1':
-        return parse_t1_file(content)
-    elif file_name[-4:].lower() == 'tsgf':
-        return parse_tsgf_file(content)
-    else:
-        lt.popup("Didn't recognize the filename extension.")
+    try:
+        if file_name[-2:].upper() == 'T1':
+            return parse_t1_file(content)
+        elif file_name[-4:].lower() == 'tsgf':
+            return parse_tsgf_file(content)
+        else:
+            lt.popup("Didn't recognize the filename extension.")
+    except Exception as e:
+        sg.popup_ok(f"Error '{e}' while opening file {file_name}")
 
     return None, None
