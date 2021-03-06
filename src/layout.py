@@ -19,7 +19,7 @@ def st_label(text, key=None):
 
 
 def text_label(text, key=None):
-    return field_label(text, key, 8)
+    return field_label(text, key, 10)
 
 
 def text_field(text, key=None):
