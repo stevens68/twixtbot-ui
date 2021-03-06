@@ -290,6 +290,7 @@ class TwixtbotUI():
         # assign player names
         self.stgs.settings[ct.K_NAME[1]] = players[0]
         self.stgs.settings[ct.K_NAME[2]] = players[1]
+        self.update_settings_changed()
         # reset game
         self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
         # replay game
