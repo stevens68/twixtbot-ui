@@ -1,7 +1,7 @@
 # twixtbot-ui
 
-twixtbot-ui is a graphical user interface on top of [twixtbot](https://github.com/BonyJordan/twixtbot). twixtbot is an engine for the game of [TwixT](https://en.wikipedia.org/wiki/TwixT)
-developed by Jordan Lampe. It uses [AlphaZero](https://en.wikipedia.org/wiki/AlphaZero) techniques, i.e. a neural network plus Monte-Carlo-Tree-Search and plays extremely strong. See its ratings at [littlegolem.net](https://littlegolem.net/jsp/games/gamedetail.jsp?gtid=twixt). It's brilliant! Big round of applause to Jordan!
+twixtbot-ui is a graphical user interface on top of [twixtbot](https://github.com/BonyJordan/twixtbot). twixtbot is an engine for the game [TwixT](https://en.wikipedia.org/wiki/TwixT)
+that has been developed by Jordan Lampe. It uses [AlphaZero](https://en.wikipedia.org/wiki/AlphaZero) techniques, i.e. a neural network plus Monte-Carlo-Tree-Search and plays extremely strong. See its ratings at [littlegolem.net](https://littlegolem.net/jsp/games/gamedetail.jsp?gtid=twixt). It's brilliant! Big round of applause to Jordan!
 
 twixtbot-ui brings twixtbot to your desktop in a simple standalone python program. You can play against the bot, have it evaluate past games or have two bots play against each other using different settings.
 
@@ -115,13 +115,11 @@ Decrease c<sub>puct</sub> to move the needle towards exploitation, i.e reduce th
 
 ### File | Open File...
 
-You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (*.T1). After game is loaded, the player names and the board are updated and you can continue to play as usual or undo (but not redo) moves. See sample files in folder `./games`. 
+You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). After game is loaded, the player names and the board are updated and you can continue to play as usual or undo (but not redo) moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game.
 
 #### *.T1j
 
-twixtbot-ui only reads the move history and the player names, i.e. all other settings like *starting player* and *pierule?* are ignored. Each game is considered "unswapped" with player 1 to start.
-
-You can also prepare T1j-like files in an editor: The first 13 lines need to be comments except lines 4 and 5 for the player names. Append one line per move in upper or lower case with *swap* and *resign* being valid moves. Note that these files cannot be read by T1j.
+All rows except those for moves and player names are ignored. Each game is considered "unswapped" with player 1 to start. You can prepare T1j-like files in an editor: The first 13 lines need to be comments except lines 4 and 5 for the player names. Append one line per move in upper or lower case with *swap* and *resign* being valid moves. Note that these files cannot be read by T1j.
 
 ```
 #
@@ -147,7 +145,7 @@ resign
  
 #### *.tsgf
 
-*coming soon*
+This file format is used when a TwixT game is saved at [littlegolem.net](https://littlegolem.net/jsp/games/gamedetail.jsp?gtid=twixt).
  
 ### Planned enhancements...
 
@@ -157,6 +155,10 @@ resign
 + best moves heat map
 
 
-### known bugs
+### Known bugs
 
 * undo of first move not possible
+
+### Contributors
+
+* [agtoever](https://github.com/agtoever)
