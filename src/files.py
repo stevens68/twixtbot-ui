@@ -108,11 +108,12 @@ def parse_tsgf_file(content):
         ValueError: if players or moves data can't be interpreted
 
     Examples:
-        >>> content = [['(;FF[4]EV[twixt.ld.DEFAULT]PB[agtoever]PW[Jan Krabbenbos]SZ[24]SO[https://www.littlegolem.net];b[pl];r[ps];b[pr];r[rt];b[ot];r[po];b[pn];r[qq];b[op];r[pg];b[nh];r[oj];b[oi];r[qi];b[nk];r[nf];b[mf])']]
+        >>> content = ['(;FF[4]EV[twixt.ld.DEFAULT]PB[agtoever]PW[Jan Krabbenbos]SZ[24]SO[https://www.littlegolem.net];b[pl];r[ps];b[pr];r[rt];b[ot];r[po];b[pn];r[qq];b[op];r[pg];b[nh];r[oj];b[oi];r[qi];b[nk];r[nf];b[mf])']
         >>> parse_tsgf_file(content)
         (['agtoever', 'Jan Krabbenbos'], [p12, p19, p18, r20, o20, p15, p14, q17, o16, p7, n8, o10, o9, q9, n11, n6, m6])
     """
-    PLAYERS_STR = ['PB', 'PW']
+    PLAYERS_STR = ('PB', 'PW')
+    TURN_STR = ('r[', 'b[')
     
     if len(content) > 1:
         raise ValueError('Found more than 1 line in a tsgf file.')
@@ -125,8 +126,9 @@ def parse_tsgf_file(content):
         raise ValueError("Can't read player names from tsgf file")
         
     try:
-        raw_moves = [line[2:4] for line in content[0].split(';')
-                     if line[:2] == 'r[' or line[:2] == 'b[']
+        raw_moves = [line[2:-1].strip(']) ') 
+                     for line in content[0].split(';')
+                     if line[:2] in TURN_STR]
         moves = list(map(str2twixt, raw_moves))
     except:
         # Just pass on the exception from str2twixt
