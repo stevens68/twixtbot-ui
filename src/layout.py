@@ -143,6 +143,10 @@ class MainWindowLayout():
         return [text_label(ct.K_EVAL_MOVES[0]),
                 sg.Canvas(size=(240, 80), background_color=ct.OUTPUT_BACKGROUND_COLOR, key=ct.K_EVAL_MOVES[1])]
 
+    def row_eval_hist(self):
+        return [text_label(ct.K_EVAL_HIST[0]),
+                sg.Canvas(size=(240, 80), background_color=ct.OUTPUT_BACKGROUND_COLOR, key=ct.K_EVAL_HIST[1])]
+
     def build_layout(self):
         menu_def = [[ct.ITEM_FILE, [ct.ITEM_OPEN_FILE, ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
                     [ct.ITEM_HELP, [ct.ITEM_ABOUT]]]
@@ -155,6 +159,7 @@ class MainWindowLayout():
                                  self.row_eval_bar(),
                                  self.row_eval_num(),
                                  self.row_eval_moves(),
+                                 self.row_eval_hist(),
                                  row_separator(ct.SEP_MCTS),
                                  row_trials(),
                                  row_visits(),
@@ -337,13 +342,12 @@ class AboutDialogLayout():
 
         width = 40
         layout = [
-            [sg.Text("twixtbot-ui", size=(width, 1))],
-            [sg.Text("(c) 2021 - stevens68", size=(width, 1))],
-            [sg.Text("https://github.com/stevens68/twixtbot-ui", size=(width, 1))],
-            [sg.Text("", size=(width, 1))],
-            [sg.Text("twixtbot", size=(width, 1))],
-            [sg.Text("(c) 2019 - Jordan Lampe", size=(width, 1))],
+            [sg.Text("twixtbot engine and network by Jordan Lampe", size=(width, 1))],
             [sg.Text("https://github.com/BonyJordan/twixtbot", size=(width, 1))],
+            [sg.Text("", size=(width, 1))],
+            [sg.Text(
+                "twixtbot-ui frontend by stevens68 and contributors", size=(width, 1))],
+            [sg.Text("https://github.com/stevens68/twixtbot-ui", size=(width, 1))],
             [sg.Text("", size=(width, 1))],
             [sg.Button(ct.B_EXIT, size=(10, 1), focus=True)]
         ]

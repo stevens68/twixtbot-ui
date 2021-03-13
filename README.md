@@ -67,7 +67,7 @@ Note that for the first move and the swap move the bot does not use MCTS.
 
 ### Swap rule 
 
-human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). It will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
+human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
 
 ### Undo, Resign, Reset
 
@@ -92,7 +92,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 
 #### Tab *Player 1 / 2*
 
-- *color*:  choose you favorite colors for the players (default: red / black)
+- *color*:  choose your favorite colors for the players (default: red / black)
 - *name*: chose your favorite player names (default: Tom / Jerry)
 - *auto move*: if true, the bot makes a move autmatically (default: false)
 - *random rotation*: if true, the bot randomly chooses one of the four equivalent boards (rotation / mirroring) for evaluation (default: false)
@@ -115,7 +115,7 @@ Decrease c<sub>puct</sub> to move the needle towards exploitation, i.e reduce th
 
 ### File | Open File...
 
-You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). After game is loaded, the player names and the board are updated and you can continue to play as usual or undo (but not redo) moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game.
+You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). After a game is loaded, the player names and the board are updated and you can continue to play as usual or undo (but not redo) moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game.
 
 #### *.T1j
 
@@ -147,18 +147,6 @@ resign
 
 This file format is used when a TwixT game is saved at [littlegolem.net](https://littlegolem.net/jsp/games/gamedetail.jsp?gtid=twixt).
  
-### Planned enhancements...
-
-+ save games 
-+ show evaluation history plot
-+ draw current best MCTS move on board (dotted)
-+ best moves heat map
-
-
-### Known bugs
-
-* undo of first move not possible
-
 ### Contributors
 
 * [agtoever](https://github.com/agtoever)
