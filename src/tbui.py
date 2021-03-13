@@ -334,13 +334,18 @@ class TwixtbotUI():
         if self.game_over():
             return
 
-        if len(self.game.history) in self.moves_score:
-            del self.moves_score[len(self.game.history)]
+        gl = len(self.game.history)
+        if gl in self.moves_score:
+            del self.moves_score[gl]
 
-        if len(self.game.history) > 1:
+        if gl > 0 and gl != 2:
             self.game.undo()
-        elif len(self.game.history) == 1:
-            self.game = twixt.Game(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+        elif gl == 2:
+            # move 2 might have been a swap move => reset the game and redo
+            # move #1
+            move_one = self.game.history[0]
+            self.reset_game()
+            self.execute_move(move_one)
 
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):

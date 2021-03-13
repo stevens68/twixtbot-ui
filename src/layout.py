@@ -342,13 +342,12 @@ class AboutDialogLayout():
 
         width = 40
         layout = [
-            [sg.Text("twixtbot-ui", size=(width, 1))],
-            [sg.Text("(c) 2021 - stevens68", size=(width, 1))],
-            [sg.Text("https://github.com/stevens68/twixtbot-ui", size=(width, 1))],
-            [sg.Text("", size=(width, 1))],
-            [sg.Text("twixtbot", size=(width, 1))],
-            [sg.Text("(c) 2019 - Jordan Lampe", size=(width, 1))],
+            [sg.Text("twixtbot engine and network by Jordan Lampe", size=(width, 1))],
             [sg.Text("https://github.com/BonyJordan/twixtbot", size=(width, 1))],
+            [sg.Text("", size=(width, 1))],
+            [sg.Text(
+                "twixtbot-ui frontend by stevens68 and contributors", size=(width, 1))],
+            [sg.Text("https://github.com/stevens68/twixtbot-ui", size=(width, 1))],
             [sg.Text("", size=(width, 1))],
             [sg.Button(ct.B_EXIT, size=(10, 1), focus=True)]
         ]
