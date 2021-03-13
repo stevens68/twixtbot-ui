@@ -82,6 +82,7 @@ K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
 K_EVAL_BAR = ['', 'EVAL_BAR', None, 0]
 K_EVAL_NUM = ['', 'EVAL_NUM', None, ""]
 K_EVAL_MOVES = ['P * 1000', 'EVAL_MOVES', None, ""]
+K_EVAL_HIST = ['history', 'EVAL_HIST']
 K_PROGRESS_BAR = ['progress', 'PROGRESS_BAR']
 K_PROGRESS_NUM = ['', 'PROGRESS_NUMBERS']
 K_SPINNER = ['', 'SPINNER']

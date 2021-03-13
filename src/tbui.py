@@ -13,6 +13,8 @@ import files as fi
 import plot as pt
 import uiboard
 
+from tkinter import ttk
+
 
 def popup_bot_in_progress():
     lt.popup("bot in progress. Click Accept or Cancel.")
@@ -37,6 +39,7 @@ class TwixtbotUI():
     def __init__(self, game, stgs, board):
         self.board = board
         self.game = game
+        self.moves_score = {}
         self.stgs = stgs
         layout = lt.MainWindowLayout(board, stgs).get_layout()
         self.window = sg.Window(ct.WINDOW_TITLE, layout, margins=(25, 25))
@@ -51,6 +54,10 @@ class TwixtbotUI():
         canvas = self.window[ct.K_VISITS[1]].TKCanvas
         self.visit_plot = pt.ThreeBarPlot(canvas, ct.VISITS_PLOT_COLOR)
         self.visit_plot.update()
+
+        canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
+        self.eval_hist_plot = pt.EvalHistPlot(canvas,
+            stgs.get_setting(ct.K_COLOR[1]), self.stgs.get_setting(ct.K_COLOR[2]))
 
         self.update_settings_changed()
         self.prepare_bots()
@@ -112,15 +119,19 @@ class TwixtbotUI():
 
     def update_evals(self):
         if not self.game_over(False):
-
             score, moves, P = self.bots[self.game.turn].nm.eval_game(
                 self.game, self.window)
             # get score from white's perspective
             self.next_move = score, moves, P
 
             sc = round((2 * self.game.turn - 1) * score, 3)
+            
+            # Add sc to dict of historical scores
+            self.moves_score[len(self.game.history)] = sc
+
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
+
             # update chart
             values = {"moves": moves, "Y": P}
             self.eval_moves_plot.update(values, 1000)
@@ -133,9 +144,9 @@ class TwixtbotUI():
 
         # clean visits
         self.visit_plot.update()
+        self.eval_hist_plot.update(self.moves_score)
 
     def update_evalbar_colors(self):
-        from tkinter import ttk
         s = ttk.Style()
         ebs = self.window[ct.K_EVAL_BAR[1]].TKProgressBar.style_name
         s.configure(ebs, background=self.stgs.get_setting(ct.K_COLOR[1]))
@@ -287,16 +298,21 @@ class TwixtbotUI():
         players, moves = fi.get_game()
         if players is None:
             return
+
         # assign player names
         self.stgs.settings[ct.K_NAME[1]] = players[0]
         self.stgs.settings[ct.K_NAME[2]] = players[1]
         self.update_settings_changed()
+
         # reset game
         self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+        self.moves_score = {}
+
         # replay game
         try:
             for m in moves:
                 self.execute_move(m)
+                self.update_after_move()
         except:
             lt.popup("invalid move: " + str(m))
 
@@ -310,6 +326,9 @@ class TwixtbotUI():
     def handle_undo(self):
         if self.game_over():
             return
+
+        if len(self.game.history) in self.moves_score:
+            del self.moves_score[len(self.game.history)]
 
         if len(self.game.history) > 1:
             self.game.undo()
@@ -469,7 +488,7 @@ class TwixtbotUI():
             # than Accept, Cancel
             if event == ct.K_BOARD[1]:
                 self.handle_board_click(values)
-                self.update_after_move()
+                # self.update_after_move()
 
             elif event == ct.B_BOT_MOVE:
                 if not self.game_over():
@@ -485,6 +504,7 @@ class TwixtbotUI():
                 self.update_turn_indicators()
             elif event == ct.B_RESET:
                 self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+                self.moves_score = {}
                 self.update_after_move()
 
 

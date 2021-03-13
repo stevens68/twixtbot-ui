@@ -2,7 +2,6 @@
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
-
 import constants as ct
 
 
@@ -53,3 +52,54 @@ class ThreeBarPlot():
 
         self.sub_plot = ax1
         self.agg = agg
+
+
+class EvalHistPlot():
+    def __init__(self, canvas, col_player1, col_player2):
+        self.col_player1  = col_player1
+        self.col_player2  = col_player2
+        self.sub_plot = None
+        self.agg = None
+        self.prepare(canvas)
+
+
+    def sc_to_color(self, sc):
+        if sc > 0:
+            return self.col_player1
+        return self.col_player2
+
+
+    def update(self, values=None):
+        # clear the subplot
+        ax1 = self.sub_plot
+        ax1.clear()
+
+        if values is not None:
+            ax1.bar(values.keys(), values.values(),
+                    color=list(map(self.sc_to_color, values.values())))
+
+        plt.subplots_adjust(left=None, bottom=None,
+                            right=None, top=None, wspace=0, hspace=0)
+
+        plt.ylim([-1, 1])
+        self.agg.draw()
+
+
+    def prepare(self, canvas):
+        fig, ax1 = plt.subplots(figsize=(2.4, 0.7))
+
+        for ax in ['x', 'y']:
+            ax1.tick_params(axis=ax, which='major', labelcolor="black",
+                        labelsize=8, pad=.8)
+        ax1.autoscale(True, axis='x', tight=True)
+
+        ax1.spines['bottom'].set_visible(False)
+        ax1.spines['top'].set_visible(False)
+        ax1.spines['right'].set_visible(False)
+
+        agg = FigureCanvasTkAgg(fig, canvas)
+        agg.get_tk_widget().pack()
+
+        self.sub_plot = ax1
+        self.agg = agg
+

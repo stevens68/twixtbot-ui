@@ -143,6 +143,10 @@ class MainWindowLayout():
         return [text_label(ct.K_EVAL_MOVES[0]),
                 sg.Canvas(size=(240, 80), background_color=ct.OUTPUT_BACKGROUND_COLOR, key=ct.K_EVAL_MOVES[1])]
 
+    def row_eval_hist(self):
+        return [text_label(ct.K_EVAL_HIST[0]),
+                sg.Canvas(size=(240, 80), background_color=ct.OUTPUT_BACKGROUND_COLOR, key=ct.K_EVAL_HIST[1])]
+
     def build_layout(self):
         menu_def = [[ct.ITEM_FILE, [ct.ITEM_OPEN_FILE, ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
                     [ct.ITEM_HELP, [ct.ITEM_ABOUT]]]
@@ -155,6 +159,7 @@ class MainWindowLayout():
                                  self.row_eval_bar(),
                                  self.row_eval_num(),
                                  self.row_eval_moves(),
+                                 self.row_eval_hist(),
                                  row_separator(ct.SEP_MCTS),
                                  row_trials(),
                                  row_visits(),
