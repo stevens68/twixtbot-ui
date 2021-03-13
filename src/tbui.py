@@ -218,6 +218,12 @@ class TwixtbotUI():
         self.update_bots()
         self.update_game()
 
+    def reset_game(self):
+        self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+        self.moves_score = {}
+        # get eval of empty board to avoid gap at x=0 in plot in loaded games
+        self.calc_eval()
+
     def update_game(self):
         self.game.allow_scl = self.stgs.get_setting(ct.K_ALLOW_SCL[1])
 
@@ -306,7 +312,7 @@ class TwixtbotUI():
         self.stgs.settings[ct.K_NAME[2]] = players[1]
         self.update_settings_changed()
         # reset game
-        self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+        self.reset_game()
         # replay game
         try:
             lt.popup("loading game...")
@@ -504,8 +510,7 @@ class TwixtbotUI():
                 self.handle_resign()
                 self.update_turn_indicators()
             elif event == ct.B_RESET:
-                self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
-                self.moves_score = {}
+                self.reset_game()
                 self.update_after_move()
 
 
