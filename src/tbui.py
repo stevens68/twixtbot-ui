@@ -56,8 +56,12 @@ class TwixtbotUI():
         self.visit_plot.update()
 
         canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
+<<<<<<< HEAD
         self.eval_hist_plot = pt.EvalHistPlot(canvas,
             stgs.get_setting(ct.K_COLOR[1]), self.stgs.get_setting(ct.K_COLOR[2]))
+=======
+        self.eval_hist_plot = pt.EvalHistPlot(canvas, stgs)
+>>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
 
         self.update_settings_changed()
         self.prepare_bots()
@@ -117,8 +121,20 @@ class TwixtbotUI():
 
         self.get_control(ct.K_HISTORY).Update(text)
 
+    def calc_eval(self):
+        score, moves, P = self.bots[self.game.turn].nm.eval_game(
+            self.game, self.window)
+        # get score from white's perspective
+        self.next_move = score, moves, P
+        sc = round((2 * self.game.turn - 1) * score, 3)
+        # Add sc to dict of historical scores
+        self.moves_score[len(self.game.history)] = sc
+
+        return sc, moves, P
+
     def update_evals(self):
         if not self.game_over(False):
+<<<<<<< HEAD
             score, moves, P = self.bots[self.game.turn].nm.eval_game(
                 self.game, self.window)
             # get score from white's perspective
@@ -128,6 +144,9 @@ class TwixtbotUI():
             
             # Add sc to dict of historical scores
             self.moves_score[len(self.game.history)] = sc
+=======
+            sc, moves, P = self.calc_eval()
+>>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
@@ -212,8 +231,15 @@ class TwixtbotUI():
         self.update_turn_indicators()
         self.update_tooltips()
         self.update_evalbar_colors()
+        self.eval_hist_plot.update(self.moves_score)
         self.update_bots()
         self.update_game()
+
+    def reset_game(self):
+        self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+        self.moves_score = {}
+        # get eval of empty board to avoid gap at x=0 in plot in loaded games
+        self.calc_eval()
 
     def update_game(self):
         self.game.allow_scl = self.stgs.get_setting(ct.K_ALLOW_SCL[1])
@@ -305,14 +331,24 @@ class TwixtbotUI():
         self.update_settings_changed()
 
         # reset game
+<<<<<<< HEAD
         self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
         self.moves_score = {}
 
+=======
+        self.reset_game()
+>>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
         # replay game
         try:
+            lt.popup("loading game...")
             for m in moves:
                 self.execute_move(m)
+<<<<<<< HEAD
                 self.update_after_move()
+=======
+                self.calc_eval()
+                # self.update_after_move()
+>>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
         except:
             lt.popup("invalid move: " + str(m))
 
@@ -327,13 +363,25 @@ class TwixtbotUI():
         if self.game_over():
             return
 
+<<<<<<< HEAD
         if len(self.game.history) in self.moves_score:
             del self.moves_score[len(self.game.history)]
 
         if len(self.game.history) > 1:
+=======
+        gl = len(self.game.history)
+        if gl in self.moves_score:
+            del self.moves_score[gl]
+
+        if gl > 0 and gl != 2:
+>>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
             self.game.undo()
-        elif len(self.game.history) == 1:
-            self.game = twixt.Game(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+        elif gl == 2:
+            # move 2 might have been a swap move => reset the game and redo
+            # move #1
+            move_one = self.game.history[0]
+            self.reset_game()
+            self.execute_move(move_one)
 
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):
@@ -503,8 +551,12 @@ class TwixtbotUI():
                 self.handle_resign()
                 self.update_turn_indicators()
             elif event == ct.B_RESET:
+<<<<<<< HEAD
                 self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
                 self.moves_score = {}
+=======
+                self.reset_game()
+>>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
                 self.update_after_move()
 
 
