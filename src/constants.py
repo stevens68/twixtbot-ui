@@ -1,4 +1,3 @@
-
 import pathlib
 from os import path
 
@@ -21,6 +20,7 @@ OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
               "lightgreen", "purple", "red", "yellow", "white"]
 FIELD_BACKGROUND_COLOR = "lightgrey"
+HEATMAP_RADIUS_FACTOR = 0.5
 
 
 TURN_CHAR = '\u2588'  # block char
@@ -120,6 +120,7 @@ ITEM_EXIT = "Exit"
 ITEM_HELP = "Help"
 ITEM_ABOUT = "About..."
 
+B_HEATMAP = "Heatmap"
 B_BOT_MOVE = "Bot Move"
 B_ACCEPT = "Accept"
 B_CANCEL = "Cancel"

@@ -11,6 +11,7 @@ import settings as st
 import layout as lt
 import files as fi
 import plot as pt
+import heatmap as hm
 import uiboard
 
 from tkinter import ttk
@@ -56,12 +57,8 @@ class TwixtbotUI():
         self.visit_plot.update()
 
         canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
-<<<<<<< HEAD
         self.eval_hist_plot = pt.EvalHistPlot(canvas,
             stgs.get_setting(ct.K_COLOR[1]), self.stgs.get_setting(ct.K_COLOR[2]))
-=======
-        self.eval_hist_plot = pt.EvalHistPlot(canvas, stgs)
->>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
 
         self.update_settings_changed()
         self.prepare_bots()
@@ -134,7 +131,6 @@ class TwixtbotUI():
 
     def update_evals(self):
         if not self.game_over(False):
-<<<<<<< HEAD
             score, moves, P = self.bots[self.game.turn].nm.eval_game(
                 self.game, self.window)
             # get score from white's perspective
@@ -144,9 +140,7 @@ class TwixtbotUI():
             
             # Add sc to dict of historical scores
             self.moves_score[len(self.game.history)] = sc
-=======
             sc, moves, P = self.calc_eval()
->>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
@@ -310,6 +304,9 @@ class TwixtbotUI():
         self.thread.start()
 
     # handle events
+    def handle_heatmap(self):
+        lt.popup("calculating heatmap (please be patient)...")
+        self.board.draw(hm.Heatmap(self.game, self.bots[self.game.turn]))
 
     def handle_board_click(self, values):
         if self.game_over():
@@ -331,24 +328,18 @@ class TwixtbotUI():
         self.update_settings_changed()
 
         # reset game
-<<<<<<< HEAD
         self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
         self.moves_score = {}
 
-=======
         self.reset_game()
->>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
         # replay game
         try:
             lt.popup("loading game...")
             for m in moves:
                 self.execute_move(m)
-<<<<<<< HEAD
                 self.update_after_move()
-=======
                 self.calc_eval()
                 # self.update_after_move()
->>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
         except:
             lt.popup("invalid move: " + str(m))
 
@@ -363,18 +354,15 @@ class TwixtbotUI():
         if self.game_over():
             return
 
-<<<<<<< HEAD
         if len(self.game.history) in self.moves_score:
             del self.moves_score[len(self.game.history)]
 
         if len(self.game.history) > 1:
-=======
-        gl = len(self.game.history)
+            gl = len(self.game.history)
         if gl in self.moves_score:
             del self.moves_score[gl]
 
         if gl > 0 and gl != 2:
->>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
             self.game.undo()
         elif gl == 2:
             # move 2 might have been a swap move => reset the game and redo
@@ -537,7 +525,8 @@ class TwixtbotUI():
             if event == ct.K_BOARD[1]:
                 self.handle_board_click(values)
                 # self.update_after_move()
-
+            elif event == ct.B_HEATMAP:
+                self.handle_heatmap()
             elif event == ct.B_BOT_MOVE:
                 if not self.game_over():
                     # clear move statistics
@@ -551,12 +540,9 @@ class TwixtbotUI():
                 self.handle_resign()
                 self.update_turn_indicators()
             elif event == ct.B_RESET:
-<<<<<<< HEAD
                 self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
                 self.moves_score = {}
-=======
                 self.reset_game()
->>>>>>> b014f92f3054d0e7d8f786e38e625db8c618de19
                 self.update_after_move()
 
 

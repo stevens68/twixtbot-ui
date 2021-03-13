@@ -1,4 +1,4 @@
-
+import numpy
 import PySimpleGUI as sg
 import backend.board as board
 import backend.twixt as twixt
@@ -24,10 +24,10 @@ class UiBoard(board.TwixtBoard):
                               key=ct.K_BOARD[1],
                               enable_events=True)
 
-    def draw(self):
+    def draw(self, heatmap=None):
         self.graph.erase()
         self._draw_endlines()
-        self._draw_pegholes()
+        self._draw_pegholes(heatmap)
         self._draw_labels()
         self._draw_guidelines()
 
@@ -61,16 +61,26 @@ class UiBoard(board.TwixtBoard):
                                      (self.size + self.offset_factor) * self.cell_width),
                                     ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
 
-    def _draw_pegholes(self):
+    def _draw_pegholes(self, heatmap=None):
         for x in range(self.size):
             for y in range(self.size):
                 if x in (0, self.size - 1) and y in (0, self.size - 1):
                     continue
 
+                color = ct.PEG_HOLE_COLOR
+                radius = self.hole_radius
+                if heatmap:
+                    sc = heatmap.scores[x, twixt.Game.SIZE - y - 1]
+                    if not numpy.isnan(sc):
+                        grn = f'{int(64 + 191 * max(sc, 0)):02x}'
+                        blu = f'{int(127 - 128 * min(sc, 0)):02x}'
+                        color = '#' + '60' + grn + blu
+                        radius = self.peg_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * abs(sc)) / 2
+
                 self.graph.DrawCircle(
                     ((x + self.offset_factor) * self.cell_width,
                      (y + self.offset_factor) * self.cell_width),
-                    self.hole_radius, ct.PEG_HOLE_COLOR, ct.PEG_HOLE_COLOR)
+                    radius, color, color)
 
     def _draw_endlines(self):
         o = 2 * self.cell_width

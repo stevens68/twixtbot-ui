@@ -179,6 +179,7 @@ class MainWindowLayout():
                 control_col
             ],
             [
+                sg.Button(ct.B_HEATMAP, size=(10, 1)),
                 sg.Button(ct.B_BOT_MOVE, size=(10, 1), focus=True),
                 sg.Button(ct.B_ACCEPT, size=(10, 1)),
                 sg.Button(ct.B_CANCEL, size=(10, 1)),
