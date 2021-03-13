@@ -56,8 +56,7 @@ class TwixtbotUI():
         self.visit_plot.update()
 
         canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
-        self.eval_hist_plot = pt.EvalHistPlot(canvas,
-            stgs.get_setting(ct.K_COLOR[1]), self.stgs.get_setting(ct.K_COLOR[2]))
+        self.eval_hist_plot = pt.EvalHistPlot(canvas, stgs)
 
         self.update_settings_changed()
         self.prepare_bots()
@@ -117,17 +116,20 @@ class TwixtbotUI():
 
         self.get_control(ct.K_HISTORY).Update(text)
 
+    def calc_eval(self):
+        score, moves, P = self.bots[self.game.turn].nm.eval_game(
+            self.game, self.window)
+        # get score from white's perspective
+        self.next_move = score, moves, P
+        sc = round((2 * self.game.turn - 1) * score, 3)
+        # Add sc to dict of historical scores
+        self.moves_score[len(self.game.history)] = sc
+
+        return sc, moves, P
+
     def update_evals(self):
         if not self.game_over(False):
-            score, moves, P = self.bots[self.game.turn].nm.eval_game(
-                self.game, self.window)
-            # get score from white's perspective
-            self.next_move = score, moves, P
-
-            sc = round((2 * self.game.turn - 1) * score, 3)
-            
-            # Add sc to dict of historical scores
-            self.moves_score[len(self.game.history)] = sc
+            sc, moves, P = self.calc_eval()
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
@@ -212,6 +214,7 @@ class TwixtbotUI():
         self.update_turn_indicators()
         self.update_tooltips()
         self.update_evalbar_colors()
+        self.eval_hist_plot.update(self.moves_score)
         self.update_bots()
         self.update_game()
 
@@ -306,9 +309,11 @@ class TwixtbotUI():
         self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
         # replay game
         try:
+            lt.popup("loading game...")
             for m in moves:
                 self.execute_move(m)
-                self.update_after_move()
+                self.calc_eval()
+                # self.update_after_move()
         except:
             lt.popup("invalid move: " + str(m))
 
