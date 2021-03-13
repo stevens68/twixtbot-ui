@@ -72,9 +72,10 @@ class UiBoard(board.TwixtBoard):
                 if heatmap:
                     sc = heatmap.scores[x, twixt.Game.SIZE - y - 1]
                     if not numpy.isnan(sc):
-                        grn = f'{int(64 + 191 * max(sc, 0)):02x}'
-                        blu = f'{int(127 - 128 * min(sc, 0)):02x}'
-                        color = '#' + '60' + grn + blu
+                        if sc > 0:
+                            color = '#00FF' + f'{int(256 * sc):02x}'
+                        else:
+                            color = '#00' + f'{int(256 * (1+sc)):02x}' + 'FF'
                         radius = self.peg_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * abs(sc)) / 2
 
                 self.graph.DrawCircle(

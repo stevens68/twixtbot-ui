@@ -26,8 +26,6 @@ class Heatmap:
                 self.scores[move] = base_sc - self._get_score()
                 self.game.undo()
             
-        # normalize to [-1, 1]
-        self.scores = numpy.interp(
-            self.scores,
-            (numpy.nanmin(self.scores), numpy.nanmax(self.scores)),
-            (-1, +1))
+        # normalize
+        scalar = max(-numpy.nanmin(self.scores), numpy.nanmax(self.scores))
+        self.scores /= scalar
