@@ -55,19 +55,16 @@ class ThreeBarPlot():
 
 
 class EvalHistPlot():
-    def __init__(self, canvas, col_player1, col_player2):
-        self.col_player1  = col_player1
-        self.col_player2  = col_player2
+    def __init__(self, canvas, stgs):
         self.sub_plot = None
         self.agg = None
         self.prepare(canvas)
-
+        self.stgs = stgs
 
     def sc_to_color(self, sc):
         if sc > 0:
-            return self.col_player1
-        return self.col_player2
-
+            return self.stgs.get_setting(ct.K_COLOR[1])
+        return self.stgs.get_setting(ct.K_COLOR[2])
 
     def update(self, values=None):
         # clear the subplot
@@ -78,18 +75,22 @@ class EvalHistPlot():
             ax1.bar(values.keys(), values.values(),
                     color=list(map(self.sc_to_color, values.values())))
 
-        plt.subplots_adjust(left=None, bottom=None,
-                            right=None, top=None, wspace=0, hspace=0)
+        plt.subplots_adjust(left=None, bottom=0.3,
+                            right=None, top=0.9, wspace=0, hspace=0)
 
+        xmax = max(10, len(values))
+        plt.xlim(-1, xmax)
+        plt.xticks(np.arange(0, xmax, xmax // 6))
         plt.ylim([-1, 1])
-        self.agg.draw()
 
+        self.agg.draw()
 
     def prepare(self, canvas):
         fig, ax1 = plt.subplots(figsize=(2.4, 0.7))
 
-        for ax in ['x', 'y']:
-            ax1.tick_params(axis=ax, which='major', labelcolor="black",
+        ax1.tick_params(axis='x', which='major', labelcolor="black",
+                        labelsize=8, pad=.8, top=False, bottom=False)
+        ax1.tick_params(axis='y', which='major', labelcolor="black",
                         labelsize=8, pad=.8)
         ax1.autoscale(True, axis='x', tight=True)
 
@@ -102,4 +103,3 @@ class EvalHistPlot():
 
         self.sub_plot = ax1
         self.agg = agg
-
