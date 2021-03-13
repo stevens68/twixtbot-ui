@@ -57,8 +57,7 @@ class TwixtbotUI():
         self.visit_plot.update()
 
         canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
-        self.eval_hist_plot = pt.EvalHistPlot(canvas,
-            stgs.get_setting(ct.K_COLOR[1]), self.stgs.get_setting(ct.K_COLOR[2]))
+        self.eval_hist_plot = pt.EvalHistPlot(canvas, stgs)
 
         self.update_settings_changed()
         self.prepare_bots()
