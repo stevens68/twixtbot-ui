@@ -67,7 +67,7 @@ Note that for the first move and the swap move the bot does not use MCTS.
 
 ### Swap rule 
 
-human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). It will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
+human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
 
 ### Undo, Resign, Reset
 
