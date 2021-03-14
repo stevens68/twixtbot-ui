@@ -130,15 +130,6 @@ class TwixtbotUI():
 
     def update_evals(self):
         if not self.game_over(False):
-            score, moves, P = self.bots[self.game.turn].nm.eval_game(
-                self.game, self.window)
-            # get score from white's perspective
-            self.next_move = score, moves, P
-
-            sc = round((2 * self.game.turn - 1) * score, 3)
-            
-            # Add sc to dict of historical scores
-            self.moves_score[len(self.game.history)] = sc
             sc, moves, P = self.calc_eval()
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
@@ -327,16 +318,13 @@ class TwixtbotUI():
         self.update_settings_changed()
 
         # reset game
-        self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
-        self.moves_score = {}
-
         self.reset_game()
+
         # replay game
         try:
             lt.popup("loading game...")
             for m in moves:
                 self.execute_move(m)
-                self.update_after_move()
                 self.calc_eval()
                 # self.update_after_move()
         except:
@@ -353,19 +341,15 @@ class TwixtbotUI():
         if self.game_over():
             return
 
-        if len(self.game.history) in self.moves_score:
-            del self.moves_score[len(self.game.history)]
+        gl = len(self.game.history)
 
-        if len(self.game.history) > 1:
-            gl = len(self.game.history)
         if gl in self.moves_score:
             del self.moves_score[gl]
 
         if gl > 0 and gl != 2:
             self.game.undo()
         elif gl == 2:
-            # move 2 might have been a swap move => reset the game and redo
-            # move #1
+            # move 2 might be a swap move => reset game and redo move #1
             move_one = self.game.history[0]
             self.reset_game()
             self.execute_move(move_one)
@@ -539,8 +523,6 @@ class TwixtbotUI():
                 self.handle_resign()
                 self.update_turn_indicators()
             elif event == ct.B_RESET:
-                self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
-                self.moves_score = {}
                 self.reset_game()
                 self.update_after_move()
 
