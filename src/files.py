@@ -157,7 +157,7 @@ def get_game():
     file_name = sg.PopupGetFile('Choose file', file_types=(
         ("All Files", "*.*"),
         ("T1j Files", "*.T1"),
-        ("Little Golem Files", "*.tsgf")), no_window=True)
+        ("Little Golem Files", "*.tsgf")), no_window=True, keep_on_top=True)
 
     if file_name is None:
         return None, None
@@ -182,3 +182,69 @@ def get_game():
         sg.popup_ok(f"Error '{e}' while opening file {file_name}")
 
     return None, None
+
+
+def save_game(players=['Player1', 'Player2'],
+              moves=[''],
+              board_size=24,
+              game_over=False):
+    """ Saves a Twixt game to T1 file, chosen by the user
+    
+    Shows a file-savve dialog to the user.
+    The twixt game give by the function parameters are saved to the file.
+    Only .T1 file format is currently supported.
+    Exceptions that occur while saving the file are handles within 
+    this function.
+    
+    Args:
+        players: list of two strings with player names
+        moves: list of twixt moves
+        board_size: int with board size (defaults to 24)
+        game_over: bool if the game if over (defaults to False)
+
+    Returns:
+        None
+    """
+
+    # Get filename
+    file_name = sg.PopupGetFile('Choose file', file_types=(
+        ("T1j Files", "*.T1"),), no_window=True, save_as=True, keep_on_top=True)
+
+    if file_name is None:
+        return
+
+    # Build file contents
+    try:
+        content = [
+            '# File created by twixtbot-ui',
+            '# twixtbot-ui is a program to play TwixtT (https://github.com/stevens68/twixtbot-ui)',
+            '1 # version of file-format',
+            str(players[0]) + ' # Name of player 1',
+            str(players[1]) + ' # Name of player 2',
+            str(board_size) + ' # y-size of board',
+            str(board_size) + ' # x-size of board',
+            'H # player 1 human or computer',
+            'H # player 2 human or computer',
+            '1 # starting player (1 plays top-down)',
+            'V # direction of letters',
+            'Y # pierule?',
+            ('Y' if game_over else 'N') + ' # game already over?'
+            ]
+        
+        content += [str(m).upper() for m in moves]
+
+    except Exception as e:
+        sg.popup_ok('Could not create file contents. Game is NOT saved!')
+        print(e)
+        return
+
+    # Write file
+    try:
+        with open(file_name, "tw") as f:
+            f.write('\n'.join(content))
+    except:
+        sg.popup_ok(f"Can't write {file_name}. Game is NOT saved!")
+        return
+    
+    sg.popup_ok(f'Game saves successfully as {file_name}')
+    return
