@@ -40,6 +40,9 @@ class Settings():
         try:
             with open(ct.SETTINGS_FILE, 'r') as f:
                 self.settings = jsonload(f)
+                # backward compatibility: set board_size to new min 500
+                self.settings[ct.K_BOARD_SIZE[1]] = max(
+                    min(ct.BOARD_SIZE_LIST), self.settings[ct.K_BOARD_SIZE[1]])
         except Exception:
             sg.popup(ct.MSG_NO_CONFIG_FILE, keep_on_top=True)
 

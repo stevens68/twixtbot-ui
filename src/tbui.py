@@ -115,7 +115,7 @@ class TwixtbotUI():
 
             text += "\t\t" if i % 2 == 0 else ""
 
-        self.get_control(ct.K_HISTORY).Update(text)
+        self.get_control(ct.K_MOVES).Update(text)
 
     def calc_eval(self):
         score, moves, P = self.bots[self.game.turn].nm.eval_game(
@@ -295,7 +295,7 @@ class TwixtbotUI():
 
     # handle events
     def handle_heatmap(self):
-        lt.popup("calculating heatmap (please be patient)...")
+        lt.popup(ct.MSG_HEATMAP_CALCULATING)
         self.board.draw(hm.Heatmap(self.game, self.bots[self.game.turn]))
 
     def handle_board_click(self, values):
