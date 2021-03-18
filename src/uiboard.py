@@ -80,8 +80,9 @@ class UiBoard(board.TwixtBoard):
                         color = self._score_to_rgbstring(sc)
                         radius = self.peg_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * abs(sc)) / 2
                         
-                        move = chr(ord('a') + 2 + x) + str(twixt.Game.SIZE - y)
+                        move = chr(ord('a') + x) + str(twixt.Game.SIZE - y)
                         if move in heatmap.policy_moves:
+                            print(f'{move} in {heatmap.policy_moves}')
                             border = 'black'
                         else:
                             border = color
