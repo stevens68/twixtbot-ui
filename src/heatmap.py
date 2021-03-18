@@ -16,10 +16,9 @@ class Heatmap:
     def calculate(self):
         base_sc, moves, P = self.bot.nm.eval_game(self.game, maxbest=100)
 
-        for i, p in enumerate(P):
-            print("p: ", i, p)
+        # for i, p in enumerate(P):
+        #    print("p: ", i, p)
 
-        """
         slp = self.game.slow_legal_plays()
         if twixt.SWAP in slp:
             slp.remove(twixt.SWAP)
@@ -27,7 +26,6 @@ class Heatmap:
             self.game.play(move)
             self.scores[move] = base_sc - self._get_score()
             self.game.undo()
-        """
 
         # normalize
         scalar = max(-numpy.nanmin(self.scores), numpy.nanmax(self.scores))
