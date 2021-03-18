@@ -110,6 +110,7 @@ MSG_HEATMAP_CALCULATING = "Calculating heatmap (please be patient) ..."
 
 ITEM_FILE = "File"
 ITEM_OPEN_FILE = "Open File..."
+ITEM_SAVE_FILE = "Save File..."
 ITEM_SETTINGS = "Settings..."
 ITEM_EXIT = "Exit"
 ITEM_HELP = "Help"

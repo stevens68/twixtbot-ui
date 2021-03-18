@@ -36,7 +36,6 @@ class BotEvent(threading.Event):
 
 
 class TwixtbotUI():
-
     def __init__(self, game, stgs, board):
         self.board = board
         self.game = game
@@ -331,6 +330,13 @@ class TwixtbotUI():
 
         self.update_after_move()
 
+    def handle_save_file(self):
+        fi.save_game(
+            [self.stgs.settings[ct.K_NAME[p]] for p in (1, 2)],
+            self.game.history,
+            self.game.SIZE,
+            self.game is not None)
+
     def handle_resign(self):
         if self.game_over():
             return
@@ -376,7 +382,7 @@ class TwixtbotUI():
             self.update_progress(values)
 
         if "moves" in values and "current" in values and len(values["moves"]) > 1:
-            self.visit_plot.update(values, values["max"])
+            self.visit_plot.update(values, max(1, values["max"]))
 
         if values["status"] == "done":
             self.get_control(ct.K_SPINNER).Update(visible=False)
@@ -490,6 +496,8 @@ class TwixtbotUI():
             self.about_dialog()
         elif event == ct.ITEM_OPEN_FILE:
             self.handle_open_file()
+        elif event == ct.ITEM_SAVE_FILE:
+            self.handle_save_file()
         elif st.key_like(event,  ['AUTO_MOVE', 'TRIALS']):
             # handle trials sliders and auto-move check boxes
             self.stgs.update(event, values)
