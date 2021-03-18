@@ -118,8 +118,7 @@ class TwixtbotUI():
         self.get_control(ct.K_MOVES).Update(text)
 
     def calc_eval(self):
-        score, moves, P = self.bots[self.game.turn].nm.eval_game(
-            self.game, self.window)
+        score, moves, P = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
         self.next_move = score, moves, P
         sc = round((2 * self.game.turn - 1) * score, 3)
