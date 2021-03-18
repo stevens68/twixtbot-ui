@@ -11,6 +11,7 @@ import settings as st
 import layout as lt
 import files as fi
 import plot as pt
+import heatmap as hm
 import uiboard
 
 from tkinter import ttk
@@ -35,7 +36,6 @@ class BotEvent(threading.Event):
 
 
 class TwixtbotUI():
-
     def __init__(self, game, stgs, board):
         self.board = board
         self.game = game
@@ -114,11 +114,10 @@ class TwixtbotUI():
 
             text += "\t\t" if i % 2 == 0 else ""
 
-        self.get_control(ct.K_HISTORY).Update(text)
+        self.get_control(ct.K_MOVES).Update(text)
 
     def calc_eval(self):
-        score, moves, P = self.bots[self.game.turn].nm.eval_game(
-            self.game, self.window)
+        score, moves, P = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
         self.next_move = score, moves, P
         sc = round((2 * self.game.turn - 1) * score, 3)
@@ -293,6 +292,9 @@ class TwixtbotUI():
         self.thread.start()
 
     # handle events
+    def handle_heatmap(self):
+        lt.popup(ct.MSG_HEATMAP_CALCULATING)
+        self.board.draw(hm.Heatmap(self.game, self.bots[self.game.turn]))
 
     def handle_board_click(self, values):
         if self.game_over():
@@ -307,12 +309,15 @@ class TwixtbotUI():
         players, moves = fi.get_game()
         if players is None:
             return
+
         # assign player names
         self.stgs.settings[ct.K_NAME[1]] = players[0]
         self.stgs.settings[ct.K_NAME[2]] = players[1]
         self.update_settings_changed()
+
         # reset game
         self.reset_game()
+
         # replay game
         try:
             lt.popup("loading game...")
@@ -325,6 +330,13 @@ class TwixtbotUI():
 
         self.update_after_move()
 
+    def handle_save_file(self):
+        fi.save_game(
+            [self.stgs.settings[ct.K_NAME[p]] for p in (1, 2)],
+            self.game.history,
+            self.game.SIZE,
+            self.game is not None)
+
     def handle_resign(self):
         if self.game_over():
             return
@@ -335,14 +347,14 @@ class TwixtbotUI():
             return
 
         gl = len(self.game.history)
+
         if gl in self.moves_score:
             del self.moves_score[gl]
 
         if gl > 0 and gl != 2:
             self.game.undo()
         elif gl == 2:
-            # move 2 might have been a swap move => reset the game and redo
-            # move #1
+            # move 2 might be a swap move => reset game and redo move #1
             move_one = self.game.history[0]
             self.reset_game()
             self.execute_move(move_one)
@@ -370,7 +382,7 @@ class TwixtbotUI():
             self.update_progress(values)
 
         if "moves" in values and "current" in values and len(values["moves"]) > 1:
-            self.visit_plot.update(values, values["max"])
+            self.visit_plot.update(values, max(1, values["max"]))
 
         if values["status"] == "done":
             self.get_control(ct.K_SPINNER).Update(visible=False)
@@ -484,6 +496,8 @@ class TwixtbotUI():
             self.about_dialog()
         elif event == ct.ITEM_OPEN_FILE:
             self.handle_open_file()
+        elif event == ct.ITEM_SAVE_FILE:
+            self.handle_save_file()
         elif st.key_like(event,  ['AUTO_MOVE', 'TRIALS']):
             # handle trials sliders and auto-move check boxes
             self.stgs.update(event, values)
@@ -501,7 +515,8 @@ class TwixtbotUI():
             if event == ct.K_BOARD[1]:
                 self.handle_board_click(values)
                 # self.update_after_move()
-
+            elif event == ct.B_HEATMAP:
+                self.handle_heatmap()
             elif event == ct.B_BOT_MOVE:
                 if not self.game_over():
                     # clear move statistics

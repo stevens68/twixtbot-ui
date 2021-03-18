@@ -74,7 +74,7 @@ class Player:
 
         if self.num_trials == 0:
             # don't use MCTS but just evaluate and return best move
-            _, moves, P = self.nm.eval_game(game, window)
+            _, moves, P = self.nm.eval_game(game)
             self.nm.send_message(window, game, "done", 0,
                                  0, moves=moves, P=[int(round(p * 1000)) for p in P])
             return moves[0]

@@ -205,20 +205,16 @@ class NeuralMCTS:
                for index in indices[-3:]]
         return ":" + ",".join(pts)
 
-    def eval_game(self, game, window=None):
+    def eval_game(self, game, maxbest=twixt.MAXBEST):
 
         self.compute_root(game)
         # assert self.root == None
         self.root = self.expand_leaf(game)
-        top_ixs = numpy.argsort(self.root.P)[-twixt.MAXBEST:]
-        if window:
-            moves = [naf.policy_index_point(game, ix) for ix in top_ixs][::-1]
-            P = [int(round(self.root.P[ix] * 1000)) for ix in top_ixs][::-1]
-            # print("moves: ", moves, ", idx: ",  top_ixs)
-            return self.root.score, moves, P
-        else:
-            return self.root.score, [(naf.policy_index_point(game, ix),
-                                      int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs][::-1]
+        top_ixs = numpy.argsort(self.root.P)[-maxbest:]
+        moves = [naf.policy_index_point(game, ix) for ix in top_ixs][::-1]
+        P = [int(round(self.root.P[ix] * 1000)) for ix in top_ixs][::-1]
+        # print("moves: ", moves, ", idx: ",  top_ixs)
+        return self.root.score, moves, P
 
     def proven_result(self, game):
         if self.root.winning_move:

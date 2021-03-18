@@ -36,7 +36,9 @@ def pad(s):
 
 
 def row_separator(text):
-    return sg.Text(text, font=ct.SEPARATOR_FONT), sg.HSeparator(pad=((5, 18), (10, 10)))
+    # return sg.Text(text, font=ct.SEPARATOR_FONT), sg.HSeparator(pad=((5,
+    # 18), (4, 4)))
+    return sg.Text(text, font=ct.SEPARATOR_FONT), sg.Text(" ")
 
 
 def get_color_square(player):
@@ -115,11 +117,11 @@ def row_visits():
             sg.Canvas(size=(240, 80), background_color=ct.OUTPUT_BACKGROUND_COLOR, key=ct.K_VISITS[1])]
 
 
-def row_history():
-    return [text_label(ct.K_HISTORY[0]),
-            sg.Multiline(default_text='', font=ct.HISTORY_FONT, background_color=ct.OUTPUT_BACKGROUND_COLOR,
+def row_moves():
+    return [text_label(ct.K_MOVES[0]),
+            sg.Multiline(default_text='', font=ct.MOVES_FONT, background_color=ct.OUTPUT_BACKGROUND_COLOR,
                          text_color=ct.OUTPUT_TEXT_COLOR, autoscroll=True,
-                         key=ct.K_HISTORY[1], disabled=True, size=(28, 6))]
+                         key=ct.K_MOVES[1], disabled=True, size=(28, 6))]
 
 
 class MainWindowLayout():
@@ -148,29 +150,39 @@ class MainWindowLayout():
                 sg.Canvas(size=(240, 80), background_color=ct.OUTPUT_BACKGROUND_COLOR, key=ct.K_EVAL_HIST[1])]
 
     def build_layout(self):
-        menu_def = [[ct.ITEM_FILE, [ct.ITEM_OPEN_FILE, ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
+        menu_def = [[ct.ITEM_FILE, [ct.ITEM_OPEN_FILE, ct.ITEM_SAVE_FILE, ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
                     [ct.ITEM_HELP, [ct.ITEM_ABOUT]]]
+
+        button_count = 7
+        bw = int(self.stgs.get_setting(
+            ct.K_BOARD_SIZE[1]) / (button_count * 9))
+        button_row = [
+            sg.Button(ct.B_BOT_MOVE, size=(bw, 1), focus=True),
+            sg.Button(ct.B_ACCEPT, size=(bw, 1)),
+            sg.Button(ct.B_CANCEL, size=(bw, 1)),
+            sg.Button(ct.B_UNDO, size=(bw, 1)),
+            sg.Button(ct.B_RESIGN, size=(bw, 1)),
+            sg.Button(ct.B_RESET, size=(bw, 1)),
+            sg.Button(ct.B_HEATMAP, size=(bw, 1))
+        ]
 
         control_col = sg.Column([row_colors(),
                                  row_names(),
                                  row_turn_indicators(),
                                  row_auto_moves(),
-                                 row_separator(ct.SEP_EVALUATION),
                                  self.row_eval_bar(),
                                  self.row_eval_num(),
-                                 self.row_eval_moves(),
                                  self.row_eval_hist(),
-                                 row_separator(ct.SEP_MCTS),
+                                 self.row_eval_moves(),
                                  row_trials(),
                                  row_visits(),
                                  row_progress_bar(),
                                  row_progress_nums(),
-                                 row_separator(ct.SEP_HISTORY),
-                                 row_history()
+                                 row_moves()
                                  ],
                                 vertical_alignment='top')
 
-        board_col = sg.Column([[self.board.graph]])
+        board_col = sg.Column([[self.board.graph], button_row])
 
         layout = [
             [sg.Menu(menu_def, tearoff=False)],
@@ -178,14 +190,6 @@ class MainWindowLayout():
                 board_col,
                 control_col
             ],
-            [
-                sg.Button(ct.B_BOT_MOVE, size=(10, 1), focus=True),
-                sg.Button(ct.B_ACCEPT, size=(10, 1)),
-                sg.Button(ct.B_CANCEL, size=(10, 1)),
-                sg.Button(ct.B_UNDO, size=(10, 1)),
-                sg.Button(ct.B_RESIGN, size=(10, 1)),
-                sg.Button(ct.B_RESET, size=(10, 1))
-            ]
         ]
 
         return layout
