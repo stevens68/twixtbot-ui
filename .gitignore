@@ -137,3 +137,6 @@ config.json
 
 # OSX
 .DS_Store
+
+# eclipse
+.settings/
