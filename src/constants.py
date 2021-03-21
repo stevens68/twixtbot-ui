@@ -20,8 +20,11 @@ OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
               "lightgreen", "purple", "red", "yellow", "white"]
 FIELD_BACKGROUND_COLOR = "lightgrey"
+HEATMAP_CIRCLE_COLOR = 'black'
 HEATMAP_RADIUS_FACTOR = 2
-
+HEATMAP_CIRCLE_FACTOR = 1.5
+HEATMAP_LEGEND_STEPS = 10
+HEATMAP_RGB_COLORS = [(0, 0, 255), (0, 255, 255), (0, 255, 0)]  # min/mid/max
 
 TURN_CHAR = '\u2588'  # block char
 TURN_HAS_WON = "has won"
@@ -75,6 +78,7 @@ K_SHOW_LABELS = ['show labels', 'SHOW_LABELS', None, True]
 K_SHOW_GUIDELINES = ['show guidelines', 'SHOW_GUIDELINES', None, False]
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
+K_HEATMAP = ['Heatmap']
 
 
 # non-setting keys
