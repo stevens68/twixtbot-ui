@@ -20,7 +20,7 @@ OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
               "lightgreen", "purple", "red", "yellow", "white"]
 FIELD_BACKGROUND_COLOR = "lightgrey"
-HEATMAP_RADIUS_FACTOR = 0.5
+HEATMAP_RADIUS_FACTOR = 2
 
 
 TURN_CHAR = '\u2588'  # block char
@@ -106,7 +106,6 @@ MSG_REQUIRES_RESTART = "restart required"
 MSG_NO_CONFIG_FILE = 'No settings file found.\nCreating ' + \
     SETINGS_FILE_NAME + ' with default settings.'
 MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. Key = '
-MSG_HEATMAP_CALCULATING = "Calculating heatmap (please be patient) ..."
 
 ITEM_FILE = "File"
 ITEM_OPEN_FILE = "Open File..."

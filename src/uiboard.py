@@ -61,12 +61,27 @@ class UiBoard(board.TwixtBoard):
                                      (self.size + self.offset_factor) * self.cell_width),
                                     ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
 
-    def _score_to_rgbstring(self, sc):
-        if sc > 0:
-            return '#00FF' + f'{int(255 * (1 - sc)):02x}'
-        return '#00' + f'{int(255 * (sc + 1)):02x}' + 'FF'
+    def _score_to_rgbstring(self, p):
+        if p > 0.5:
+            return '#00FF' + f'{int(255 * (2 - 2 * p)):02x}'
+        return '#00' + f'{int(255 * 2 * p):02x}' + 'FF'
+
+    def _draw_heatmap_legend(self):
+        self.graph.DrawText(
+            'Heatmap:',
+            (self.cell_width * self.offset_factor, 10),
+            ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
+        for p in range(0, 20):
+            col = self._score_to_rgbstring(p/20)
+            self.graph.DrawRectangle(
+                (self.cell_width * (self.offset_factor + p + 2), 5),
+                (self.cell_width * (p + 3 + self.offset_factor), 15),
+                col, col)
 
     def _draw_pegholes(self, heatmap=None):
+        if heatmap:
+            self._draw_heatmap_legend()
+
         for x in range(self.size):
             for y in range(self.size):
                 if x in (0, self.size - 1) and y in (0, self.size - 1):
@@ -75,22 +90,22 @@ class UiBoard(board.TwixtBoard):
                 color = border = ct.PEG_HOLE_COLOR
                 radius = self.hole_radius
                 if heatmap:
-                    sc = heatmap.scores[x, twixt.Game.SIZE - y - 1]
-                    if not numpy.isnan(sc):
-                        color = self._score_to_rgbstring(sc)
-                        radius = self.peg_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * abs(sc)) / 2
-                        
-                        move = chr(ord('a') + x) + str(twixt.Game.SIZE - y)
-                        if move in heatmap.policy_moves:
-                            print(f'{move} in {heatmap.policy_moves}')
-                            border = 'black'
-                        else:
-                            border = color
+                    p = heatmap.scores[x, twixt.Game.SIZE - y - 1]
+                    if not numpy.isnan(p) and p > 0:
+                        color = self._score_to_rgbstring(p)
+                        radius = self.hole_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * p)
+
+                        self.graph.DrawCircle(
+                            ((x + self.offset_factor) * self.cell_width,
+                             (y + self.offset_factor) * self.cell_width),
+                            self.hole_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * 1.5),
+                            None, 'black')
 
                 self.graph.DrawCircle(
                     ((x + self.offset_factor) * self.cell_width,
                      (y + self.offset_factor) * self.cell_width),
                     radius, color, border)
+
 
     def _draw_endlines(self):
         o = 2 * self.cell_width
