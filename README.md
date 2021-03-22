@@ -11,7 +11,7 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 ## Get started
 
-clone or download this repository and make sure you have Python 3.6, 3.7 or 3.8 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
+Clone or download this repository and make sure you have Python 3.6, 3.7 or 3.8 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
 
 
 ```
@@ -30,8 +30,6 @@ python tbui.py
 ```
 
 Ignore the tensorflow warnings and confirm the pop-up message that says that a settings file will be created. Wait a few seconds until the bots have been initialized. You should see the GUI with a clean TwixT board and the control bar on the right:
-
-
 
 
 ![Empty TwixT board](img/EmptyBoard.JPG)
@@ -55,7 +53,13 @@ Note that the network was trained with self-crossing links allowed, which can le
 
 ### Evaluation
 
-Before each move, the bot evaluates the board. The value head of the network returns a value in range [-1.0..1.0] that indicates the probability for a win of player1 and player2, resp. The policy head returns a value in range [0..1] for each legal move. A bar chart shows the top three moves. Parameter *temperature* [0, 0.5, 1.0] influences the policy, i.e. which move is picked. If *temperature* = 0 (default) the move with the highest value will be chosen.
+Before each move, the bot evaluates the board. The value head of the network returns a value in range [-1.0..1.0] that indicates the probability for a win of player1 and player2, resp. The control bar displays the current and past evaluations.<br>
+The policy head returns a value in range [0..1] for each legal move. A bar chart on the right shows the top three moves. Switch on the *Heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. There color coding is:
++ light green: close to 100% of best p
++ light blue: close to 50% of best p
++ dark blue: close to 0% of best p<br>
+
+![Heatmap](img/Heatmap.JPG)
 
 ### MCTS
 
@@ -69,9 +73,10 @@ Note that for the first move and the swap move the bot does not use MCTS.
 
 human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
 
+
 ### Undo, Resign, Reset
 
-Click these buttons to undo the last move, resign a game or start a new game, resp. You cannot click these buttons during MCTS. You cannot undo a move if the game is over. 
+Click these buttons to undo the last move, resign a game or start a new game, resp. You cannot click these buttons during MCTS.
 
 ### File | Settings...
 
@@ -113,13 +118,13 @@ Decrease c<sub>puct</sub> to move the needle towards exploitation, i.e reduce th
 
 [This site](https://medium.com/oracledevs/lessons-from-alphazero-part-3-parameter-tweaking-4dceb78ed1e5) has more details on temperature, dirichlet noise and cpuct.
 
-### File | Open File...
+### Loading and saving games 
 
-You can load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). After a game is loaded, the player names and the board are updated and you can continue to play as usual or undo (but not redo) moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game.
+Choose *File -> Open File...* to load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). It will take a few seconds to re-calculate the evaluation history. After a game is loaded, the player names and the board are updated and you can continue to play as usual or undo moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game. Choose *File -> Save file...* to save a game in T1J format; tsgf is not supported as a target. 
 
-#### *.T1j
+#### T1J files
 
-All rows except those for moves and player names are ignored. Each game is considered "unswapped" with player 1 to start. You can prepare T1j-like files in an editor: The first 13 lines need to be comments except lines 4 and 5 for the player names. Append one line per move in upper or lower case with *swap* and *resign* being valid moves. Note that these files cannot be read by T1j.
+When reading a T1J file all rows except those for moves and player names are ignored. Each game is considered "unswapped" with player 1 to start. You can prepare T1J-like files in an editor: The first 13 lines need to be comments except lines 4 and 5 for the player names. Append one line per move in upper or lower case with *swap* and *resign* being valid moves. Note that these files cannot be read by T1J.
 
 ```
 #
@@ -142,11 +147,7 @@ H18
 P12
 resign
 ```
- 
-#### *.tsgf
-
-This file format is used when a TwixT game is saved at [littlegolem.net](https://littlegolem.net/jsp/games/gamedetail.jsp?gtid=twixt).
- 
+  
 ### Contributors
 
 * [agtoever](https://github.com/agtoever)
