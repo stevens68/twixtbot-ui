@@ -123,6 +123,10 @@ def row_moves():
                          text_color=ct.OUTPUT_TEXT_COLOR, autoscroll=True,
                          key=ct.K_MOVES[1], disabled=True, size=(28, 6))]
 
+def row_heatmap():
+    return [text_label(ct.K_HEATMAP[0]),
+                    sg.Checkbox(
+        text="", enable_events=True, default=False, key=ct.K_HEATMAP[1],  size=(7 + ct.OFFSET, 1))]
 
 class MainWindowLayout():
 
@@ -163,7 +167,6 @@ class MainWindowLayout():
             sg.Button(ct.B_UNDO, size=(bw, 1)),
             sg.Button(ct.B_RESIGN, size=(bw, 1)),
             sg.Button(ct.B_RESET, size=(bw, 1)),
-            sg.Button(ct.B_HEATMAP, size=(bw, 1))
         ]
 
         control_col = sg.Column([row_colors(),
@@ -174,6 +177,7 @@ class MainWindowLayout():
                                  self.row_eval_num(),
                                  self.row_eval_hist(),
                                  self.row_eval_moves(),
+                                 row_heatmap(),
                                  row_trials(),
                                  row_visits(),
                                  row_progress_bar(),

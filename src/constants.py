@@ -85,6 +85,7 @@ K_HEATMAP = ['Heatmap']
 K_EVAL_BAR = ['evaluation', 'EVAL_BAR', None, 0]
 K_EVAL_NUM = ['', 'EVAL_NUM', None, ""]
 K_EVAL_MOVES = ['P * 1000', 'EVAL_MOVES', None, ""]
+K_HEATMAP = ['Heatmap', 'HEATMAP']
 K_EVAL_HIST = ['history', 'EVAL_HIST']
 K_PROGRESS_BAR = ['progress', 'PROGRESS_BAR']
 K_PROGRESS_NUM = ['', 'PROGRESS_NUMBERS']
@@ -125,9 +126,6 @@ B_CANCEL = "Cancel"
 B_UNDO = "Undo"
 B_RESIGN = "Resign"
 B_RESET = "Reset"
-B_HEATMAP = "Heatmap"
-
-
 B_APPLY_SAVE = 'Apply & Save'
 B_RESET_DEFAULT = 'Reset to default'
 B_EXIT = "Exit"
