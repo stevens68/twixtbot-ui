@@ -69,22 +69,22 @@ def parse_t1_file(content):
 
     Examples:
         >>> content = [
-            '# File created by T1j', 
-            '# T1j is a program to play TwixT (mail@johannes-schwagereit.de)', 
-            '1 # version of file-format', 
-            'Player# Name of Player 1', 
-            'Computer# Name of Player 2', 
-            '24# y-size of board', 
-            '24# x-size of board', 
-            'H# player 1 human or computer', 
-            'C# player 2 human or computer', 
-            '1# starting player (1 plays top-down)', 
-            'V# Direction of letters', 
-            'N# pierule?', 
-            'N# game already over?', 
-            'L10', 'L17', 'Q15', 'Q8',  'S12', 'P11', 'O14', 'P19', 'V18', 'U15', 
-            'V16', 'T17', 'U14', 'V17', 'W16', 'W15', 'F16', 'L19', 'F20', 'I14', 
-            'F12', 'X13', 'G14', 'G8',  'I9',  'J9',  'J7',  'E9',  'G10', 'N18', 
+            '# File created by T1j',
+            '# T1j is a program to play TwixT (mail@johannes-schwagereit.de)',
+            '1 # version of file-format',
+            'Player# Name of Player 1',
+            'Computer# Name of Player 2',
+            '24# y-size of board',
+            '24# x-size of board',
+            'H# player 1 human or computer',
+            'C# player 2 human or computer',
+            '1# starting player (1 plays top-down)',
+            'V# Direction of letters',
+            'N# pierule?',
+            'N# game already over?',
+            'L10', 'L17', 'Q15', 'Q8',  'S12', 'P11', 'O14', 'P19', 'V18', 'U15',
+            'V16', 'T17', 'U14', 'V17', 'W16', 'W15', 'F16', 'L19', 'F20', 'I14',
+            'F12', 'X13', 'G14', 'G8',  'I9',  'J9',  'J7',  'E9',  'G10', 'N18',
             'J3', 'G20', 'G18', 'E21'
         ]
         >>> parse_t1_file(content)
@@ -212,7 +212,7 @@ def save_game(players=['Player1', 'Player2'],
     Shows a file-save dialog to the user.
     The twixt game given by the function parameters are saved to the file.
     Only .T1 file format is currently supported.
-    Exceptions that occur while saving the file are handled within 
+    Exceptions that occur while saving the file are handled within
     this function.
 
     Args:
@@ -261,7 +261,7 @@ def save_game(players=['Player1', 'Player2'],
     try:
         with open(file_name, "tw") as f:
             f.write('\n'.join(content))
-    except:
+    except Exception:
         sg.popup_ok(f"Can't write {file_name}. Game is NOT saved!")
         return
 
