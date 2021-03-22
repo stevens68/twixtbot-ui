@@ -68,12 +68,29 @@ def parse_t1_file(content):
         ValueError: if players or moves data can't be interpreted
 
     Examples:
-        >>> content = ['# File created by T1j', '# T1j is a program to play TwixT (mail@johannes-schwagereit.de)', '1 # version of file-format', 'Player# Name of Player 1', 'Computer# Name of Player 2', '24# y-size of board', '24# x-size of board', 'H# player 1 human or computer', 'C# player 2 human or computer', '1# starting player (1 plays top-down)', 'V# Direction of letters', 'N# pierule?', 'N# game already over?', 'L10', 'L17', 'Q15', 'Q8', 'S12', 'P11', 'O14', 'P19', 'V18', 'U15', 'V16', 'T17', 'U14', 'V17', 'W16', 'W15', 'F16', 'L19', 'F20', 'I14', 'F12', 'X13', 'G14', 'G8', 'I9', 'J9', 'J7', 'E9', 'G10', 'N18', 'J3', 'G20', 'G18', 'E21']
+        >>> content = [
+            '# File created by T1j',
+            '# T1j is a program to play TwixT (mail@johannes-schwagereit.de)',
+            '1 # version of file-format',
+            'Player# Name of Player 1',
+            'Computer# Name of Player 2',
+            '24# y-size of board',
+            '24# x-size of board',
+            'H# player 1 human or computer',
+            'C# player 2 human or computer',
+            '1# starting player (1 plays top-down)',
+            'V# Direction of letters',
+            'N# pierule?',
+            'N# game already over?',
+            'L10', 'L17', 'Q15', 'Q8',  'S12', 'P11', 'O14', 'P19', 'V18', 'U15',
+            'V16', 'T17', 'U14', 'V17', 'W16', 'W15', 'F16', 'L19', 'F20', 'I14',
+            'F12', 'X13', 'G14', 'G8',  'I9',  'J9',  'J7',  'E9',  'G10', 'N18',
+            'J3', 'G20', 'G18', 'E21'
+        ]
         >>> parse_t1_file(content)
-        (['Player', 'Computer'],
-         [l10, l17, q15, q8, s12, p11, o14, p19, v18, u15, v16, t17, u14,
-          v17, w16, w15, f16, l19, f20, i14, f12, x13, g14, g8, i9, j9, j7,
-          e9, g10, n18, j3, g20, g18, e21])
+            (['Player', 'Computer'],
+             [l10, l17, q15, q8,  s12, p11, o14, p19, v18, u15, v16, t17, u14, v17, w16, w15, f16, 
+             l19, f20, i14, f12, x13, g14,  g8, i9,  j9, j7, e9, g10, n18, j3, g20, g18, e21])
     """
     MOVES_STARTLINE = 13
     PLAYER_LINES = [3, 4]
@@ -82,13 +99,13 @@ def parse_t1_file(content):
     try:
         players = [content[linenr].split(COMMENT_CHAR)[0]
                    for linenr in PLAYER_LINES]
-    except:
+    except Exception:
         raise ValueError("Can't read player names from T1 file")
 
     try:
         moves = [str2twixt(move) for move in content[MOVES_STARTLINE:]
                  if len(move) > 0]
-    except:
+    except Exception:
         # Just pass on the exception from str2twixt
         raise
 
@@ -108,9 +125,11 @@ def parse_tsgf_file(content):
         ValueError: if players or moves data can't be interpreted
 
     Examples:
-        >>> content = ['(;FF[4]EV[twixt.ld.DEFAULT]PB[agtoever]PW[Jan Krabbenbos]SZ[24]SO[https://www.littlegolem.net];b[pl];r[ps];b[pr];r[rt];b[ot];r[po];b[pn];r[qq];b[op];r[pg];b[nh];r[oj];b[oi];r[qi];b[nk];r[nf];b[mf])']
+        >>> content = [
+            '(;FF[4]EV[twixt.ld.DEFAULT]PB[agtoever]PW[Jan Krabbenbos]SZ[24]SO[https://www.littlegolem.net];b[pl];r[ps];b[pr];r[rt];b[ot];r[po];b[pn];r[qq];b[op];r[pg];b[nh];r[oj];b[oi];r[qi];b[nk];r[nf];b[mf])'
+        ]
         >>> parse_tsgf_file(content)
-        (['agtoever', 'Jan Krabbenbos'], [p12, p19, p18, r20, o20, p15, p14, q17, o16, p7, n8, o10, o9, q9, n11, n6, m6])
+            (['agtoever', 'Jan Krabbenbos'], [p12, p19, p18, r20, o20, p15, p14, q17, o16, p7, n8, o10, o9, q9, n11, n6, m6])
     """
     PLAYERS_STR = ('PB', 'PW')
     TURN_STR = ('r[', 'b[')
@@ -122,7 +141,7 @@ def parse_tsgf_file(content):
         player_idx = [content[0].find(key) for key in PLAYERS_STR]
         players = [content[0][idx + 3:content[0].find(']', idx)]
                    for idx in player_idx]
-    except:
+    except Exception:
         raise ValueError("Can't read player names from tsgf file")
 
     try:
@@ -130,7 +149,7 @@ def parse_tsgf_file(content):
                      for line in content[0].split(';')
                      if line[:2] in TURN_STR]
         moves = list(map(str2twixt, raw_moves))
-    except:
+    except Exception:
         # Just pass on the exception from str2twixt
         raise
 
@@ -166,7 +185,7 @@ def get_game():
     try:
         with open(file_name, "tr") as f:
             content = list(map(lambda s: s.strip(), f.readlines()))
-    except:
+    except Exception:
         sg.popup_ok(f"Can't open {file_name} as a valid Twixt file.")
         return None, None
 
@@ -193,7 +212,7 @@ def save_game(players=['Player1', 'Player2'],
     Shows a file-save dialog to the user.
     The twixt game given by the function parameters are saved to the file.
     Only .T1 file format is currently supported.
-    Exceptions that occur while saving the file are handled within 
+    Exceptions that occur while saving the file are handled within
     this function.
 
     Args:
@@ -242,7 +261,7 @@ def save_game(players=['Player1', 'Player2'],
     try:
         with open(file_name, "tw") as f:
             f.write('\n'.join(content))
-    except:
+    except Exception:
         sg.popup_ok(f"Can't write {file_name}. Game is NOT saved!")
         return
 

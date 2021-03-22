@@ -1,4 +1,3 @@
-import numpy
 import itertools
 import PySimpleGUI as sg
 import backend.board as board
@@ -72,7 +71,7 @@ class UiBoard(board.TwixtBoard):
             (self.cell_width * self.offset_factor,
              (self.offset_factor - 2) * self.cell_width),
             ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
-        
+
         # Draw the heatmap
         for i, rgb_col in enumerate(heatmap.heatmap_legend()):
             self.graph.DrawRectangle(
@@ -83,17 +82,19 @@ class UiBoard(board.TwixtBoard):
     def _draw_heatmap(self, heatmap=None):
         if not heatmap:
             return
-        
+
         for move, rgb_color in heatmap.rgb_colors.items():
             # Draw a circle around those moves with a p value
             self.graph.DrawCircle(
                 ((move.x + self.offset_factor) * self.cell_width,
                  (twixt.Game.SIZE - move.y - 1 + self.offset_factor) * self.cell_width),
-                self.hole_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * ct.HEATMAP_CIRCLE_FACTOR),
+                self.hole_radius *
+                (1 + ct.HEATMAP_RADIUS_FACTOR * ct.HEATMAP_CIRCLE_FACTOR),
                 None, ct.HEATMAP_CIRCLE_COLOR)
 
             radius = self.hole_radius
-            radius *= (1 + ct.HEATMAP_RADIUS_FACTOR * heatmap.p_values[move] ** 0.5)
+            radius *= (1 + ct.HEATMAP_RADIUS_FACTOR *
+                       heatmap.p_values[move] ** 0.5)
 
             # Draw colored circle
             self.graph.DrawCircle(
