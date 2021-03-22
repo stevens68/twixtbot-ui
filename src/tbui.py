@@ -293,7 +293,6 @@ class TwixtbotUI():
 
     # handle events
     def handle_heatmap(self):
-        lt.popup(ct.MSG_HEATMAP_CALCULATING)
         self.board.draw(hm.Heatmap(self.game, self.bots[self.game.turn]))
 
     def handle_board_click(self, values):
