@@ -182,7 +182,13 @@ class TwixtbotUI():
         self.get_control(ct.K_PROGRESS_BAR).UpdateBar(value, max_value)
 
     def update_after_move(self):
-        self.board.draw()
+        if self.get_control(ct.K_HEATMAP).get():
+            heatmap = hm.Heatmap(self.game, self.bots[self.game.turn])
+        else:
+            heatmap = None
+
+        self.board.draw(heatmap)
+
         self.window.refresh()
 
         # reset progress
@@ -193,7 +199,6 @@ class TwixtbotUI():
         self.update_evals()
 
     def update_settings_changed(self):
-
         self.board.draw()
         self.window.refresh()
         # update ui
@@ -292,9 +297,6 @@ class TwixtbotUI():
         self.thread.start()
 
     # handle events
-    def handle_heatmap(self):
-        self.board.draw(hm.Heatmap(self.game, self.bots[self.game.turn]))
-
     def handle_board_click(self, values):
         if self.game_over():
             return
@@ -509,8 +511,6 @@ class TwixtbotUI():
             if event == ct.K_BOARD[1]:
                 self.handle_board_click(values)
                 # self.update_after_move()
-            elif event == ct.B_HEATMAP:
-                self.handle_heatmap()
             elif event == ct.B_BOT_MOVE:
                 if not self.game_over():
                     # clear move statistics
@@ -525,6 +525,9 @@ class TwixtbotUI():
                 self.update_turn_indicators()
             elif event == ct.B_RESET:
                 self.reset_game()
+                self.update_after_move()
+            elif event == ct.K_HEATMAP[1]:
+                # force redraw of board after heatmap checkbox click
                 self.update_after_move()
 
 
