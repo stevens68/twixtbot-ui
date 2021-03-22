@@ -342,21 +342,16 @@ class TwixtbotUI():
         self.execute_move(twixt.RESIGN)
 
     def handle_undo(self):
-        if self.game_over():
+        if self.game.result == twixt.RESIGN:
+            self.game.result = None
             return
 
         gl = len(self.game.history)
-
         if gl in self.moves_score:
             del self.moves_score[gl]
 
-        if gl > 0 and gl != 2:
+        if gl > 0:
             self.game.undo()
-        elif gl == 2:
-            # move 2 might be a swap move => reset game and redo move #1
-            move_one = self.game.history[0]
-            self.reset_game()
-            self.execute_move(move_one)
 
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):
