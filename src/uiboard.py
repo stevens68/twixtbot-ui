@@ -1,4 +1,5 @@
 import numpy
+import itertools
 import PySimpleGUI as sg
 import backend.board as board
 import backend.twixt as twixt
@@ -27,9 +28,12 @@ class UiBoard(board.TwixtBoard):
     def draw(self, heatmap=None):
         self.graph.erase()
         self._draw_endlines()
-        self._draw_pegholes(heatmap)
-        self._draw_labels()
         self._draw_guidelines()
+        self._draw_pegholes()
+        if heatmap:
+            self._draw_heatmap_legend(heatmap)
+            self._draw_heatmap(heatmap)
+        self._draw_labels()
 
         if self.game.history is not None:
             for idx in range(len(self.game.history)):
@@ -61,36 +65,52 @@ class UiBoard(board.TwixtBoard):
                                      (self.size + self.offset_factor) * self.cell_width),
                                     ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
 
-    def _score_to_rgbstring(self, sc):
-        if sc > 0:
-            return '#00FF' + f'{int(255 * (1 - sc)):02x}'
-        return '#00' + f'{int(255 * (sc + 1)):02x}' + 'FF'
+    def _draw_heatmap_legend(self, heatmap):
+        # Draw the label for the heatmap
+        self.graph.DrawText(
+            ct.K_HEATMAP[0],
+            (self.cell_width * self.offset_factor,
+             (self.offset_factor - 2) * self.cell_width),
+            ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
+        
+        # Draw the heatmap
+        for i, rgb_col in enumerate(heatmap.heatmap_legend()):
+            self.graph.DrawRectangle(
+                (self.cell_width * (self.offset_factor + i + 2), 5),
+                (self.cell_width * (i + 3 + self.offset_factor), 15),
+                rgb_col, rgb_col)
 
-    def _draw_pegholes(self, heatmap=None):
-        for x in range(self.size):
-            for y in range(self.size):
-                if x in (0, self.size - 1) and y in (0, self.size - 1):
-                    continue
+    def _draw_heatmap(self, heatmap=None):
+        if not heatmap:
+            return
+        
+        for move, rgb_color in heatmap.rgb_colors.items():
+            # Draw a circle around those moves with a p value
+            self.graph.DrawCircle(
+                ((move.x + self.offset_factor) * self.cell_width,
+                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) * self.cell_width),
+                self.hole_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * ct.HEATMAP_CIRCLE_FACTOR),
+                None, ct.HEATMAP_CIRCLE_COLOR)
 
-                color = border = ct.PEG_HOLE_COLOR
-                radius = self.hole_radius
-                if heatmap:
-                    sc = heatmap.scores[x, twixt.Game.SIZE - y - 1]
-                    if not numpy.isnan(sc):
-                        color = self._score_to_rgbstring(sc)
-                        radius = self.peg_radius * (1 + ct.HEATMAP_RADIUS_FACTOR * abs(sc)) / 2
-                        
-                        move = chr(ord('a') + x) + str(twixt.Game.SIZE - y)
-                        if move in heatmap.policy_moves:
-                            print(f'{move} in {heatmap.policy_moves}')
-                            border = 'black'
-                        else:
-                            border = color
+            radius = self.hole_radius
+            radius *= (1 + ct.HEATMAP_RADIUS_FACTOR * heatmap.p_values[move] ** 0.5)
 
-                self.graph.DrawCircle(
-                    ((x + self.offset_factor) * self.cell_width,
-                     (y + self.offset_factor) * self.cell_width),
-                    radius, color, border)
+            # Draw colored circle
+            self.graph.DrawCircle(
+                ((move.x + self.offset_factor) * self.cell_width,
+                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) * self.cell_width),
+                radius, rgb_color, rgb_color)
+
+    def _draw_pegholes(self):
+        for x, y in itertools.product(range(self.size), range(self.size)):
+            # skip the 4 corners
+            if x in (0, self.size - 1) and y in (0, self.size - 1):
+                continue
+
+            self.graph.DrawCircle(
+                ((x + self.offset_factor) * self.cell_width,
+                 (y + self.offset_factor) * self.cell_width),
+                self.hole_radius, ct.PEG_HOLE_COLOR, ct.PEG_HOLE_COLOR)
 
     def _draw_endlines(self):
         o = 2 * self.cell_width
