@@ -78,6 +78,7 @@ K_SHOW_LABELS = ['show labels', 'SHOW_LABELS', None, True]
 K_SHOW_GUIDELINES = ['show guidelines', 'SHOW_GUIDELINES', None, False]
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
+K_HEATMAP = ['Heatmap']
 
 
 # non-setting keys
