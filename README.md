@@ -54,7 +54,7 @@ Note that the network was trained with self-crossing links allowed, which can le
 ### Evaluation
 
 Before each move, the bot evaluates the board. The value head of the network returns a value in range [-1.0..1.0] that indicates the probability for a win of player1 and player2, resp. The control bar displays the current and past evaluations.<br>
-The policy head returns a value in range [0..1] for each legal move. A bar chart on the right shows the top three moves. Switch on the *Heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. There color coding is:
+The policy head returns a value in range [0..1] for each legal move. A bar chart on the right shows the top three moves. Switch on the *Heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. The color coding is:
 + light green: close to 100% of best p
 + light blue: close to 50% of best p
 + dark blue: close to 0% of best p<br>
