@@ -42,6 +42,8 @@ SETTINGS_FILE = path.join(path.dirname(__file__), SETINGS_FILE_NAME)
 MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), '../model/pb'))
 SPINNER_IMAGE = str(pathlib.Path(__file__).parent.joinpath(
     r'../img/wheel.gif'))
+SPLASH_IMAGE = str(pathlib.Path(__file__).parent.joinpath(
+    r'../img/TwixtBotSplash.png'))
 
 # limits
 TRIALS_MAX = 50000
@@ -87,6 +89,8 @@ K_EVAL_NUM = ['', 'EVAL_NUM', None, ""]
 K_EVAL_MOVES = ['P * 1000', 'EVAL_MOVES', None, ""]
 K_HEATMAP = ['Heatmap:', 'HEATMAP']
 K_EVAL_HIST = ['history', 'EVAL_HIST']
+K_SPLASH_PROGRESS_BAR = ['SPLASH_PROGRESS_BAR']
+K_SPLASH_STATUS_TEXT = ['SPLASH_STATUS_TEXT']
 K_PROGRESS_BAR = ['progress', 'PROGRESS_BAR']
 K_PROGRESS_NUM = ['', 'PROGRESS_NUMBERS']
 K_SPINNER = ['', 'SPINNER']

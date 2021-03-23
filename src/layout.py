@@ -364,3 +364,28 @@ class AboutDialogLayout():
 
     def get_layout(self):
         return self.layout
+
+
+class SplashScreenLayout():
+    def __init__(self):
+        width = 50
+        bg = 'white'
+        tc = 'black'
+        self.layout = [
+            [sg.Image(ct.SPLASH_IMAGE, pad=(0,0))],
+            [sg.Text("twixtbot engine and network by Jordan Lampe\n"
+                     "https://github.com/BonyJordan/twixtbot\n\n"
+                     "twixtbot-ui frontend by stevens68 and contributors\n"
+                     "https://github.com/stevens68/twixtbot-ui",
+                     size=(width, 5), justification='center',
+                     background_color=bg, text_color=tc)],
+            [sg.ProgressBar(100, orientation='h', size=(30, 20),
+                key=ct.K_SPLASH_PROGRESS_BAR[0], relief='RELIEF_RIDGE',
+                bar_color=(ct.PROGRESS_BAR_COLOR,
+                           ct.OUTPUT_BACKGROUND_COLOR))],
+            [sg.Text("", size=(width, 1), key=ct.K_SPLASH_STATUS_TEXT[0],
+                     background_color=bg, text_color=tc)],
+        ]
+    
+    def get_layout(self):
+        return self.layout
