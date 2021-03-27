@@ -178,7 +178,7 @@ def get_game():
         ("T1j Files", "*.T1"),
         ("Little Golem Files", "*.tsgf")), no_window=True, keep_on_top=True)
 
-    if file_name is None:
+    if file_name is None or file_name == "":
         return None, None
 
     # Open file
@@ -229,7 +229,7 @@ def save_game(players=['Player1', 'Player2'],
     file_name = sg.PopupGetFile('Choose file', file_types=(
         ("T1j Files", "*.T1"),), no_window=True, save_as=True, keep_on_top=True)
 
-    if file_name is None:
+    if file_name is None or file_name == "":
         return
 
     # Build file contents

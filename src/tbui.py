@@ -1,9 +1,10 @@
-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import PySimpleGUI as sg
 import threading
+import time
 
 import backend.twixt as twixt
-
 import util.pmeter as pmeter
 
 import constants as ct
@@ -15,10 +16,6 @@ import heatmap as hm
 import uiboard
 
 from tkinter import ttk
-
-
-def popup_bot_in_progress():
-    lt.popup("bot in progress. Click Accept or Cancel.")
 
 
 class BotEvent(threading.Event):
@@ -35,18 +32,40 @@ class BotEvent(threading.Event):
         self.context = context
 
 
+class ProgressWindow(sg.Window):
+
+    def __init__(self):
+
+        layout = lt.SplashScreenLayout().get_layout()
+        super().__init__('twixtbot-ui', layout,
+                         background_color=sg.theme_background_color(), keep_on_top=True,
+                         finalize=True, margins=(15, 15))
+
+    def update(self, text, progress):
+        self.__getitem__(ct.K_SPLASH_PROGRESS_BAR[0]).UpdateBar(progress, 100)
+        self.__getitem__(ct.K_SPLASH_STATUS_TEXT[0]).Update(text)
+        self.refresh()
+
+
 class TwixtbotUI():
     def __init__(self, game, stgs, board):
+        # Show splash screen during init
+
+        init_window = ProgressWindow()
+        init_window.update('initializing GUI ...', 5)
+
+        # init class properties
         self.board = board
         self.game = game
         self.moves_score = {}
         self.stgs = stgs
+
+        # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
-        self.window = sg.Window(ct.WINDOW_TITLE, layout, margins=(25, 25))
-
-        # create the objects to update the bar chart
-
-        self.window.Finalize()
+        self.window = sg.Window(ct.WINDOW_TITLE,
+                                layout,
+                                margins=(25, 25),
+                                finalize=True)
 
         canvas = self.window[ct.K_EVAL_MOVES[1]].TKCanvas
         self.eval_moves_plot = pt.ThreeBarPlot(canvas, ct.EVAL_PLOT_COLOR)
@@ -58,9 +77,33 @@ class TwixtbotUI():
         canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
         self.eval_hist_plot = pt.EvalHistPlot(canvas, stgs)
 
+        # Apply settings
+        init_window.update('refreshing settings ...', 10)
         self.update_settings_changed()
-        self.prepare_bots()
+
+        # import
+        init_window.update('importing modules ...', 30)
+        import backend.nnmplayer as nnmplayer
+
+        # Initialize and warm-up bots
+        self.bots = [None, None]
+        init_window.update('initializing bot 1 ...', 50)
+        self.init_bot(1)
+
+        init_window.update('initializing bot 2 ...', 70)
+        self.init_bot(2)
+
+        init_window.update('warming up bots ...', 90)
+        self.bots[0].nm.eval_game(self.game)
+        self.bots[1].nm.eval_game(self.game)
+
+        # Update evaluation graph
         self.update_evals()
+
+        # Close and destroy splash window
+        init_window.update('ready to play', 100)
+        time.sleep(1)
+        init_window.close()
 
     def __del__(self):
         if hasattr(self, 'window'):
@@ -266,16 +309,6 @@ class TwixtbotUI():
         import backend.nnmplayer as nnmplayer
         self.bots[2 - player] = nnmplayer.Player(**args)
 
-    def prepare_bots(self):
-        lt.popup('initializing bots ... ')
-
-        self.bots = [None, None]
-        self.init_bot(1)
-        self.init_bot(2)
-        # warm-up bots before first move
-        self.bots[0].nm.eval_game(self.game)
-        self.bots[1].nm.eval_game(self.game)
-
     def bot_move(self):
         if len(self.game.history) >= 2 and self.get_current(ct.K_TRIALS) == 0 and self.next_move is not None:
             # we already have the next move from evaluation
@@ -401,7 +434,7 @@ class TwixtbotUI():
         elif event == ct.B_CANCEL:
             self.handle_cancel_bot()
         elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE]:
-            popup_bot_in_progress()
+            lt.popup("bot in progress. Click Accept or Cancel.")
 
     def thread_is_alive(self):
         return hasattr(self, 'thread') and self.thread is not None and self.thread.is_alive()
@@ -484,7 +517,7 @@ class TwixtbotUI():
             # blocking read when no bot is processing
             return self.window.read()
 
-    def handle_event(self, evet, values):
+    def handle_event(self, event, values):
         if event == ct.ITEM_SETTINGS:
             if self.settings_dialog() == ct.B_APPLY_SAVE:
                 self.update_settings_changed()
@@ -531,36 +564,37 @@ class TwixtbotUI():
                 self.update_after_move()
 
 
-# initialize settings from config.json
-stgs = st.Settings()
+def main():
+    # initialize settings from config.json
+    stgs = st.Settings()
 
-# initialize game, pass "allow self crossing links" setting
-game = twixt.Game(stgs.get_setting(ct.K_ALLOW_SCL[1]))
+    # initialize game, pass "allow self crossing links" setting
+    game = twixt.Game(stgs.get_setting(ct.K_ALLOW_SCL[1]))
 
-# initialize twixt board (draw it later)
-board = uiboard.UiBoard(game, stgs)
+    # initialize twixt board (draw it later)
+    board = uiboard.UiBoard(game, stgs)
 
-# initialize ui
-ui = TwixtbotUI(game, stgs, board)
+    # initialize ui
+    ui = TwixtbotUI(game, stgs, board)
+    # Event Loop
+    while True:
+        if not ui.game_over(False) and ui.get_current(ct.K_AUTO_MOVE):
+            # auto move case
+            if not ui.thread_is_alive():
+                ui.update_progress()
+                ui.launch_bot()
+
+        event, values = ui.get_event()
+
+        if event == "__TIMEOUT__":
+            continue
+
+        elif event == sg.WIN_CLOSED or event == ct.B_EXIT:
+            # exiting or closed
+            break
+
+        ui.handle_event(event, values)
 
 
-# Event Loop
-while True:
-    if not ui.game_over(False) and ui.get_current(ct.K_AUTO_MOVE):
-        # auto move case
-        if not ui.thread_is_alive():
-            ui.update_progress()
-            ui.launch_bot()
-
-    event, values = ui.get_event()
-
-    if event == "__TIMEOUT__":
-        continue
-    elif event == sg.WIN_CLOSED or event == ct.B_EXIT:
-        # exiting or closed
-        break
-
-    ui.handle_event(event, values)
-
-
-del ui
+if __name__ == "__main__":
+    main()

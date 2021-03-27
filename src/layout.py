@@ -366,3 +366,21 @@ class AboutDialogLayout():
 
     def get_layout(self):
         return self.layout
+
+
+class SplashScreenLayout():
+    def __init__(self):
+        width = 35
+        self.layout = [
+            [sg.ProgressBar(100, orientation='h', size=(30, 20),
+                            # 'default', 'winnative', 'clam', 'alt', 'classic', 'vista', 'xpnative'
+                            # relief='RELIEF_RIDGE',
+                            key=ct.K_SPLASH_PROGRESS_BAR[0],
+                            style='clam',
+                            bar_color=(ct.PROGRESS_BAR_COLOR, 'lightslategrey'))],
+            [sg.Text("", size=(width, 1), key=ct.K_SPLASH_STATUS_TEXT[0],
+                     background_color=sg.theme_background_color(), text_color=ct.OUTPUT_TEXT_COLOR)],
+        ]
+
+    def get_layout(self):
+        return self.layout
