@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import PySimpleGUI as sg
 import threading
+import time
 
 import backend.twixt as twixt
 import util.pmeter as pmeter
@@ -31,21 +32,33 @@ class BotEvent(threading.Event):
         self.context = context
 
 
+class ProgressWindow(sg.Window):
+
+    def __init__(self):
+
+        layout = lt.SplashScreenLayout().get_layout()
+        super().__init__('twixtbot-ui', layout,
+                         background_color=sg.theme_background_color(), keep_on_top=True,
+                         finalize=True, margins=(15, 15))
+
+    def update(self, text, progress):
+        self.__getitem__(ct.K_SPLASH_PROGRESS_BAR[0]).UpdateBar(progress, 100)
+        self.__getitem__(ct.K_SPLASH_STATUS_TEXT[0]).Update(text)
+        self.refresh()
+
+
 class TwixtbotUI():
     def __init__(self, game, stgs, board):
         # Show splash screen during init
-        self.splash = sg.Window('twixtbot-ui',
-                                lt.SplashScreenLayout().get_layout(),
-                                background_color='white', keep_on_top=True,
-                                finalize=True, margins=(15,15))
-        self.update_splash('Initializing GUI...', 10)
+
+        init_window = ProgressWindow()
+        init_window.update('initializing GUI ...', 5)
 
         # init class properties
         self.board = board
         self.game = game
         self.moves_score = {}
         self.stgs = stgs
-
 
         # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
@@ -64,30 +77,33 @@ class TwixtbotUI():
         canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
         self.eval_hist_plot = pt.EvalHistPlot(canvas, stgs)
 
-
         # Apply settings
-        self.update_splash('Refreshing settings...', 20)
+        init_window.update('refreshing settings ...', 10)
         self.update_settings_changed()
 
-        # Initialize and warmup bots
-        self.update_splash('Initializing AlphaZero bot 1...', 40)
+        # import
+        init_window.update('importing modules ...', 30)
+        import backend.nnmplayer as nnmplayer
+
+        # Initialize and warm-up bots
         self.bots = [None, None]
+        init_window.update('initializing bot 1 ...', 50)
         self.init_bot(1)
 
-        self.update_splash('Initializing AlphaZero bot 2...', 60)
+        init_window.update('initializing bot 2 ...', 70)
         self.init_bot(2)
 
-        self.update_splash('Warming up AlphaZero bots...', 90)
+        init_window.update('warming up bots ...', 90)
         self.bots[0].nm.eval_game(self.game)
         self.bots[1].nm.eval_game(self.game)
 
         # Update evaluation graph
-        self.update_splash('Get ready for some Twixt!', 100)
         self.update_evals()
-        
+
         # Close and destroy splash window
-        self.splash.close()
-        del self.splash
+        init_window.update('ready to play', 100)
+        time.sleep(1)
+        init_window.close()
 
     def __del__(self):
         if hasattr(self, 'window'):
@@ -95,10 +111,6 @@ class TwixtbotUI():
         del self.stgs
         del self.game
         del self.board
-
-    def update_splash(self, text, progress):
-        self.splash[ct.K_SPLASH_PROGRESS_BAR[0]].UpdateBar(progress, 100)
-        self.splash[ct.K_SPLASH_STATUS_TEXT[0]].Update(text)
 
     def get_control(self, key, player=None):
         return self.window[key[1]] if player is None else self.window[key[player]]
@@ -551,16 +563,17 @@ class TwixtbotUI():
                 # force redraw of board after heatmap checkbox click
                 self.update_after_move()
 
+
 def main():
     # initialize settings from config.json
     stgs = st.Settings()
-    
+
     # initialize game, pass "allow self crossing links" setting
     game = twixt.Game(stgs.get_setting(ct.K_ALLOW_SCL[1]))
-    
+
     # initialize twixt board (draw it later)
     board = uiboard.UiBoard(game, stgs)
-    
+
     # initialize ui
     ui = TwixtbotUI(game, stgs, board)
     # Event Loop
@@ -570,19 +583,18 @@ def main():
             if not ui.thread_is_alive():
                 ui.update_progress()
                 ui.launch_bot()
-    
+
         event, values = ui.get_event()
-    
+
         if event == "__TIMEOUT__":
             continue
 
         elif event == sg.WIN_CLOSED or event == ct.B_EXIT:
             # exiting or closed
             break
-    
+
         ui.handle_event(event, values)
 
 
 if __name__ == "__main__":
     main()
-

@@ -42,8 +42,6 @@ SETTINGS_FILE = path.join(path.dirname(__file__), SETINGS_FILE_NAME)
 MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), '../model/pb'))
 SPINNER_IMAGE = str(pathlib.Path(__file__).parent.joinpath(
     r'../img/wheel.gif'))
-SPLASH_IMAGE = str(pathlib.Path(__file__).parent.joinpath(
-    r'../img/TwixtBotSplash.png'))
 
 # limits
 TRIALS_MAX = 50000
