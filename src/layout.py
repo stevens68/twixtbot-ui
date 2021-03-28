@@ -312,6 +312,8 @@ class SettingsDialogLayout():
                            sg.Checkbox(text=None, default=ct.K_SHOW_LABELS[3], key=ct.K_SHOW_LABELS[1])],
                           [st_label(ct.K_SHOW_GUIDELINES[0]),
                            sg.Checkbox(text=None, default=ct.K_SHOW_GUIDELINES[3], key=ct.K_SHOW_GUIDELINES[1])],
+                          [st_label(ct.K_SHOW_CURSOR_LABEL[0]),
+                           sg.Checkbox(text=None, default=ct.K_SHOW_CURSOR_LABEL[3], key=ct.K_SHOW_CURSOR_LABEL[1])],
                           row_separator(""),
                           st_row_smart_accept()
 

@@ -6,6 +6,7 @@ import time
 
 import backend.twixt as twixt
 import util.pmeter as pmeter
+import pyautogui
 
 import constants as ct
 import settings as st
@@ -333,7 +334,8 @@ class TwixtbotUI():
     def handle_board_click(self, values):
         if self.game_over():
             return
-        move = self.board.get_move(values[ct.K_BOARD[1]])
+        print("click: ", values[ct.K_BOARD[1]])
+        move, _ = self.board.get_move(values[ct.K_BOARD[1]])
         if move is not None:
             # clear move statistics
             self.execute_move(move)
@@ -576,6 +578,15 @@ def main():
 
     # initialize ui
     ui = TwixtbotUI(game, stgs, board)
+
+    def motion(event):
+        if stgs.get_setting(ct.K_SHOW_CURSOR_LABEL[1]):
+            coords = (event.x, stgs.get_setting(ct.K_BOARD_SIZE[1]) - event.y)
+            _, move = board.get_move(coords)
+            board.draw_cursor_label(move)
+
+    ui.window["BOARD"].TKCanvas.bind('<Motion>', motion)
+
     # Event Loop
     while True:
         if not ui.game_over(False) and ui.get_current(ct.K_AUTO_MOVE):
