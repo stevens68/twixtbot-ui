@@ -23,7 +23,6 @@ class UiBoard(board.TwixtBoard):
         self.graph = sg.Graph(canvas_size=(bp, bp),
                               graph_bottom_left=(0, 0),
                               graph_top_right=(bp, bp),
-                              drag_submits=True,
                               background_color=ct.FIELD_BACKGROUND_COLOR,
                               key=ct.K_BOARD[1],
                               enable_events=True)

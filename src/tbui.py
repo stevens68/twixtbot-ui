@@ -6,7 +6,6 @@ import time
 
 import backend.twixt as twixt
 import util.pmeter as pmeter
-import pyautogui
 
 import constants as ct
 import settings as st
