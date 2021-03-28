@@ -594,6 +594,7 @@ def main():
                 ui.launch_bot()
 
         event, values = ui.get_event()
+        print(event, values)
 
         if event == "__TIMEOUT__":
             continue
