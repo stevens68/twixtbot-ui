@@ -88,6 +88,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 + *board size*: number of pixels of a side of the board (default: 600)
 + *show labels*: display labels for rows and columns (default: true)
 + *show guidelines*: display lines that lead into the corners (default: false)
++ *show cursor label*: displays the coordinates in tooltip at mouse coursor
 + *smart accept*: during MCTS, reduce the max number of trials automatically according to the lead of the best move (default: true)
 
 #### Tab *Player 1 / 2*
