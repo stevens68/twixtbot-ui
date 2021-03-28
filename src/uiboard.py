@@ -1,4 +1,3 @@
-import numpy
 import itertools
 import PySimpleGUI as sg
 import backend.board as board

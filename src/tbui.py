@@ -40,7 +40,7 @@ class ProgressWindow(sg.Window):
         layout = lt.SplashScreenLayout().get_layout()
         super().__init__('twixtbot-ui', layout,
                          background_color=sg.theme_background_color(), keep_on_top=True,
-                         finalize=True, margins=(15, 15), modal=True)
+                         finalize=True, margins=(15, 15))
 
     def update(self, text, progress):
         self.__getitem__(ct.K_SPLASH_PROGRESS_BAR[0]).UpdateBar(progress, 100)
@@ -360,7 +360,7 @@ class TwixtbotUI():
                 self.execute_move(m)
                 self.calc_eval()
                 # self.update_after_move()
-        except:
+        except Exception:
             lt.popup("invalid move: " + str(m))
 
         self.update_after_move()
