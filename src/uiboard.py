@@ -11,8 +11,11 @@ class UiBoard(board.TwixtBoard):
         super().__init__(stgs)
 
         self.game = game
+        self.current_cursor_label = None
+        self.rect_item = None
 
         bp = stgs.get_setting(ct.K_BOARD_SIZE[1])
+        self.cursor_label_factor = bp / ct.K_BOARD_SIZE[3]
         self.cell_width = bp / (twixt.Game.SIZE + 4)
         self.peg_radius = self.cell_width / 3.8
         self.hole_radius = self.cell_width / 10
@@ -37,6 +40,23 @@ class UiBoard(board.TwixtBoard):
         if self.game.history is not None:
             for idx in range(len(self.game.history)):
                 self.create_move_objects(idx)
+
+    def draw_cursor_label(self, move):
+        if move is None and self.current_cursor_label is not None:
+            # remove current
+            self.graph.delete_figure(self.current_cursor_label)
+            self.current_cursor_label = None
+            self.graph.delete_figure(self.rect_item)
+        elif move is not None and self.current_cursor_label is None:
+            (x, y) = self._point_to_coords(self._move_to_point(move))
+            coords = (x - 2 * self.cursor_label_factor,
+                      y + 15 * self.cursor_label_factor)
+            self.current_cursor_label = self.graph.DrawText(move.upper(), coords,
+                                                            ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
+            tl, br = self.graph.GetBoundingBox(self.current_cursor_label)
+            self.rect_item = self.graph.DrawRectangle(
+                tl, br, line_color=ct.CURSOR_LABEL_BACKGROUND_COLOR, fill_color=ct.CURSOR_LABEL_BACKGROUND_COLOR, line_width=3)
+            self.graph.BringFigureToFront(self.current_cursor_label)
 
     def _draw_labels(self):
         if self.stgs.get_setting(ct.K_SHOW_LABELS[1]):
@@ -144,6 +164,15 @@ class UiBoard(board.TwixtBoard):
 
     def get_move(self, coords):
 
+        # returns (legalmove, pegposition)
+        # pegposition:
+        #    has the move coordinates of the peghole the mouse points to,
+        #    None if the mouse doesn't point to a valid peghole
+        # legalmove:
+        #    can be none if mouse doesn't point to a legal move
+        #    can be swap if moise points to move #1
+        #    equals pegposition otherwise
+
         offset = self.offset_factor * self.cell_width
         x = (coords[0] - offset) / self.cell_width
         y = (coords[1] - offset) / self.cell_width
@@ -154,32 +183,32 @@ class UiBoard(board.TwixtBoard):
         ygap = abs(y - round(y))
         if xgap > maxgap or ygap > maxgap:
             # click not on hole
-            return None
+            return None, None
 
         x = round(x)
         y = round(y)
         move = chr(ord('a') + x) + "%d" % (self.size - y)
         if len(self.game.history) == 1 and self._move_to_point(
                 move) == self.game.history[0] and self.stgs.get_setting(ct.K_ALLOW_SWAP[1]):
-            return twixt.SWAP
+            return twixt.SWAP, move
 
         if x < 0 or x > self.size - 1 or y < 0 or y > self.size - 1:
             # overboard click
-            return None
+            return None, None
         elif (x == 0 or x == self.size - 1) and (y == 0 or y == self.size - 1):
             # corner click
-            return None
+            return None, None
         elif ((x == 0 or x == self.size - 1) and len(self.game.history) % 2 == 0):
             # white clicked on black's end line
-            return None
+            return None, move
         elif ((y == 0 or y == self.size - 1) and len(self.game.history) % 2 == 1):
             # black clicked white's end line
-            return None
+            return None, move
 
         if not self.valid_spot(move):
-            return None
+            return None, move
 
-        return move
+        return move, move
 
     def valid_spot(self, move):
 

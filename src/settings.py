@@ -45,15 +45,21 @@ class Settings():
                     min(ct.BOARD_SIZE_LIST), self.settings[ct.K_BOARD_SIZE[1]])
         except Exception:
             sg.popup(ct.MSG_NO_CONFIG_FILE, keep_on_top=True)
-
             self.settings = {}
-            for key in ct.SETTING_KEYS:
-                # player 1 defaults
-                self.settings[key[1]] = key[3]
-                if len(key) == 5:
-                    # player 2 defaults
-                    self.settings[key[2]] = key[4]
 
+        # set defaults for settings that haven't been found in config file
+        changes = False
+        for key in ct.SETTING_KEYS:
+            # general and player 1 defaults
+            if key[1] not in self.settings:
+                self.settings[key[1]] = key[3]
+                changes = True
+            if len(key) == 5 and key[2] not in self.settings:
+                # player 2 defaults
+                self.settings[key[2]] = key[4]
+                changes = True
+
+        if changes:
             self.save()
 
     def save(self, values=None):
