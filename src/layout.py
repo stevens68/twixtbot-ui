@@ -159,16 +159,16 @@ class MainWindowLayout():
         menu_def = [[ct.ITEM_FILE, [ct.ITEM_OPEN_FILE, ct.ITEM_SAVE_FILE, ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
                     [ct.ITEM_HELP, [ct.ITEM_ABOUT]]]
 
-        button_count = 7
+        button_count = 6
         bw = int(self.stgs.get_setting(
-            ct.K_BOARD_SIZE[1]) / (button_count * 9))
+            ct.K_BOARD_SIZE[1]) / (button_count * 10))
         button_row = [
             sg.Button(ct.B_BOT_MOVE, size=(bw, 1), focus=True),
             sg.Button(ct.B_ACCEPT, size=(bw, 1)),
             sg.Button(ct.B_CANCEL, size=(bw, 1)),
             sg.Button(ct.B_UNDO, size=(bw, 1)),
             sg.Button(ct.B_RESIGN, size=(bw, 1)),
-            sg.Button(ct.B_RESET, size=(bw, 1)),
+            sg.Button(ct.B_RESET, size=(bw, 1))
         ]
 
         control_col = sg.Column([row_colors(),

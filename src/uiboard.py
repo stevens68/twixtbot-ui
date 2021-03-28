@@ -51,13 +51,13 @@ class UiBoard(board.TwixtBoard):
             self.graph.delete_figure(self.rect_item)
         elif move is not None and self.current_cursor_label is None:
             (x, y) = self._point_to_coords(self._move_to_point(move))
-            coords = (x - 3 * self.cursor_label_factor,
-                      y + 11 * self.cursor_label_factor)
+            coords = (x - 2 * self.cursor_label_factor,
+                      y + 15 * self.cursor_label_factor)
             self.current_cursor_label = self.graph.DrawText(move.upper(), coords,
-                                                            "black", ct.BOARD_LABEL_FONT)
+                                                            ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
             tl, br = self.graph.GetBoundingBox(self.current_cursor_label)
             self.rect_item = self.graph.DrawRectangle(
-                tl, br, line_color="white", fill_color="white", line_width=3)
+                tl, br, line_color=ct.CURSOR_LABEL_BACKGROUND_COLOR, fill_color=ct.CURSOR_LABEL_BACKGROUND_COLOR, line_width=3)
             self.graph.BringFigureToFront(self.current_cursor_label)
 
     def _draw_labels(self):

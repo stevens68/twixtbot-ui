@@ -40,7 +40,7 @@ class ProgressWindow(sg.Window):
         layout = lt.SplashScreenLayout().get_layout()
         super().__init__('twixtbot-ui', layout,
                          background_color=sg.theme_background_color(), keep_on_top=True,
-                         finalize=True, margins=(15, 15))
+                         finalize=True, margins=(15, 15), modal=True)
 
     def update(self, text, progress):
         self.__getitem__(ct.K_SPLASH_PROGRESS_BAR[0]).UpdateBar(progress, 100)
