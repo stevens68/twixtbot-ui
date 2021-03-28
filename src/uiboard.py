@@ -13,6 +13,7 @@ class UiBoard(board.TwixtBoard):
 
         self.game = game
         self.current_cursor_label = None
+        self.rect_item = None
 
         bp = stgs.get_setting(ct.K_BOARD_SIZE[1])
         self.cursor_label_factor = bp / ct.K_BOARD_SIZE[3]
@@ -47,12 +48,17 @@ class UiBoard(board.TwixtBoard):
             # remove current
             self.graph.delete_figure(self.current_cursor_label)
             self.current_cursor_label = None
+            self.graph.delete_figure(self.rect_item)
         elif move is not None and self.current_cursor_label is None:
             (x, y) = self._point_to_coords(self._move_to_point(move))
-            coords = (x - 5 * self.cursor_label_factor,
+            coords = (x - 3 * self.cursor_label_factor,
                       y + 11 * self.cursor_label_factor)
             self.current_cursor_label = self.graph.DrawText(move.upper(), coords,
-                                                            ct.CURSOR_LABEL_COLOR, ct.BOARD_LABEL_FONT)
+                                                            "black", ct.BOARD_LABEL_FONT)
+            tl, br = self.graph.GetBoundingBox(self.current_cursor_label)
+            self.rect_item = self.graph.DrawRectangle(
+                tl, br, line_color="white", fill_color="white", line_width=3)
+            self.graph.BringFigureToFront(self.current_cursor_label)
 
     def _draw_labels(self):
         if self.stgs.get_setting(ct.K_SHOW_LABELS[1]):

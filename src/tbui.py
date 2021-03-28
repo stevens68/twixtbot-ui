@@ -334,7 +334,6 @@ class TwixtbotUI():
     def handle_board_click(self, values):
         if self.game_over():
             return
-        print("click: ", values[ct.K_BOARD[1]])
         move, _ = self.board.get_move(values[ct.K_BOARD[1]])
         if move is not None:
             # clear move statistics

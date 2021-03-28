@@ -12,7 +12,6 @@ VISITS_PLOT_COLOR = "blue"
 PEG_HOLE_COLOR = "grey"
 BOARD_LABEL_COLOR = "black"
 BOARD_LABEL_FONT = ("Arial", 9)
-CURSOR_LABEL_COLOR = "white"
 GUIDELINE_COLOR = "#b3b3b3"
 PLOT_LABEL_COLOR = "black"
 PLOT_LABEL_FONT = ("Arial", 9)
@@ -21,6 +20,9 @@ OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
               "lightgreen", "purple", "red", "yellow", "white"]
 FIELD_BACKGROUND_COLOR = "lightgrey"
+
+CURSOR_LABEL_COLOR = "white"
+
 HEATMAP_CIRCLE_COLOR = 'black'
 HEATMAP_RADIUS_FACTOR = 2
 HEATMAP_CIRCLE_FACTOR = 1.5
