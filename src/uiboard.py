@@ -14,7 +14,7 @@ class UiBoard(board.TwixtBoard):
         self.current_cursor_label = None
         self.rect_item = None
 
-        bp = stgs.get_setting(ct.K_BOARD_SIZE[1])
+        bp = stgs.get(ct.K_BOARD_SIZE[1])
         self.cursor_label_factor = bp / ct.K_BOARD_SIZE[3]
         self.cell_width = bp / (twixt.Game.SIZE + 4)
         self.peg_radius = self.cell_width / 3.8
@@ -59,7 +59,7 @@ class UiBoard(board.TwixtBoard):
             self.graph.BringFigureToFront(self.current_cursor_label)
 
     def _draw_labels(self):
-        if self.stgs.get_setting(ct.K_SHOW_LABELS[1]):
+        if self.stgs.get(ct.K_SHOW_LABELS[1]):
             for i in range(self.size):
                 row_label = "%d" % (self.size - i)
                 # left row label
@@ -138,16 +138,16 @@ class UiBoard(board.TwixtBoard):
         s = self.size - 1
         w = self.cell_width
         self.graph.DrawLine((o + 1 * w, o + 1 * w + w / 3),
-                            (o + 1 * w, o + s * w - w / 3), self.stgs.get_setting(ct.K_COLOR[2]), 3)
+                            (o + 1 * w, o + s * w - w / 3), self.stgs.get(ct.K_COLOR[2]), 3)
         self.graph.DrawLine((o + s * w, o + 1 * w + w / 3),
-                            (o + s * w, o + s * w - w / 3), self.stgs.get_setting(ct.K_COLOR[2]), 3)
+                            (o + s * w, o + s * w - w / 3), self.stgs.get(ct.K_COLOR[2]), 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + 1 * w),
-                            (o + s * w - w / 3, o + 1 * w), self.stgs.get_setting(ct.K_COLOR[1]), 3)
+                            (o + s * w - w / 3, o + 1 * w), self.stgs.get(ct.K_COLOR[1]), 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + s * w),
-                            (o + s * w - w / 3, o + s * w), self.stgs.get_setting(ct.K_COLOR[1]), 3)
+                            (o + s * w - w / 3, o + s * w), self.stgs.get(ct.K_COLOR[1]), 3)
 
     def _draw_guidelines(self):
-        if self.stgs.get_setting(ct.K_SHOW_GUIDELINES[1]):
+        if self.stgs.get(ct.K_SHOW_GUIDELINES[1]):
             for p in [((1,  1), (15,  8)),
                       ((15,  8), (22, 22)),
                       ((22, 22), (8, 15)),
@@ -189,7 +189,7 @@ class UiBoard(board.TwixtBoard):
         y = round(y)
         move = chr(ord('a') + x) + "%d" % (self.size - y)
         if len(self.game.history) == 1 and self._move_to_point(
-                move) == self.game.history[0] and self.stgs.get_setting(ct.K_ALLOW_SWAP[1]):
+                move) == self.game.history[0] and self.stgs.get(ct.K_ALLOW_SWAP[1]):
             return twixt.SWAP, move
 
         if x < 0 or x > self.size - 1 or y < 0 or y > self.size - 1:

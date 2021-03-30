@@ -77,6 +77,30 @@ class TwixtbotUI():
         canvas = self.window[ct.K_EVAL_HIST[1]].TKCanvas
         self.eval_hist_plot = pt.EvalHistPlot(canvas, stgs)
 
+        def motion(event):
+            if stgs.get(ct.K_SHOW_CURSOR_LABEL[1]):
+                coords = (event.x, stgs.get(
+                    ct.K_BOARD_SIZE[1]) - event.y)
+                _, move = board.get_move(coords)
+                board.draw_cursor_label(move)
+
+        self.window["BOARD"].TKCanvas.bind('<Motion>', motion)
+
+        self.window.bind('<Alt-b>', ct.B_BOT_MOVE)
+        self.window.bind('<Alt-a>', ct.B_ACCEPT)
+        self.window.bind('<Alt-c>', ct.B_CANCEL)
+        self.window.bind('<Alt-u>', ct.B_UNDO)
+        self.window.bind('<Alt-g>', ct.B_RESIGN)
+        self.window.bind('<Alt-r>', ct.B_RESET)
+        self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
+        self.window.bind('<Alt-KeyPress-1>', ct.EVENT_SHORTCUT_AUTOMOVE_1)
+        self.window.bind('<Alt-KeyPress-2>', ct.EVENT_SHORTCUT_AUTOMOVE_2)
+        self.window.bind('<Alt-Right->', ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
+        self.window.bind('<Alt-Left->', ct.EVENT_SHORTCUT_TRIALS_1_MINUS)
+        self.window.bind('<Alt-Shift-Right->', ct.EVENT_SHORTCUT_TRIALS_2_PLUS)
+        self.window.bind('<Alt-Shift-Left->',
+                         ct.EVENT_SHORTCUT_TRIALS_2_MINUS)
+
         # Apply settings
         init_window.update('refreshing settings ...', 10)
         self.update_settings_changed()
@@ -193,8 +217,8 @@ class TwixtbotUI():
     def update_evalbar_colors(self):
         s = ttk.Style()
         ebs = self.window[ct.K_EVAL_BAR[1]].TKProgressBar.style_name
-        s.configure(ebs, background=self.stgs.get_setting(ct.K_COLOR[1]))
-        s.configure(ebs, troughcolor=self.stgs.get_setting(ct.K_COLOR[2]))
+        s.configure(ebs, background=self.stgs.get(ct.K_COLOR[1]))
+        s.configure(ebs, troughcolor=self.stgs.get(ct.K_COLOR[2]))
 
     def update_progress(self, values=None):
         if values is None:
@@ -205,7 +229,7 @@ class TwixtbotUI():
             max_value = values["max"]
             value = values["current"]
 
-            if self.stgs.get_setting(ct.K_SMART_ACCEPT[1]) and "Y" in values:
+            if self.stgs.get(ct.K_SMART_ACCEPT[1]) and "Y" in values:
                 diff = values["Y"][0] - values["Y"][1]
                 if diff > max_value - value:
                     # 2nd best cannot catch up => accept
@@ -247,16 +271,16 @@ class TwixtbotUI():
         # update ui
         for p in [1, 2]:
             self.get_control(ct.K_NAME, p).Update(
-                self.stgs.get_setting(ct.K_NAME[p]))
+                self.stgs.get(ct.K_NAME[p]))
             self.get_control(ct.K_COLOR, p).erase()
             self.get_control(ct.K_COLOR, p).DrawCircle((7, 9), 6,
-                                                       self.stgs.get_setting(
+                                                       self.stgs.get(
                                                            ct.K_COLOR[p]),
-                                                       self.stgs.get_setting(ct.K_COLOR[p]))
+                                                       self.stgs.get(ct.K_COLOR[p]))
             self.get_control(ct.K_AUTO_MOVE, p).Update(
-                self.stgs.get_setting(ct.K_AUTO_MOVE[p]))
+                self.stgs.get(ct.K_AUTO_MOVE[p]))
             self.get_control(ct.K_TRIALS, p).Update(
-                self.stgs.get_setting(ct.K_TRIALS[p]))
+                self.stgs.get(ct.K_TRIALS[p]))
 
         self.update_turn_indicators()
         self.update_tooltips()
@@ -266,13 +290,13 @@ class TwixtbotUI():
         self.update_game()
 
     def reset_game(self):
-        self.game.__init__(self.stgs.get_setting(ct.K_ALLOW_SCL[1]))
+        self.game.__init__(self.stgs.get(ct.K_ALLOW_SCL[1]))
         self.moves_score = {}
         # get eval of empty board to avoid gap at x=0 in plot in loaded games
         self.calc_eval()
 
     def update_game(self):
-        self.game.allow_scl = self.stgs.get_setting(ct.K_ALLOW_SCL[1])
+        self.game.allow_scl = self.stgs.get(ct.K_ALLOW_SCL[1])
 
     # bot functions
 
@@ -280,29 +304,29 @@ class TwixtbotUI():
         for t in [0, 1]:
             if hasattr(self, 'bots') and self.bots[t] is not None:
                 p = self.game.turn_to_player(t)
-                self.bots[t].allow_swap = self.stgs.get_setting(
+                self.bots[t].allow_swap = self.stgs.get(
                     ct.K_ALLOW_SWAP[1])
                 self.bots[t].num_trials = int(
-                    self.stgs.get_setting(ct.K_TRIALS[p]))
+                    self.stgs.get(ct.K_TRIALS[p]))
                 self.bots[t].temperature = float(
-                    self.stgs.get_setting(ct.K_TEMPERATURE[p]))
-                self.bots[t].random_rotation = self.stgs.get_setting(
+                    self.stgs.get(ct.K_TEMPERATURE[p]))
+                self.bots[t].random_rotation = self.stgs.get(
                     ct.K_RANDOM_ROTATION[p])
                 self.bots[t].add_noise = float(
-                    self.stgs.get_setting(ct.K_ADD_NOISE[p]))
+                    self.stgs.get(ct.K_ADD_NOISE[p]))
                 self.bots[t].nm.cpuct = float(
-                    self.stgs.get_setting(ct.K_CPUCT[p]))
+                    self.stgs.get(ct.K_CPUCT[p]))
 
     def init_bot(self, player):
 
         args = {
-            "allow_swap": self.stgs.get_setting(ct.K_ALLOW_SWAP[1]),
-            "model": self.stgs.get_setting(ct.K_MODEL_FOLDER[player]),
-            "trials": self.stgs.get_setting(ct.K_TRIALS[player]),
-            "temperature": self.stgs.get_setting(ct.K_TEMPERATURE[player]),
-            "random_rotation": self.stgs.get_setting(ct.K_RANDOM_ROTATION[player]),
-            "add_noise": self.stgs.get_setting(ct.K_ADD_NOISE[player]),
-            "cpuct": self.stgs.get_setting(ct.K_CPUCT[player])
+            "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
+            "model": self.stgs.get(ct.K_MODEL_FOLDER[player]),
+            "trials": self.stgs.get(ct.K_TRIALS[player]),
+            "temperature": self.stgs.get(ct.K_TEMPERATURE[player]),
+            "random_rotation": self.stgs.get(ct.K_RANDOM_ROTATION[player]),
+            "add_noise": self.stgs.get(ct.K_ADD_NOISE[player]),
+            "cpuct": self.stgs.get(ct.K_CPUCT[player])
 
         }
 
@@ -442,7 +466,7 @@ class TwixtbotUI():
     def game_over(self, display_message=True):
         if self.game.just_won():
             if display_message:
-                lt.popup('Game over: ' + self.stgs.get_setting(
+                lt.popup('Game over: ' + self.stgs.get(
                     ct.K_NAME[3 - self.game.turn_to_player()]) + ' has won!')
             return True
 
@@ -517,51 +541,134 @@ class TwixtbotUI():
             # blocking read when no bot is processing
             return self.window.read()
 
-    def handle_event(self, event, values):
-        if event == ct.ITEM_SETTINGS:
+    def handle_menue_event(self, event, values):
+        if event == ct.ITEM_SETTINGS.replace('&', ''):
             if self.settings_dialog() == ct.B_APPLY_SAVE:
                 self.update_settings_changed()
-        elif event == ct.ITEM_ABOUT:
+            return True
+
+        if event == ct.ITEM_ABOUT.replace('&', ''):
             self.about_dialog()
-        elif event == ct.ITEM_OPEN_FILE:
+            return True
+
+        if event == ct.ITEM_OPEN_FILE.replace('&', ''):
             self.handle_open_file()
-        elif event == ct.ITEM_SAVE_FILE:
+            return True
+
+        if event == ct.ITEM_SAVE_FILE.replace('&', ''):
             self.handle_save_file()
-        elif st.key_like(event,  ['AUTO_MOVE', 'TRIALS']):
-            # handle trials sliders and auto-move check boxes
+            return True
+
+        return False
+
+    def handle_button_event(self, event, values):
+        if event == ct.B_BOT_MOVE:
+            if not self.game_over():
+                # clear move statistics
+                self.visit_plot.update()
+                self.update_progress()
+                self.launch_bot()
+            return True
+
+        if event == ct.B_UNDO:
+            self.handle_undo()
+            self.update_after_move()
+            return True
+
+        if event == ct.B_RESIGN:
+            self.handle_resign()
+            self.update_turn_indicators()
+            return True
+
+        if event == ct.B_RESET:
+            self.reset_game()
+            self.update_after_move()
+            return True
+
+        return False
+
+    def handle_shortcut_event(self, event, values):
+        if event == ct.EVENT_SHORTCUT_HEATMAP:
+            # toggle heatmap checkbox and redraw board
+            self.get_control(ct.K_HEATMAP).Update(
+                not self.get_control(ct.K_HEATMAP).get())
+            self.update_after_move()
+            return True
+
+        if event == ct.EVENT_SHORTCUT_AUTOMOVE_1:
+            check = self.get_control(ct.K_AUTO_MOVE, 1).get()
+            self.get_control(ct.K_AUTO_MOVE, 1).Update(not check)
+            self.stgs.set(ct.K_AUTO_MOVE[1], not check)
+            return True
+
+        if event == ct.EVENT_SHORTCUT_AUTOMOVE_2:
+            check = self.get_control(ct.K_AUTO_MOVE, 2).get()
+            self.get_control(ct.K_AUTO_MOVE, 2).Update(not check)
+            self.stgs.set(ct.K_AUTO_MOVE[2], not check)
+            return True
+
+        def update_slider(player, func, limit, factor):
+            trials_new = func(self.get_control(
+                ct.K_TRIALS, player).Widget.get() + factor * ct.TRIALS_RESOLUTION, limit)
+            self.stgs.set(ct.K_TRIALS[player], trials_new)
+            self.get_control(ct.K_TRIALS, player).Update(trials_new)
+            self.update_bots()
+            return True
+
+        if event == ct.EVENT_SHORTCUT_TRIALS_1_PLUS:
+            return update_slider(1, min, ct.TRIALS_MAX, 1)
+        if event == ct.EVENT_SHORTCUT_TRIALS_1_MINUS:
+            return update_slider(1, max, 0, -1)
+        if event == ct.EVENT_SHORTCUT_TRIALS_2_PLUS:
+            return update_slider(2, min, ct.TRIALS_MAX, 1)
+        if event == ct.EVENT_SHORTCUT_TRIALS_2_MINUS:
+            return update_slider(2, max, 0, -1)
+
+        return False
+
+    def handle_event(self, event, values):
+
+        # menue events
+        if self.handle_menue_event(event, values):
+            return
+
+        # keyboard shortcurt event (buttons and control bar)
+        if self.handle_shortcut_event(event, values):
+            return
+
+        # click on auto move or trials (no shortcuts)
+        if event in [ct.K_AUTO_MOVE[1], ct.K_AUTO_MOVE[2], ct.K_TRIALS[1], ct.K_TRIALS[2]]:
+            # handle trials sliders, auto-move check and heatmap boxes
             self.stgs.update(event, values)
             self.update_bots()
-        elif event == ct.K_THREAD[1]:
+            return
+
+        # click on heatmap (no short
+        if event == ct.K_HEATMAP[1]:
+            self.update_after_move()
+            return
+
+        # thread events
+        if event == ct.K_THREAD[1]:
             # handle event sent from bot
             self.handle_thread_event(values[ct.K_THREAD[1]])
+            return
 
+        # button events while bot is processing (Accept, Cancel)
         if self.thread_is_alive():
-            # while bot is processing: handle Accept and Cancel
             self.handle_accept_and_cancel(event)
-        else:
-            # unless bot is processing: handle click on board and buttons other
-            # than Accept, Cancel
-            if event == ct.K_BOARD[1]:
-                self.handle_board_click(values)
-                # self.update_after_move()
-            elif event == ct.B_BOT_MOVE:
-                if not self.game_over():
-                    # clear move statistics
-                    self.visit_plot.update()
-                    self.update_progress()
-                    self.launch_bot()
-            elif event == ct.B_UNDO:
-                self.handle_undo()
-                self.update_after_move()
-            elif event == ct.B_RESIGN:
-                self.handle_resign()
-                self.update_turn_indicators()
-            elif event == ct.B_RESET:
-                self.reset_game()
-                self.update_after_move()
-            elif event == ct.K_HEATMAP[1]:
-                # force redraw of board after heatmap checkbox click
-                self.update_after_move()
+            return
+
+        # button events while bot is not processing
+        if self.handle_button_event(event, values):
+            return
+
+        # click on board event
+        if event == ct.K_BOARD[1]:
+            self.handle_board_click(values)
+            return
+
+        # other events go here...
 
 
 def main():
@@ -569,21 +676,13 @@ def main():
     stgs = st.Settings()
 
     # initialize game, pass "allow self crossing links" setting
-    game = twixt.Game(stgs.get_setting(ct.K_ALLOW_SCL[1]))
+    game = twixt.Game(stgs.get(ct.K_ALLOW_SCL[1]))
 
     # initialize twixt board (draw it later)
     board = uiboard.UiBoard(game, stgs)
 
     # initialize ui
     ui = TwixtbotUI(game, stgs, board)
-
-    def motion(event):
-        if stgs.get_setting(ct.K_SHOW_CURSOR_LABEL[1]):
-            coords = (event.x, stgs.get_setting(ct.K_BOARD_SIZE[1]) - event.y)
-            _, move = board.get_move(coords)
-            board.draw_cursor_label(move)
-
-    ui.window["BOARD"].TKCanvas.bind('<Motion>', motion)
 
     # Event Loop
     while True:

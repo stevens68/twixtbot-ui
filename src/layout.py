@@ -138,8 +138,8 @@ class MainWindowLayout():
         self.layout = self.build_layout()
 
     def row_eval_bar(self):
-        colors = (self.stgs.get_setting(ct.K_COLOR[1]),
-                  self.stgs.get_setting(ct.K_COLOR[2]))
+        colors = (self.stgs.get(ct.K_COLOR[1]),
+                  self.stgs.get(ct.K_COLOR[2]))
         return [text_label(ct.K_EVAL_BAR[0]), sg.ProgressBar(2000, orientation='h', size=(21.5, 8), key=ct.K_EVAL_BAR[1],
                                                              bar_color=colors)]
 
@@ -160,7 +160,7 @@ class MainWindowLayout():
                     [ct.ITEM_HELP, [ct.ITEM_ABOUT]]]
 
         button_count = 6
-        bw = int(self.stgs.get_setting(
+        bw = int(self.stgs.get(
             ct.K_BOARD_SIZE[1]) / (button_count * 10))
         button_row = [
             sg.Button(ct.B_BOT_MOVE, size=(bw, 1), focus=True),
@@ -286,7 +286,7 @@ def st_tab_player(player):
             st_row_random_rotation(player),
             row_separator("   MCTS"),
             st_row_trials(player),
-            st_row_smart_root(player),
+            # st_row_smart_root(player),  # removed for now
             st_row_temperature(player),
             st_row_add_noise(player),
             st_row_cpuct(player),

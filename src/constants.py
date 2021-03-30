@@ -119,13 +119,13 @@ MSG_NO_CONFIG_FILE = 'No settings file found.\nCreating ' + \
     SETINGS_FILE_NAME + ' with default settings.'
 MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. Key = '
 
-ITEM_FILE = "File"
-ITEM_OPEN_FILE = "Open File..."
-ITEM_SAVE_FILE = "Save File..."
-ITEM_SETTINGS = "Settings..."
-ITEM_EXIT = "Exit"
-ITEM_HELP = "Help"
-ITEM_ABOUT = "About..."
+ITEM_FILE = "&File"
+ITEM_OPEN_FILE = "&Open File..."
+ITEM_SAVE_FILE = "&Save File..."
+ITEM_SETTINGS = "Se&ttings..."
+ITEM_EXIT = "E&xit"
+ITEM_HELP = "&Help"
+ITEM_ABOUT = "&About..."
 
 B_BOT_MOVE = "Bot Move"
 B_ACCEPT = "Accept"
@@ -137,7 +137,15 @@ B_APPLY_SAVE = 'Apply & Save'
 B_RESET_DEFAULT = 'Reset to default'
 B_EXIT = "Exit"
 
-TAB_LABEL_GENERAL = "General"
-TAB_LABEL_PLAYER1 = "Player 1"
-TAB_LABEL_PLAYER2 = "Player 2"
-TAB_LABEL_APPEARANCE = "Appearance"
+TAB_LABEL_GENERAL = "&General"
+TAB_LABEL_PLAYER1 = "Player &1"
+TAB_LABEL_PLAYER2 = "Player &2"
+
+# shortcut events for checkboxes
+EVENT_SHORTCUT_HEATMAP = 'SHORTCUT_HEATMAP'
+EVENT_SHORTCUT_AUTOMOVE_1 = 'SHORTCUT_AUTOMOVE_1'
+EVENT_SHORTCUT_AUTOMOVE_2 = 'SHORTCUT_AUTOMOVE_2'
+EVENT_SHORTCUT_TRIALS_1_PLUS = 'SHORTCUT_TRIALS_1_PLUS'
+EVENT_SHORTCUT_TRIALS_1_MINUS = 'SHORTCUT_TRIALS_1_MINUS'
+EVENT_SHORTCUT_TRIALS_2_PLUS = 'SHORTCUT_TRIALS_2_PLUS'
+EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'

@@ -63,8 +63,8 @@ class EvalHistPlot():
 
     def sc_to_color(self, sc):
         if sc > 0:
-            return self.stgs.get_setting(ct.K_COLOR[1])
-        return self.stgs.get_setting(ct.K_COLOR[2])
+            return self.stgs.get(ct.K_COLOR[1])
+        return self.stgs.get(ct.K_COLOR[2])
 
     def update(self, values=None):
         # clear the subplot
