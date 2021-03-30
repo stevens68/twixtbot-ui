@@ -95,6 +95,11 @@ class TwixtbotUI():
         self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
         self.window.bind('<Alt-KeyPress-1>', ct.EVENT_SHORTCUT_AUTOMOVE_1)
         self.window.bind('<Alt-KeyPress-2>', ct.EVENT_SHORTCUT_AUTOMOVE_2)
+        self.window.bind('<Alt-Right->', ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
+        self.window.bind('<Alt-Left->', ct.EVENT_SHORTCUT_TRIALS_1_MINUS)
+        self.window.bind('<Alt-Shift-Right->', ct.EVENT_SHORTCUT_TRIALS_2_PLUS)
+        self.window.bind('<Alt-Shift-Left->',
+                         ct.EVENT_SHORTCUT_TRIALS_2_MINUS)
 
         # Apply settings
         init_window.update('refreshing settings ...', 10)
@@ -602,6 +607,23 @@ class TwixtbotUI():
             self.stgs.set(ct.K_AUTO_MOVE[2], not check)
             return True
 
+        def update_slider(player, func, limit, factor):
+            trials_new = func(self.get_control(
+                ct.K_TRIALS, player).Widget.get() + factor * ct.TRIALS_RESOLUTION, limit)
+            self.stgs.set(ct.K_TRIALS[player], trials_new)
+            self.get_control(ct.K_TRIALS, player).Update(trials_new)
+            self.update_bots()
+            return True
+
+        if event == ct.EVENT_SHORTCUT_TRIALS_1_PLUS:
+            return update_slider(1, min, ct.TRIALS_MAX, 1)
+        if event == ct.EVENT_SHORTCUT_TRIALS_1_MINUS:
+            return update_slider(1, max, 0, -1)
+        if event == ct.EVENT_SHORTCUT_TRIALS_2_PLUS:
+            return update_slider(2, min, ct.TRIALS_MAX, 1)
+        if event == ct.EVENT_SHORTCUT_TRIALS_2_MINUS:
+            return update_slider(2, max, 0, -1)
+
         return False
 
     def handle_event(self, event, values):
@@ -610,8 +632,12 @@ class TwixtbotUI():
         if self.handle_menue_event(event, values):
             return
 
+        # keyboard shortcurt event (buttons and control bar)
+        if self.handle_shortcut_event(event, values):
+            return
+
         # click on auto move or trials (no shortcuts)
-        if st.key_like(event,  ['AUTO_MOVE', 'TRIALS']):
+        if event in [ct.K_AUTO_MOVE[1], ct.K_AUTO_MOVE[2], ct.K_TRIALS[1], ct.K_TRIALS[2]]:
             # handle trials sliders, auto-move check and heatmap boxes
             self.stgs.update(event, values)
             self.update_bots()
@@ -642,10 +668,6 @@ class TwixtbotUI():
             self.handle_board_click(values)
             return
 
-        # keyboard shortcurt event (buttons and control bar)
-        if self.handle_shortcut_event(event, values):
-            return
-
         # other events go here...
 
 
@@ -671,7 +693,6 @@ def main():
                 ui.launch_bot()
 
         event, values = ui.get_event()
-        print(event, values)
 
         if event == "__TIMEOUT__":
             continue

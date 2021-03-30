@@ -5,13 +5,6 @@ import pathlib
 import constants as ct
 
 
-def key_like(key, key_list):
-    for k in key_list:
-        if k in key:
-            return True
-    return False
-
-
 class Settings():
 
     def __init__(self):
@@ -30,7 +23,7 @@ class Settings():
         self.settings[key[game.turn_to_player()]] = value
 
     def update(self, event, values):
-        if key_like(event, ['TRIALS']):
+        if event in [ct.K_TRIALS[1], ct.K_TRIALS[2]]:
             self.settings[event] = int(values[event])
         else:
             self.settings[event] = values[event]

@@ -11,8 +11,16 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 ## Get started
 
-Clone or download this repository and make sure you have Python 3.6, 3.7 or 3.8 installed including pip. At the command line, change to the twixtbot-ui directory and install the necessary modules:
+make sure you have Python3 installed. The Python version needs to support tensorflow2. As of Mar 2021 this is true for Python 3.6, 3.7 and 3.8 (64bit). Do not use Python 3.9. Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
 
+```
+python --version
+
+python -c "import struct; print( 8 * struct.calcsize('P'))"
+
+```
+
+Clone or download this repository. At the command line, change to the twixtbot-ui directory and install the necessary modules:
 
 ```
 python -m pip install -r requirements.txt
@@ -148,6 +156,32 @@ H18
 P12
 resign
 ```
+
+### Keyboard shortcuts
+
+<table id="verticalalign">
+    <thead>
+        <tr>
+            <th>Menus</th>
+            <th>Buttons</th>
+            <th>Checkboxes</th>
+            <th>Sliders</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td align="left" valign="top"><i>File</i>: <kbd>Alt</kbd>+<kbd>f</kbd><br><i>Help</i>: <kbd>Alt</kbd>+<kbd>h</kbd></td>
+            <td align="left" valign="top"><i>Bot Move</i>: <kbd>Alt</kbd>+<kbd>b</kbd><br><i>Accept</i>: <kbd>Alt</kbd>+<kbd>a</kbd><br><i>Cancel</i>: <kbd>Alt</kbd>+<kbd>c</kbd><br><i>Undo</i>: <kbd>Alt</kbd>+<kbd>u</kbd><br><i>Resign</i>: <kbd>Alt</kbd>+<kbd>g</kbd><br><i>Reset</i>: <kbd>Alt</kbd>+<kbd>r</kbd></td>
+            <td align="left" valign="top"><i>auto move</i> 1: <kbd>Alt</kbd>+<kbd>1</kbd><br><i>auto move</i> 2: <kbd>Alt</kbd>+<kbd>2</kbd><br><i>Heatmap</i>: <kbd>Alt</kbd>+<kbd>m</kbd></td>
+            <td align="left" valign="top"><i>MCTS trials</i> 1: <kbd>Alt</kbd>+<kbd>&#8592</kbd>, <kbd>Alt</kbd>+<kbd>&#8594</kbd><br><i>MCTS trials</i> 2: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>&#8592</kbd>, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>&#8594</kbd></td>
+        </tr>
+    </tbody>
+</table>
+
+left arrow: ← &#8592;
+upward arrow: ↑ &#8593;
+right arrow: → &#8594;
+downward arrow: ↓ &#8595;
   
 ### Contributors
 
