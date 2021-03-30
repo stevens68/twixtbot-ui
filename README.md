@@ -178,11 +178,7 @@ resign
     </tbody>
 </table>
 
-left arrow: ← &#8592;
-upward arrow: ↑ &#8593;
-right arrow: → &#8594;
-downward arrow: ↓ &#8595;
-  
+
 ### Contributors
 
 * [agtoever](https://github.com/agtoever)
