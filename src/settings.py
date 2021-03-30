@@ -17,8 +17,11 @@ class Settings():
     def __init__(self):
         self.load()
 
-    def get_setting(self, key):
+    def get(self, key):
         return self.settings[key]
+
+    def set(self, key, value):
+        self.settings[key] = value
 
     def get_current(self, key, game):
         return self.settings[key[game.turn_to_player()]]
@@ -33,8 +36,8 @@ class Settings():
             self.settings[event] = values[event]
 
     def same_models(self):
-        return pathlib.Path(self.get_setting(ct.K_MODEL_FOLDER[1])).absolute() == \
-            pathlib.Path(self.get_setting(ct.K_MODEL_FOLDER[2])).absolute()
+        return pathlib.Path(self.get(ct.K_MODEL_FOLDER[1])).absolute() == \
+            pathlib.Path(self.get(ct.K_MODEL_FOLDER[2])).absolute()
 
     def load(self):
         try:
@@ -100,32 +103,32 @@ class Settings():
         for key in ct.SETTING_KEYS:
             k = key[1]
             try:
-                window[k].update(value=self.get_setting(k))
+                window[k].update(value=self.get(k))
                 if len(key) > 4:
                     # player2
                     k = key[2]
-                    window[k].update(value=self.get_setting(k))
+                    window[k].update(value=self.get(k))
             except Exception as e:
                 print(ct.MSG_ERROR_UPDATING_KEY + k + ": " + str(e))
 
     def get_tooltip(self, player):
         # show settings on mouse over auto-move check box
         text = ct.K_ALLOW_SWAP[0] + ":\t" + \
-            str(self.get_setting(ct.K_ALLOW_SWAP[1])) + "   \n"
+            str(self.get(ct.K_ALLOW_SWAP[1])) + "   \n"
         text += "allow scl" + ":\t" + \
-            str(self.get_setting(ct.K_ALLOW_SCL[1])) + "   \n"
+            str(self.get(ct.K_ALLOW_SCL[1])) + "   \n"
         text += ct.K_SMART_ACCEPT[0] + ":\t" + \
-            str(self.get_setting(ct.K_SMART_ACCEPT[1])) + "   \n"
+            str(self.get(ct.K_SMART_ACCEPT[1])) + "   \n"
         text += "----  evaluation  ------------------\n"
         text += ct.K_MODEL_FOLDER[0] + ":\t" + \
-            str(self.get_setting(ct.K_MODEL_FOLDER[player])) + "   \n"
+            str(self.get(ct.K_MODEL_FOLDER[player])) + "   \n"
         text += ct.K_RANDOM_ROTATION[0] + ":\t" + \
-            str(self.get_setting(ct.K_RANDOM_ROTATION[player])) + "   \n"
+            str(self.get(ct.K_RANDOM_ROTATION[player])) + "   \n"
         text += "----  MCTS  ------------------------\n"
         text += ct.K_TEMPERATURE[0] + ":\t" + \
-            str(self.get_setting(ct.K_TEMPERATURE[player])) + "   \n"
+            str(self.get(ct.K_TEMPERATURE[player])) + "   \n"
         text += ct.K_ADD_NOISE[0] + ":\t" + \
-            str(self.get_setting(ct.K_ADD_NOISE[player])) + "   \n"
+            str(self.get(ct.K_ADD_NOISE[player])) + "   \n"
         text += ct.K_CPUCT[0] + ":\t\t" + \
-            str(self.get_setting(ct.K_CPUCT[player])) + "   "
+            str(self.get(ct.K_CPUCT[player])) + "   "
         return text
