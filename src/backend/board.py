@@ -157,7 +157,7 @@ class TwixtBoard:
         nho.objects = objs
         # end set_nn_inputs
 
-    def _create_drawn_peg(self, point, coloridx, outline_move=False):
+    def _create_drawn_peg(self, point, coloridx):
         if coloridx == 1:
             color = self.stgs.get(ct.K_COLOR[1])
         else:
