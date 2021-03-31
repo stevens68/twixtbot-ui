@@ -138,8 +138,8 @@ class MainWindowLayout():
         self.layout = self.build_layout()
 
     def row_eval_bar(self):
-        colors = (self.stgs.get_setting(ct.K_COLOR[1]),
-                  self.stgs.get_setting(ct.K_COLOR[2]))
+        colors = (self.stgs.get(ct.K_COLOR[1]),
+                  self.stgs.get(ct.K_COLOR[2]))
         return [text_label(ct.K_EVAL_BAR[0]), sg.ProgressBar(2000, orientation='h', size=(21.5, 8), key=ct.K_EVAL_BAR[1],
                                                              bar_color=colors)]
 
@@ -159,16 +159,16 @@ class MainWindowLayout():
         menu_def = [[ct.ITEM_FILE, [ct.ITEM_OPEN_FILE, ct.ITEM_SAVE_FILE, ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
                     [ct.ITEM_HELP, [ct.ITEM_ABOUT]]]
 
-        button_count = 7
-        bw = int(self.stgs.get_setting(
-            ct.K_BOARD_SIZE[1]) / (button_count * 9))
+        button_count = 6
+        bw = int(self.stgs.get(
+            ct.K_BOARD_SIZE[1]) / (button_count * 10))
         button_row = [
             sg.Button(ct.B_BOT_MOVE, size=(bw, 1), focus=True),
             sg.Button(ct.B_ACCEPT, size=(bw, 1)),
             sg.Button(ct.B_CANCEL, size=(bw, 1)),
             sg.Button(ct.B_UNDO, size=(bw, 1)),
             sg.Button(ct.B_RESIGN, size=(bw, 1)),
-            sg.Button(ct.B_RESET, size=(bw, 1)),
+            sg.Button(ct.B_RESET, size=(bw, 1))
         ]
 
         control_col = sg.Column([row_colors(),
@@ -286,7 +286,7 @@ def st_tab_player(player):
             st_row_random_rotation(player),
             row_separator("   MCTS"),
             st_row_trials(player),
-            st_row_smart_root(player),
+            # st_row_smart_root(player),  # removed for now
             st_row_temperature(player),
             st_row_add_noise(player),
             st_row_cpuct(player),
@@ -312,6 +312,8 @@ class SettingsDialogLayout():
                            sg.Checkbox(text=None, default=ct.K_SHOW_LABELS[3], key=ct.K_SHOW_LABELS[1])],
                           [st_label(ct.K_SHOW_GUIDELINES[0]),
                            sg.Checkbox(text=None, default=ct.K_SHOW_GUIDELINES[3], key=ct.K_SHOW_GUIDELINES[1])],
+                          [st_label(ct.K_SHOW_CURSOR_LABEL[0]),
+                           sg.Checkbox(text=None, default=ct.K_SHOW_CURSOR_LABEL[3], key=ct.K_SHOW_CURSOR_LABEL[1])],
                           row_separator(""),
                           st_row_smart_accept()
 

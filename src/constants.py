@@ -12,6 +12,7 @@ VISITS_PLOT_COLOR = "blue"
 PEG_HOLE_COLOR = "grey"
 BOARD_LABEL_COLOR = "black"
 BOARD_LABEL_FONT = ("Arial", 9)
+CURSOR_LABEL_BACKGROUND_COLOR = "white"
 GUIDELINE_COLOR = "#b3b3b3"
 PLOT_LABEL_COLOR = "black"
 PLOT_LABEL_FONT = ("Arial", 9)
@@ -20,6 +21,8 @@ OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
               "lightgreen", "purple", "red", "yellow", "white"]
 FIELD_BACKGROUND_COLOR = "lightgrey"
+
+
 HEATMAP_CIRCLE_COLOR = 'black'
 HEATMAP_RADIUS_FACTOR = 2
 HEATMAP_CIRCLE_FACTOR = 1.5
@@ -76,6 +79,8 @@ K_ADD_NOISE = ['add noise', 'P1_ADD_NOISE', 'P2_ADD_NOISE', 0.0, 0.0]
 K_BOARD_SIZE = ['board size (pixels)', 'BOARD_SIZE', None, 600]
 K_SHOW_LABELS = ['show labels', 'SHOW_LABELS', None, True]
 K_SHOW_GUIDELINES = ['show guidelines', 'SHOW_GUIDELINES', None, False]
+K_SHOW_CURSOR_LABEL = ['show cursor label', 'SHOW_CURSOR_LABEL', None, False]
+
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
 K_HEATMAP = ['Heatmap']
@@ -102,7 +107,7 @@ SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
                 K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_RANDOM_ROTATION,
                 K_BOARD_SIZE,
-                K_SHOW_LABELS, K_SHOW_GUIDELINES]
+                K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL]
 
 
 WINDOW_TITLE = 'twixtbot-ui'
@@ -114,13 +119,13 @@ MSG_NO_CONFIG_FILE = 'No settings file found.\nCreating ' + \
     SETINGS_FILE_NAME + ' with default settings.'
 MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. Key = '
 
-ITEM_FILE = "File"
-ITEM_OPEN_FILE = "Open File..."
-ITEM_SAVE_FILE = "Save File..."
-ITEM_SETTINGS = "Settings..."
-ITEM_EXIT = "Exit"
-ITEM_HELP = "Help"
-ITEM_ABOUT = "About..."
+ITEM_FILE = "&File"
+ITEM_OPEN_FILE = "&Open File..."
+ITEM_SAVE_FILE = "&Save File..."
+ITEM_SETTINGS = "Se&ttings..."
+ITEM_EXIT = "E&xit"
+ITEM_HELP = "&Help"
+ITEM_ABOUT = "&About..."
 
 B_BOT_MOVE = "Bot Move"
 B_ACCEPT = "Accept"
@@ -132,7 +137,15 @@ B_APPLY_SAVE = 'Apply & Save'
 B_RESET_DEFAULT = 'Reset to default'
 B_EXIT = "Exit"
 
-TAB_LABEL_GENERAL = "General"
-TAB_LABEL_PLAYER1 = "Player 1"
-TAB_LABEL_PLAYER2 = "Player 2"
-TAB_LABEL_APPEARANCE = "Appearance"
+TAB_LABEL_GENERAL = "&General"
+TAB_LABEL_PLAYER1 = "Player &1"
+TAB_LABEL_PLAYER2 = "Player &2"
+
+# shortcut events for checkboxes
+EVENT_SHORTCUT_HEATMAP = 'SHORTCUT_HEATMAP'
+EVENT_SHORTCUT_AUTOMOVE_1 = 'SHORTCUT_AUTOMOVE_1'
+EVENT_SHORTCUT_AUTOMOVE_2 = 'SHORTCUT_AUTOMOVE_2'
+EVENT_SHORTCUT_TRIALS_1_PLUS = 'SHORTCUT_TRIALS_1_PLUS'
+EVENT_SHORTCUT_TRIALS_1_MINUS = 'SHORTCUT_TRIALS_1_MINUS'
+EVENT_SHORTCUT_TRIALS_2_PLUS = 'SHORTCUT_TRIALS_2_PLUS'
+EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'

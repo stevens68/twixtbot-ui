@@ -159,9 +159,9 @@ class TwixtBoard:
 
     def _create_drawn_peg(self, point, coloridx):
         if coloridx == 1:
-            color = self.stgs.get_setting(ct.K_COLOR[1])
+            color = self.stgs.get(ct.K_COLOR[1])
         else:
-            color = self.stgs.get_setting(ct.K_COLOR[2])
+            color = self.stgs.get(ct.K_COLOR[2])
 
         peg = self.graph.DrawCircle(self._point_to_coords(
             point), self.peg_radius, color, color)
@@ -197,9 +197,9 @@ class TwixtBoard:
 
     def _create_drawn_link(self, p1, p2, color):
         # carray = [gr.color_rgb(0,0,0), gr.color_rgb(150,150,150), gr.color_rgb(255,0,0)]
-        carray = [self.stgs.get_setting(ct.K_COLOR[2]),
-                  self.stgs.get_setting(ct.K_COLOR[1]),
-                  self.stgs.get_setting(ct.K_COLOR[1])]
+        carray = [self.stgs.get(ct.K_COLOR[2]),
+                  self.stgs.get(ct.K_COLOR[1]),
+                  self.stgs.get(ct.K_COLOR[1])]
 
         line = self.graph.DrawLine(self._point_to_coords(
             p1), self._point_to_coords(p2), carray[color], 5)
