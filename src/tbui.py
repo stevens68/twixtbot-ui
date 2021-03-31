@@ -93,6 +93,7 @@ class TwixtbotUI():
         self.window.bind('<Alt-g>', ct.B_RESIGN)
         self.window.bind('<Alt-r>', ct.B_RESET)
         self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
+        self.window.bind('<Alt-p>', ct.EVENT_SHORTCUT_SHOW_POLICY)
         self.window.bind('<Alt-KeyPress-1>', ct.EVENT_SHORTCUT_AUTOMOVE_1)
         self.window.bind('<Alt-KeyPress-2>', ct.EVENT_SHORTCUT_AUTOMOVE_2)
         self.window.bind('<Alt-Right->', ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
@@ -193,7 +194,18 @@ class TwixtbotUI():
 
         return sc, moves, P
 
+    def clear_evals(self):
+        self.get_control(ct.K_EVAL_NUM).Update('')
+        self.get_control(ct.K_EVAL_BAR).Update(0)
+        self.eval_moves_plot.update()
+        self.eval_hist_plot.update()
+        self.visit_plot.update()
+
     def update_evals(self):
+        if not self.get_control(ct.K_SHOW_POLICY).get():
+            self.clear_evals()
+            return
+
         if not self.game_over(False):
             sc, moves, P = self.calc_eval()
 
@@ -263,7 +275,9 @@ class TwixtbotUI():
 
         self.update_turn_indicators()
         self.update_history()
-        self.update_evals()
+        
+        if self.get_control(ct.K_SHOW_POLICY).get():
+            self.update_evals()
 
     def update_settings_changed(self):
         self.board.draw()
@@ -643,9 +657,14 @@ class TwixtbotUI():
             self.update_bots()
             return
 
-        # click on heatmap (no short
+        # click on heatmap (no shortcuts)
         if event == ct.K_HEATMAP[1]:
             self.update_after_move()
+            return
+
+        # click on show_policy (no shortcuts)
+        if event == ct.K_SHOW_POLICY[1]:
+            self.update_evals()
             return
 
         # thread events

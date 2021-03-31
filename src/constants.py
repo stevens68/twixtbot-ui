@@ -84,7 +84,8 @@ K_SHOW_CURSOR_LABEL = ['show cursor label', 'SHOW_CURSOR_LABEL', None, False]
 
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
-K_HEATMAP = ['Heatmap']
+K_HEATMAP = ['Heatmap', 'HEATMAP']
+K_SHOW_POLICY = ['Show policy', 'SHOW_POLICY', True]
 
 
 # non-setting keys
@@ -144,6 +145,7 @@ TAB_LABEL_PLAYER2 = "Player &2"
 
 # shortcut events for checkboxes
 EVENT_SHORTCUT_HEATMAP = 'SHORTCUT_HEATMAP'
+EVENT_SHORTCUT_SHOW_POLICY = 'SHORTCUT_SHOW_POLICY'
 EVENT_SHORTCUT_AUTOMOVE_1 = 'SHORTCUT_AUTOMOVE_1'
 EVENT_SHORTCUT_AUTOMOVE_2 = 'SHORTCUT_AUTOMOVE_2'
 EVENT_SHORTCUT_TRIALS_1_PLUS = 'SHORTCUT_TRIALS_1_PLUS'
