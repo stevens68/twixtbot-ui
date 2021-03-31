@@ -159,15 +159,12 @@ class TwixtBoard:
 
     def _create_drawn_peg(self, point, coloridx, outline_move=False):
         if coloridx == 1:
-            color = lcolor = self.stgs.get(ct.K_COLOR[1])
+            color = self.stgs.get(ct.K_COLOR[1])
         else:
-            color = lcolor = self.stgs.get(ct.K_COLOR[2])
-        
-        if outline_move:
-            lcolor = ct.SHOW_LAST_MOVE[1]
+            color = self.stgs.get(ct.K_COLOR[2])
 
         peg = self.graph.DrawCircle(self._point_to_coords(
-            point), self.peg_radius, color, lcolor, ct.SHOW_LAST_MOVE[2])
+            point), self.peg_radius, color, color)
         return peg
 
     def create_move_objects(self, game, index):
@@ -186,8 +183,7 @@ class TwixtBoard:
         nho = TBWHistory(move)
         self.history.append(nho)
 
-        outline_move = ct.SHOW_LAST_MOVE[0] and index == len(game.history) - 1
-        nho.objects.append(self._create_drawn_peg(move, color, outline_move))
+        nho.objects.append(self._create_drawn_peg(move, color))
         self.known_moves.add(move)
 
         for dlink in game.DLINKS:
