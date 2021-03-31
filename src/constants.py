@@ -21,6 +21,7 @@ OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
               "lightgreen", "purple", "red", "yellow", "white"]
 FIELD_BACKGROUND_COLOR = "lightgrey"
+SHOW_LAST_MOVE = [True, 'yellow', 2]  # bool: show/don't show, border color, border size
 
 
 HEATMAP_CIRCLE_COLOR = 'black'
