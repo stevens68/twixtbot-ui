@@ -23,6 +23,7 @@ class BotEvent(threading.Event):
 
     def __init__(self):
         super().__init__()
+        self.context = None
 
     def get_context(self):
         return self.context
@@ -59,6 +60,7 @@ class TwixtbotUI():
         self.game = game
         self.moves_score = {}
         self.stgs = stgs
+        self.bot_event = None
 
         # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
@@ -93,7 +95,7 @@ class TwixtbotUI():
         self.window.bind('<Alt-g>', ct.B_RESIGN)
         self.window.bind('<Alt-r>', ct.B_RESET)
         self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
-        self.window.bind('<Alt-p>', ct.EVENT_SHORTCUT_SHOW_POLICY)
+        self.window.bind('<Alt-e>', ct.EVENT_SHORTCUT_SHOW_EVALUATION)
         self.window.bind('<Alt-KeyPress-1>', ct.EVENT_SHORTCUT_AUTOMOVE_1)
         self.window.bind('<Alt-KeyPress-2>', ct.EVENT_SHORTCUT_AUTOMOVE_2)
         self.window.bind('<Alt-Right->', ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
@@ -202,8 +204,9 @@ class TwixtbotUI():
         self.visit_plot.update()
 
     def update_evals(self):
-        if not self.get_control(ct.K_SHOW_POLICY).get():
+        if not self.get_control(ct.K_SHOW_EVALUATION).get():
             self.clear_evals()
+            self.next_move = None
             return
 
         if not self.game_over(False):
@@ -244,8 +247,10 @@ class TwixtbotUI():
             if self.stgs.get(ct.K_SMART_ACCEPT[1]) and "Y" in values:
                 diff = values["Y"][0] - values["Y"][1]
                 if diff > max_value - value:
-                    # 2nd best cannot catch up => accept
-                    self.handle_accept_bot()
+                    # 2nd best cannot catch up => accept (if not already
+                    # cancelled)
+                    if self.bot_event.get_context() != ct.CANCEL_EVENT:
+                        self.handle_accept_bot()
 
                 # reduce max val
                 while diff > values["max"] - max_value + 20 and max_value >= value + 20:
@@ -275,8 +280,8 @@ class TwixtbotUI():
 
         self.update_turn_indicators()
         self.update_history()
-        
-        if self.get_control(ct.K_SHOW_POLICY).get():
+
+        if self.get_control(ct.K_SHOW_EVALUATION).get():
             self.update_evals()
 
     def update_settings_changed(self):
@@ -355,12 +360,12 @@ class TwixtbotUI():
         else:
             # mcts, or first/second move
             self.bots[self.game.turn].pick_move(
-                self.game, self.window, self.event)
+                self.game, self.window, self.bot_event)
 
     def launch_bot(self):
         self.visit_plot.update()
         self.window[ct.K_SPINNER[1]].Update(visible=True)
-        self.event = BotEvent()
+        self.bot_event = BotEvent()
         self.thread = threading.Thread(
             target=self.bot_move, args=(), daemon=True)
 
@@ -433,10 +438,10 @@ class TwixtbotUI():
                 ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def handle_accept_bot(self):
-        self.event.set(ct.ACCEPT_EVENT)
+        self.bot_event.set(ct.ACCEPT_EVENT)
 
     def handle_cancel_bot(self):
-        self.event.set(ct.CANCEL_EVENT)
+        self.bot_event.set(ct.CANCEL_EVENT)
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):
             self.set_current(ct.K_AUTO_MOVE, False)
@@ -446,6 +451,7 @@ class TwixtbotUI():
     def handle_thread_event(self, values):
         print("Bot response: " + str(values))
         if values["max"] != 0:
+            # mcts case
             self.update_progress(values)
 
         if "moves" in values and "current" in values and len(values["moves"]) > 1:
@@ -453,13 +459,16 @@ class TwixtbotUI():
 
         if values["status"] == "done":
             self.get_control(ct.K_SPINNER).Update(visible=False)
-            if not self.event.is_set() or self.event.get_context() == ct.ACCEPT_EVENT:
+            if not self.bot_event.is_set() or self.bot_event.get_context() == ct.ACCEPT_EVENT:
                 # bot has not been cancelled (but is finished or accepted)
                 self.execute_move(values["moves"][0])
                 self.update_after_move()
             else:
-                # clear progress controls
+                # bot has been cancelled clear progress controls and visits
                 self.update_progress()
+                self.visit_plot.update()
+                self.bots[self.game.turn].nm.root = None
+
                 # switch off auto move
                 if self.get_current(ct.K_AUTO_MOVE):
                     self.set_current(ct.K_AUTO_MOVE, False)
@@ -662,8 +671,8 @@ class TwixtbotUI():
             self.update_after_move()
             return
 
-        # click on show_policy (no shortcuts)
-        if event == ct.K_SHOW_POLICY[1]:
+        # click on evaluation checkbox (no shortcuts)
+        if event == ct.K_SHOW_EVALUATION[1]:
             self.update_evals()
             return
 

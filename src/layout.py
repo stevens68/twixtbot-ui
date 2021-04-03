@@ -124,11 +124,11 @@ def row_moves():
                          key=ct.K_MOVES[1], disabled=True, size=(28, 6))]
 
 
-def row_show_policy():
-    return [text_label(ct.K_SHOW_POLICY[0]),
+def row_show_evaluation():
+    return [text_label(ct.K_SHOW_EVALUATION[0]),
             sg.Checkbox(
-        text="", enable_events=True, default=ct.K_SHOW_POLICY[2],
-        key=ct.K_SHOW_POLICY[1],  size=(7 + ct.OFFSET, 1))]
+        text="", enable_events=True, default=ct.K_SHOW_EVALUATION[3],
+        key=ct.K_SHOW_EVALUATION[1],  size=(7 + ct.OFFSET, 1))]
 
 
 def row_heatmap():
@@ -182,11 +182,11 @@ class MainWindowLayout():
                                  row_names(),
                                  row_turn_indicators(),
                                  row_auto_moves(),
+                                 row_show_evaluation(),
                                  self.row_eval_bar(),
                                  self.row_eval_num(),
                                  self.row_eval_hist(),
                                  self.row_eval_moves(),
-                                 row_show_policy(),
                                  row_heatmap(),
                                  row_trials(),
                                  row_visits(),

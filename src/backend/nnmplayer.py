@@ -80,6 +80,7 @@ class Player:
             return moves[0]
 
         N = self.nm.mcts(game, self.num_trials, window, event)
+
         self.report = self.nm.report
 
         # When a forcing win or forcing draw move is found, there's no policy
