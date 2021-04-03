@@ -11,13 +11,12 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 ## Get started
 
-make sure you have Python3 installed. The Python version needs to support tensorflow2. As of Mar 2021 this is true for Python 3.6, 3.7 and 3.8 (64bit). Do not use Python 3.9. Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
+make sure you have Python3 installed. The Python version needs to support tensorflow2. As of March 2021 this is true for Python 3.6, 3.7 and 3.8 (64bit). Do not use Python 3.9. Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
 
 ```
 python --version
 
 python -c "import struct; print( 8 * struct.calcsize('P'))"
-
 ```
 
 Clone or download this repository. At the command line, change to the twixtbot-ui directory and install the necessary modules:
@@ -101,7 +100,8 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 + *board size*: number of pixels of a side of the board (default: 600)
 + *show labels*: display labels for rows and columns (default: true)
 + *show guidelines*: display lines that lead into the corners (default: false)
-+ *show cursor label*: displays the coordinates in tooltip at mouse coursor
++ *show cursor label*: display the coordinates in a tooltip at the mouse cursor (default: false)
++ *highlight last move*: display yellow circle around last peg (default: false)
 + *smart accept*: during MCTS, reduce the max number of trials automatically according to the lead of the best move (default: true)
 
 #### Tab *Player 1 / 2*
