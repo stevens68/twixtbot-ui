@@ -21,6 +21,7 @@ OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
               "lightgreen", "purple", "red", "yellow", "white"]
 FIELD_BACKGROUND_COLOR = "lightgrey"
+HIGHLIGHT_LAST_MOVE_COLOR = 'yellow'
 
 
 HEATMAP_CIRCLE_COLOR = 'black'
@@ -80,6 +81,8 @@ K_BOARD_SIZE = ['board size (pixels)', 'BOARD_SIZE', None, 600]
 K_SHOW_LABELS = ['show labels', 'SHOW_LABELS', None, True]
 K_SHOW_GUIDELINES = ['show guidelines', 'SHOW_GUIDELINES', None, False]
 K_SHOW_CURSOR_LABEL = ['show cursor label', 'SHOW_CURSOR_LABEL', None, False]
+K_HIGHLIGHT_LAST_MOVE = ['highlight last move',
+                         'HIGHLIGHT_LAST_MOVE', None, False]
 
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
@@ -108,7 +111,7 @@ SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
                 K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_RANDOM_ROTATION,
                 K_BOARD_SIZE,
-                K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL]
+                K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL, K_HIGHLIGHT_LAST_MOVE]
 
 
 WINDOW_TITLE = 'twixtbot-ui'
