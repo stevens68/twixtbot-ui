@@ -124,11 +124,11 @@ def row_moves():
                          key=ct.K_MOVES[1], disabled=True, size=(28, 6))]
 
 
-def row_show_evaluation():
+def row_eval_show_num():
     return [text_label(ct.K_SHOW_EVALUATION[0]),
-            sg.Checkbox(
-        text="", enable_events=True, default=ct.K_SHOW_EVALUATION[3],
-        key=ct.K_SHOW_EVALUATION[1],  size=(7 + ct.OFFSET, 1))]
+            sg.Checkbox(text="", enable_events=True, default=ct.K_SHOW_EVALUATION[3],
+                        key=ct.K_SHOW_EVALUATION[1]),
+            text_output(ct.K_EVAL_NUM[1], 7)]
 
 
 def row_heatmap():
@@ -149,10 +149,6 @@ class MainWindowLayout():
                   self.stgs.get(ct.K_COLOR[2]))
         return [text_label(ct.K_EVAL_BAR[0]), sg.ProgressBar(2000, orientation='h', size=(21.5, 8), key=ct.K_EVAL_BAR[1],
                                                              bar_color=colors)]
-
-    def row_eval_num(self):
-        return [text_label(ct.K_EVAL_NUM[0]),
-                text_output(ct.K_EVAL_NUM[1], 14)]
 
     def row_eval_moves(self):
         return [text_label(ct.K_EVAL_MOVES[0]),
@@ -182,9 +178,8 @@ class MainWindowLayout():
                                  row_names(),
                                  row_turn_indicators(),
                                  row_auto_moves(),
-                                 row_show_evaluation(),
+                                 row_eval_show_num(),
                                  self.row_eval_bar(),
-                                 self.row_eval_num(),
                                  self.row_eval_hist(),
                                  self.row_eval_moves(),
                                  row_heatmap(),

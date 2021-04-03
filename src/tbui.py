@@ -454,7 +454,7 @@ class TwixtbotUI():
             # mcts case
             self.update_progress(values)
 
-        if "moves" in values and "current" in values and len(values["moves"]) > 1:
+        if self.get_control(ct.K_SHOW_EVALUATION).get() and "moves" in values and "current" in values and len(values["moves"]) > 1:
             self.visit_plot.update(values, max(1, values["max"]))
 
         if values["status"] == "done":
@@ -466,8 +466,7 @@ class TwixtbotUI():
             else:
                 # bot has been cancelled clear progress controls and visits
                 self.update_progress()
-                self.visit_plot.update()
-                self.bots[self.game.turn].nm.root = None
+                #self.bots[self.game.turn].nm.root = None
 
                 # switch off auto move
                 if self.get_current(ct.K_AUTO_MOVE):
@@ -615,6 +614,13 @@ class TwixtbotUI():
             # toggle heatmap checkbox and redraw board
             self.get_control(ct.K_HEATMAP).Update(
                 not self.get_control(ct.K_HEATMAP).get())
+            self.update_after_move()
+            return True
+
+        if event == ct.EVENT_SHORTCUT_SHOW_EVALUATION:
+            # toggle evaluation checkbox and redraw board
+            self.get_control(ct.K_SHOW_EVALUATION).Update(
+                not self.get_control(ct.K_SHOW_EVALUATION).get())
             self.update_after_move()
             return True
 
