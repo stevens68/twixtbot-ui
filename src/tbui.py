@@ -466,7 +466,10 @@ class TwixtbotUI():
             else:
                 # bot has been cancelled clear progress controls and visits
                 self.update_progress()
+                self.game.play(values["moves"][0])
+                self.game.undo()
                 #self.bots[self.game.turn].nm.root = None
+                self.bots[self.game.turn].nm.history_at_root = None
 
                 # switch off auto move
                 if self.get_current(ct.K_AUTO_MOVE):
