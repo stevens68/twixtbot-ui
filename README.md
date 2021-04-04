@@ -60,8 +60,15 @@ Note that the network was trained with self-crossing links allowed, which can le
 
 ### Evaluation
 
-Before each move, the bot evaluates the board. The value head of the network returns a value in range [-1.0..1.0] that indicates the probability for a win of player1 and player2, resp. The control bar displays the current and past evaluations.<br>
-The policy head returns a value in range [0..1] for each legal move. A bar chart on the right shows the top three moves. Switch on the *Heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. The color coding is:
+By default, the evaluation output of the network is displayed after each move. If you do not want to be distracted or influenced you can uncheck the *evaluation* checkbox. This also hides the *MCTS visits* bar chart.
+
+#### value head
+
+After each move, the network evaluates the board. The value head [-1.0..1.0] indicates the probability for a win of player1 and player2, resp. The value is displayed as a float number and as a horizontal bar. Past values are recorded in a history bar chart.<br>
+
+#### policy head
+
+The policy head of the network evaluates each leagal move. These p-values in range [0..1] indicate how promising a certain move for the current player is. A bar chart on the right shows the top three moves and their p-values. Switch on the *heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. The color coding is:
 + light green: close to 100% of best p
 + light blue: close to 50% of best p
 + dark blue: close to 0% of best p<br>
@@ -172,7 +179,7 @@ resign
         <tr>
             <td align="left" valign="top"><i>File</i>: <kbd>Alt</kbd>+<kbd>f</kbd><br><i>Help</i>: <kbd>Alt</kbd>+<kbd>h</kbd></td>
             <td align="left" valign="top"><i>Bot Move</i>: <kbd>Alt</kbd>+<kbd>b</kbd><br><i>Accept</i>: <kbd>Alt</kbd>+<kbd>a</kbd><br><i>Cancel</i>: <kbd>Alt</kbd>+<kbd>c</kbd><br><i>Undo</i>: <kbd>Alt</kbd>+<kbd>u</kbd><br><i>Resign</i>: <kbd>Alt</kbd>+<kbd>g</kbd><br><i>Reset</i>: <kbd>Alt</kbd>+<kbd>r</kbd></td>
-            <td align="left" valign="top"><i>auto move</i> 1: <kbd>Alt</kbd>+<kbd>1</kbd><br><i>auto move</i> 2: <kbd>Alt</kbd>+<kbd>2</kbd><br><i>Heatmap</i>: <kbd>Alt</kbd>+<kbd>m</kbd></td>
+            <td align="left" valign="top"><i>evaluation</i>: <kbd>Alt</kbd>+<kbd>e</kbd><br><i>auto move</i> 1: <kbd>Alt</kbd>+<kbd>1</kbd><br><i>auto move</i> 2: <kbd>Alt</kbd>+<kbd>2</kbd><br><i>heatmap</i>: <kbd>Alt</kbd>+<kbd>m</kbd></td>
             <td align="left" valign="top"><i>MCTS trials</i> 1: <kbd>Alt</kbd>+<kbd>&#8592</kbd>, <kbd>Alt</kbd>+<kbd>&#8594</kbd><br><i>MCTS trials</i> 2: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>&#8592</kbd>, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>&#8594</kbd></td>
         </tr>
     </tbody>
