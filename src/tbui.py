@@ -466,9 +466,7 @@ class TwixtbotUI():
             else:
                 # bot has been cancelled clear progress controls and visits
                 self.update_progress()
-                self.game.play(values["moves"][0])
-                self.game.undo()
-                #self.bots[self.game.turn].nm.root = None
+                # reset history_at_root resets tree and visit counts
                 self.bots[self.game.turn].nm.history_at_root = None
 
                 # switch off auto move
