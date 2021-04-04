@@ -86,14 +86,14 @@ K_HIGHLIGHT_LAST_MOVE = ['highlight last move',
 
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
-K_HEATMAP = ['Heatmap']
 
 
 # non-setting keys
-K_EVAL_BAR = ['evaluation', 'EVAL_BAR', None, 0]
+K_SHOW_EVALUATION = ['evaluation', 'SHOW_EVALUATION', None, True]
+K_EVAL_BAR = ['', 'EVAL_BAR', None, 0]
 K_EVAL_NUM = ['', 'EVAL_NUM', None, ""]
 K_EVAL_MOVES = ['P * 1000', 'EVAL_MOVES', None, ""]
-K_HEATMAP = ['Heatmap', 'HEATMAP']
+K_HEATMAP = ['heatmap', 'HEATMAP']
 K_EVAL_HIST = ['history', 'EVAL_HIST']
 K_SPLASH_PROGRESS_BAR = ['SPLASH_PROGRESS_BAR']
 K_SPLASH_STATUS_TEXT = ['SPLASH_STATUS_TEXT']
@@ -146,6 +146,7 @@ TAB_LABEL_PLAYER2 = "Player &2"
 
 # shortcut events for checkboxes
 EVENT_SHORTCUT_HEATMAP = 'SHORTCUT_HEATMAP'
+EVENT_SHORTCUT_SHOW_EVALUATION = 'SHORTCUT_SHOW_EVALUATION'
 EVENT_SHORTCUT_AUTOMOVE_1 = 'SHORTCUT_AUTOMOVE_1'
 EVENT_SHORTCUT_AUTOMOVE_2 = 'SHORTCUT_AUTOMOVE_2'
 EVENT_SHORTCUT_TRIALS_1_PLUS = 'SHORTCUT_TRIALS_1_PLUS'
