@@ -170,6 +170,7 @@ class MainWindowLayout():
             sg.Button(ct.B_ACCEPT, size=(bw, 1)),
             sg.Button(ct.B_CANCEL, size=(bw, 1)),
             sg.Button(ct.B_UNDO, size=(bw, 1)),
+            sg.Button(ct.B_REDO, size=(bw, 1), disabled=True),
             sg.Button(ct.B_RESIGN, size=(bw, 1)),
             sg.Button(ct.B_RESET, size=(bw, 1))
         ]
