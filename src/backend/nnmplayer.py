@@ -22,6 +22,7 @@ class Player:
         self.allow_swap = int(kwargs.get('allow_swap', 1))
         self.add_noise = float(kwargs.get('add_noise', 0))
         self.cpuct = float(kwargs.get('cpuct', 1))
+        self.board = kwargs.get('board', None)
 
         self.verbosity = int(kwargs.get('verbosity', 0))
 
@@ -53,7 +54,12 @@ class Player:
             raise Exception("Specify model or resource")
 
         self.nm = nnmcts.NeuralMCTS(
-            nnfunc, add_noise=self.add_noise, smart_root=self.smart_root, verbosity=self.verbosity, cpuct=self.cpuct)
+            nnfunc,
+            add_noise=self.add_noise,
+            smart_root=self.smart_root,
+            verbosity=self.verbosity,
+            cpuct=self.cpuct,
+            board=self.board)
 
     def pick_move(self, game, window=None, event=None):
 

@@ -4,6 +4,7 @@ import numpy
 
 import backend.naf as naf
 import backend.twixt as twixt
+from test.test_binop import SN
 
 
 class EvalNode:
@@ -30,6 +31,8 @@ class NeuralMCTS:
         self.verbosity = kwargs.pop("verbosity", 0)
         self.smart_root = kwargs.pop("smart_root", 0)
         self.smart_init = kwargs.pop("smart_init", 0)
+        self.board = kwargs.pop("board", None)
+
         if kwargs:
             raise TypeError('Unexpected kwargs provided: %s' %
                             list(kwargs.keys()))
@@ -146,6 +149,7 @@ class NeuralMCTS:
         subnode = node.subnodes[index]
 
         game.play(move)
+        # self.board.mcts_update(move)
         if subnode:
             subscore = -self.visit_node(game, subnode)
         else:
@@ -281,6 +285,7 @@ class NeuralMCTS:
 
                 if window:
                     if (i + 1) % 20 == 0:
+                        self.traverse(0, self.root)
                         self.send_message(
                             window, game, "in-progress", trials, i + 1, False)
 
@@ -294,3 +299,14 @@ class NeuralMCTS:
         self.report = "%6.3f" % (
             self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
         return self.root.N
+
+    def traverse(self, level, node):
+
+        k = numpy.argmax(node.N)
+        n = node.N[k]
+        sn = node.subnodes[k]
+
+        print("l:", level, "k:", k, "n:", n)
+
+        if sn is not None:
+            self.traverse(level + 1, sn)

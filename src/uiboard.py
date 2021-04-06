@@ -27,19 +27,26 @@ class UiBoard(board.TwixtBoard):
                               key=ct.K_BOARD[1],
                               enable_events=True)
 
-    def draw(self, heatmap=None):
-        self.graph.erase()
-        self._draw_endlines()
-        self._draw_guidelines()
-        self._draw_pegholes()
+    def draw(self, heatmap=None, complete=True):
+        if complete:
+            self.graph.erase()
+            self._draw_endlines()
+            self._draw_labels()
+            self._draw_guidelines()
+            self._draw_pegholes()
+            if self.game.history is not None:
+                for idx in range(len(self.game.history)):
+                    self.create_move_objects(idx)
+        else:
+            gl = len(self.game.history)
+            if gl > 1:
+                # erase highlighted move
+                self.create_move_objects(gl - 2)
+            self.create_move_objects(gl - 1)
+
         if heatmap:
             self._draw_heatmap_legend(heatmap)
             self._draw_heatmap(heatmap)
-        self._draw_labels()
-
-        if self.game.history is not None:
-            for idx in range(len(self.game.history)):
-                self.create_move_objects(idx)
 
     def draw_cursor_label(self, move):
         if move is None and self.current_cursor_label is not None:
