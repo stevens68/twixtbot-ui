@@ -6,6 +6,7 @@ import backend.naf as naf
 import backend.twixt as twixt
 
 
+
 class EvalNode:
 
     def __init__(self):
@@ -30,12 +31,16 @@ class NeuralMCTS:
         self.verbosity = kwargs.pop("verbosity", 0)
         self.smart_root = kwargs.pop("smart_root", 0)
         self.smart_init = kwargs.pop("smart_init", 0)
+        self.board = kwargs.pop("board", None)
+
         if kwargs:
             raise TypeError('Unexpected kwargs provided: %s' %
                             list(kwargs.keys()))
         self.sap = sap
         self.root = None
         self.history_at_root = None
+        
+        self.path = []
 
     def expand_leaf(self, game):
         """ Create a brand new leaf node for the current game state
@@ -88,7 +93,7 @@ class NeuralMCTS:
         return leaf
         # end expand_leaf()
 
-    def visit_node(self, game, node, top=False, trials=None, trials_left=-1, window=None):
+    def visit_node(self, game, node, top=False, trials=None, trials_left=-1, window=None, path=None):
         """ Visit a node, return the evaluation from the
             point of view of the player currently to play. """
 
@@ -146,9 +151,20 @@ class NeuralMCTS:
         subnode = node.subnodes[index]
 
         game.play(move)
+        path.append(move)
+        idx = len(path)-1
+        if len(self.path) < len(path):
+            self.path.append(move)
+        elif path[idx] != self.path[idx]:
+            #print("   trunctating self.path at", idx)
+            del self.path[idx:]
+            self.path.append(move)
+        
+        # self.board.mcts_update(move)
         if subnode:
-            subscore = -self.visit_node(game, subnode)
+            subscore = -self.visit_node(game, subnode, path=path)
         else:
+            #print(trials, "expanding", path)
             subnode = self.expand_leaf(game)
             node.subnodes[index] = subnode
             subscore = -subnode.score
@@ -229,31 +245,30 @@ class NeuralMCTS:
 
     def send_message(self, window, game, status, num_trials=0, current_trials=0, proven=False, moves=None, P=None):
 
-        if window:
-            resp = {
-                "status": status,
-                "current": current_trials,
-                "max": num_trials,
-                "proven": proven
-            }
+        resp = {
+            "status": status,
+            "current": current_trials,
+            "max": num_trials,
+            "proven": proven
+        }
 
-            if P is not None:
-                resp["P"] = P.tolist() if type(P) != list else P
+        if P is not None:
+            resp["P"] = P.tolist() if type(P) != list else P
 
-            if not moves:
-                indices = numpy.argsort(self.root.N)[::-1][:twixt.MAXBEST]
-                resp["moves"] = [naf.policy_index_point(
-                    game.turn, i) for i in indices]
-                resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]
-                resp["P"] = [int(round(p * 1000))
-                             for p in self.root.P[indices].tolist()]
-                # resp["Q"] = self.root.Q[indices].tolist()
-            else:
-                resp["moves"] = moves
+        if not moves:
+            indices = numpy.argsort(self.root.N)[::-1][:twixt.MAXBEST]
+            resp["moves"] = [naf.policy_index_point(
+                game.turn, i) for i in indices]
+            resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]
+            resp["P"] = [int(round(p * 1000))
+                         for p in self.root.P[indices].tolist()]
+            # resp["Q"] = self.root.Q[indices].tolist()
+        else:
+            resp["moves"] = moves
 
-            window.write_event_value('THREAD', resp)
+        window.write_event_value('THREAD', resp)
 
-    def mcts(self, game, trials, window=None, event=None):
+    def mcts(self, game, trials, window, event):
         """ Using the neural net, compute the move visit count vector """
 
         self.compute_root(game)
@@ -269,9 +284,10 @@ class NeuralMCTS:
             # for i in tqdm(range(trials), ncols=100, desc="processing",
             # file=sys.stdout):
             for i in range(trials):
+                path = []
                 assert not self.root.proven
                 self.visit_node(game, self.root, True,
-                                trials - i)
+                                trials - i, window=window, path=path)
 
                 if self.root.proven:
                     break
@@ -279,10 +295,10 @@ class NeuralMCTS:
                 if event is not None and event.is_set():
                     break
 
-                if window:
-                    if (i + 1) % 20 == 0:
-                        self.send_message(
-                            window, game, "in-progress", trials, i + 1, False)
+                if (i + 1) % 20 == 0:
+                    #self.traverse(0, self.root)
+                    self.send_message(
+                        window, game, "in-progress", trials, i + 1, False)
 
         if self.root.proven:
             return self.proven_result(game)
@@ -294,3 +310,14 @@ class NeuralMCTS:
         self.report = "%6.3f" % (
             self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
         return self.root.N
+
+    def traverse(self, level, node):
+
+        k = numpy.argmax(node.N)
+        n = node.N[k]
+        sn = node.subnodes[k]
+
+        print("l:", level, "k:", k, "n:", n)
+
+        if sn is not None:
+            self.traverse(level + 1, sn)

@@ -267,13 +267,13 @@ class TwixtbotUI():
         self.get_control(ct.K_PROGRESS_NUM).Update(text)
         self.get_control(ct.K_PROGRESS_BAR).UpdateBar(value, max_value)
 
-    def update_after_move(self):
+    def update_after_move(self, complete=True):
         if self.get_control(ct.K_HEATMAP).get():
             heatmap = hm.Heatmap(self.game, self.bots[self.game.turn])
         else:
             heatmap = None
 
-        self.board.draw(heatmap)
+        self.board.draw(heatmap, complete)
 
         self.window.refresh()
 
@@ -347,7 +347,8 @@ class TwixtbotUI():
             "temperature": self.stgs.get(ct.K_TEMPERATURE[player]),
             "random_rotation": self.stgs.get(ct.K_RANDOM_ROTATION[player]),
             "add_noise": self.stgs.get(ct.K_ADD_NOISE[player]),
-            "cpuct": self.stgs.get(ct.K_CPUCT[player])
+            "cpuct": self.stgs.get(ct.K_CPUCT[player]),
+            "board": self.board
 
         }
 
@@ -382,7 +383,7 @@ class TwixtbotUI():
         if move is not None:
             # clear move statistics
             self.execute_move(move)
-            self.update_after_move()
+            self.update_after_move(False)
 
     def handle_open_file(self):
         players, moves = fi.get_game()
@@ -403,7 +404,6 @@ class TwixtbotUI():
             for m in moves:
                 self.execute_move(m)
                 self.calc_eval()
-                # self.update_after_move()
         except Exception:
             lt.popup("invalid move: " + str(m))
 
@@ -442,7 +442,8 @@ class TwixtbotUI():
                 ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def handle_redo(self):
-        self.execute_move(self.redo_moves.pop(), False)
+        if len(self.redo_moves) > 0:
+            self.execute_move(self.redo_moves.pop(), False)
 
     def handle_accept_bot(self):
         self.bot_event.set(ct.ACCEPT_EVENT)
@@ -469,7 +470,7 @@ class TwixtbotUI():
             if not self.bot_event.is_set() or self.bot_event.get_context() == ct.ACCEPT_EVENT:
                 # bot has not been cancelled (but is finished or accepted)
                 self.execute_move(values["moves"][0])
-                self.update_after_move()
+                self.update_after_move(False)
             else:
                 # bot has been cancelled clear progress controls and visits
                 self.update_progress()
@@ -520,7 +521,7 @@ class TwixtbotUI():
             self.game.play_swap()
         else:
             self.game.play(move)
-        self.board.create_move_objects(len(self.game.history) - 1)
+        #self.board.create_move_objects(len(self.game.history) - 1)
         self.game_over()
 
     def create_settings_window(self):
