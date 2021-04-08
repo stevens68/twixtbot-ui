@@ -16,7 +16,7 @@ make sure you have Python3 installed. The Python version needs to support tensor
 ```
 python --version
 
-python -c "import struct; print( 8 * struct.calcsize('P'))"
+python -c "import struct; print(8 * struct.calcsize('P'))"
 ```
 
 Clone or download this repository. At the command line, change to the twixtbot-ui directory and install the necessary modules:
@@ -188,4 +188,4 @@ resign
 
 ### Contributors
 
-* [agtoever](https://github.com/agtoever): Save Files, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo
+* [agtoever](https://github.com/agtoever): Save Files, Evaluation History, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo
