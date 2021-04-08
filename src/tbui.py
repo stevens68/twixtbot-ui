@@ -93,7 +93,7 @@ class TwixtbotUI():
         self.window.bind('<Alt-a>', ct.B_ACCEPT)
         self.window.bind('<Alt-c>', ct.B_CANCEL)
         self.window.bind('<Alt-u>', ct.B_UNDO)
-        self.window.bind('<Alt-U>', ct.B_REDO)
+        self.window.bind('<Alt-d>', ct.B_REDO)
         self.window.bind('<Alt-g>', ct.B_RESIGN)
         self.window.bind('<Alt-r>', ct.B_RESET)
         self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
@@ -434,7 +434,6 @@ class TwixtbotUI():
         if gl > 0:
             self.redo_moves.append(self.game.history[-1])
             self.game.undo()
-            self.window[ct.B_REDO].update(disabled=False)
 
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):
@@ -444,8 +443,6 @@ class TwixtbotUI():
 
     def handle_redo(self):
         self.execute_move(self.redo_moves.pop(), False)
-        if not self.redo_moves:
-            self.window[ct.B_REDO].update(disabled=True)
 
     def handle_accept_bot(self):
         self.bot_event.set(ct.ACCEPT_EVENT)
@@ -514,7 +511,6 @@ class TwixtbotUI():
     def execute_move(self, move, clear_redo_moves=True):
         if clear_redo_moves:
             self.redo_moves = []
-            self.window[ct.B_REDO].update(disabled=True)
 
         if move == twixt.RESIGN:
             self.game.result = twixt.RESIGN

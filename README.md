@@ -88,9 +88,9 @@ Note that for the first move and the swap move the bot does not use MCTS.
 human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
 
 
-### Undo, Resign, Reset
+### Undo, Redo, Resign, Reset
 
-Click these buttons to undo the last move, resign a game or start a new game, resp. You cannot click these buttons during MCTS.
+Click these buttons to undo the last move, redo undone moves, resign a game or start a new game, resp. You cannot click these buttons during MCTS.
 
 ### File | Settings...
 
@@ -108,7 +108,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 + *show labels*: display labels for rows and columns (default: true)
 + *show guidelines*: display lines that lead into the corners (default: false)
 + *show cursor label*: display the coordinates in a tooltip at the mouse cursor (default: false)
-+ *highlight last move*: display yellow circle around last peg (default: false)
++ *highlight last move*: display a yellow circle around last peg (default: false)
 + *smart accept*: during MCTS, reduce the max number of trials automatically according to the lead of the best move (default: true)
 
 #### Tab *Player 1 / 2*
@@ -177,10 +177,10 @@ resign
     </thead>
     <tbody>
         <tr>
-            <td align="left" valign="top"><i>File</i>: <kbd>Alt</kbd>+<kbd>f</kbd><br><i>Help</i>: <kbd>Alt</kbd>+<kbd>h</kbd></td>
-            <td align="left" valign="top"><i>Bot Move</i>: <kbd>Alt</kbd>+<kbd>b</kbd><br><i>Accept</i>: <kbd>Alt</kbd>+<kbd>a</kbd><br><i>Cancel</i>: <kbd>Alt</kbd>+<kbd>c</kbd><br><i>Undo</i>: <kbd>Alt</kbd>+<kbd>u</kbd><br><i>Resign</i>: <kbd>Alt</kbd>+<kbd>g</kbd><br><i>Reset</i>: <kbd>Alt</kbd>+<kbd>r</kbd></td>
-            <td align="left" valign="top"><i>evaluation</i>: <kbd>Alt</kbd>+<kbd>e</kbd><br><i>auto move</i> 1: <kbd>Alt</kbd>+<kbd>1</kbd><br><i>auto move</i> 2: <kbd>Alt</kbd>+<kbd>2</kbd><br><i>heatmap</i>: <kbd>Alt</kbd>+<kbd>m</kbd></td>
-            <td align="left" valign="top"><i>MCTS trials</i> 1: <kbd>Alt</kbd>+<kbd>&#8592</kbd>, <kbd>Alt</kbd>+<kbd>&#8594</kbd><br><i>MCTS trials</i> 2: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>&#8592</kbd>, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>&#8594</kbd></td>
+            <td align="left" valign="top"><i>File</i>: <kbd>Alt</kbd><kbd>f</kbd><br><i>Help</i>: <kbd>Alt</kbd><kbd>h</kbd></td>
+            <td align="left" valign="top"><i>Bot Move</i>: <kbd>Alt</kbd><kbd>b</kbd><br><i>Accept</i>: <kbd>Alt</kbd><kbd>a</kbd><br><i>Cancel</i>: <kbd>Alt</kbd><kbd>c</kbd><br><i>Undo</i>: <kbd>Alt</kbd><kbd>u</kbd><br><i>Redo</i>: <kbd>Alt</kbd><kbd>d</kbd><br><i>Resign</i>: <kbd>Alt</kbd><kbd>g</kbd><br><i>Reset</i>: <kbd>Alt</kbd><kbd>r</kbd></td>
+            <td align="left" valign="top"><i>auto move</i> 1: <kbd>Alt</kbd><kbd>1</kbd><br><i>auto move</i> 2: <kbd>Alt</kbd><kbd>2</kbd><br><i>evaluation</i>: <kbd>Alt</kbd><kbd>e</kbd><br><i>heatmap</i>: <kbd>Alt</kbd><kbd>m</kbd></td>
+            <td align="left" valign="top"><i>MCTS trials</i> 1: <kbd>Alt</kbd><kbd>&#8592</kbd>, <kbd>Alt</kbd><kbd>&#8594</kbd><br><i>MCTS trials</i> 2: <kbd>Alt</kbd><kbd>Shift</kbd><kbd>&#8592</kbd>, <kbd>Alt</kbd><kbd>Shift</kbd><kbd>&#8594</kbd></td>
         </tr>
     </tbody>
 </table>
@@ -188,4 +188,4 @@ resign
 
 ### Contributors
 
-* [agtoever](https://github.com/agtoever)
+* [agtoever](https://github.com/agtoever): Save Files, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo
