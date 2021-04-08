@@ -156,7 +156,7 @@ class NeuralMCTS:
         if len(self.path) < len(path):
             self.path.append(move)
         elif path[idx] != self.path[idx]:
-            print("   trunctating self.path at", idx)
+            #print("   trunctating self.path at", idx)
             del self.path[idx:]
             self.path.append(move)
         
@@ -164,7 +164,7 @@ class NeuralMCTS:
         if subnode:
             subscore = -self.visit_node(game, subnode, path=path)
         else:
-            print(trials, "expanding", path)
+            #print(trials, "expanding", path)
             subnode = self.expand_leaf(game)
             node.subnodes[index] = subnode
             subscore = -subnode.score

@@ -26,6 +26,7 @@ class UiBoard(board.TwixtBoard):
                               background_color=ct.FIELD_BACKGROUND_COLOR,
                               key=ct.K_BOARD[1],
                               enable_events=True)
+        
 
     def draw(self, heatmap=None, complete=True):
         if complete:
@@ -39,10 +40,11 @@ class UiBoard(board.TwixtBoard):
                     self.create_move_objects(idx)
         else:
             gl = len(self.game.history)
+                # erase move before last move
             if gl > 1:
-                # erase highlighted move
+                self.undo_last_move_objects()
                 self.create_move_objects(gl - 2)
-            self.create_move_objects(gl - 1)
+            self.create_move_objects(gl-1)
 
         if heatmap:
             self._draw_heatmap_legend(heatmap)

@@ -79,7 +79,15 @@ class TwixtBoard:
                     nho.objects.append(
                         self._create_drawn_link(move, other, color))
 
-        # end create_move_objects()
+    def undo_last_move_objects(self):
+        if len(self.history) > 0:
+            objects = self.history.pop().objects
+            for obj in objects:
+                self.graph.delete_figure(obj)
+            
+        
+          
+       # end create_move_objects()
 
     def _create_drawn_link(self, p1, p2, color):
         # carray = [gr.color_rgb(0,0,0), gr.color_rgb(150,150,150), gr.color_rgb(255,0,0)]
