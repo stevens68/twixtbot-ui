@@ -442,7 +442,8 @@ class TwixtbotUI():
                 ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def handle_redo(self):
-        self.execute_move(self.redo_moves.pop(), False)
+        if len(self.redo_moves) > 0:
+            self.execute_move(self.redo_moves.pop(), False)
 
     def handle_accept_bot(self):
         self.bot_event.set(ct.ACCEPT_EVENT)

@@ -26,12 +26,6 @@ class TwixtBoard:
 
         self.stgs = stgs
 
-    def _point_to_move(self, point):
-        if isinstance(point, twixt.Point):
-            return chr(ord('a') + point[0]) + "%d" % (twixt.Game.SIZE - point[1])
-        else:
-            # swap case
-            return point
 
     def _point_to_coords(self, point):
         return ((point[0] + self.offset_factor) * self.cell_width,
@@ -40,122 +34,7 @@ class TwixtBoard:
     def _move_to_point(self, move):
         return twixt.Point(ord(move[0]) - ord('a'), int(move[1:]) - 1)
 
-    def set_game(self, game):
-        i = 0
-        while i < len(game.history) and i < len(self.history):
-            if game.history[i] != self.history[i].move:
-                break
-            i += 1
 
-        # Get rid of now unneeded objects
-        if i < len(self.history):
-            for h in reversed(self.history[i:]):
-                for o in h.objects:
-                    self.graph.delete(o)
-                self.known_moves.remove(h.move)
-            self.history = self.history[:i]
-
-        # Add new objects
-        while i < len(game.history):
-            self.create_move_objects(game, i)
-            i += 1
-
-    def set_naf(self, naf, rotate=False):
-        for h in reversed(self.history):
-            for o in h.objects:
-                self.graph.delete(o)
-
-        self.history = []
-        self.known_moves = set()
-
-        if not rotate:
-            def xyp(x, y): return twixt.Point(x, y)
-
-            def pp(p): return p
-
-            def cp(c): return 1 - c
-        else:
-            def xyp(x, y): return twixt.Point(y, x)
-
-            def cp(c): return c
-
-            def pp(p): return twixt.Point(p.y, p.x)
-
-        objs = []
-
-        for x, y, i in zip(*naf[:, :, 8:].nonzero()):
-            objs.append(self._create_drawn_peg(xyp(x, y), cp(i & 1)))
-
-        for x, y, j in zip(*naf[:, :, :8].nonzero()):
-            link = twixt.Game.describe_link(j, x, y)
-            objs.append(self._create_drawn_link(
-                pp(link.p1), pp(link.p2), cp(i & 1)))
-
-        nho = TBWHistory("nninputs")
-        self.history.append(nho)
-        nho.objects = objs
-
-    def set_nn_inputs(self, pegs, links, rotate=False):
-        for h in reversed(self.history):
-            for o in h.objects:
-                self.graph.delete(o)
-
-        self.history = []
-        self.known_moves = set()
-
-        if not rotate:
-            def xyp(x, y): return twixt.Point(x, y)
-
-            def pp(p): return p
-
-            def cp(c): return 1 - c
-        else:
-            def xyp(x, y): return twixt.Point(y, x)
-
-            def cp(c): return c
-
-            def pp(p): return twixt.Point(p.y, p.x)
-
-        objs = []
-
-        for x, y, i in zip(*pegs.nonzero()):
-            objs.append(self._create_drawn_peg(xyp(x, y), cp(i)))
-
-        i_px_py = []
-        # color = game.WHITE
-        for vertical in [False, True]:
-            for diff_sign in [False, True]:
-                for as_me in [False, True]:
-                    index = if_else0(vertical, twixt.Game.LINK_LONGY)
-                    index += if_else0(diff_sign, twixt.Game.LINK_DIFFSIGN)
-                    index += 1 if as_me else 0
-                    pad_x = if_else0(vertical or diff_sign, 1)
-                    pad_y = if_else0(not vertical or diff_sign, 1)
-
-                    i_px_py.append((index, pad_x, pad_y))
-
-        for x, y, j in zip(*links.nonzero()):
-            index, pad_x, pad_y = i_px_py[j]
-            lx = x - pad_x
-            ly = y - pad_y
-            desc = twixt.Game.describe_link(index, lx, ly)
-            c1 = 2 - 2 * pegs[desc.p1.x, desc.p1.y, 0] - \
-                pegs[desc.p1.x, desc.p1.y, 1]
-            c2 = 2 - 2 * pegs[desc.p2.x, desc.p2.y, 0] - \
-                pegs[desc.p2.x, desc.p2.y, 1]
-            if c1 == 0 and c2 == 0:
-                color = 0
-            elif c1 == 1 and c2 == 1:
-                color = 1
-            else:
-                color = 2
-            objs.append(self._create_drawn_link(
-                pp(desc.p1), pp(desc.p2), color))
-
-        nho = TBWHistory("nninputs")
-        self.history.append(nho)
-        nho.objects = objs
-        # end set_nn_inputs
 
     def _create_drawn_peg(self, point, coloridx, highlight_last_move=False):
         if coloridx == 1:

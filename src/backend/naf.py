@@ -141,13 +141,7 @@ class NetInputs:
         if r & VFLIP_BIT:
             self.vflip()
 
-    def to_compact_bytes(self):
 
-        return self._front_bytes() + numpy.packbits(self.naf[:, :, :10]).tobytes()
-
-    def to_expanded_bytes(self):
-
-        return self._front_bytes() + self.naf[:, :, :10].tobytes()
 
     def _front_bytes(self):
 
@@ -207,14 +201,7 @@ class NetInputs:
         assert abs(c8 - c9) <= 1
         self.naf[:, :, :10] = p1
 
-    def equal_with(self, other):
-
-        if not numpy.array_equal(self.naf, other.naf):
-            return False
-        if self.recents != other.recents:
-            return False
-        return True
-
+ 
     def to_input_arrays(self, use_recents=False):
 
         pegs = self.naf[:, :, 8:10]
@@ -246,133 +233,6 @@ class NetInputs:
 # 8-9  pegs
 
 
-def old_game_to_naf(game):
-    S = twixt.Game.SIZE
-    naf = numpy.zeros((S, S, 10), dtype=numpy.uint8)
-
-    if game.turn == game.WHITE:
-        return _game_to_naf_white(game, naf)
-    else:
-        return _game_to_naf_black(game, naf)
-
-
-def _game_to_naf_white(game, naf):
-    for i in range(8):
-        naf[:, :, i] = game.links[i]
-    for j in range(2):
-        naf[:, :, 8 + j] = game.pegs[j]
-    return naf
-
-
-def _game_to_naf_black(game, naf):
-    for color in range(2):
-        acolor = 1 - color
-        # LONGY changes but DIFFISGN and color do not.
-        naf[:, :, 4 + color] = game.links[0 + acolor].T
-        naf[:, :, 6 + color] = game.links[2 + acolor].T
-        naf[:, :, 0 + color] = game.links[4 + acolor].T
-        naf[:, :, 2 + color] = game.links[6 + acolor].T
-        naf[:, :, 8 + color] = game.pegs[acolor].T
-    return naf
-
-
-def old_hflip_naf(naf):
-    tmp = numpy.flip(naf, 0)
-
-    S = twixt.Game.SIZE
-    vix = twixt.Game.LINK_LONGY
-    out = numpy.zeros((S, S, 10), dtype=numpy.uint8)
-    for color in range(2):
-        out[:, :, 8 + color] = tmp[:, :, 8 + color]
-
-        for diffsign in range(2):
-            dix = diffsign * twixt.Game.LINK_DIFFSIGN
-            adix = (1 - diffsign) * twixt.Game.LINK_DIFFSIGN
-            # non verticals are easy
-            out[:, :, color + dix] = tmp[:, :, color + adix]
-            # verticals need to be shifted.
-            out[:-1, :, color + dix + vix] = tmp[1:, :, color + adix + vix]
-    return out
-
-
-def old_vflip_naf(naf):
-    tmp = numpy.flip(naf, 1)
-
-    S = twixt.Game.SIZE
-    vix = twixt.Game.LINK_LONGY
-    out = numpy.zeros((S, S, 10), dtype=numpy.uint8)
-
-    for color in range(2):
-        out[:, :, 8 + color] = tmp[:, :, 8 + color]
-
-        for diffsign in range(2):
-            dix = diffsign * twixt.Game.LINK_DIFFSIGN
-            adix = (1 - diffsign) * twixt.Game.LINK_DIFFSIGN
-            # verticals are easy
-            out[:, :, color + dix + vix] = tmp[:, :, color + adix + vix]
-            # horizontals need to be shifted.
-            out[:, :-1, color + dix] = tmp[:, 1:, color + adix]
-    return out
-
-
-def old_naf_expanded_size():
-    return 10 * twixt.Game.SIZE ** 2
-
-
-def old_naf_compressed_size():
-    return 10 * twixt.Game.SIZE ** 2 / 8
-
-
-def old_naf_to_compressed(naf):
-    return numpy.packbits(naf).tobytes()
-
-
-def old_naf_to_expanded(naf):
-    return naf.tobytes()
-
-
-def old_naf_from_compressed(b):
-    assert len(b) == old_naf_compressed_size()
-    p0 = numpy.frombuffer(b, dtype=numpy.uint8)
-    p1 = numpy.unpackbits(p0)
-    p2 = p1.reshape((twixt.Game.SIZE, twixt.Game.SIZE, 10))
-    assert abs(numpy.count_nonzero(
-        p2[:, :, 8]) - numpy.count_nonzero(p2[:, :, 9])) <= 1
-    return p2
-
-
-def old_naf_from_expanded(b):
-    assert len(b) == old_naf_expanded_size()
-    p0 = numpy.frombuffer(b, dtype=numpy.uint8)
-    p1 = p0.reshape(twixt.Game.SIZE, twixt.Game.SIZE, 10)
-    c8 = numpy.count_nonzero(p1[:, :, 8])
-    c9 = numpy.count_nonzero(p1[:, :, 9])
-    if abs(c8 - c9) > 1:
-        print("Zut!! c8=%d, c9=%d" % (c8, c9), file=sys.stderr)
-        print("p8:", file=sys.stderr)
-        print(binary_array_string(p1[:, :, 8]), file=sys.stderr)
-        print("p9:", file=sys.stderr)
-        print(binary_array_string(p1[:, :, 9]), file=sys.stderr)
-
-    assert abs(c8 - c9) <= 1
-    return p1
-
-
-def old_naf_to_ninputs(naf):
-    pegs = naf[:, :, 8:]
-    links = numpy.copy(naf[:, :, :8])
-    for index in range(8):
-        vertical = index & twixt.Game.LINK_LONGY
-        diffsign = index & twixt.Game.LINK_DIFFSIGN
-
-        if vertical or diffsign:
-            links[1:, :, index] = links[:-1, :, index]
-            links[0, :, index] = 0
-        if (not vertical) or diffsign:
-            links[:, 1:, index] = links[:, :-1, index]
-            links[:, 0, index] = 0
-
-    return pegs, links
 
 
 def hflip_policy_array(array):
@@ -450,45 +310,6 @@ def binary_array_string(arr):
     else:
         raise ValueError("only one/two dimensional arrays handled")
 
-######################
-
-
-class LearningState:
-    NUM_MOVES = twixt.Game.SIZE * (twixt.Game.SIZE - 2)
-    NAF_BYTES = NetInputs.COMPACT_SIZE
-    NUM_BYTES = NAF_BYTES + 2 * NUM_MOVES + 1
-
-    def __init__(self, game):
-
-        self.nips = NetInputs(game)
-        self.N = None
-        self.z = None
-
-    def to_bytes(self):
-
-        b = bytearray()
-        b0 = self.nips.to_compact_bytes()
-        b1 = self.N.astype(numpy.uint16).tobytes()
-        assert len(b0) == LearningState.NAF_BYTES
-        assert len(b1) == 2 * LearningState.NUM_MOVES
-
-        b.extend(b0)
-        b.extend(b1)
-        b.append(int(self.z) + 1)
-        assert len(b) == self.NUM_BYTES
-        return bytes(b)
-
-    @staticmethod
-    def from_bytes(b, name=None):
-
-        assert len(b) == LearningState.NUM_BYTES
-        ls = LearningState(None)
-        ls.nips = NetInputs(b[0:LearningState.NAF_BYTES])
-        ls.N = numpy.frombuffer(
-            b, dtype=numpy.uint16, count=LearningState.NUM_MOVES, offset=LearningState.NAF_BYTES)
-        ls.z = ord(b[-1]) - 1
-        ls.name = name
-        return ls
 
 
 def location_inputs(dest=None):
@@ -503,17 +324,9 @@ def location_inputs(dest=None):
     c[:, :, 1] = b.T
     return c
 
-
 NUM_ROTATIONS = 4
 HFLIP_BIT = 1
 VFLIP_BIT = 2
-
-
-def single_move_policy_array(thing, move):
-    S = twixt.Game.SIZE
-    a = numpy.zeros(S * (S - 2), dtype=numpy.uint16)
-    a[policy_point_index(thing, move)] = 1
-    return a
 
 
 def rotate_policy_array(pa, r):
@@ -524,8 +337,6 @@ def rotate_policy_array(pa, r):
     if r & VFLIP_BIT:
         x = vflip_policy_array(x)
     return x
-
-# ##
 
 
 def three_to_one(three):

@@ -199,115 +199,13 @@ class Game:
 
         return self.is_winning(1 - self.turn)
 
-    def can_win(self, color):
-
-        can_win_debug = False
-        if can_win_debug:
-            print("Starting for", self.COLOR_NAME[color])
-
-        enemy = 1 - color
-        visited = set()
-        if color == Game.WHITE:
-            starts = [Point(x, 0) for x in range(1, Game.SIZE - 1)]
-
-            def endcheck(pt): return pt.y == Game.SIZE - 1
-
-            def boundcheck(pt): return pt.x not in (0, Game.SIZE - 1)
-        else:
-            assert color == Game.BLACK
-            starts = [Point(0, y) for y in range(1, Game.SIZE - 1)]
-
-            def endcheck(pt): return pt.x == Game.SIZE - 1
-
-            def boundcheck(pt): return pt.y not in (0, Game.SIZE - 1)
-
-        unvisited = starts
-        while unvisited:
-            p = unvisited.pop()
-            if can_win_debug:
-                print("visitng:", p)
-            if endcheck(p):
-                if can_win_debug:
-                    print("and dats a winner!")
-                return True
-            visited.add(p)
-
-            for dlink in Game.DLINKS:
-                q = p + dlink
-                if (not Game.inbounds(q)) or self.pegs[enemy][q]:
-                    continue
-                if not boundcheck(q):
-                    continue
-                if q in visited:
-                    continue
-                if self.any_crossing_links(p, q, enemy):
-                    continue
-                if not self.allow_scl and self.any_crossing_links(p, q, 1 - enemy):
-                    continue
-                unvisited.append(q)
-        return False
+ 
 
     def is_winning(self, color):
 
         return "win" in self.reachable[color]
 
-    def slow_is_winning(self, color):
-
-        visited = set()
-        if color == Game.WHITE:
-            starts = [Point(x, 0) for x in range(1, Game.SIZE - 1)]
-
-            def endcheck(pt): return pt.y == Game.SIZE - 1
-        else:
-            assert color == Game.BLACK
-            starts = [Point(0, y) for y in range(1, Game.SIZE - 1)]
-
-            def endcheck(pt): return pt.x == Game.SIZE - 1
-
-        unvisited = [p for p in starts if self.pegs[color][p]]
-        while unvisited:
-            p = unvisited.pop()
-            if endcheck(p):
-                return True
-            visited.add(p)
-
-            for dlink in Game.DLINKS:
-                q = p + dlink
-                if (not Game.inbounds(q)) or self.pegs[color][q] == 0:
-                    continue
-                if q in visited:
-                    continue
-                if self.get_link(p, q, color):
-                    unvisited.append(q)
-
-        return False
-
-    def legal_plays(self):
-
-        return self.open_pegs[self.turn]
-
-    def slow_legal_plays(self):
-
-        out = []
-        if len(self.history) == 1:
-            out.append(SWAP)
-
-        if self.turn == Game.WHITE:
-            xr = list(range(1, Game.SIZE - 1))
-            yr = list(range(0, Game.SIZE))
-        else:
-            assert self.turn == Game.BLACK
-            xr = list(range(0, Game.SIZE))
-            yr = list(range(1, Game.SIZE - 1))
-
-        for x in xr:
-            for y in yr:
-                p = Point(x, y)
-                if self.pegs[Game.BLACK][p] + self.pegs[Game.WHITE][p] == 0:
-                    out.append(p)
-
-        return out
-
+ 
     def play_swap(self):
 
         assert len(self.history) == 1
