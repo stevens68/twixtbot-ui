@@ -61,6 +61,7 @@ class TwixtbotUI():
         self.moves_score = {}
         self.stgs = stgs
         self.bot_event = None
+        self.redo_moves = []
 
         # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
@@ -92,6 +93,7 @@ class TwixtbotUI():
         self.window.bind('<Alt-a>', ct.B_ACCEPT)
         self.window.bind('<Alt-c>', ct.B_CANCEL)
         self.window.bind('<Alt-u>', ct.B_UNDO)
+        self.window.bind('<Alt-d>', ct.B_REDO)
         self.window.bind('<Alt-g>', ct.B_RESIGN)
         self.window.bind('<Alt-r>', ct.B_RESET)
         self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
@@ -422,6 +424,7 @@ class TwixtbotUI():
     def handle_undo(self):
         if self.game.result == twixt.RESIGN:
             self.game.result = None
+            self.redo_moves.append(twixt.RESIGN)
             return
 
         gl = len(self.game.history)
@@ -429,6 +432,7 @@ class TwixtbotUI():
             del self.moves_score[gl]
 
         if gl > 0:
+            self.redo_moves.append(self.game.history[-1])
             self.game.undo()
 
         # switch off auto move
@@ -436,6 +440,9 @@ class TwixtbotUI():
             self.set_current(ct.K_AUTO_MOVE, False)
             self.get_control(
                 ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
+
+    def handle_redo(self):
+        self.execute_move(self.redo_moves.pop(), False)
 
     def handle_accept_bot(self):
         self.bot_event.set(ct.ACCEPT_EVENT)
@@ -480,7 +487,7 @@ class TwixtbotUI():
             self.handle_accept_bot()
         elif event == ct.B_CANCEL:
             self.handle_cancel_bot()
-        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE]:
+        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE]:
             lt.popup("bot in progress. Click Accept or Cancel.")
 
     def thread_is_alive(self):
@@ -501,7 +508,10 @@ class TwixtbotUI():
 
         return False
 
-    def execute_move(self, move):
+    def execute_move(self, move, clear_redo_moves=True):
+        if clear_redo_moves:
+            self.redo_moves = []
+
         if move == twixt.RESIGN:
             self.game.result = twixt.RESIGN
             self.game_over()
@@ -595,6 +605,11 @@ class TwixtbotUI():
 
         if event == ct.B_UNDO:
             self.handle_undo()
+            self.update_after_move()
+            return True
+
+        if event == ct.B_REDO:
+            self.handle_redo()
             self.update_after_move()
             return True
 

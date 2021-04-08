@@ -134,6 +134,7 @@ B_BOT_MOVE = "Bot Move"
 B_ACCEPT = "Accept"
 B_CANCEL = "Cancel"
 B_UNDO = "Undo"
+B_REDO = "Redo"
 B_RESIGN = "Resign"
 B_RESET = "Reset"
 B_APPLY_SAVE = 'Apply & Save'
