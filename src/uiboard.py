@@ -240,5 +240,5 @@ class UiBoard(board.TwixtBoard):
 
         return True
 
-    def create_move_objects(self, index):
-        return super().create_move_objects(self.game, index)
+    def create_move_objects(self, index, mcts=None):
+        return super().create_move_objects(self.game, index, mcts)

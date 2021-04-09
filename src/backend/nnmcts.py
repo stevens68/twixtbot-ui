@@ -32,7 +32,7 @@ class NeuralMCTS:
         self.smart_root = kwargs.pop("smart_root", 0)
         self.smart_init = kwargs.pop("smart_init", 0)
         self.board = kwargs.pop("board", None)
-
+        
         if kwargs:
             raise TypeError('Unexpected kwargs provided: %s' %
                             list(kwargs.keys()))
@@ -152,14 +152,20 @@ class NeuralMCTS:
 
         game.play(move)
         path.append(move)
-        idx = len(path)-1
+        self.board.create_move_objects(len(game.history)-1, True)
+        
+        """
+        idx = len(path) - 1
         if len(self.path) < len(path):
             self.path.append(move)
         elif path[idx] != self.path[idx]:
-            #print("   trunctating self.path at", idx)
+            while len(self.path) >= len(path):
+                self.board.undo_last_move_objects()                
             del self.path[idx:]
             self.path.append(move)
+        """
         
+
         # self.board.mcts_update(move)
         if subnode:
             subscore = -self.visit_node(game, subnode, path=path)
@@ -168,6 +174,9 @@ class NeuralMCTS:
             subnode = self.expand_leaf(game)
             node.subnodes[index] = subnode
             subscore = -subnode.score
+            
+            
+        self.board.undo_last_move_objects()
         game.undo()
 
         node.N[index] += 1
