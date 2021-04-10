@@ -116,11 +116,16 @@ class TwixtbotUI():
 
         # Initialize and warm-up bots
         self.bots = [None, None]
-        init_window.update('initializing bot 1 ...', 50)
-        self.init_bot(1)
-
-        init_window.update('initializing bot 2 ...', 70)
-        self.init_bot(2)
+        
+        if self.stgs.same_models():
+            init_window.update('initializing bots ...', 60)
+            self.init_bot(1) # init bot[1]
+            self.init_bot(2, self.bots[1].evaluator)
+        else:
+            init_window.update('initializing bot 1 ...', 50)
+            self.init_bot(1)
+            init_window.update('initializing bot 2 ...', 70)
+            self.init_bot(2)
 
         init_window.update('warming up bots ...', 90)
         self.bots[0].nm.eval_game(self.game)
@@ -337,8 +342,9 @@ class TwixtbotUI():
                     self.stgs.get(ct.K_ADD_NOISE[p]))
                 self.bots[t].nm.cpuct = float(
                     self.stgs.get(ct.K_CPUCT[p]))
+                self.bots[t].nm.visualize_mcts = self.get_control(ct.K_VISUALIZE_MCTS).get()
 
-    def init_bot(self, player):
+    def init_bot(self, player, evaluator=None):
 
         args = {
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
@@ -348,8 +354,8 @@ class TwixtbotUI():
             "random_rotation": self.stgs.get(ct.K_RANDOM_ROTATION[player]),
             "add_noise": self.stgs.get(ct.K_ADD_NOISE[player]),
             "cpuct": self.stgs.get(ct.K_CPUCT[player]),
-            "board": self.board
-
+            "board": self.board,
+            "evaluator": evaluator 
         }
 
         import backend.nnmplayer as nnmplayer
@@ -488,9 +494,11 @@ class TwixtbotUI():
             self.handle_accept_bot()
         elif event == ct.B_CANCEL:
             self.handle_cancel_bot()
-        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE]:
+        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE, ct.K_VISUALIZE_MCTS[1]]:
             lt.popup("bot in progress. Click Accept or Cancel.")
-
+            if event == ct.K_VISUALIZE_MCTS[1]:
+                self.get_control(ct.K_VISUALIZE_MCTS).update(not self.get_control(ct.K_VISUALIZE_MCTS).get())
+ 
     def thread_is_alive(self):
         return hasattr(self, 'thread') and self.thread is not None and self.thread.is_alive()
 
@@ -699,6 +707,7 @@ class TwixtbotUI():
             self.update_evals()
             return
 
+
         # thread events
         if event == ct.K_THREAD[1]:
             # handle event sent from bot
@@ -712,6 +721,11 @@ class TwixtbotUI():
 
         # button events while bot is not processing
         if self.handle_button_event(event, values):
+            return
+
+        # selection of mcts visualization
+        if event == ct.K_VISUALIZE_MCTS[1]:
+            self.update_bots()
             return
 
         # click on board event
@@ -744,7 +758,7 @@ def main():
                 ui.launch_bot()
 
         event, values = ui.get_event()
-
+        
         if event == "__TIMEOUT__":
             continue
 

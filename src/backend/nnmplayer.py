@@ -23,6 +23,8 @@ class Player:
         self.add_noise = float(kwargs.get('add_noise', 0))
         self.cpuct = float(kwargs.get('cpuct', 1))
         self.board = kwargs.get('board', None)
+        self.evaluator = kwargs.get('evaluator', None)
+
 
         self.verbosity = int(kwargs.get('verbosity', 0))
 
@@ -31,8 +33,11 @@ class Player:
 
         if self.model:
             # assert not self.socket
-            nneval_ = nneval.NNEvaluater(self.model)
-
+            if self.evaluator is None:
+                self.evaluator = nneval.NNEvaluater(self.model)
+            
+            nneval_ = self.evaluator
+            
             def nnfunc(game):
 
                 nips = naf.NetInputs(game)
@@ -59,7 +64,9 @@ class Player:
             smart_root=self.smart_root,
             verbosity=self.verbosity,
             cpuct=self.cpuct,
-            board=self.board)
+            board=self.board,
+            visualize_mcts=False
+        )
 
     def pick_move(self, game, window=None, event=None):
 

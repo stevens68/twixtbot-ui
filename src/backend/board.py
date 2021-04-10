@@ -41,9 +41,11 @@ class TwixtBoard:
             color = self.stgs.get(ct.K_COLOR[2])
 
         if highlight_last_move:
+            pr = self.peg_radius + 1
             lw = 2
             line_color = ct.HIGHLIGHT_LAST_MOVE_COLOR
         else:
+            pr = self.peg_radius
             lw = 1
             line_color = color
             
@@ -52,8 +54,7 @@ class TwixtBoard:
         else:
             fill_color = color
 
-        peg = self.graph.DrawCircle(self._point_to_coords(
-            point), self.peg_radius + 1, fill_color, line_color, lw)
+        peg = self.graph.DrawCircle(self._point_to_coords(point), pr, fill_color, line_color, lw)
             
         return peg
 
@@ -62,8 +63,9 @@ class TwixtBoard:
         move = game.history[index]
         if not isinstance(move, twixt.Point):
             # swap case: flip first move
-            c1 = self.history.pop().objects[0]
-            self.graph.delete_figure(c1)
+            if len(self.history) > 0:
+                c1 = self.history.pop().objects[0]
+                self.graph.delete_figure(c1)
             self.known_moves.clear()
             m1 = game.history[0]
             move = twixt.Point(m1.y, m1.x)
@@ -90,9 +92,10 @@ class TwixtBoard:
 
     def undo_last_move_objects(self):
         if len(self.history) > 0:
-            objects = self.history.pop().objects
-            for obj in objects:
-                self.graph.delete_figure(obj)
+            m = self.history.pop()
+            if m.objects is not None:
+                for obj in m.objects:
+                    self.graph.delete_figure(obj)
             
 
     def _create_drawn_link(self, p1, p2, color, mcts=False):

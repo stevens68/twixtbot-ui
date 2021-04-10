@@ -29,7 +29,7 @@ class UiBoard(board.TwixtBoard):
         
 
     def draw(self, heatmap=None, complete=True):
-        if complete:
+        if complete or heatmap is not None:
             self.graph.erase()
             self._draw_endlines()
             self._draw_labels()
@@ -46,7 +46,7 @@ class UiBoard(board.TwixtBoard):
                 self.create_move_objects(gl - 2)
             self.create_move_objects(gl-1)
 
-        if heatmap:
+        if heatmap is not None:
             self._draw_heatmap_legend(heatmap)
             self._draw_heatmap(heatmap)
 

@@ -4,6 +4,7 @@ import layout as lt
 import string
 
 
+
 def str2twixt(move):
     """ Converts one move string to a twixt backend class move.
 
