@@ -494,10 +494,12 @@ class TwixtbotUI():
             self.handle_accept_bot()
         elif event == ct.B_CANCEL:
             self.handle_cancel_bot()
-        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE, ct.K_VISUALIZE_MCTS[1]]:
+        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE, ct.K_VISUALIZE_MCTS[1], ct.K_HEATMAP[1]]:
             lt.popup("bot in progress. Click Accept or Cancel.")
             if event == ct.K_VISUALIZE_MCTS[1]:
                 self.get_control(ct.K_VISUALIZE_MCTS).update(not self.get_control(ct.K_VISUALIZE_MCTS).get())
+            elif event == ct.K_HEATMAP[1]:
+                self.get_control(ct.K_HEATMAP).update(not self.get_control(ct.K_HEATMAP).get())
  
     def thread_is_alive(self):
         return hasattr(self, 'thread') and self.thread is not None and self.thread.is_alive()
@@ -697,10 +699,6 @@ class TwixtbotUI():
             self.update_bots()
             return
 
-        # click on heatmap (no shortcuts)
-        if event == ct.K_HEATMAP[1]:
-            self.update_after_move()
-            return
 
         # click on evaluation checkbox (no shortcuts)
         if event == ct.K_SHOW_EVALUATION[1]:
@@ -728,7 +726,12 @@ class TwixtbotUI():
             self.update_bots()
             return
 
-        # click on board event
+        # click on heatmap (no shortcuts)
+        if event == ct.K_HEATMAP[1]:
+            self.update_after_move()
+            return
+ 
+         # click on board event
         if event == ct.K_BOARD[1]:
             self.handle_board_click(values)
             return

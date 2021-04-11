@@ -135,12 +135,14 @@ def row_eval_show_num():
             
             sg.Checkbox(text=ct.K_SHOW_EVALUATION[0], enable_events=True, default=ct.K_SHOW_EVALUATION[3],
                         key=ct.K_SHOW_EVALUATION[1]),
-            text_output(ct.K_EVAL_NUM[1], 7),
-            sg.Checkbox(text=ct.K_HEATMAP[0], enable_events=True, default=False, key=ct.K_HEATMAP[1],  size=(7 + ct.OFFSET, 1))
+            text_output(ct.K_EVAL_NUM[1], 7)
             ]
 
 
-
+def row_heatmap():
+    return [text_label(text=ct.K_HEATMAP[0]),
+            sg.Checkbox("", enable_events=True, default=False, key=ct.K_HEATMAP[1],  size=(7 + ct.OFFSET, 1))
+            ]
 
 
 class MainWindowLayout():
@@ -195,6 +197,7 @@ class MainWindowLayout():
                                  row_eval_show_num(),                                
                                  self.row_eval_hist(),
                                  self.row_eval_moves(),
+                                 row_heatmap(),
                                  row_separator("MCTS", True),
                                  row_trials(),
                                  row_visits(),

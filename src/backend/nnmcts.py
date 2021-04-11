@@ -153,8 +153,8 @@ class NeuralMCTS:
 
         game.play(move)
         
-        if self.visualize_mcts:
-            self.board.create_move_objects(len(game.history)-1, True)
+        #cif self.visualize_mcts:
+        #    self.board.create_move_objects(len(game.history)-1, True)
         
         if subnode:
             subscore = -self.visit_node(game, subnode)
@@ -165,8 +165,8 @@ class NeuralMCTS:
             subscore = -subnode.score
             
             
-        if self.visualize_mcts:
-            self.board.undo_last_move_objects()
+        #if self.visualize_mcts:
+        #    self.board.undo_last_move_objects()
             
         game.undo()
 
@@ -283,6 +283,7 @@ class NeuralMCTS:
         if not self.root.proven:
             # for i in tqdm(range(trials), ncols=100, desc="processing",
             # file=sys.stdout):
+            path = []
             for i in range(trials):
                 assert not self.root.proven
                 self.visit_node(game, self.root, True,
@@ -294,10 +295,16 @@ class NeuralMCTS:
                 if event is not None and event.is_set():
                     break
 
+                    
                 if (i + 1) % 20 == 0:
-                    #self.traverse(0, self.root)
                     self.send_message(
                         window, game, "in-progress", trials, i + 1, False)
+                    if self.visualize_mcts:
+                        self.clean_path(path)
+                        self.traverse(game, path, 0, self.root)
+
+        if self.visualize_mcts:
+            self.clean_path(path)
 
         if self.root.proven:
             return self.proven_result(game)
@@ -309,21 +316,32 @@ class NeuralMCTS:
         self.report = "%6.3f" % (
             self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
         return self.root.N
+    
+    def clean_path(self, path):
+            # remove current best path
+            for m in path:
+                for obj in m.objects:
+                    self.board.graph.delete_figure(obj)
+            del path[:]
 
-    def traverse(self, level, node):
+    def traverse(self, game, path, level, node):
 
         k = numpy.argmax(node.N)
         n = node.N[k]
-        sn = node.subnodes[k]
+        if n > 0:
+            sn = node.subnodes[k]
+            move = naf.policy_index_point(1-level % 2, k)            
+            #print("l:", level, "k:", k, "n:", n)
+            game.play(move)
+                                       
+            self.board.create_move_objects(len(game.history)-1, n)
+            path.append(self.board.history[-1]) 
 
-        print("l:", level, "k:", k, "n:", n)
-
-        game.play(move)
-        self.board.create_move_objects(len(game.history)-1, True)
-
-        """
-        if sn is not None:
-            self.traverse(level + 1, sn)
-        """
-        
-        game.undo()
+            if sn is not None:
+                self.traverse(game, path, level + 1, sn)
+            else:
+                print([m.move for m in path])
+            
+            game.undo()
+            self.board.history.pop()
+                       
