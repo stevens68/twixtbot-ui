@@ -331,7 +331,6 @@ class NeuralMCTS:
         if n > 0:
             sn = node.subnodes[k]
             move = naf.policy_index_point(game.turn % 2, k)            
-            #print("l:", level, "k:", k, "n:", n)
             game.play(move)
                                        
             self.board.create_move_objects(len(game.history)-1, n)
