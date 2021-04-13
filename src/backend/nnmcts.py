@@ -330,7 +330,7 @@ class NeuralMCTS:
         n = node.N[k]
         if n > 0:
             sn = node.subnodes[k]
-            move = naf.policy_index_point(1-level % 2, k)            
+            move = naf.policy_index_point(game.turn % 2, k)            
             #print("l:", level, "k:", k, "n:", n)
             game.play(move)
                                        

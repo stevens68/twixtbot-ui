@@ -96,8 +96,9 @@ class TwixtbotUI():
         self.window.bind('<Alt-d>', ct.B_REDO)
         self.window.bind('<Alt-g>', ct.B_RESIGN)
         self.window.bind('<Alt-r>', ct.B_RESET)
-        self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
         self.window.bind('<Alt-e>', ct.EVENT_SHORTCUT_SHOW_EVALUATION)
+        self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
+        self.window.bind('<Alt-v>', ct.EVENT_SHORTCUT_VISUALIZE_MCTS)
         self.window.bind('<Alt-KeyPress-1>', ct.EVENT_SHORTCUT_AUTOMOVE_1)
         self.window.bind('<Alt-KeyPress-2>', ct.EVENT_SHORTCUT_AUTOMOVE_2)
         self.window.bind('<Alt-Right->', ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
@@ -494,7 +495,8 @@ class TwixtbotUI():
             self.handle_accept_bot()
         elif event == ct.B_CANCEL:
             self.handle_cancel_bot()
-        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE, ct.K_VISUALIZE_MCTS[1], ct.K_HEATMAP[1]]:
+        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE, ct.K_VISUALIZE_MCTS[1], ct.K_HEATMAP[1],
+                        ct.EVENT_SHORTCUT_VISUALIZE_MCTS, ct.EVENT_SHORTCUT_HEATMAP]:
             lt.popup("bot in progress. Click Accept or Cancel.")
             if event == ct.K_VISUALIZE_MCTS[1]:
                 self.get_control(ct.K_VISUALIZE_MCTS).update(not self.get_control(ct.K_VISUALIZE_MCTS).get())
@@ -651,6 +653,13 @@ class TwixtbotUI():
             self.update_after_move()
             return True
 
+        if event == ct.EVENT_SHORTCUT_VISUALIZE_MCTS:
+            # toggle visualize checkbox and redraw board
+            self.get_control(ct.K_VISUALIZE_MCTS).Update(
+                not self.get_control(ct.K_VISUALIZE_MCTS).get())
+            self.update_after_move()
+            return True
+
         if event == ct.EVENT_SHORTCUT_AUTOMOVE_1:
             check = self.get_control(ct.K_AUTO_MOVE, 1).get()
             self.get_control(ct.K_AUTO_MOVE, 1).Update(not check)
@@ -688,9 +697,6 @@ class TwixtbotUI():
         if self.handle_menue_event(event, values):
             return
 
-        # keyboard shortcurt event (buttons and control bar)
-        if self.handle_shortcut_event(event, values):
-            return
 
         # click on auto move or trials (no shortcuts)
         if event in [ct.K_AUTO_MOVE[1], ct.K_AUTO_MOVE[2], ct.K_TRIALS[1], ct.K_TRIALS[2]]:
@@ -716,6 +722,11 @@ class TwixtbotUI():
         if self.thread_is_alive():
             self.handle_accept_and_cancel(event)
             return
+
+        # keyboard shortcurt event (buttons and control bar)
+        if self.handle_shortcut_event(event, values):
+            return
+
 
         # button events while bot is not processing
         if self.handle_button_event(event, values):

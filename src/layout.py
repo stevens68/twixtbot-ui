@@ -156,7 +156,13 @@ class MainWindowLayout():
     def col_eval_bar(self):
         colors = (self.stgs.get(ct.K_COLOR[1]),
                   self.stgs.get(ct.K_COLOR[2]))
-        vsize = int(self.stgs.get(ct.K_BOARD_SIZE[1]) / 11.11)
+        
+        l = [[sg.Text(text='test', key='-TEXT-', font=('Helvetica', 10))]]
+        w = sg.Window('test', l, finalize=True)
+        h = w['-TEXT-'].get_size()
+        w.close()
+        print("h:", h)   
+        vsize = int(self.stgs.get(ct.K_BOARD_SIZE[1]) / (h[1]* 0.65))
         return [sg.ProgressBar(2000, orientation='v', size=(vsize, 8), key=ct.K_EVAL_BAR[1],  bar_color=colors, pad=(0,0)),
                 sg.ProgressBar(1, orientation='v', size=(0.1, 5), key="TESTEVAL",  bar_color=("white","white"), pad=(0,0))
                 ]
