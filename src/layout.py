@@ -97,7 +97,7 @@ def row_trials():
 
 
 def get_progress_bar():
-    return sg.ProgressBar(1000, orientation='h', size=(21.5, 20),
+    return sg.ProgressBar(1000, orientation='h', size=(19, 20),
                           key=ct.K_PROGRESS_BAR[1], relief='RELIEF_RIDGE',
                           bar_color=(ct.PROGRESS_BAR_COLOR, ct.OUTPUT_BACKGROUND_COLOR))
 
