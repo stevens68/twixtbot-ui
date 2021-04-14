@@ -52,19 +52,25 @@ Place pegs by clicking on the board. You are in control of player1 and player2 a
 
 There is one dedicated bot for each player. The bots can have different settings. Click button *Bot Move* to let the reponsible bot do the next move. If you switch on *auto move* the bot will make its moves automatically.
 
-### Network
+### Swap rule 
+
+human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
+
+### Undo, Redo, Resign, Reset
+
+Click these buttons to undo the last move, redo undone moves, resign a game or start a new game, resp. You cannot click these buttons during MCTS.
+
+## Evaluation
 
 By default, both bots share the same neural network in folder `./model/pb`. The network has been taken from [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020. Some manual adjustments were necessary for tensorflow2 to read it. If you want to use another network that you have trained using twixtbot, have a look at the files in folder `./convert` to see what needs to be adjusted before twixtbot-ui can use it. Put the network into a separate folder and configure the folder in *File -> Settings...*.  
 
 Note that the network was trained with self-crossing links allowed, which can lead to incorrect evaluations in certain cases, if *allow scl* is set to false (default). It doesn't make a big difference though in most cases.
 
-### Evaluation
-
 By default, the evaluation output of the network is displayed after each move. If you do not want to be distracted or influenced you can uncheck the *evaluation* checkbox. This also hides the *MCTS visits* bar chart.
 
 #### value head
 
-After each move, the network evaluates the board. The value head [-1.0..1.0] indicates the probability for a win of player1 and player2, resp. The value is displayed as a float number and as a horizontal bar. Past values are recorded in a history bar chart.<br>
+After each move, the network evaluates the board. The value head [-1.0..1.0] indicates the probability for a win of player1 and player2, resp. The value is displayed as a float number and as a vertical bar. Past values are recorded in a history bar chart.<br>
 
 #### policy head
 
@@ -75,28 +81,23 @@ The policy head of the network evaluates each legal move. These p-values in rang
 
 ![Heatmap](img/Heatmap.JPG)
 
-### MCTS
+## MCTS
 
-The network is strong enough to win agaist almost any human player. However, if you want the bot to play even stronger you can switch on Monte-Carlo-Tree-Search. To do so chose a number of *trials* > 0. The more trials, the bigger the tree, i.e. the more boards will be evaluated. twixtbot-ui starts MCTS in a separate thread. Progress info is updated every 20 trials. The top three moves with the most visits are listed. If *smart accept* is switched on, the max number of trials will be reduced automatically depending on the visit difference between the leading move and the second best.  
+The network is strong enough to win against most human players. If you want the bot to play even stronger you can switch on Monte-Carlo-Tree-Search. To do so choose a number of *trials* > 0. The more trials, the bigger the tree, i.e. the more boards will be evaluated. twixtbot-ui starts MCTS in a separate thread. Progress info is updated every 20 trials. The top three moves with the most visits are listed.<br><br> 
+If *smart accept* is switched on, the max number of trials will be reduced automatically depending on the visit difference between the leading move and the second best.<br><br>
+If you check the *visualize* checkbox, the current line with the most visits will be displayed on the board so you can get an idea in which direction the bot is "thinking". In the example below, the line is S18 (3185), R14 (230), R11 (193), etc. 
+
+![Visualize MCTS](img/VisMCTS.JPG)
 
 In many cases MCTS will not lead to a different move than initially suggested by the network. Click *Accept* to accept the current best move. Click *Cancel* to abort; this will also set *auto move* to false. 
- 
-Note that for the first move and the swap move the bot does not use MCTS.
 
-### Swap rule 
+Note that for the first move and the swap move the bot does not use the evaluation of the network and MCTS.
 
-human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
+## Settings
 
-
-### Undo, Redo, Resign, Reset
-
-Click these buttons to undo the last move, redo undone moves, resign a game or start a new game, resp. You cannot click these buttons during MCTS.
-
-### File | Settings...
+All settings can be changed and saved via *File -> Settings...*. Most changes are effective immediately and can be applied in the middle of a game. Click button *Reset to default* to reset the values in all three tabs. 
 
 ![Settings Dialog](img/Settings.JPG)
-
-All settings can be changed and saved in *File -> Settings...*. Most changes are effective immediately and can be applied in the middle of a game. Click button *Reset to default* to reset the values in all three tabs. 
 
 Parameters *auto move* and *trials* can also be changed in the control panel of the main window. These changes won't be saved when you exit the program. In the main window, to see the current settings in a tooltip, hover the mouse over the *auto move* checkboxes. 
 
@@ -134,9 +135,9 @@ Decrease c<sub>puct</sub> to move the needle towards exploitation, i.e reduce th
 
 [This site](https://medium.com/oracledevs/lessons-from-alphazero-part-3-parameter-tweaking-4dceb78ed1e5) has more details on temperature, dirichlet noise and cpuct.
 
-### Loading and saving games 
+## Loading and saving games 
 
-Choose *File -> Open File...* to load games stored in [T1j](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). It will take a few seconds to re-calculate the evaluation history. After a game is loaded, the player names and the board are updated and you can continue to play as usual or undo moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game. Choose *File -> Save file...* to save a game in T1J format; tsgf is not supported as a target. 
+Choose *File -> Open File...* to load games stored in [T1J](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). It will take a few seconds to re-calculate the evaluation history. After a game is loaded, the player names and the board are updated and you can continue to play as usual or undo moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game. Choose *File -> Save file...* to save a game in T1J format; tsgf is not supported as a target. 
 
 #### T1J files
 
@@ -179,7 +180,7 @@ resign
         <tr>
             <td align="left" valign="top"><i>File</i>: <kbd>Alt</kbd><kbd>f</kbd><br><i>Help</i>: <kbd>Alt</kbd><kbd>h</kbd></td>
             <td align="left" valign="top"><i>Bot Move</i>: <kbd>Alt</kbd><kbd>b</kbd><br><i>Accept</i>: <kbd>Alt</kbd><kbd>a</kbd><br><i>Cancel</i>: <kbd>Alt</kbd><kbd>c</kbd><br><i>Undo</i>: <kbd>Alt</kbd><kbd>u</kbd><br><i>Redo</i>: <kbd>Alt</kbd><kbd>d</kbd><br><i>Resign</i>: <kbd>Alt</kbd><kbd>g</kbd><br><i>Reset</i>: <kbd>Alt</kbd><kbd>r</kbd></td>
-            <td align="left" valign="top"><i>auto move</i> 1: <kbd>Alt</kbd><kbd>1</kbd><br><i>auto move</i> 2: <kbd>Alt</kbd><kbd>2</kbd><br><i>evaluation</i>: <kbd>Alt</kbd><kbd>e</kbd><br><i>heatmap</i>: <kbd>Alt</kbd><kbd>m</kbd></td>
+            <td align="left" valign="top"><i>auto move</i> 1: <kbd>Alt</kbd><kbd>1</kbd><br><i>auto move</i> 2: <kbd>Alt</kbd><kbd>2</kbd><br><i>evaluation</i>: <kbd>Alt</kbd><kbd>e</kbd><br><i>heatmap</i>: <kbd>Alt</kbd><kbd>m</kbd><br><i>visualize</i>: <kbd>Alt</kbd><kbd>v</kbd></td>
             <td align="left" valign="top"><i>MCTS trials</i> 1: <kbd>Alt</kbd><kbd>&#8592</kbd>, <kbd>Alt</kbd><kbd>&#8594</kbd><br><i>MCTS trials</i> 2: <kbd>Alt</kbd><kbd>Shift</kbd><kbd>&#8592</kbd>, <kbd>Alt</kbd><kbd>Shift</kbd><kbd>&#8594</kbd></td>
         </tr>
     </tbody>
@@ -188,4 +189,5 @@ resign
 
 ### Contributors
 
-* [agtoever](https://github.com/agtoever): Save Files, Evaluation History, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo
+* [agtoever](https://github.com/agtoever):  
+Load tsgf Files, Save Files, Evaluation History, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo

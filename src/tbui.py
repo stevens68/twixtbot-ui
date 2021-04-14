@@ -96,8 +96,9 @@ class TwixtbotUI():
         self.window.bind('<Alt-d>', ct.B_REDO)
         self.window.bind('<Alt-g>', ct.B_RESIGN)
         self.window.bind('<Alt-r>', ct.B_RESET)
-        self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
         self.window.bind('<Alt-e>', ct.EVENT_SHORTCUT_SHOW_EVALUATION)
+        self.window.bind('<Alt-m>', ct.EVENT_SHORTCUT_HEATMAP)
+        self.window.bind('<Alt-v>', ct.EVENT_SHORTCUT_VISUALIZE_MCTS)
         self.window.bind('<Alt-KeyPress-1>', ct.EVENT_SHORTCUT_AUTOMOVE_1)
         self.window.bind('<Alt-KeyPress-2>', ct.EVENT_SHORTCUT_AUTOMOVE_2)
         self.window.bind('<Alt-Right->', ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
@@ -116,11 +117,16 @@ class TwixtbotUI():
 
         # Initialize and warm-up bots
         self.bots = [None, None]
-        init_window.update('initializing bot 1 ...', 50)
-        self.init_bot(1)
-
-        init_window.update('initializing bot 2 ...', 70)
-        self.init_bot(2)
+        
+        if self.stgs.same_models():
+            init_window.update('initializing bots ...', 60)
+            self.init_bot(1) # init bot[1]
+            self.init_bot(2, self.bots[1].evaluator)
+        else:
+            init_window.update('initializing bot 1 ...', 50)
+            self.init_bot(1)
+            init_window.update('initializing bot 2 ...', 70)
+            self.init_bot(2)
 
         init_window.update('warming up bots ...', 90)
         self.bots[0].nm.eval_game(self.game)
@@ -337,8 +343,9 @@ class TwixtbotUI():
                     self.stgs.get(ct.K_ADD_NOISE[p]))
                 self.bots[t].nm.cpuct = float(
                     self.stgs.get(ct.K_CPUCT[p]))
+                self.bots[t].nm.visualize_mcts = self.get_control(ct.K_VISUALIZE_MCTS).get()
 
-    def init_bot(self, player):
+    def init_bot(self, player, evaluator=None):
 
         args = {
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
@@ -348,8 +355,8 @@ class TwixtbotUI():
             "random_rotation": self.stgs.get(ct.K_RANDOM_ROTATION[player]),
             "add_noise": self.stgs.get(ct.K_ADD_NOISE[player]),
             "cpuct": self.stgs.get(ct.K_CPUCT[player]),
-            "board": self.board
-
+            "board": self.board,
+            "evaluator": evaluator 
         }
 
         import backend.nnmplayer as nnmplayer
@@ -488,9 +495,14 @@ class TwixtbotUI():
             self.handle_accept_bot()
         elif event == ct.B_CANCEL:
             self.handle_cancel_bot()
-        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE]:
+        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE, ct.K_VISUALIZE_MCTS[1], ct.K_HEATMAP[1],
+                        ct.EVENT_SHORTCUT_VISUALIZE_MCTS, ct.EVENT_SHORTCUT_HEATMAP]:
             lt.popup("bot in progress. Click Accept or Cancel.")
-
+            if event == ct.K_VISUALIZE_MCTS[1]:
+                self.get_control(ct.K_VISUALIZE_MCTS).update(not self.get_control(ct.K_VISUALIZE_MCTS).get())
+            elif event == ct.K_HEATMAP[1]:
+                self.get_control(ct.K_HEATMAP).update(not self.get_control(ct.K_HEATMAP).get())
+ 
     def thread_is_alive(self):
         return hasattr(self, 'thread') and self.thread is not None and self.thread.is_alive()
 
@@ -641,6 +653,13 @@ class TwixtbotUI():
             self.update_after_move()
             return True
 
+        if event == ct.EVENT_SHORTCUT_VISUALIZE_MCTS:
+            # toggle visualize checkbox and redraw board
+            self.get_control(ct.K_VISUALIZE_MCTS).Update(
+                not self.get_control(ct.K_VISUALIZE_MCTS).get())
+            self.update_after_move()
+            return True
+
         if event == ct.EVENT_SHORTCUT_AUTOMOVE_1:
             check = self.get_control(ct.K_AUTO_MOVE, 1).get()
             self.get_control(ct.K_AUTO_MOVE, 1).Update(not check)
@@ -678,9 +697,6 @@ class TwixtbotUI():
         if self.handle_menue_event(event, values):
             return
 
-        # keyboard shortcurt event (buttons and control bar)
-        if self.handle_shortcut_event(event, values):
-            return
 
         # click on auto move or trials (no shortcuts)
         if event in [ct.K_AUTO_MOVE[1], ct.K_AUTO_MOVE[2], ct.K_TRIALS[1], ct.K_TRIALS[2]]:
@@ -689,15 +705,12 @@ class TwixtbotUI():
             self.update_bots()
             return
 
-        # click on heatmap (no shortcuts)
-        if event == ct.K_HEATMAP[1]:
-            self.update_after_move()
-            return
 
         # click on evaluation checkbox (no shortcuts)
         if event == ct.K_SHOW_EVALUATION[1]:
             self.update_evals()
             return
+
 
         # thread events
         if event == ct.K_THREAD[1]:
@@ -710,11 +723,26 @@ class TwixtbotUI():
             self.handle_accept_and_cancel(event)
             return
 
+        # keyboard shortcurt event (buttons and control bar)
+        if self.handle_shortcut_event(event, values):
+            return
+
+
         # button events while bot is not processing
         if self.handle_button_event(event, values):
             return
 
-        # click on board event
+        # selection of mcts visualization
+        if event == ct.K_VISUALIZE_MCTS[1]:
+            self.update_bots()
+            return
+
+        # click on heatmap (no shortcuts)
+        if event == ct.K_HEATMAP[1]:
+            self.update_after_move()
+            return
+ 
+         # click on board event
         if event == ct.K_BOARD[1]:
             self.handle_board_click(values)
             return
@@ -744,7 +772,7 @@ def main():
                 ui.launch_bot()
 
         event, values = ui.get_event()
-
+        
         if event == "__TIMEOUT__":
             continue
 

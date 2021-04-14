@@ -16,6 +16,7 @@ CURSOR_LABEL_BACKGROUND_COLOR = "white"
 GUIDELINE_COLOR = "#b3b3b3"
 PLOT_LABEL_COLOR = "black"
 PLOT_LABEL_FONT = ("Arial", 9)
+VISITS_LABEL_FONT = ("Arial", 8)
 OUTPUT_BACKGROUND_COLOR = "slate grey"
 OUTPUT_TEXT_COLOR = "white"
 COLOR_LIST = ["black", "blue", "cyan", "orange",
@@ -59,13 +60,15 @@ CANCEL_EVENT = "cancelled"
 BOARD_SIZE_LIST = [500, 600, 700, 800]
 TEMPERATURE_LIST = [0.0, 0.5, 1.0]
 
+
 # keys
 K_COLOR = ['color', 'P1_COLOR', 'P2_COLOR', "red", "black"]
 K_TURN_INDICATOR = ['turn', 'P1_TURN_INDICATOR',
                     'P2_TURN_INDICATOR', TURN_CHAR, ""]
 K_NAME = ['name', 'P1_NAME', 'P2_NAME', "Tom", "Jerry"]
 K_AUTO_MOVE = ['auto move', 'P1_AUTO_MOVE', 'P2_AUTO_MOVE', False, False]
-K_TRIALS = ['MCTS trials', 'P1_TRIALS', 'P2_TRIALS', 0, 0]
+K_TRIALS = ['trials', 'P1_TRIALS', 'P2_TRIALS', 0, 0]
+K_VISUALIZE_MCTS = ['visualize', 'VISUALIZE_MCTS', None, False]
 K_ALLOW_SWAP = ['allow swap', 'ALLOW_SWAP', None, True]
 K_ALLOW_SCL = ['allow self crossing links', 'ALLOW_SCL', None, False]
 K_SMART_ACCEPT = ['smart accept', 'SMART_ACCEPT', None, True]
@@ -89,7 +92,7 @@ K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
 
 
 # non-setting keys
-K_SHOW_EVALUATION = ['evaluation', 'SHOW_EVALUATION', None, True]
+K_SHOW_EVALUATION = ['', 'SHOW_EVALUATION', None, True]
 K_EVAL_BAR = ['', 'EVAL_BAR', None, 0]
 K_EVAL_NUM = ['', 'EVAL_NUM', None, ""]
 K_EVAL_MOVES = ['P * 1000', 'EVAL_MOVES', None, ""]
@@ -100,7 +103,7 @@ K_SPLASH_STATUS_TEXT = ['SPLASH_STATUS_TEXT']
 K_PROGRESS_BAR = ['progress', 'PROGRESS_BAR']
 K_PROGRESS_NUM = ['', 'PROGRESS_NUMBERS']
 K_SPINNER = ['', 'SPINNER']
-K_VISITS = ['MCTS visits', 'VISITS']
+K_VISITS = ['visits', 'VISITS']
 K_MOVES = ['moves', 'MOVES']
 K_BOARD = [None, 'BOARD']
 K_THREAD = [None, 'THREAD']
@@ -148,6 +151,7 @@ TAB_LABEL_PLAYER2 = "Player &2"
 # shortcut events for checkboxes
 EVENT_SHORTCUT_HEATMAP = 'SHORTCUT_HEATMAP'
 EVENT_SHORTCUT_SHOW_EVALUATION = 'SHORTCUT_SHOW_EVALUATION'
+EVENT_SHORTCUT_VISUALIZE_MCTS = 'SHORTCUT_VISUALIZE_MCTS'
 EVENT_SHORTCUT_AUTOMOVE_1 = 'SHORTCUT_AUTOMOVE_1'
 EVENT_SHORTCUT_AUTOMOVE_2 = 'SHORTCUT_AUTOMOVE_2'
 EVENT_SHORTCUT_TRIALS_1_PLUS = 'SHORTCUT_TRIALS_1_PLUS'

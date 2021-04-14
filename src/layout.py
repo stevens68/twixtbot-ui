@@ -35,10 +35,11 @@ def pad(s):
     return sg.Text("", size=(s, 1))
 
 
-def row_separator(text):
-    # return sg.Text(text, font=ct.SEPARATOR_FONT), sg.HSeparator(pad=((5,
-    # 18), (4, 4)))
-    return sg.Text(text, font=ct.SEPARATOR_FONT), sg.Text(" ")
+def row_separator(text, line=False):
+    if line:
+        return sg.Text(text, font=ct.SEPARATOR_FONT), sg.HSeparator(pad=((5,18), (4, 2)))
+    else:
+        return sg.Text(text, font=ct.SEPARATOR_FONT), sg.Text(" ");
 
 
 def get_color_square(player):
@@ -96,7 +97,7 @@ def row_trials():
 
 
 def get_progress_bar():
-    return sg.ProgressBar(1000, orientation='h', size=(21.5, 20),
+    return sg.ProgressBar(1000, orientation='h', size=(19, 20),
                           key=ct.K_PROGRESS_BAR[1], relief='RELIEF_RIDGE',
                           bar_color=(ct.PROGRESS_BAR_COLOR, ct.OUTPUT_BACKGROUND_COLOR))
 
@@ -116,25 +117,32 @@ def row_visits():
     return [text_label(ct.K_VISITS[0]),
             sg.Canvas(size=(240, 80), background_color=ct.OUTPUT_BACKGROUND_COLOR, key=ct.K_VISITS[1])]
 
+def row_visualize_mcts():
+    return [text_label(ct.K_VISUALIZE_MCTS[0]),
+            sg.Checkbox(text="", enable_events=True, default=ct.K_VISUALIZE_MCTS[3],
+                        key=ct.K_VISUALIZE_MCTS[1])]
+
 
 def row_moves():
     return [text_label(ct.K_MOVES[0]),
             sg.Multiline(default_text='', font=ct.MOVES_FONT, background_color=ct.OUTPUT_BACKGROUND_COLOR,
                          text_color=ct.OUTPUT_TEXT_COLOR, autoscroll=True,
-                         key=ct.K_MOVES[1], disabled=True, size=(28, 6))]
+                         key=ct.K_MOVES[1], disabled=True, size=(28, 5))]
 
 
 def row_eval_show_num():
-    return [text_label(ct.K_SHOW_EVALUATION[0]),
-            sg.Checkbox(text="", enable_events=True, default=ct.K_SHOW_EVALUATION[3],
+    return [text_label(""),
+            
+            sg.Checkbox(text=ct.K_SHOW_EVALUATION[0], enable_events=True, default=ct.K_SHOW_EVALUATION[3],
                         key=ct.K_SHOW_EVALUATION[1]),
-            text_output(ct.K_EVAL_NUM[1], 7)]
+            text_output(ct.K_EVAL_NUM[1], 7)
+            ]
 
 
 def row_heatmap():
-    return [text_label(ct.K_HEATMAP[0]),
-            sg.Checkbox(
-        text="", enable_events=True, default=False, key=ct.K_HEATMAP[1],  size=(7 + ct.OFFSET, 1))]
+    return [text_label(text=ct.K_HEATMAP[0]),
+            sg.Checkbox("", enable_events=True, default=False, key=ct.K_HEATMAP[1],  size=(7 + ct.OFFSET, 1))
+            ]
 
 
 class MainWindowLayout():
@@ -144,11 +152,20 @@ class MainWindowLayout():
         self.stgs = stgs
         self.layout = self.build_layout()
 
-    def row_eval_bar(self):
+
+    def col_eval_bar(self):
         colors = (self.stgs.get(ct.K_COLOR[1]),
                   self.stgs.get(ct.K_COLOR[2]))
-        return [text_label(ct.K_EVAL_BAR[0]), sg.ProgressBar(2000, orientation='h', size=(21.5, 8), key=ct.K_EVAL_BAR[1],
-                                                             bar_color=colors)]
+
+        #create dummy window to get line height in pixels        
+        l = [[sg.Text(text='test', key='-TEXT-', font=('Helvetica', 10))]]
+        w = sg.Window('test', l, finalize=True)
+        s = w['-TEXT-'].get_size()
+        w.close()
+        vsize = int(self.stgs.get(ct.K_BOARD_SIZE[1]) / (s[1]* 0.65))
+        return [sg.ProgressBar(2000, orientation='v', size=(vsize, 8), key=ct.K_EVAL_BAR[1],  bar_color=colors, pad=(0,0)),
+                sg.ProgressBar(1, orientation='v', size=(0.1, 5), key="TESTEVAL",  bar_color=("white","white"), pad=(0,0))
+                ]
 
     def row_eval_moves(self):
         return [text_label(ct.K_EVAL_MOVES[0]),
@@ -164,7 +181,7 @@ class MainWindowLayout():
 
         button_count = 7
         bw = int(self.stgs.get(
-            ct.K_BOARD_SIZE[1]) / (button_count * 9))
+            ct.K_BOARD_SIZE[1]) / (button_count * 10))
         button_row = [
             sg.Button(ct.B_BOT_MOVE, size=(bw, 1), focus=True),
             sg.Button(ct.B_ACCEPT, size=(bw, 1)),
@@ -175,31 +192,37 @@ class MainWindowLayout():
             sg.Button(ct.B_RESET, size=(bw, 1))
         ]
 
+        eval_bar_col = sg.Column([self.col_eval_bar()])
+
         control_col = sg.Column([row_colors(),
                                  row_names(),
                                  row_turn_indicators(),
                                  row_auto_moves(),
-                                 row_eval_show_num(),
-                                 self.row_eval_bar(),
+                                 row_moves(),
+                                 row_separator("evaluation", True),
+                                 row_eval_show_num(),                                
                                  self.row_eval_hist(),
                                  self.row_eval_moves(),
                                  row_heatmap(),
+                                 row_separator("MCTS", True),
                                  row_trials(),
                                  row_visits(),
+                                 row_visualize_mcts(),
                                  row_progress_bar(),
-                                 row_progress_nums(),
-                                 row_moves()
+                                 row_progress_nums()
                                  ],
                                 vertical_alignment='top')
 
-        board_col = sg.Column([[self.board.graph], button_row])
+        board_col = sg.Column([[self.board.graph]])
 
         layout = [
             [sg.Menu(menu_def, tearoff=False)],
             [
                 board_col,
+                eval_bar_col,
                 control_col
             ],
+            button_row
         ]
 
         return layout

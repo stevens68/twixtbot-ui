@@ -4,6 +4,7 @@ import numpy
 
 import backend.naf as naf
 import backend.twixt as twixt
+import constants as ct
 
 
 
@@ -32,7 +33,8 @@ class NeuralMCTS:
         self.smart_root = kwargs.pop("smart_root", 0)
         self.smart_init = kwargs.pop("smart_init", 0)
         self.board = kwargs.pop("board", None)
-
+        self.visualize_mcts = kwargs.pop("visualize_mcts", None)
+        
         if kwargs:
             raise TypeError('Unexpected kwargs provided: %s' %
                             list(kwargs.keys()))
@@ -40,7 +42,6 @@ class NeuralMCTS:
         self.root = None
         self.history_at_root = None
         
-        self.path = []
 
     def expand_leaf(self, game):
         """ Create a brand new leaf node for the current game state
@@ -93,7 +94,7 @@ class NeuralMCTS:
         return leaf
         # end expand_leaf()
 
-    def visit_node(self, game, node, top=False, trials=None, trials_left=-1, window=None, path=None):
+    def visit_node(self, game, node, top=False, trials=None, trials_left=-1, window=None):
         """ Visit a node, return the evaluation from the
             point of view of the player currently to play. """
 
@@ -151,23 +152,22 @@ class NeuralMCTS:
         subnode = node.subnodes[index]
 
         game.play(move)
-        path.append(move)
-        idx = len(path)-1
-        if len(self.path) < len(path):
-            self.path.append(move)
-        elif path[idx] != self.path[idx]:
-            #print("   trunctating self.path at", idx)
-            del self.path[idx:]
-            self.path.append(move)
         
-        # self.board.mcts_update(move)
+        #cif self.visualize_mcts:
+        #    self.board.create_move_objects(len(game.history)-1, True)
+        
         if subnode:
-            subscore = -self.visit_node(game, subnode, path=path)
+            subscore = -self.visit_node(game, subnode)
         else:
             #print(trials, "expanding", path)
             subnode = self.expand_leaf(game)
             node.subnodes[index] = subnode
             subscore = -subnode.score
+            
+            
+        #if self.visualize_mcts:
+        #    self.board.undo_last_move_objects()
+            
         game.undo()
 
         node.N[index] += 1
@@ -283,11 +283,11 @@ class NeuralMCTS:
         if not self.root.proven:
             # for i in tqdm(range(trials), ncols=100, desc="processing",
             # file=sys.stdout):
+            path = []
             for i in range(trials):
-                path = []
                 assert not self.root.proven
                 self.visit_node(game, self.root, True,
-                                trials - i, window=window, path=path)
+                                trials - i, window=window)
 
                 if self.root.proven:
                     break
@@ -295,10 +295,16 @@ class NeuralMCTS:
                 if event is not None and event.is_set():
                     break
 
+                    
                 if (i + 1) % 20 == 0:
-                    #self.traverse(0, self.root)
                     self.send_message(
                         window, game, "in-progress", trials, i + 1, False)
+                    if self.visualize_mcts:
+                        self.clean_path(path)
+                        self.traverse(game, path, 0, self.root)
+
+        if self.visualize_mcts:
+            self.clean_path(path)
 
         if self.root.proven:
             return self.proven_result(game)
@@ -310,14 +316,31 @@ class NeuralMCTS:
         self.report = "%6.3f" % (
             self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
         return self.root.N
+    
+    def clean_path(self, path):
+            # remove current best path
+            for m in path:
+                for obj in m.objects:
+                    self.board.graph.delete_figure(obj)
+            del path[:]
 
-    def traverse(self, level, node):
+    def traverse(self, game, path, level, node):
 
         k = numpy.argmax(node.N)
         n = node.N[k]
-        sn = node.subnodes[k]
+        if n > 0:
+            sn = node.subnodes[k]
+            move = naf.policy_index_point(game.turn % 2, k)            
+            game.play(move)
+                                       
+            self.board.create_move_objects(len(game.history)-1, n)
+            path.append(self.board.history[-1]) 
 
-        print("l:", level, "k:", k, "n:", n)
-
-        if sn is not None:
-            self.traverse(level + 1, sn)
+            if sn is not None:
+                self.traverse(game, path, level + 1, sn)
+            else:
+                print([m.move for m in path])
+            
+            game.undo()
+            self.board.history.pop()
+                       
