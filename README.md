@@ -85,7 +85,7 @@ The policy head of the network evaluates each legal move. These p-values in rang
 
 The network is strong enough to win against most human players. If you want the bot to play even stronger you can switch on Monte-Carlo-Tree-Search. To do so choose a number of *trials* > 0. The more trials, the bigger the tree, i.e. the more boards will be evaluated. twixtbot-ui starts MCTS in a separate thread. Progress info is updated every 20 trials. The top three moves with the most visits are listed.<br><br> 
 If *smart accept* is switched on, the max number of trials will be reduced automatically depending on the visit difference between the leading move and the second best.<br><br>
-If you check the *visualize* checkbox, the current line with the most visits will be displayed on the board so you can get an idea in which direction the bot is "thinking".
+If you check the *visualize* checkbox, the current line with the most visits will be displayed on the board so you can get an idea in which direction the bot is "thinking". In the example below, the line is S18 (3185), R14 (230), R11 (193), etc. 
 
 ![Visualize MCTS](img/VisMCTS.JPG)
 
