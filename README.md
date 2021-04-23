@@ -11,28 +11,35 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 ## Get started
 
-make sure you have Python3 installed. The Python version needs to support tensorflow2. As of March 2021 this is true for Python 3.6, 3.7 and 3.8 (64bit). Do not use Python 3.9. Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
+Make sure you have Python3 with Tkinter installed and support for the mysqlclient Python package. For Ubuntu based distributions, the following command installs the required packages:
+
+```
+sudo apt install -y git python3 python3-tk python3-pip python3-dev default-libmysqlclient-dev build-essential
+```
+
+The Python version needs to support tensorflow2. As of March 2021 this is true for Python 3.6, 3.7 and 3.8 (64bit). Do not use Python 3.9. Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
 
 ```
 python --version
-
 python -c "import struct; print(8 * struct.calcsize('P'))"
 ```
 
-Clone or download this repository. At the command line, change to the twixtbot-ui directory and install the necessary modules:
+Clone or download this repository using the command:
+
+```
+git clone https://github.com/stevens68/twixtbot-ui
+```
+
+At the command line, change to the twixtbot-ui directory and install the necessary modules:
 
 ```
 python -m pip install -r requirements.txt
 ```
 
-> Note for Ubuntu users: If you see errors, you might need to execute the following steps and try again:<br>
-> `sudo apt-get install mysql-client`<br>
-> `sudo apt-get install libmysqlclient-dev`<br>
-> `sudo apt-get install python3-tk`<br>
-
 Change to directory `./src` and start twixtbot-ui:
 
 ```
+cd src
 python tbui.py
 ```
 
