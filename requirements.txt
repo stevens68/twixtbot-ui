@@ -1,4 +1,4 @@
 numpy==1.19.5
-matplotlib==3.4.1
+matplotlib==3.3.4
 tensorflow==2.4.1
 PySimpleGUI==4.39.1
