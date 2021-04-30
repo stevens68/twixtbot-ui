@@ -4,7 +4,6 @@ import layout as lt
 import string
 
 
-
 def str2twixt(move):
     """ Converts one move string to a twixt backend class move.
 
@@ -134,6 +133,7 @@ def parse_tsgf_file(content):
     """
     PLAYERS_STR = ('PB', 'PW')
     TURN_STR = ('r[', 'b[')
+    FIELD_SEP = ';'
 
     if len(content) > 1:
         raise ValueError('Found more than 1 line in a tsgf file.')
@@ -146,9 +146,11 @@ def parse_tsgf_file(content):
         raise ValueError("Can't read player names from tsgf file")
 
     try:
-        raw_moves = [line[2:-1].strip(']) ')
-                     for line in content[0].split(';')
-                     if line[:2] in TURN_STR]
+        print(content[0])
+        raw_moves = [field[2:field.find('|') if '|' in field else field.find(']')]
+                     for field in content[0].split(FIELD_SEP)
+                     if field[:2] in TURN_STR]
+        print(raw_moves)
         moves = list(map(str2twixt, raw_moves))
     except Exception:
         # Just pass on the exception from str2twixt
