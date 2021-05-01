@@ -2,7 +2,6 @@ import PySimpleGUI as sg
 from backend import twixt
 import layout as lt
 import string
-import settings as st
 
 
 
@@ -159,7 +158,7 @@ def parse_tsgf_file(content):
     return players, moves
 
 
-def get_game():
+def get_game(curent_cross_lines_setting=False):
     """Returns (players, moves) from a file, chosen by the user
 
     Shows a file-open dialog to the user.
@@ -175,7 +174,7 @@ def get_game():
     are handled within this function.
 
     Args:
-        None
+        curent_cross_lines_setting (bool): current setting for crossing lines
 
     Returns:
         tuple: (list: players as strings,
@@ -206,12 +205,12 @@ def get_game():
         if file_name[-2:].upper() == 'T1':
             return parse_t1_file(content), False
         elif file_name[-4:].lower() == 'tsgf':
-            if not stgs.get(ct.K_ALLOW_SCL[1]):
+            if not curent_cross_lines_setting:
                 enable_crossing_lines = sg.popup_yes_no(
                     "You have opened a .tsgf file, which propably comes "
                     "from LittleGolem. By default, LittleGolem allows "
                     "crossing lines. You don't have crossing lines enabled. "
-                    "Do you want to enable crossing lines?"
+                    "Do you want to enable crossing lines?",
                     title='Enable crossing lines?') == "Yes"
             return parse_tsgf_file(content), enable_crossing_lines
         else:
