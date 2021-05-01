@@ -393,7 +393,7 @@ class TwixtbotUI():
             self.update_after_move(False)
 
     def handle_open_file(self):
-        players, moves, cross_lines = fi.get_game()
+        players, moves, x_lines = fi.get_game(self.stgs.get(ct.K_ALLOW_SCL[1]))
         if players is None:
             return
 
@@ -402,7 +402,7 @@ class TwixtbotUI():
         self.stgs.settings[ct.K_NAME[2]] = players[1]
 
         # adjust settings if needed
-        if cross_lines:
+        if x_lines:
             self.stgs.set(ct.K_ALLOW_SCL[1], True)
         self.update_settings_changed()
 
