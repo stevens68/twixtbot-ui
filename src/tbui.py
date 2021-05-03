@@ -393,16 +393,20 @@ class TwixtbotUI():
             self.update_after_move(False)
 
     def handle_open_file(self):
-        players, moves = fi.get_game()
+        players, moves, x_lines = fi.get_game(self.stgs.get(ct.K_ALLOW_SCL[1]))
         if players is None:
             return
 
         # assign player names
         self.stgs.settings[ct.K_NAME[1]] = players[0]
         self.stgs.settings[ct.K_NAME[2]] = players[1]
+
+        # adjust settings if needed
+        if x_lines:
+            self.stgs.set(ct.K_ALLOW_SCL[1], True)
         self.update_settings_changed()
 
-        # reset game
+        # reset game (which also handles changes crossing lines settings)
         self.reset_game()
 
         # replay game

@@ -159,21 +159,30 @@ def parse_tsgf_file(content):
     return players, moves
 
 
-def get_game():
+def get_game(curent_cross_lines_setting=False):
     """Returns (players, moves) from a file, chosen by the user
 
     Shows a file-open dialog to the user.
     The chosen file is read and parsed into players and moves.
+    If the file is a tsgf file, the user is asked if the setting
+    to allow crossing lines should be enabled, because Little Golem
+    plays with corring lines allowed by default.
     The resulting player name list and moves list is returned.
+    Finally a boolean is returned, which indicates if crossing lines
+    should be set to enabled (True) or if it should be left
+    in the current state (False).
     Exceptions that occur while opening and/or parsing the file
     are handled within this function.
 
     Args:
-        None
+        curent_cross_lines_setting (bool): current setting for crossing lines
 
     Returns:
-        tuple: (list: players as strings, list: twixt moves)
+        tuple: (list: players as strings,
+                list: twixt moves,
+                bool: enable_crossing_lines)
     """
+    RETURN_ON_FAILURE = (None, None, False)
 
     # Get filename
     file_name = sg.PopupGetFile('Choose file', file_types=(
@@ -182,7 +191,7 @@ def get_game():
         ("Little Golem Files", "*.tsgf")), no_window=True, keep_on_top=True)
 
     if file_name is None or file_name == "":
-        return None, None
+        return RETURN_ON_FAILURE
 
     # Open file
     try:
@@ -190,20 +199,28 @@ def get_game():
             content = list(map(lambda s: s.strip(), f.readlines()))
     except Exception:
         sg.popup_ok(f"Can't open {file_name} as a valid Twixt file.")
-        return None, None
+        return RETURN_ON_FAILURE
 
     # Parse file
     try:
         if file_name[-2:].upper() == 'T1':
-            return parse_t1_file(content)
+            return parse_t1_file(content), False
         elif file_name[-4:].lower() == 'tsgf':
-            return parse_tsgf_file(content)
+            enable_crossing_lines = False
+            if not curent_cross_lines_setting:
+                enable_crossing_lines = sg.popup_yes_no(
+                    "You have opened a .tsgf file, which propably comes "
+                    "from LittleGolem. By default, LittleGolem allows "
+                    "crossing lines. You don't have crossing lines enabled. "
+                    "Do you want to enable crossing lines?",
+                    title='Enable crossing lines?') == "Yes"
+            return (*parse_tsgf_file(content)), enable_crossing_lines
         else:
             lt.popup("Didn't recognize the filename extension.")
     except Exception as e:
         sg.popup_ok(f"Error '{e}' while opening file {file_name}")
 
-    return None, None
+    return RETURN_ON_FAILURE
 
 
 def save_game(players=['Player1', 'Player2'],
