@@ -3,6 +3,7 @@
 import PySimpleGUI as sg
 import threading
 import time
+import os
 
 import backend.twixt as twixt
 import util.pmeter as pmeter
@@ -788,4 +789,7 @@ def main():
 
 
 if __name__ == "__main__":
+    abspath = os.path.abspath(__file__)
+    dname = os.path.dirname(abspath)
+    os.chdir(dname)
     main()
