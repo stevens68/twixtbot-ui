@@ -213,7 +213,7 @@ def get_game(curent_cross_lines_setting=False):
                     "crossing lines. You don't have crossing lines enabled. "
                     "Do you want to enable crossing lines?",
                     title='Enable crossing lines?') == "Yes"
-            return *parse_tsgf_file(content), enable_crossing_lines
+            return (*parse_tsgf_file(content)), enable_crossing_lines
         else:
             lt.popup("Didn't recognize the filename extension.")
     except Exception as e:
