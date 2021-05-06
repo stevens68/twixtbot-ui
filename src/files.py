@@ -146,11 +146,9 @@ def parse_tsgf_file(content):
         raise ValueError("Can't read player names from tsgf file")
 
     try:
-        print(content[0])
         raw_moves = [field[2:field.find('|') if '|' in field else field.find(']')]
                      for field in content[0].split(FIELD_SEP)
                      if field[:2] in TURN_STR]
-        print(raw_moves)
         moves = list(map(str2twixt, raw_moves))
     except Exception:
         # Just pass on the exception from str2twixt
@@ -214,7 +212,7 @@ def get_game(curent_cross_lines_setting=False):
                     "crossing lines. You don't have crossing lines enabled. "
                     "Do you want to enable crossing lines?",
                     title='Enable crossing lines?') == "Yes"
-            return (*parse_tsgf_file(content)), enable_crossing_lines
+            return (*parse_tsgf_file(content), enable_crossing_lines)
         else:
             lt.popup("Didn't recognize the filename extension.")
     except Exception as e:
@@ -273,8 +271,8 @@ def save_game(players=['Player1', 'Player2'],
         content += [str(m).upper() for m in moves]
 
     except Exception as e:
-        sg.popup_ok('Could not create file contents. Game is NOT saved!')
-        print(e)
+        sg.popup_ok('Could not create file contents. Game is NOT saved!\n'
+                    f'Python error: {e}')
         return
 
     # Write file
