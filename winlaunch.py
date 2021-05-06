@@ -45,5 +45,6 @@ else:
 
 
 if __name__ == '__main__':
+    os.chdir(srcdir)
     from src.tbui import main
     main()

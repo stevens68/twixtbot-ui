@@ -11,7 +11,11 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 
 ## Get started
 
-Make sure you have Python3 installed. The Python version needs to support tensorflow2. As of March 2021 this is true for Python 3.6, 3.7 and 3.8 (64bit). Do not use Python 3.9. Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
+#### Windows Installer
+For Windows 10 there is an [executable installer](https://c.web.de/@337132546481460455/4HW9ryQDSuulyIESaKfc_g). It will install all necessary files and create a shortcut 'twixtbot-ui' in the Start Menu. The shortcut points to a script ```winlaunch.py``` that starts twixtbot-ui. The installation requires ~1.1 GByte of free disk space.
+
+#### Manual Installation
+For manual installation make sure you have Python3 installed. The Python version needs to support tensorflow2. As of March 2021 this is true for Python 3.6, 3.7 and 3.8 (64bit). Do not use Python 3.9. Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
 
 ```
 python --version
