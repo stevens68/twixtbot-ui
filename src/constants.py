@@ -144,9 +144,9 @@ B_APPLY_SAVE = 'Apply & Save'
 B_RESET_DEFAULT = 'Reset to default'
 B_EXIT = "Exit"
 
-TAB_LABEL_GENERAL = "&General"
-TAB_LABEL_PLAYER1 = "Player &1"
-TAB_LABEL_PLAYER2 = "Player &2"
+TAB_LABEL_GENERAL = "General"
+TAB_LABEL_PLAYER1 = "Player 1"
+TAB_LABEL_PLAYER2 = "Player 2"
 
 # shortcut events for checkboxes
 EVENT_SHORTCUT_HEATMAP = 'SHORTCUT_HEATMAP'
