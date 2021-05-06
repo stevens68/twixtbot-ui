@@ -142,3 +142,9 @@ config.json
 # eclipse
 .settings/
 .vscode/launch.json
+
+
+
+pkginfo
+pynsist_pkgs/
+winlaunch.py

@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import PySimpleGUI as sg
-import threading
-import time
-import os
 
 import backend.twixt as twixt
 import util.pmeter as pmeter
@@ -17,6 +13,10 @@ import heatmap as hm
 import uiboard
 
 from tkinter import ttk
+
+import PySimpleGUI as sg
+import threading
+import time
 
 
 class BotEvent(threading.Event):
@@ -788,8 +788,7 @@ def main():
         ui.handle_event(event, values)
 
 
+import sys
+
 if __name__ == "__main__":
-    abspath = os.path.abspath(__file__)
-    dname = os.path.dirname(abspath)
-    os.chdir(dname)
     main()
