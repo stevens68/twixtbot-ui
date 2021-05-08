@@ -1,3 +1,4 @@
+import logging
 import pstats
 from pstats import SortKey
 p = pstats.Stats('profile_output')

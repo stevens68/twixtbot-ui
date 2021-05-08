@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import importlib
 import numpy
+import logging
 import operator
 from collections import namedtuple
 
@@ -354,7 +355,7 @@ class Game:
     def get_link(self, a, b, color):
 
         ix1, ix2 = self.get_link_index(a, b, color)
-        # print("x1,x2", ix1, ix2)
+        logging.info("x1,x2", ix1, ix2)
         return self.links[ix1][ix2]
 
     def set_link(self, a, b, color, value):
@@ -441,10 +442,10 @@ class Game:
         dshort = Point((delta.x & 1) * delta.x, (delta.y & 1) * delta.y)
         dlong = Point((delta.x - dshort.x) / 2, (delta.y - dshort.y) / 2)
         if debug:
-            print("any_crossing_links.", a, b, color)
-            print("delta=(%d,%d)" % (delta.x, delta.y))
-            print("dlong=(%d,%d)" % (dlong.x, dlong.y))
-            print("dshort=(%d,%d)" % (dshort.x, dshort.y))
+            logging.debug("any_crossing_links.", a, b, color)
+            logging.debug("delta=(%d,%d)" % (delta.x, delta.y))
+            logging.debug("dlong=(%d,%d)" % (dlong.x, dlong.y))
+            logging.debug("dshort=(%d,%d)" % (dshort.x, dshort.y))
 
         cross_links = [
             (-1, 1, 1, 0),
@@ -464,7 +465,7 @@ class Game:
             c = a + dlong * cl[0] + dshort * cl[1]
             d = a + dlong * cl[2] + dshort * cl[3]
             if debug:
-                print("checking", c, d)
+                logging.debug("checking", c, d)
             if self.inbounds(c) and self.inbounds(d) and self.get_link(c, d, color):
                 return True
 

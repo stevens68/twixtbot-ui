@@ -1,4 +1,5 @@
 import pathlib
+import logging
 from os import path
 
 
@@ -158,3 +159,7 @@ EVENT_SHORTCUT_TRIALS_1_PLUS = 'SHORTCUT_TRIALS_1_PLUS'
 EVENT_SHORTCUT_TRIALS_1_MINUS = 'SHORTCUT_TRIALS_1_MINUS'
 EVENT_SHORTCUT_TRIALS_2_PLUS = 'SHORTCUT_TRIALS_2_PLUS'
 EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'
+
+# Logging
+LOG_LEVEL = logging.ERROR
+LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(pathname)s:(%(lineno)d] %(message)s'
