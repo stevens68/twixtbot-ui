@@ -2,6 +2,7 @@
 import math
 import numpy
 import sys
+import logging
 
 import backend.twixt as twixt
 
@@ -192,11 +193,11 @@ class NetInputs:
         c8 = numpy.count_nonzero(p1[:, :, 8])
         c9 = numpy.count_nonzero(p1[:, :, 9])
         if abs(c8 - c9) > 1:
-            print("Zut!! c8=%d, c9=%d" % (c8, c9), file=sys.stderr)
-            print("p8:", file=sys.stderr)
-            print(binary_array_string(p1[:, :, 8]), file=sys.stderr)
-            print("p9:", file=sys.stderr)
-            print(binary_array_string(p1[:, :, 9]), file=sys.stderr)
+            logging.error("Zut!! c8=%d, c9=%d" % (c8, c9))
+            logging.error("p8:")
+            logging.error(binary_array_string(p1[:, :, 8]))
+            logging.error("p9:")
+            logging.error(binary_array_string(p1[:, :, 9]))
 
         assert abs(c8 - c9) <= 1
         self.naf[:, :, :10] = p1

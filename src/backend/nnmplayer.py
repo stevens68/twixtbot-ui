@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import numpy
 import random
+import logging
 
 import backend.naf as naf
 import backend.nneval as nneval
@@ -111,7 +112,7 @@ class Player:
         elif self.temperature == 0.5:
             weights = N ** 2
         if self.verbosity >= 2:
-            print("weights=", weights)
+            logging.info("weights=", weights)
         index = numpy.random.choice(numpy.arange(
             len(weights)), p=weights / weights.sum())
 

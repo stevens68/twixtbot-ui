@@ -1,5 +1,12 @@
 import os
+import logging
+import constants as ct
+
+# Suppress Tensorflow info messages and warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 import tensorflow.compat.v1 as tf
+tf.get_logger().setLevel(ct.LOG_LEVEL)
 tf.disable_v2_behavior()
 
 

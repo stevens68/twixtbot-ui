@@ -17,6 +17,7 @@ from tkinter import ttk
 import PySimpleGUI as sg
 import threading
 import time
+import logging
 
 
 class BotEvent(threading.Event):
@@ -469,7 +470,7 @@ class TwixtbotUI():
                 ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def handle_thread_event(self, values):
-        print("Bot response: " + str(values))
+        logging.info("Bot response: " + str(values))
         if values["max"] != 0:
             # mcts case
             self.update_progress(values)
@@ -756,6 +757,10 @@ class TwixtbotUI():
 
 
 def main():
+    # Init logging
+    logging.basicConfig(format=ct.LOG_FORMAT,
+                        level=ct.LOG_LEVEL)
+
     # initialize settings from config.json
     stgs = st.Settings()
 
@@ -787,8 +792,6 @@ def main():
 
         ui.handle_event(event, values)
 
-
-import sys
 
 if __name__ == "__main__":
     main()
