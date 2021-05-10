@@ -87,10 +87,10 @@ K_SHOW_GUIDELINES = ['show guidelines', 'SHOW_GUIDELINES', None, False]
 K_SHOW_CURSOR_LABEL = ['show cursor label', 'SHOW_CURSOR_LABEL', None, False]
 K_HIGHLIGHT_LAST_MOVE = ['highlight last move',
                          'HIGHLIGHT_LAST_MOVE', None, False]
-
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
-
+K_LOG_LEVEL = ['Log level', 'LOG_LEVEL', None, logging.ERROR]
+LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 
 # non-setting keys
 K_SHOW_EVALUATION = ['', 'SHOW_EVALUATION', None, True]
@@ -113,7 +113,7 @@ K_THREAD = [None, 'THREAD']
 SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
                 K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_RANDOM_ROTATION,
-                K_BOARD_SIZE,
+                K_BOARD_SIZE, K_LOG_LEVEL,
                 K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL, K_HIGHLIGHT_LAST_MOVE]
 
 
@@ -161,5 +161,5 @@ EVENT_SHORTCUT_TRIALS_2_PLUS = 'SHORTCUT_TRIALS_2_PLUS'
 EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'
 
 # Logging
-LOG_LEVEL = logging.ERROR
+LOGGER = 'twixtbot-ui'
 LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(pathname)s:(%(lineno)d] %(message)s'

@@ -6,17 +6,17 @@ import constants as ct
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 import tensorflow.compat.v1 as tf
-tf.get_logger().setLevel(ct.LOG_LEVEL)
+tf.get_logger().setLevel(ct.K_LOG_LEVEL[3])
 tf.disable_v2_behavior()
 
 
 class NNEvaluater:
-
     def __init__(self, model):
 
         export_dir = os.path.join(os.getcwd(), model)
-
+        self.logger = logging.getLogger(ct.LOGGER + __name__)
         self.sess = tf.Session()
+        tf.get_logger().setLevel(self.logger.getEffectiveLevel())
         tf.saved_model.loader.load(
             sess=self.sess,
             tags=[tf.saved_model.tag_constants.SERVING],

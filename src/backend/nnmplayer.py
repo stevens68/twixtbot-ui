@@ -2,7 +2,7 @@
 import numpy
 import random
 import logging
-
+import constants as ct
 import backend.naf as naf
 import backend.nneval as nneval
 import backend.nnmcts as nnmcts
@@ -13,7 +13,7 @@ import backend.twixt as twixt
 class Player:
 
     def __init__(self, **kwargs):
-
+        self.logger = logging.getLogger(ct.LOGGER + __name__)
         self.model = kwargs.get('model', None)
         self.num_trials = int(kwargs.get('trials', 100))
         self.temperature = float(kwargs.get('temperature', 0))
@@ -25,9 +25,6 @@ class Player:
         self.cpuct = float(kwargs.get('cpuct', 1))
         self.board = kwargs.get('board', None)
         self.evaluator = kwargs.get('evaluator', None)
-
-
-        self.verbosity = int(kwargs.get('verbosity', 0))
 
         if self.temperature not in (0.0, 0.5, 1.0):
             raise ValueError("Unsupported temperature")
@@ -63,7 +60,6 @@ class Player:
             nnfunc,
             add_noise=self.add_noise,
             smart_root=self.smart_root,
-            verbosity=self.verbosity,
             cpuct=self.cpuct,
             board=self.board,
             visualize_mcts=False
@@ -111,8 +107,7 @@ class Player:
             weights = N
         elif self.temperature == 0.5:
             weights = N ** 2
-        if self.verbosity >= 2:
-            logging.info("weights=", weights)
+        self.logger.info("weights=", weights)
         index = numpy.random.choice(numpy.arange(
             len(weights)), p=weights / weights.sum())
 

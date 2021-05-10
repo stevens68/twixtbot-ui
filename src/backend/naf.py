@@ -3,7 +3,7 @@ import math
 import numpy
 import sys
 import logging
-
+import constants as ct
 import backend.twixt as twixt
 
 
@@ -17,7 +17,7 @@ class NetInputs:
     NAF_DIMS = (twixt.Game.SIZE, twixt.Game.SIZE, 11)
 
     def __init__(self, thing):
-
+        self.logger = logging.getLogger(ct.LOGGER + __name__)
         self.naf = numpy.zeros(self.NAF_DIMS, dtype=numpy.uint8)
         if thing is None:
             return
@@ -193,11 +193,11 @@ class NetInputs:
         c8 = numpy.count_nonzero(p1[:, :, 8])
         c9 = numpy.count_nonzero(p1[:, :, 9])
         if abs(c8 - c9) > 1:
-            logging.error("Zut!! c8=%d, c9=%d" % (c8, c9))
-            logging.error("p8:")
-            logging.error(binary_array_string(p1[:, :, 8]))
-            logging.error("p9:")
-            logging.error(binary_array_string(p1[:, :, 9]))
+            self.logger.error("Zut!! c8=%d, c9=%d" % (c8, c9))
+            self.logger.error("p8:")
+            self.logger.error(binary_array_string(p1[:, :, 8]))
+            self.logger.error("p9:")
+            self.logger.error(binary_array_string(p1[:, :, 9]))
 
         assert abs(c8 - c9) <= 1
         self.naf[:, :, :10] = p1

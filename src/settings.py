@@ -7,8 +7,8 @@ import constants as ct
 
 
 class Settings():
-
     def __init__(self):
+        self.logger =  logging.getLogger(ct.LOGGER + __name__)
         self.load()
 
     def get(self, key):
@@ -73,7 +73,7 @@ class Settings():
                         # player 2
                         self.settings[key[2]] = values[key[2]]
                 except Exception as e:
-                    logging.error(ct.MSG_ERROR_UPDATING_KEY + str(key) + " " + str(e))
+                    self.logger.error(ct.MSG_ERROR_UPDATING_KEY + str(key) + " " + str(e))
 
         with open(ct.SETTINGS_FILE, 'w') as f:
             jsondump(self.settings, f, indent=4, sort_keys=True)
@@ -91,7 +91,7 @@ class Settings():
                     k = key[2]
                     self.settings[k] = key[4]
             except Exception as e:
-                logging.error(ct.MSG_ERROR_UPDATING_KEY + str(k) + " " + str(e))
+                self.logger.error(ct.MSG_ERROR_UPDATING_KEY + str(k) + " " + str(e))
 
     def update_window(self, window):
         for key in ct.SETTING_KEYS:
@@ -103,7 +103,7 @@ class Settings():
                     k = key[2]
                     window[k].update(value=self.get(k))
             except Exception as e:
-                logging.error(ct.MSG_ERROR_UPDATING_KEY + k + ": " + str(e))
+                self.logger.error(ct.MSG_ERROR_UPDATING_KEY + k + ": " + str(e))
 
     def get_tooltip(self, player):
         # show settings on mouse over auto-move check box
