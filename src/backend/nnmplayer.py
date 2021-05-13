@@ -13,7 +13,7 @@ import backend.twixt as twixt
 class Player:
 
     def __init__(self, **kwargs):
-        self.logger = logging.getLogger(ct.LOGGER + __name__)
+        self.logger = logging.getLogger(ct.LOGGER)
         self.model = kwargs.get('model', None)
         self.num_trials = int(kwargs.get('trials', 100))
         self.temperature = float(kwargs.get('temperature', 0))

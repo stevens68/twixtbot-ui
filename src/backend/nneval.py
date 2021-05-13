@@ -11,10 +11,11 @@ tf.disable_v2_behavior()
 
 
 class NNEvaluater:
+
     def __init__(self, model):
 
         export_dir = os.path.join(os.getcwd(), model)
-        self.logger = logging.getLogger(ct.LOGGER + __name__)
+        self.logger = logging.getLogger(ct.LOGGER)
         self.sess = tf.Session()
         tf.get_logger().setLevel(self.logger.getEffectiveLevel())
         tf.saved_model.loader.load(

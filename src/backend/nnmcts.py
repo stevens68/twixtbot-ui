@@ -40,8 +40,7 @@ class NeuralMCTS:
         self.sap = sap
         self.root = None
         self.history_at_root = None
-        self.logger = logging.getLogger(ct.LOGGER + __name__)
-        
+        self.logger = logging.getLogger(ct.LOGGER)
 
     def expand_leaf(self, game):
         """ Create a brand new leaf node for the current game state
@@ -80,15 +79,15 @@ class NeuralMCTS:
         leaf.P[numpy.where(leaf.LM == 0)[0]] = 0
         # leaf.P *= leaf.LM
 
-        self.logger.info("LMnz: %s", leaf.LMnz)
-        self.logger.info("raw P: %s", leaf.P)
+        self.logger.debug("LMnz: %s", leaf.LMnz)
+        self.logger.debug("raw P: %s", leaf.P)
 
         if self.add_noise:
             leaf.P[leaf.LMnz] *= (1.0 - self.add_noise)
             leaf.P[leaf.LMnz] += self.add_noise * \
                 numpy.random.dirichlet(0.03 * numpy.ones(len(leaf.LMnz[0])))
 
-        self.logger.info("after noise P: %s", leaf.P)
+        self.logger.debug("after noise P: %s", leaf.P)
         return leaf
         # end expand_leaf()
 

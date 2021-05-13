@@ -162,4 +162,4 @@ EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'
 
 # Logging
 LOGGER = 'twixtbot-ui'
-LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(pathname)s:(%(lineno)d] %(message)s'
+LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(filename)s:(%(lineno)d] %(message)s'

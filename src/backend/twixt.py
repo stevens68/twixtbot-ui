@@ -156,7 +156,7 @@ class Game:
     COLOR_NAME = ("BLACK", "WHITE")
 
     def __init__(self, allow_scl):
-        self.logger = logging.getLogger(ct.LOGGER + __name__)
+        self.logger = logging.getLogger(ct.LOGGER)
         self.allow_scl = allow_scl
 
         self.result = None
@@ -356,7 +356,7 @@ class Game:
     def get_link(self, a, b, color):
 
         ix1, ix2 = self.get_link_index(a, b, color)
-        self.logger.info("x1,x2: %s, %s", ix1, ix2)
+        self.logger.debug("x1,x2: %s, %s", ix1, ix2)
         return self.links[ix1][ix2]
 
     def set_link(self, a, b, color, value):

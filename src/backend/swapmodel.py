@@ -8,7 +8,8 @@ import logging
 import constants as ct
 import backend.twixt as twixt
 
-logger = logging.getLogger(ct.LOGGER + __name__)
+logger = logging.getLogger(ct.LOGGER)
+
 
 def _xy_predictors(xres, yres):
     return numpy.array([1.0, xres, yres, xres * yres])

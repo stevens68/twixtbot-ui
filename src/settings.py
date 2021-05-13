@@ -8,7 +8,7 @@ import constants as ct
 
 class Settings():
     def __init__(self):
-        self.logger =  logging.getLogger(ct.LOGGER + __name__)
+        self.logger = logging.getLogger(ct.LOGGER)
         self.load()
 
     def get(self, key):

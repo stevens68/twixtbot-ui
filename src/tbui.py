@@ -768,7 +768,7 @@ def main():
     # Init logging
     logging.basicConfig(format=ct.LOG_FORMAT,
                        level=stgs.get(ct.K_LOG_LEVEL[1]))
-    logger = logging.getLogger(ct.LOGGER)
+    # logger = logging.getLogger(ct.LOGGER)
 
     # initialize game, pass "allow self crossing links" setting
     game = twixt.Game(stgs.get(ct.K_ALLOW_SCL[1]))
