@@ -80,15 +80,15 @@ class NeuralMCTS:
         leaf.P[numpy.where(leaf.LM == 0)[0]] = 0
         # leaf.P *= leaf.LM
 
-        self.logger.info("LMnz:", leaf.LMnz)
-        self.logger.info("raw P:", leaf.P)
+        self.logger.info("LMnz: %s", leaf.LMnz)
+        self.logger.info("raw P: %s", leaf.P)
 
         if self.add_noise:
             leaf.P[leaf.LMnz] *= (1.0 - self.add_noise)
             leaf.P[leaf.LMnz] += self.add_noise * \
                 numpy.random.dirichlet(0.03 * numpy.ones(len(leaf.LMnz[0])))
 
-        self.logger.info("after noise P:", leaf.P)
+        self.logger.info("after noise P: %s", leaf.P)
         return leaf
         # end expand_leaf()
 
@@ -140,8 +140,8 @@ class NeuralMCTS:
         move = naf.policy_index_point(game.turn, index)
 
         if top:
-            self.logger.info("selecting index=%d move=%s Q=%.3f P=%.5f N=%d" %
-                             (index, str(move), node.Q[index], node.P[index], node.N[index]))
+            self.logger.info("selecting index=%d move=%s Q=%.3f P=%.5f N=%d",
+                             index, str(move), node.Q[index], node.P[index], node.N[index])
 
         subnode = node.subnodes[index]
 
@@ -153,7 +153,6 @@ class NeuralMCTS:
         if subnode:
             subscore = -self.visit_node(game, subnode)
         else:
-            self.logger.info(trials, "expanding", path)
             subnode = self.expand_leaf(game)
             node.subnodes[index] = subnode
             subscore = -subnode.score
@@ -222,7 +221,7 @@ class NeuralMCTS:
         top_ixs = numpy.argsort(self.root.P)[-maxbest:]
         moves = [naf.policy_index_point(game, ix) for ix in top_ixs][::-1]
         P = [int(round(self.root.P[ix] * 1000)) for ix in top_ixs][::-1]
-        self.logger.info("moves: ", moves, ", idx: ",  top_ixs)
+        self.logger.debug("moves: %s, idx: %s", moves, top_ixs)
         return self.root.score, moves, P
 
     def proven_result(self, game):
@@ -269,8 +268,10 @@ class NeuralMCTS:
             self.root = self.expand_leaf(game)
             self.history_at_root = list(game.history)
             top_ixs = numpy.argsort(self.root.P)[-5:]
-            self.logger.info("eval=%.3f  %s" % (self.root.score, " ".join(["%s:%d" %
-                             (naf.policy_index_point(game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs])))
+            if self.logger.level <= logging.INFO:
+                # if... to avoid unnecessary conversion
+                self.logger.info("eval=%.3f  %s", self.root.score, " ".join(["%s:%d" % 
+                                 (naf.policy_index_point(game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs]))
 
         if not self.root.proven:
             # for i in tqdm(range(trials), ncols=100, desc="processing",
@@ -301,8 +302,8 @@ class NeuralMCTS:
         if self.root.proven:
             return self.proven_result(game)
 
-        self.logger.info("N=", self.root.N)
-        self.logger.info("Q=", self.root.Q)
+        self.logger.info("N=%s", self.root.N)
+        self.logger.info("Q=%s", self.root.Q)
 
         self.report = "%6.3f" % (
             self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
@@ -329,8 +330,6 @@ class NeuralMCTS:
 
             if sn is not None:
                 self.traverse(game, path, level + 1, sn)
-            else:
-                self.logger.info([m.move for m in path])
             
             game.undo()
             self.board.history.pop()

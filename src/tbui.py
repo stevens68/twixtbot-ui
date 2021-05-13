@@ -471,7 +471,7 @@ class TwixtbotUI():
                 ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def handle_thread_event(self, values):
-        self.logger.info("Bot response: " + str(values))
+        self.logger.info("Bot response: %s", values)
         if values["max"] != 0:
             # mcts case
             self.update_progress(values)

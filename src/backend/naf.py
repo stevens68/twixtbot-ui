@@ -193,11 +193,9 @@ class NetInputs:
         c8 = numpy.count_nonzero(p1[:, :, 8])
         c9 = numpy.count_nonzero(p1[:, :, 9])
         if abs(c8 - c9) > 1:
-            self.logger.error("Zut!! c8=%d, c9=%d" % (c8, c9))
-            self.logger.error("p8:")
-            self.logger.error(binary_array_string(p1[:, :, 8]))
-            self.logger.error("p9:")
-            self.logger.error(binary_array_string(p1[:, :, 9]))
+            self.logger.error("Zut!! c8=%d, c9=%d", c8, c9)
+            self.logger.error("p8: %s", binary_array_string(p1[:,:, 8]))
+            self.logger.error("p9: %s", binary_array_string(p1[:,:, 9]))
 
         assert abs(c8 - c9) <= 1
         self.naf[:, :, :10] = p1

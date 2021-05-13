@@ -61,6 +61,7 @@ CANCEL_EVENT = "cancelled"
 BOARD_SIZE_LIST = [500, 600, 700, 800]
 TEMPERATURE_LIST = [0.0, 0.5, 1.0]
 
+LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 
 # keys
 K_COLOR = ['color', 'P1_COLOR', 'P2_COLOR', "red", "black"]
@@ -89,8 +90,7 @@ K_HIGHLIGHT_LAST_MOVE = ['highlight last move',
                          'HIGHLIGHT_LAST_MOVE', None, False]
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
-K_LOG_LEVEL = ['Log level', 'LOG_LEVEL', None, logging.ERROR]
-LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
+K_LOG_LEVEL = ['Log level', 'LOG_LEVEL', None, logging.getLevelName(logging.ERROR)]
 
 # non-setting keys
 K_SHOW_EVALUATION = ['', 'SHOW_EVALUATION', None, True]
@@ -124,7 +124,7 @@ ABOUT_DIALOG_TITLE = "About"
 MSG_REQUIRES_RESTART = "restart required"
 MSG_NO_CONFIG_FILE = 'No settings file found.\nCreating ' + \
     SETINGS_FILE_NAME + ' with default settings.'
-MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. Key = '
+MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. key=%s, exc=%s'
 
 ITEM_FILE = "&File"
 ITEM_OPEN_FILE = "&Open File..."

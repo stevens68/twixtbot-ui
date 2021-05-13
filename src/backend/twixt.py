@@ -356,7 +356,7 @@ class Game:
     def get_link(self, a, b, color):
 
         ix1, ix2 = self.get_link_index(a, b, color)
-        self.logger.info("x1,x2", ix1, ix2)
+        self.logger.info("x1,x2: %s, %s", ix1, ix2)
         return self.links[ix1][ix2]
 
     def set_link(self, a, b, color, value):
@@ -443,10 +443,10 @@ class Game:
         dshort = Point((delta.x & 1) * delta.x, (delta.y & 1) * delta.y)
         dlong = Point((delta.x - dshort.x) / 2, (delta.y - dshort.y) / 2)
         if debug:
-            self.logger.debug("any_crossing_links.", a, b, color)
-            self.logger.debug("delta=(%d,%d)" % (delta.x, delta.y))
-            self.logger.debug("dlong=(%d,%d)" % (dlong.x, dlong.y))
-            self.logger.debug("dshort=(%d,%d)" % (dshort.x, dshort.y))
+            self.logger.debug("any_crossing_links. a=%s, b=%s, color=%s", a, b, color)
+            self.logger.debug("delta=(%d,%d)", delta.x, delta.y)
+            self.logger.debug("dlong=(%d,%d)", dlong.x, dlong.y)
+            self.logger.debug("dshort=(%d,%d)", dshort.x, dshort.y)
 
         cross_links = [
             (-1, 1, 1, 0),
@@ -466,7 +466,7 @@ class Game:
             c = a + dlong * cl[0] + dshort * cl[1]
             d = a + dlong * cl[2] + dshort * cl[3]
             if debug:
-                self.logger.debug("checking", c, d)
+                self.logger.debug("checking %d,%d", c, d)
             if self.inbounds(c) and self.inbounds(d) and self.get_link(c, d, color):
                 return True
 

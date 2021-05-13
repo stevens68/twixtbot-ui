@@ -28,7 +28,7 @@ Clone this repository using the following command or download the repository as 
 git clone https://github.com/stevens68/twixtbot-ui
 ```
 
-At the command line, change to the twixtbot-ui directory &ndash; or twixtbot-ui-master if you extracted a ZIP file &ndash; and install the necessary modules:
+At the command line, change to the ```twixtbot-ui``` directory &ndash; or ```twixtbot-ui-master``` if you extracted a ZIP file &ndash; and install the necessary modules:
 
 ```
 python -m pip install -r requirements.txt
@@ -59,7 +59,7 @@ There is one dedicated bot for each player. The bots can have different settings
 
 ### Swap rule 
 
-human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
+Human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
 
 ### Undo, Redo, Resign, Reset
 
@@ -116,11 +116,13 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 + *show cursor label*: display the coordinates in a tooltip at the mouse cursor (default: false)
 + *highlight last move*: display a yellow circle around last peg (default: false)
 + *smart accept*: during MCTS, reduce the max number of trials automatically according to the lead of the best move (default: true)
++ *log level*: verbosity of log messages (default: INFO)
+
 
 #### Tab *Player 1 / 2*
 
 - *color*:  choose your favorite colors for the players (default: red / black)
-- *name*: chose your favorite player names (default: Tom / Jerry)
+- *name*: choose your favorite player names (default: Tom / Jerry)
 - *auto move*: if true, the bot makes a move autmatically (default: false)
 - *random rotation*: if true, the bot randomly chooses one of the four equivalent boards (rotation / mirroring) for evaluation (default: false)
 - *model folder*: no reason to change this unless you have a second network (default: `../model/pb`)
@@ -142,7 +144,7 @@ Decrease c<sub>puct</sub> to move the needle towards exploitation, i.e reduce th
 
 ## Loading and saving games 
 
-Choose *File -> Open File...* to load games stored in [T1J](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). It will take a few seconds to re-calculate the evaluation history. After a game is loaded, the player names and the board are updated and you can continue to play as usual or undo moves. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game. Choose *File -> Save file...* to save a game in T1J format; tsgf is not supported as a target. 
+Choose *File -> Open File...* to load games stored in [T1J](http://www.johannes-schwagereit.de/twixt/T1j/index.html) file format (\*.T1) or littlegolem.net format (\*.tsgf). It will take a few seconds to re-calculate the evaluation history. After a game is loaded, the player names and the board are updated and you can continue to play as usual. See sample files in folder `./games`. Note that the value of *self crossing links* is applied when loading a game. Choose *File -> Save file...* to save a game in T1J format; tsgf is not supported as a target. 
 
 #### T1J files
 
@@ -195,4 +197,4 @@ resign
 ### Contributors
 
 * [agtoever](https://github.com/agtoever):  
-Load tsgf Files, Save Files, Evaluation History, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo
+Load tsgf Files, Save Files, Evaluation History, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo, Logging

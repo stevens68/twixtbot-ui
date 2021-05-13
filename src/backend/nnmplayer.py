@@ -107,7 +107,7 @@ class Player:
             weights = N
         elif self.temperature == 0.5:
             weights = N ** 2
-        self.logger.info("weights=", weights)
+        self.logger.info("weights=%s", weights)
         index = numpy.random.choice(numpy.arange(
             len(weights)), p=weights / weights.sum())
 

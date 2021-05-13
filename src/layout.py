@@ -345,8 +345,9 @@ class SettingsDialogLayout():
                           st_row_smart_accept(),
                           row_separator(""),
                           [st_label(ct.K_LOG_LEVEL[0]),
-                           sg.Combo(ct.LOG_LEVEL_LIST, ct.K_LOG_LEVEL[2], size=(
+                           sg.Combo(ct.LOG_LEVEL_LIST, ct.K_LOG_LEVEL[3], size=(
                                15, 1), key=ct.K_LOG_LEVEL[1], readonly=True)],
+                          row_separator("")
                           ]
 
         st_tab_player1 = st_tab_player(1)
