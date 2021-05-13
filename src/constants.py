@@ -1,4 +1,5 @@
 import pathlib
+import logging
 from os import path
 
 
@@ -60,6 +61,7 @@ CANCEL_EVENT = "cancelled"
 BOARD_SIZE_LIST = [500, 600, 700, 800]
 TEMPERATURE_LIST = [0.0, 0.5, 1.0]
 
+LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 
 # keys
 K_COLOR = ['color', 'P1_COLOR', 'P2_COLOR', "red", "black"]
@@ -86,10 +88,9 @@ K_SHOW_GUIDELINES = ['show guidelines', 'SHOW_GUIDELINES', None, False]
 K_SHOW_CURSOR_LABEL = ['show cursor label', 'SHOW_CURSOR_LABEL', None, False]
 K_HIGHLIGHT_LAST_MOVE = ['highlight last move',
                          'HIGHLIGHT_LAST_MOVE', None, False]
-
 K_MODEL_FOLDER = ['model folder', "P1_MODEL_FOLDER",
                   "P2_MODEL_FOLDER", "../model/pb", "../model/pb"]
-
+K_LOG_LEVEL = ['Log level', 'LOG_LEVEL', None, logging.getLevelName(logging.ERROR)]
 
 # non-setting keys
 K_SHOW_EVALUATION = ['', 'SHOW_EVALUATION', None, True]
@@ -112,7 +113,7 @@ K_THREAD = [None, 'THREAD']
 SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
                 K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_RANDOM_ROTATION,
-                K_BOARD_SIZE,
+                K_BOARD_SIZE, K_LOG_LEVEL,
                 K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL, K_HIGHLIGHT_LAST_MOVE]
 
 
@@ -123,7 +124,7 @@ ABOUT_DIALOG_TITLE = "About"
 MSG_REQUIRES_RESTART = "restart required"
 MSG_NO_CONFIG_FILE = 'No settings file found.\nCreating ' + \
     SETINGS_FILE_NAME + ' with default settings.'
-MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. Key = '
+MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. key=%s, exc=%s'
 
 ITEM_FILE = "&File"
 ITEM_OPEN_FILE = "&Open File..."
@@ -158,3 +159,7 @@ EVENT_SHORTCUT_TRIALS_1_PLUS = 'SHORTCUT_TRIALS_1_PLUS'
 EVENT_SHORTCUT_TRIALS_1_MINUS = 'SHORTCUT_TRIALS_1_MINUS'
 EVENT_SHORTCUT_TRIALS_2_PLUS = 'SHORTCUT_TRIALS_2_PLUS'
 EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'
+
+# Logging
+LOGGER = 'twixtbot-ui'
+LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(filename)s:(%(lineno)d] %(message)s'

@@ -2,7 +2,8 @@
 import math
 import numpy
 import sys
-
+import logging
+import constants as ct
 import backend.twixt as twixt
 
 
@@ -16,21 +17,8 @@ class NetInputs:
     NAF_DIMS = (twixt.Game.SIZE, twixt.Game.SIZE, 11)
 
     def __init__(self, thing):
-
         self.naf = numpy.zeros(self.NAF_DIMS, dtype=numpy.uint8)
-        if thing is None:
-            return
-        elif isinstance(thing, twixt.Game):
-            self.init_from_game(thing)
-        elif isinstance(thing, str):
-            if len(thing) == self.EXPANDED_SIZE:
-                self.init_from_expanded(thing)
-            elif len(thing) == self.COMPACT_SIZE:
-                self.init_from_compact(thing)
-            else:
-                raise TypeError("Wrong string length")
-        else:
-            raise TypeError("Only twixt.Game or binary formats usable")
+        self.init_from_game(thing)
 
     def init_from_game(self, game):
 
@@ -142,66 +130,6 @@ class NetInputs:
             self.vflip()
 
 
-
-    def _front_bytes(self):
-
-        b = self.HEADER
-        for i in range(self.NUM_RECENTS):
-            if i < len(self.recents):
-                p = self.recents[i]
-                b += chr(p.x)
-                b += chr(p.y)
-            else:
-                b += '\xff\xff'
-        assert len(b) == self.FRONT_BYTES
-        return b
-
-    def _init_front_bytes(self, b):
-
-        if b[:self.HEADER_BYTES] != self.HEADER:
-            raise ValueError("Header sanity error (%s)" %
-                             (b[:self.HEADER_BYTES]))
-        self.recents = []
-        for i in range(self.NUM_RECENTS):
-            x = ord(b[self.HEADER_BYTES + i * 2])
-            y = ord(b[self.HEADER_BYTES + i * 2 + 1])
-            if x == 255 and y == 255:
-                continue
-            if x >= twixt.Game.SIZE or y >= twixt.Game.SIZE:
-                raise ValueError("Recent Point Error")
-            self.recents.append(twixt.Point(x, y))
-        self._load_recents()
-
-    def init_from_compact(self, b):
-
-        assert len(b) == self.COMPACT_SIZE
-        self._init_front_bytes(b)
-        p0 = numpy.frombuffer(b[self.FRONT_BYTES:], dtype=numpy.uint8)
-        p1 = numpy.unpackbits(p0)
-        p2 = p1.reshape((twixt.Game.SIZE, twixt.Game.SIZE, 10))
-        assert abs(numpy.count_nonzero(
-            p2[:, :, 8]) - numpy.count_nonzero(p2[:, :, 9])) <= 1
-        self.naf[:, :, :10] = p2
-
-    def init_from_expanded(self, b):
-
-        assert len(b) == self.EXPANDED_SIZE
-        self._init_front_bytes(b)
-        p0 = numpy.frombuffer(b[self.FRONT_BYTES:], dtype=numpy.uint8)
-        p1 = p0.reshape(twixt.Game.SIZE, twixt.Game.SIZE, 10)
-        c8 = numpy.count_nonzero(p1[:, :, 8])
-        c9 = numpy.count_nonzero(p1[:, :, 9])
-        if abs(c8 - c9) > 1:
-            print("Zut!! c8=%d, c9=%d" % (c8, c9), file=sys.stderr)
-            print("p8:", file=sys.stderr)
-            print(binary_array_string(p1[:, :, 8]), file=sys.stderr)
-            print("p9:", file=sys.stderr)
-            print(binary_array_string(p1[:, :, 9]), file=sys.stderr)
-
-        assert abs(c8 - c9) <= 1
-        self.naf[:, :, :10] = p1
-
- 
     def to_input_arrays(self, use_recents=False):
 
         pegs = self.naf[:, :, 8:10]

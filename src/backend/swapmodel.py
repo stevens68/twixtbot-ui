@@ -4,8 +4,11 @@ import math
 import numpy
 import random
 import sys
-
+import logging
+import constants as ct
 import backend.twixt as twixt
+
+logger = logging.getLogger(ct.LOGGER)
 
 
 def _xy_predictors(xres, yres):
@@ -70,7 +73,7 @@ def first_move_report():
         if p.x >= twixt.Game.SIZE // 2 or p.y >= twixt.Game.SIZE // 2:
             continue
         pct = 4.0 * (locations[i + 1] - locations[i]) / cum
-        print("%3s %5.2f" % (str(p), pct * 100))
+        logger.info("%3s %5.2f" % (str(p), pct * 100))
 
 
 def choose_first_move():
@@ -86,9 +89,9 @@ def choose_first_move():
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print(choose_first_move())
+        logger.info(choose_first_move())
     elif len(sys.argv) == 2 and sys.argv[1] == "all":
         first_move_report()
     elif len(sys.argv) == 2:
         p = twixt.Point(sys.argv[1])
-        print(_point_score(p), want_swap(p))
+        logger.info(_point_score(p), want_swap(p))

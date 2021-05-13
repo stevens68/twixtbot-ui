@@ -1,6 +1,4 @@
-
 import PySimpleGUI as sg
-
 import constants as ct
 
 
@@ -344,8 +342,12 @@ class SettingsDialogLayout():
                           [st_label(ct.K_HIGHLIGHT_LAST_MOVE[0]),
                            sg.Checkbox(text=None, default=ct.K_HIGHLIGHT_LAST_MOVE[3], key=ct.K_HIGHLIGHT_LAST_MOVE[1])],
                           row_separator(""),
-                          st_row_smart_accept()
-
+                          st_row_smart_accept(),
+                          row_separator(""),
+                          [st_label(ct.K_LOG_LEVEL[0]),
+                           sg.Combo(ct.LOG_LEVEL_LIST, ct.K_LOG_LEVEL[3], size=(
+                               15, 1), key=ct.K_LOG_LEVEL[1], readonly=True)],
+                          row_separator("")
                           ]
 
         st_tab_player1 = st_tab_player(1)

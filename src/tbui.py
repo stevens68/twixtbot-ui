@@ -17,6 +17,7 @@ from tkinter import ttk
 import PySimpleGUI as sg
 import threading
 import time
+import logging
 
 
 class BotEvent(threading.Event):
@@ -63,6 +64,7 @@ class TwixtbotUI():
         self.stgs = stgs
         self.bot_event = None
         self.redo_moves = []
+        self.logger = logging.getLogger(ct.LOGGER)
 
         # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
@@ -316,6 +318,7 @@ class TwixtbotUI():
         self.eval_hist_plot.update(self.moves_score)
         self.update_bots()
         self.update_game()
+        self.update_logger()
 
     def reset_game(self):
         self.game.__init__(self.stgs.get(ct.K_ALLOW_SCL[1]))
@@ -325,6 +328,9 @@ class TwixtbotUI():
 
     def update_game(self):
         self.game.allow_scl = self.stgs.get(ct.K_ALLOW_SCL[1])
+
+    def update_logger(self):
+        self.logger.setLevel(self.stgs.get(ct.K_LOG_LEVEL[1]))
 
     # bot functions
 
@@ -469,7 +475,7 @@ class TwixtbotUI():
                 ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def handle_thread_event(self, values):
-        print("Bot response: " + str(values))
+        self.logger.info("Bot response: %s", values)
         if values["max"] != 0:
             # mcts case
             self.update_progress(values)
@@ -759,6 +765,11 @@ def main():
     # initialize settings from config.json
     stgs = st.Settings()
 
+    # Init logging
+    logging.basicConfig(format=ct.LOG_FORMAT,
+                       level=stgs.get(ct.K_LOG_LEVEL[1]))
+    # logger = logging.getLogger(ct.LOGGER)
+
     # initialize game, pass "allow self crossing links" setting
     game = twixt.Game(stgs.get(ct.K_ALLOW_SCL[1]))
 
@@ -787,8 +798,6 @@ def main():
 
         ui.handle_event(event, values)
 
-
-import sys
 
 if __name__ == "__main__":
     main()
