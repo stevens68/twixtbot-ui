@@ -116,7 +116,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 + *show cursor label*: display the coordinates in a tooltip at the mouse cursor (default: false)
 + *highlight last move*: display a yellow circle around last peg (default: false)
 + *smart accept*: during MCTS, reduce the max number of trials automatically according to the lead of the best move (default: true)
-+ *log level*: verbosity of log messages (default: INFO)
++ *log level*: verbosity of log messages (default: ERROR)
 
 
 #### Tab *Player 1 / 2*

@@ -318,6 +318,7 @@ class TwixtbotUI():
         self.eval_hist_plot.update(self.moves_score)
         self.update_bots()
         self.update_game()
+        self.update_logger()
 
     def reset_game(self):
         self.game.__init__(self.stgs.get(ct.K_ALLOW_SCL[1]))
@@ -327,6 +328,9 @@ class TwixtbotUI():
 
     def update_game(self):
         self.game.allow_scl = self.stgs.get(ct.K_ALLOW_SCL[1])
+
+    def update_logger(self):
+        self.logger.setLevel(self.stgs.get(ct.K_LOG_LEVEL[1]))
 
     # bot functions
 
