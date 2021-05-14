@@ -338,6 +338,7 @@ class TwixtbotUI():
         for t in [0, 1]:
             if hasattr(self, 'bots') and self.bots[t] is not None:
                 p = self.game.turn_to_player(t)
+                # update bot    
                 self.bots[t].allow_swap = self.stgs.get(
                     ct.K_ALLOW_SWAP[1])
                 self.bots[t].num_trials = int(
@@ -348,6 +349,8 @@ class TwixtbotUI():
                     ct.K_RANDOM_ROTATION[p])
                 self.bots[t].add_noise = float(
                     self.stgs.get(ct.K_ADD_NOISE[p]))
+                # update bot's mcts object     
+                self.bots[t].nm.smart_root = self.stgs.get(ct.K_SMART_ROOT[p])
                 self.bots[t].nm.cpuct = float(
                     self.stgs.get(ct.K_CPUCT[p]))
                 self.bots[t].nm.visualize_mcts = self.get_control(ct.K_VISUALIZE_MCTS).get()
