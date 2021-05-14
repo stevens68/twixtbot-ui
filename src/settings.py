@@ -81,15 +81,17 @@ class Settings():
         self.settings[ct.K_BOARD_SIZE[1]
                       ] = old_board_size or self.settings[ct.K_BOARD_SIZE[1]]
 
-    def reset_to_default(self):
+    def reset_to_default(self, window):
         for key in ct.SETTING_KEYS:  # update all settings with defaults
             try:
                 k = key[1]
-                self.settings[k] = key[3]
+                # self.settings[k] = key[3]
+                window[k].update(value=key[3])
                 if len(key) == 5:
                     # player 2
                     k = key[2]
-                    self.settings[k] = key[4]
+                    # self.settings[k] = key[4]
+                    window[k].update(value=key[4])
             except Exception as e:
                 self.logger.error(ct.MSG_ERROR_UPDATING_KEY, str(k), str(e))
 

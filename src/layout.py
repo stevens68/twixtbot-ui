@@ -367,7 +367,7 @@ class SettingsDialogLayout():
             )],
             [sg.Button(ct.B_APPLY_SAVE, size=(12, 1)),
              sg.Button(ct.B_RESET_DEFAULT, size=(15, 1)),
-             sg.Button(ct.B_EXIT, size=(10, 1), focus=True)]
+             sg.Button(ct.B_CANCEL, size=(10, 1), focus=True)]
         ]
 
         return layout
@@ -392,7 +392,7 @@ class AboutDialogLayout():
                 "twixtbot-ui frontend by stevens68 and contributors", size=(width, 1))],
             [sg.Text("https://github.com/stevens68/twixtbot-ui", size=(width, 1))],
             [sg.Text("", size=(width, 1))],
-            [sg.Button(ct.B_EXIT, size=(10, 1), focus=True)]
+            [sg.Button(ct.B_OK, size=(10, 1), focus=True)]
         ]
 
         return layout

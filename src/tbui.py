@@ -563,11 +563,11 @@ class TwixtbotUI():
         dialog = self.create_settings_window()
         while True:
             event, values = dialog.read()
-            if event == sg.WIN_CLOSED or event == ct.B_EXIT:
+            if event == sg.WIN_CLOSED or event == ct.B_CANCEL:
                 break
             elif event == ct.B_RESET_DEFAULT:
-                self.stgs.reset_to_default()
-                self.stgs.update_window(dialog)
+                self.stgs.reset_to_default(dialog)
+                dialog.refresh()
             elif event == ct.B_APPLY_SAVE:
                 self.stgs.save(values)
                 break
@@ -586,7 +586,7 @@ class TwixtbotUI():
         dialog = self.create_about_window()
         while True:
             event, values = dialog.read()
-            if event == sg.WIN_CLOSED or event == ct.B_EXIT:
+            if event == sg.WIN_CLOSED or event == ct.B_OK or event == "Exit":
                 break
         dialog.close()
 
@@ -793,7 +793,7 @@ def main():
         if event == "__TIMEOUT__":
             continue
 
-        elif event == sg.WIN_CLOSED or event == ct.B_EXIT:
+        elif event == sg.WIN_CLOSED or event == "Exit":
             # exiting or closed
             break
 
