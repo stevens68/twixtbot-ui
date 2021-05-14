@@ -264,14 +264,14 @@ class TwixtbotUI():
                         self.handle_accept_bot()
 
                 # reduce max val
-                while diff > values["max"] - max_value + 20 and max_value >= value + 20:
-                    max_value -= 20
+                while diff > values["max"] - max_value + ct.MCTS_TRIAL_CHUNK and max_value >= value + ct.MCTS_TRIAL_CHUNK:
+                    max_value -= ct.MCTS_TRIAL_CHUNK
 
             text = str(value) + "/" + str(max_value) + "      " + \
                 str(round(100 * value / max_value)) + "%      "
-            if value > 0:
-                self.timer.update(value + values["max"] - max_value)
-                text += self.timer.getstatus()
+            v = 100.0 * (value + values["max"] - max_value) / max_value
+            self.timer.update(v)
+            text += self.timer.getstatus()
 
         self.get_control(ct.K_PROGRESS_NUM).Update(text)
         self.get_control(ct.K_PROGRESS_BAR).UpdateBar(value, max_value)
@@ -358,6 +358,7 @@ class TwixtbotUI():
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
             "model": self.stgs.get(ct.K_MODEL_FOLDER[player]),
             "trials": self.stgs.get(ct.K_TRIALS[player]),
+            "smart_root": self.stgs.get(ct.K_SMART_ROOT[player]),
             "temperature": self.stgs.get(ct.K_TEMPERATURE[player]),
             "random_rotation": self.stgs.get(ct.K_RANDOM_ROTATION[player]),
             "add_noise": self.stgs.get(ct.K_ADD_NOISE[player]),
@@ -386,7 +387,7 @@ class TwixtbotUI():
         self.thread = threading.Thread(
             target=self.bot_move, args=(), daemon=True)
 
-        self.timer = pmeter.ETA(self.get_current(ct.K_TRIALS), max_seconds=300)
+        self.timer = pmeter.ETA(100.0, max_seconds=20)
         self.thread.start()
 
     # handle events
@@ -562,11 +563,11 @@ class TwixtbotUI():
         dialog = self.create_settings_window()
         while True:
             event, values = dialog.read()
-            if event == sg.WIN_CLOSED or event == ct.B_EXIT:
+            if event == sg.WIN_CLOSED or event == ct.B_CANCEL:
                 break
             elif event == ct.B_RESET_DEFAULT:
-                self.stgs.reset_to_default()
-                self.stgs.update_window(dialog)
+                self.stgs.reset_to_default(dialog)
+                dialog.refresh()
             elif event == ct.B_APPLY_SAVE:
                 self.stgs.save(values)
                 break
@@ -585,7 +586,7 @@ class TwixtbotUI():
         dialog = self.create_about_window()
         while True:
             event, values = dialog.read()
-            if event == sg.WIN_CLOSED or event == ct.B_EXIT:
+            if event == sg.WIN_CLOSED or event == ct.B_OK or event == ct.EVENT_EXIT:
                 break
         dialog.close()
 
@@ -759,6 +760,7 @@ class TwixtbotUI():
             return
 
         # other events go here...
+        self.logger.debug("event not handled: %s, %s", event, values)
 
 
 def main():
@@ -792,8 +794,11 @@ def main():
         if event == "__TIMEOUT__":
             continue
 
-        elif event == sg.WIN_CLOSED or event == ct.B_EXIT:
-            # exiting or closed
+        elif event == sg.WIN_CLOSED or event == ct.EVENT_EXIT:
+            if ui.thread_is_alive():
+                ui.handle_cancel_bot()
+
+            ui.window.close()
             break
 
         ui.handle_event(event, values)

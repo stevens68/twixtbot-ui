@@ -311,7 +311,7 @@ def st_tab_player(player):
             st_row_random_rotation(player),
             row_separator("   MCTS"),
             st_row_trials(player),
-            # st_row_smart_root(player),  # removed for now
+            st_row_smart_root(player),
             st_row_temperature(player),
             st_row_add_noise(player),
             st_row_cpuct(player),
@@ -367,7 +367,7 @@ class SettingsDialogLayout():
             )],
             [sg.Button(ct.B_APPLY_SAVE, size=(12, 1)),
              sg.Button(ct.B_RESET_DEFAULT, size=(15, 1)),
-             sg.Button(ct.B_EXIT, size=(10, 1), focus=True)]
+             sg.Button(ct.B_CANCEL, size=(10, 1), focus=True)]
         ]
 
         return layout
@@ -392,7 +392,7 @@ class AboutDialogLayout():
                 "twixtbot-ui frontend by stevens68 and contributors", size=(width, 1))],
             [sg.Text("https://github.com/stevens68/twixtbot-ui", size=(width, 1))],
             [sg.Text("", size=(width, 1))],
-            [sg.Button(ct.B_EXIT, size=(10, 1), focus=True)]
+            [sg.Button(ct.B_OK, size=(10, 1), focus=True)]
         ]
 
         return layout

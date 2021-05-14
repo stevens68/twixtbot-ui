@@ -74,13 +74,13 @@ K_VISUALIZE_MCTS = ['visualize', 'VISUALIZE_MCTS', None, False]
 K_ALLOW_SWAP = ['allow swap', 'ALLOW_SWAP', None, True]
 K_ALLOW_SCL = ['allow self crossing links', 'ALLOW_SCL', None, False]
 K_SMART_ACCEPT = ['smart accept', 'SMART_ACCEPT', None, True]
+K_SMART_ROOT = ['smart root', 'P1_SMART_ROOT',
+                'P2_SMART_ROOT', False, False]
 
 K_TEMPERATURE = ['temperature', 'P1_TEMPERATURE', 'P2_TEMPERATURE', 0.0, 0.0]
 K_CPUCT = ['cpuct', 'P1_CPUCT', 'P2_CPUCT', 1.0, 1.0]
 K_RANDOM_ROTATION = ['random rotation',
                      'P1_RANDOM_ROTATION', 'P2_RANDOM_ROTATION', False, False]
-K_SMART_ROOT = ['smart root', 'P1_SMART_ROOT',
-                'P2_SMART_ROOT', False, False]
 K_ADD_NOISE = ['add noise', 'P1_ADD_NOISE', 'P2_ADD_NOISE', 0.0, 0.0]
 K_BOARD_SIZE = ['board size (pixels)', 'BOARD_SIZE', None, 600]
 K_SHOW_LABELS = ['show labels', 'SHOW_LABELS', None, True]
@@ -113,7 +113,7 @@ K_THREAD = [None, 'THREAD']
 SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
                 K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_RANDOM_ROTATION,
-                K_BOARD_SIZE, K_LOG_LEVEL,
+                K_BOARD_SIZE, K_LOG_LEVEL, K_SMART_ROOT,
                 K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL, K_HIGHLIGHT_LAST_MOVE]
 
 
@@ -143,7 +143,7 @@ B_RESIGN = "Resign"
 B_RESET = "Reset"
 B_APPLY_SAVE = 'Apply & Save'
 B_RESET_DEFAULT = 'Reset to default'
-B_EXIT = "Exit"
+B_OK = "OK"
 
 TAB_LABEL_GENERAL = "General"
 TAB_LABEL_PLAYER1 = "Player 1"
@@ -160,6 +160,11 @@ EVENT_SHORTCUT_TRIALS_1_MINUS = 'SHORTCUT_TRIALS_1_MINUS'
 EVENT_SHORTCUT_TRIALS_2_PLUS = 'SHORTCUT_TRIALS_2_PLUS'
 EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'
 
+EVENT_EXIT = "Exit"
+
 # Logging
 LOGGER = 'twixtbot-ui'
 LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(filename)s:(%(lineno)d] %(message)s'
+
+# MCTS
+MCTS_TRIAL_CHUNK = 20
