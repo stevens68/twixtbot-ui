@@ -289,9 +289,8 @@ class NeuralMCTS:
 
                 if event is not None and event.is_set():
                     break
-
                     
-                if (i + 1) % 20 == 0:
+                if (i + 1) % ct.MCTS_TRIAL_CHUNK == 0:
                     self.send_message(
                         window, game, "in-progress", trials, i + 1, False)
                     if self.visualize_mcts:

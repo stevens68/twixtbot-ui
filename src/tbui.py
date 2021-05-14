@@ -251,7 +251,6 @@ class TwixtbotUI():
             text = ""
             value = 0
             max_value = 0
-            last_max_value = 0
         else:
             max_value = values["max"]
             value = values["current"]
@@ -587,7 +586,7 @@ class TwixtbotUI():
         dialog = self.create_about_window()
         while True:
             event, values = dialog.read()
-            if event == sg.WIN_CLOSED or event == ct.B_OK or event == "Exit":
+            if event == sg.WIN_CLOSED or event == ct.B_OK or event == ct.EVENT_EXIT:
                 break
         dialog.close()
 
@@ -761,7 +760,7 @@ class TwixtbotUI():
             return
 
         # other events go here...
-        self.logger.error("event not handled: %s, %s", event, values)
+        self.logger.debug("event not handled: %s, %s", event, values)
 
 
 def main():
