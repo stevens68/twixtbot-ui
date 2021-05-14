@@ -66,28 +66,24 @@ class Player:
         )
 
     def pick_move(self, game, window=None, event=None):
-
         if self.allow_swap and len(game.history) < 2:
 
             if len(game.history) == 0:
                 self.report = "swapmodel"
                 m = swapmodel.choose_first_move()
-                self.nm.send_message(window, game, "done", moves=[m])
-                return m
+                return self.nm.create_response(game, "done", moves=[m])
             elif swapmodel.want_swap(game.history[0]):
                 self.report = "swapmodel"
                 m = twixt.SWAP
-                self.nm.send_message(window, game, "done", moves=[m])
-                return m
+                return self.nm.create_response(game, "done", moves=[m])
             # else:
             #   didn't want to swap => compute move
 
         if self.num_trials == 0:
             # don't use MCTS but just evaluate and return best move
             _, moves, P = self.nm.eval_game(game)
-            self.nm.send_message(window, game, "done", 0,
+            return self.nm.create_response(game, "done", 0,
                                  0, moves=moves, P=[int(round(p * 1000)) for p in P])
-            return moves[0]
 
         N = self.nm.mcts(game, self.num_trials, window, event)
 
@@ -96,9 +92,8 @@ class Player:
         # When a forcing win or forcing draw move is found, there's no policy
         # array returned
         if isinstance(N, (str, twixt.Point)):
-            self.nm.send_message(window, game, "done", self.num_trials,
+            return self.nm.create_response(game, "done", self.num_trials,
                                  self.num_trials, True, P=[1000, 0, 0])
-            return N
 
         if self.temperature == 0.0:
             mx = N.max()
@@ -110,8 +105,6 @@ class Player:
         self.logger.info("weights=%s", weights)
         index = numpy.random.choice(numpy.arange(
             len(weights)), p=weights / weights.sum())
-
-        self.nm.send_message(window, game, "done", self.num_trials,
+        
+        return self.nm.create_response(game, "done", self.num_trials,
                              self.num_trials, False)
-
-        return naf.policy_index_point(game, index), N

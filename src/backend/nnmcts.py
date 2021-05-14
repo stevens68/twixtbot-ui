@@ -91,7 +91,7 @@ class NeuralMCTS:
         return leaf
         # end expand_leaf()
 
-    def visit_node(self, game, node, top=False, trials=None, window=None):
+    def visit_node(self, game, node, top=False, trials=None):
         """ Visit a node, return the evaluation from the
             point of view of the player currently to play. """
 
@@ -237,7 +237,7 @@ class NeuralMCTS:
             self.report = "flose"
             return twixt.RESIGN
 
-    def send_message(self, window, game, status, num_trials=0, current_trials=0, proven=False, moves=None, P=None):
+    def create_response(self, game, status, num_trials=0, current_trials=0, proven=False, moves=None, P=None):
 
         resp = {
             "status": status,
@@ -260,7 +260,10 @@ class NeuralMCTS:
         else:
             resp["moves"] = moves
 
-        window.write_event_value('THREAD', resp)
+        return resp
+    
+    def send_message(self, window, response):
+        window.write_event_value('THREAD', response)
 
     def mcts(self, game, trials, window, event):
         """ Using the neural net, compute the move visit count vector """
@@ -282,7 +285,7 @@ class NeuralMCTS:
             for i in range(trials):
                 assert not self.root.proven
                 self.visit_node(game, self.root, True,
-                                trials - i, window=window)
+                                trials - i)
 
                 if self.root.proven:
                     break
@@ -291,8 +294,8 @@ class NeuralMCTS:
                     break
                     
                 if (i + 1) % ct.MCTS_TRIAL_CHUNK == 0:
-                    self.send_message(
-                        window, game, "in-progress", trials, i + 1, False)
+                    resp = self.create_response(game, "in-progress", trials, i + 1, False)
+                    self.send_message(window, resp)
                     if self.visualize_mcts:
                         self.clean_path(path)
                         self.traverse(game, path, 0, self.root)

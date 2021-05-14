@@ -200,7 +200,6 @@ class TwixtbotUI():
     def calc_eval(self):
         score, moves, P = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
-        self.next_move = score, moves, P
         sc = round((2 * self.game.turn - 1) * score, 3)
         # Add sc to dict of historical scores
         self.moves_score[len(self.game.history)] = sc
@@ -217,7 +216,6 @@ class TwixtbotUI():
     def update_evals(self):
         if not self.get_control(ct.K_SHOW_EVALUATION).get():
             self.clear_evals()
-            self.next_move = None
             return
 
         if not self.game_over(False):
@@ -233,8 +231,6 @@ class TwixtbotUI():
         else:
             self.get_control(ct.K_EVAL_NUM).Update('')
             self.get_control(ct.K_EVAL_BAR).Update(0)
-
-            self.next_move = None
 
         # clean visits
         self.visit_plot.update()
@@ -374,14 +370,25 @@ class TwixtbotUI():
         self.bots[2 - player] = nnmplayer.Player(**args)
 
     def bot_move(self):
-        if len(self.game.history) >= 2 and self.get_current(ct.K_TRIALS) == 0 and self.next_move is not None:
-            # we already have the next move from evaluation
-            self.bots[self.game.turn].nm.send_message(self.window, self.game, "done",
-                                                      0, 0, moves=self.next_move[1], P=self.next_move[2])
-        else:
-            # mcts, or first/second move
-            self.bots[self.game.turn].pick_move(
-                self.game, self.window, self.bot_event)
+        response = self.bots[self.game.turn].pick_move(self.game, self.window, self.bot_event)
+
+        if response["status"] == "done":
+            self.get_control(ct.K_SPINNER).Update(visible=False)
+            if not self.bot_event.is_set() or self.bot_event.get_context() == ct.ACCEPT_EVENT:
+                # bot has not been cancelled (but is finished or accepted)
+                self.execute_move(response["moves"][0])
+                self.update_after_move(False)
+            else:
+                # bot has been cancelled clear progress controls and visits
+                self.update_progress()
+                # reset history_at_root resets tree and visit counts
+                self.bots[self.game.turn].nm.history_at_root = None
+
+                # switch off auto move
+                if self.get_current(ct.K_AUTO_MOVE):
+                    self.set_current(ct.K_AUTO_MOVE, False)
+                    self.get_control(
+                        ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def launch_bot(self):
         self.visit_plot.update()
@@ -487,23 +494,6 @@ class TwixtbotUI():
         if self.get_control(ct.K_SHOW_EVALUATION).get() and "moves" in values and "current" in values and len(values["moves"]) > 1:
             self.visit_plot.update(values, max(1, values["max"]))
 
-        if values["status"] == "done":
-            self.get_control(ct.K_SPINNER).Update(visible=False)
-            if not self.bot_event.is_set() or self.bot_event.get_context() == ct.ACCEPT_EVENT:
-                # bot has not been cancelled (but is finished or accepted)
-                self.execute_move(values["moves"][0])
-                self.update_after_move(False)
-            else:
-                # bot has been cancelled clear progress controls and visits
-                self.update_progress()
-                # reset history_at_root resets tree and visit counts
-                self.bots[self.game.turn].nm.history_at_root = None
-
-                # switch off auto move
-                if self.get_current(ct.K_AUTO_MOVE):
-                    self.set_current(ct.K_AUTO_MOVE, False)
-                    self.get_control(
-                        ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def handle_accept_and_cancel(self, event):
         if event == ct.B_ACCEPT:
