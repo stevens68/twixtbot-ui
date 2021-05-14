@@ -102,7 +102,7 @@ Note that for the first move and the swap move the bot does not use the evaluati
 
 All settings can be changed and saved via *File -> Settings...*. Most changes are effective immediately and can be applied in the middle of a game. Click button *Reset to default* to reset the values in all three tabs. 
 
-![Settings Dialog](img/Settings.JPG)
+<img src="img/Settings.JPG" alt="drawing" width="600"/>
 
 Parameters *auto move* and *trials* can also be changed in the control panel of the main window. These changes won't be saved when you exit the program. In the main window, to see the current settings in a tooltip, hover the mouse over the *auto move* checkboxes. 
 
@@ -127,6 +127,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 - *random rotation*: if true, the bot randomly chooses one of the four equivalent boards (rotation / mirroring) for evaluation (default: false)
 - *model folder*: no reason to change this unless you have a second network (default: `../model/pb`)
 - *trials*: number of MCTS iterations. Set it to 0 to switch off MCTS (default: 0)
+- *smart root*: if true, the leading move is not visted if it is more than one visit ahead. Of the remaining moves the one with the best UCB is chosen instead (default: false) 
 - *temperature*: controls the policy which move is taken after MCTS: 
   - 0.0: choose move with highest number of visits; random choice for tie-break (default)
   - 0.5: random choice using probability distribution of squared number of visits
