@@ -180,7 +180,7 @@ def get_game(curent_cross_lines_setting=False):
                 list: twixt moves,
                 bool: enable_crossing_lines)
     """
-    RETURN_ON_FAILURE = (None, None, False)
+    RETURN_ON_FAILURE = None, None, False
 
     # Get filename
     file_name = sg.PopupGetFile('Choose file', file_types=(
@@ -202,7 +202,8 @@ def get_game(curent_cross_lines_setting=False):
     # Parse file
     try:
         if file_name[-2:].upper() == 'T1':
-            return parse_t1_file(content), False
+            players, moves = parse_t1_file(content) 
+            return players, moves, False
         elif file_name[-4:].lower() == 'tsgf':
             enable_crossing_lines = False
             if not curent_cross_lines_setting:
@@ -212,7 +213,8 @@ def get_game(curent_cross_lines_setting=False):
                     "crossing lines. You don't have crossing lines enabled. "
                     "Do you want to enable crossing lines?",
                     title='Enable crossing lines?') == "Yes"
-            return (*parse_tsgf_file(content), enable_crossing_lines)
+            players, moves = parse_tsgf_file(content)
+            return players, moves, enable_crossing_lines
         else:
             lt.popup("Didn't recognize the filename extension.")
     except Exception as e:

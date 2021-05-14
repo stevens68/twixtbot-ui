@@ -91,7 +91,7 @@ class NeuralMCTS:
         return leaf
         # end expand_leaf()
 
-    def visit_node(self, game, node, top=False, trials=None, trials_left=-1, window=None):
+    def visit_node(self, game, node, top=False, trials=None, window=None):
         """ Visit a node, return the evaluation from the
             point of view of the player currently to play. """
 
@@ -106,10 +106,11 @@ class NeuralMCTS:
             return self.score
 
         if top and self.smart_root:
-            maxn = node.N[node.LMnz].max()
-            winnables = (node.N > maxn - trials_left) & node.LM
+            vnz = node.N[node.LMnz]
+            maxn = vnz.max()
+            winnables = (node.N > maxn - trials) & node.LM
             num_winnables = numpy.count_nonzero(winnables)
-            assert num_winnables > 0, (maxn, trials_left, numpy.array_str(
+            assert num_winnables > 0, (maxn, trials, numpy.array_str(
                 node.N), numpy.array_str(node.LM))
             if num_winnables == 1:
                 index = winnables.argmax()
@@ -117,12 +118,14 @@ class NeuralMCTS:
                 maxes = (node.N == maxn)
                 num_maxes = numpy.count_nonzero(maxes)
                 assert num_maxes > 0
-                if num_maxes == 1:
+                if num_maxes == 1 and maxn - vnz[numpy.argsort(vnz)[-2:]][0] > 1:
+                    # visit diff to second best is >1
                     winnables[maxes.argmax()] = 0
 
                 nsum = node.N.sum()  # don't need to filter since all are 0
                 stv = math.sqrt(nsum + 1.0)
                 U = node.Q + self.cpuct * node.P * stv / (1.0 + node.N)
+
                 wnz = numpy.nonzero(winnables)
                 nz_index = U[wnz].argmax()
                 index = wnz[0][nz_index]

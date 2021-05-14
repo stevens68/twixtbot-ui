@@ -358,6 +358,7 @@ class TwixtbotUI():
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
             "model": self.stgs.get(ct.K_MODEL_FOLDER[player]),
             "trials": self.stgs.get(ct.K_TRIALS[player]),
+            "smart_root": self.stgs.get(ct.K_SMART_ROOT[player]),
             "temperature": self.stgs.get(ct.K_TEMPERATURE[player]),
             "random_rotation": self.stgs.get(ct.K_RANDOM_ROTATION[player]),
             "add_noise": self.stgs.get(ct.K_ADD_NOISE[player]),

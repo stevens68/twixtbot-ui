@@ -119,6 +119,8 @@ class Settings():
         text += ct.K_RANDOM_ROTATION[0] + ":\t" + \
             str(self.get(ct.K_RANDOM_ROTATION[player])) + "   \n"
         text += "----  MCTS  ------------------------\n"
+        text += ct.K_SMART_ROOT[0] + ":\t" + \
+            str(self.get(ct.K_SMART_ROOT[player])) + "   \n"
         text += ct.K_TEMPERATURE[0] + ":\t" + \
             str(self.get(ct.K_TEMPERATURE[player])) + "   \n"
         text += ct.K_ADD_NOISE[0] + ":\t" + \

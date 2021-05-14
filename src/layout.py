@@ -311,7 +311,7 @@ def st_tab_player(player):
             st_row_random_rotation(player),
             row_separator("   MCTS"),
             st_row_trials(player),
-            # st_row_smart_root(player),  # removed for now
+            st_row_smart_root(player),
             st_row_temperature(player),
             st_row_add_noise(player),
             st_row_cpuct(player),
