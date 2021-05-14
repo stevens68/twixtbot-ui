@@ -63,7 +63,6 @@ class ETA(object):
             return
 
         eta = (float(self.wanted_size) - float(cursize)) / float(speed)
-        print("speed", speed, "delta_time", delta_time, "delta_work", delta_work, "eta", eta, "curtime", curtime)
         self.eta = format_sec(eta)
 
     def getstatus(self):
