@@ -61,6 +61,16 @@ CANCEL_EVENT = "cancelled"
 BOARD_SIZE_LIST = [500, 600, 700, 800]
 TEMPERATURE_LIST = [0.0, 0.5, 1.0]
 
+ROT_OFF = "off"
+ROT_RAND = "random"
+ROT_AVG = "average"
+ROT_FLIP_HOR = "flip horizontally"
+ROT_FLIP_VERT = "flip vertically"
+ROT_FLIP_BOTH = "flip both"
+
+ROTATION_LIST = [ROT_OFF, ROT_RAND, ROT_AVG, ROT_FLIP_HOR, ROT_FLIP_VERT, ROT_FLIP_BOTH]
+
+# logging
 LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 
 # keys
@@ -79,8 +89,7 @@ K_SMART_ROOT = ['smart root', 'P1_SMART_ROOT',
 
 K_TEMPERATURE = ['temperature', 'P1_TEMPERATURE', 'P2_TEMPERATURE', 0.0, 0.0]
 K_CPUCT = ['cpuct', 'P1_CPUCT', 'P2_CPUCT', 1.0, 1.0]
-K_RANDOM_ROTATION = ['random rotation',
-                     'P1_RANDOM_ROTATION', 'P2_RANDOM_ROTATION', False, False]
+K_ROTATION = ['rotation', 'P1_ROTATION', 'P2_ROTATION', ROT_OFF, ROT_OFF]
 K_ADD_NOISE = ['add noise', 'P1_ADD_NOISE', 'P2_ADD_NOISE', 0.0, 0.0]
 K_BOARD_SIZE = ['board size (pixels)', 'BOARD_SIZE', None, 600]
 K_SHOW_LABELS = ['show labels', 'SHOW_LABELS', None, True]
@@ -112,7 +121,7 @@ K_THREAD = [None, 'THREAD']
 
 SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
-                K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_RANDOM_ROTATION,
+                K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_ROTATION,
                 K_BOARD_SIZE, K_LOG_LEVEL, K_SMART_ROOT,
                 K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL, K_HIGHLIGHT_LAST_MOVE]
 

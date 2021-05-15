@@ -17,7 +17,7 @@ class Player:
         self.model = kwargs.get('model', None)
         self.num_trials = int(kwargs.get('trials', 100))
         self.temperature = float(kwargs.get('temperature', 0))
-        self.random_rotation = int(kwargs.get('random_rotation', 0))
+        self.rotation = kwargs.get('rotation', None)
 
         self.smart_root = int(kwargs.get('smart_root', 0))
         self.allow_swap = int(kwargs.get('allow_swap', 1))
@@ -38,21 +38,43 @@ class Player:
             
             def nnfunc(game):
 
+                rot_map = {
+                    ct.ROT_OFF: 0,
+                    ct.ROT_RAND: random.randint(0, 3),
+                    ct.ROT_FLIP_HOR: 1,
+                    ct.ROT_FLIP_VERT: 2,
+                    ct.ROT_FLIP_BOTH: 3
+                }
+
+                def get_pw_ml(r):
+                    p, m = nneval_.eval_one(nips)
+                    if len(p) == 3:
+                        p = naf.three_to_one(p)
+                    if len(p) == 1 and len(p[0] == 3):
+                        p = naf.three_to_one(p[0])
+                    m = naf.rotate_policy_array(m, r)
+                    if len(m) == 1:
+                        m = m[0]
+                    return p, m
+          
                 nips = naf.NetInputs(game)
-                if self.random_rotation:
-                    rot = random.randint(0, 3)
+
+                if self.rotation == ct.ROT_AVG:
+                    pw, ml = get_pw_ml(0)
+                    for i in range(3):
+                        nips.rotate(i + 1)
+                        pw_rot, ml_rot = get_pw_ml(i + 1)
+                        pw += pw_rot
+                        ml += ml_rot
+                    pw /= 4
+                    ml /= 4
+                else: 
+                    rot = rot_map[self.rotation]
                     nips.rotate(rot)
-                else:
-                    rot = 0
-                pw, ml = nneval_.eval_one(nips)
-                if len(pw) == 3:
-                    pw = naf.three_to_one(pw)
-                if len(pw) == 1 and len(pw[0] == 3):
-                    pw = naf.three_to_one(pw[0])
-                ml = naf.rotate_policy_array(ml, rot)
-                if len(ml) == 1:
-                    ml = ml[0]
+                    pw, ml = get_pw_ml(rot)
+
                 return pw, ml
+            
         else:
             raise Exception("Specify model or resource")
 
