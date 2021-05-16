@@ -243,6 +243,12 @@ def st_row_smart_accept():
     return [st_label(ct.K_SMART_ACCEPT[0]), sg.Checkbox(text="", default=ct.K_SMART_ACCEPT[3], key=ct.K_SMART_ACCEPT[1])]
 
 
+def st_row_resign_threshold():
+    return [st_label(ct.K_RESIGN_THRESHOLD[0]),
+            sg.Spin(values=[float((x + 70.0) / 100.0) for x in range(31)],
+                    initial_value=ct.K_RESIGN_THRESHOLD[3], key=ct.K_RESIGN_THRESHOLD[1], size=(5, 0))]
+
+
 def st_row_color(player):
     return [st_label(ct.K_COLOR[0]),
             sg.Combo(ct.COLOR_LIST, ct.K_COLOR[player + 2],
@@ -344,6 +350,7 @@ class SettingsDialogLayout():
                            sg.Checkbox(text=None, default=ct.K_HIGHLIGHT_LAST_MOVE[3], key=ct.K_HIGHLIGHT_LAST_MOVE[1])],
                           row_separator(""),
                           st_row_smart_accept(),
+                          st_row_resign_threshold(),
                           row_separator(""),
                           [st_label(ct.K_LOG_LEVEL[0]),
                            sg.Combo(ct.LOG_LEVEL_LIST, ct.K_LOG_LEVEL[3], size=(

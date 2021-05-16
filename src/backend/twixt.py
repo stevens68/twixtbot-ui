@@ -192,7 +192,7 @@ class Game:
         return copy
 
     def turn_to_player(self, turn=None):
-        if turn or turn == 0:
+        if turn is not None or turn == 0:
             return 2 - turn
         else:
             return 2 - self.turn
