@@ -36,6 +36,17 @@ class Player:
             
             nneval_ = self.evaluator
             
+            def get_pw_ml(n, r):
+                p, m = nneval_.eval_one(n)
+                if len(p) == 3:
+                    p = naf.three_to_one(p)
+                if len(p) == 1 and len(p[0] == 3):
+                    p = naf.three_to_one(p[0])
+                m = naf.rotate_policy_array(m, r)
+                if len(m) == 1:
+                    m = m[0]
+                return p, m
+
             def nnfunc(game):
 
                 rot_map = {
@@ -45,33 +56,27 @@ class Player:
                     ct.ROT_FLIP_VERT: 2,
                     ct.ROT_FLIP_BOTH: 3
                 }
-
-                def get_pw_ml(r):
-                    p, m = nneval_.eval_one(nips)
-                    if len(p) == 3:
-                        p = naf.three_to_one(p)
-                    if len(p) == 1 and len(p[0] == 3):
-                        p = naf.three_to_one(p[0])
-                    m = naf.rotate_policy_array(m, r)
-                    if len(m) == 1:
-                        m = m[0]
-                    return p, m
           
                 nips = naf.NetInputs(game)
+                # self.logger.error("ROR: %s", self.rotation)
 
                 if self.rotation == ct.ROT_AVG:
-                    pw, ml = get_pw_ml(0)
+                    pw, ml = get_pw_ml(nips, 0)
                     for i in range(3):
-                        nips.rotate(i + 1)
-                        pw_rot, ml_rot = get_pw_ml(i + 1)
+                        # 0 => 1 flip => nips is flipped hor => 1 to map ml   
+                        # 1 => 2 flip => nips is flipped both => 3 to map ml
+                        # 2 => 1 flip => nips is flipped vert => 2 to map ml
+                        nips.rotate(i % 2 + 1)  
+                        pw_rot, ml_rot = get_pw_ml(nips, (3 - i) % 3 + 1)
                         pw += pw_rot
                         ml += ml_rot
+                        x = ml.argmax()
                     pw /= 4
                     ml /= 4
                 else: 
                     rot = rot_map[self.rotation]
                     nips.rotate(rot)
-                    pw, ml = get_pw_ml(rot)
+                    pw, ml = get_pw_ml(nips, rot)
 
                 return pw, ml
             
