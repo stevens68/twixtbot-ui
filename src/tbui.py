@@ -270,7 +270,6 @@ class TwixtbotUI():
             text = str(value) + "/" + str(max_value) + "      " + \
                 str(round(100 * value / max_value)) + "%      "
                 
-            print("value", value, "values['max']", values["max"], "max_value", max_value)
             v = 100.0 * (value + values["max"] - max_value) / values["max"]
             self.timer.update(v)
             text += self.timer.getstatus()
