@@ -116,8 +116,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 + *show cursor label*: display the coordinates in a tooltip at the mouse cursor (default: false)
 + *highlight last move*: display a yellow circle around last peg (default: false)
 + *smart accept*: during MCTS, reduce the max number of trials automatically according to the lead of the best move (default: true)
-+ *resign threshold*: if evaluation is bigger than this threshold - in favor of the opponent - the bot will resign (default: 0.95)
-
++ *resign threshold*: if opponent's evaluation is bigger than this threshold the bot will resign (default: 0.95)
 + *log level*: verbosity of log messages (default: ERROR)
 
 
