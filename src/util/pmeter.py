@@ -14,7 +14,7 @@ __source__ = 'http://code.activestate.com/recipes/577002-precise-console-progres
 
 
 def format_sec(sec):
-    sec = int(sec)
+    sec = round(sec)
     min_, sec = divmod(sec, 60)
     hour, min_ = divmod(min_, 60)
     return '%d:%02d:%02d' % (hour, min_, sec)
@@ -102,7 +102,6 @@ class ProgressMeter(object):
     def set_complete(self):
         self.needrefresh = 1
         self.update(self.size)
-        print  # left progress bar on screen
 
     def _rawupdate(self, cursize):
         self.eta_calculator.update(cursize)
