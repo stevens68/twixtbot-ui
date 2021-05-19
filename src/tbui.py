@@ -374,48 +374,32 @@ class TwixtbotUI():
         import backend.nnmplayer as nnmplayer
         self.bots[2 - player] = nnmplayer.Player(**args)
 
-    def call_bot_and_move(self):
-        if len(self.game.history) >= 2 and self.get_current(ct.K_TRIALS) == 0 and self.next_move is not None:
-            # we already have the next move from evaluation            
-            response = {
-                "status": "done",
-                "moves": self.next_move[1],
-                "P": self.next_move[2]
-            }
-            
+    def call_bot(self):
+        # mcts, or first/second move (we are in a thread)       
+        response = self.bots[self.game.turn].pick_move(self.game, self.window, self.bot_event)
+        if self.bot_event is None or not self.bot_event.is_set() or self.bot_event.get_context() == ct.ACCEPT_EVENT:
+            # bot has not been cancelled (but is finished or accepted) => execute move
+            # execute move must be inside thread!
+            self.execute_move(response["moves"][0])
         else:
-            # mcts, or first/second move       
-            response = self.bots[self.game.turn].pick_move(self.game, self.window, self.bot_event)
-
-        if response["status"] == "done":
-            if self.bot_event is None or not self.bot_event.is_set() or self.bot_event.get_context() == ct.ACCEPT_EVENT:
-                # bot has not been cancelled (but is finished or accepted)
-                self.execute_move(response["moves"][0])
-                # self.window.write_event_value(ct.EVENT_UPDATE_UI, None)
-            else:
-                # reset history_at_root resets tree and visit counts
-                self.bots[self.game.turn].nm.history_at_root = None
-
-
-    def launch_bot(self):
+            # reset history_at_root resets tree and visit counts
+            self.bots[self.game.turn].nm.history_at_root = None
         
-        if self.get_current(ct.K_TRIALS) > 0:
-            self.visit_plot.update()
-            self.update_progress()            
-            self.window[ct.K_SPINNER[1]].Update(visible=True)
-            # MCTS => async
-            self.bot_event = BotEvent()
-            self.thread = threading.Thread(
-                target=self.call_bot_and_move, args=(), daemon=True)
-    
-            self.timer = pmeter.ETA(100.0, max_seconds=20)
-            self.thread.start()
-        else:
-            # no MCTS => sync 
-            self.call_bot_and_move()
-            # send pseudo-event to keep loop going 
-            # in case of trials==0 and auto_move=True for both bots
-            self.window.write_event_value('PSEUDO', None)
+        # indicate that thread is about to finish and that window needs update
+        # as (TKinter doesn't like multi-threading)
+        self.window.write_event_value(ct.EVENT_UPDATE_UI, None)
+        return
+
+    def launch_call_bot(self):
+        
+        self.visit_plot.update()
+        self.update_progress()            
+        self.window[ct.K_SPINNER[1]].Update(visible=True)
+        self.bot_event = BotEvent()
+        
+        self.thread = threading.Thread(target=self.call_bot, args=())
+        self.timer = pmeter.ETA(100.0, max_seconds=20)
+        self.thread.start()
 
     # handle events
     def handle_board_click(self, values):
@@ -560,14 +544,29 @@ class TwixtbotUI():
 
     def bot_move(self):
         if not self.game_over():
-            # clear move statistics
             if (-2 * self.game.turn + 1) * self.next_move[0] > self.stgs.get(ct.K_RESIGN_THRESHOLD[1]):
+                # resign-threshold reached
                 self.visit_plot.update()
                 self.update_progress()
                 self.execute_move(twixt.RESIGN)
-                # check resign-threshold
-            else: 
-                self.launch_bot()
+            elif self.get_current(ct.K_TRIALS) == 0:
+                # no mcts
+                if len(self.game.history) >= 2 and self.next_move is not None:
+                    # we already have the next move from eval update => execute it 
+                    print("Next move is:", self.next_move[1])
+                    self.execute_move(self.next_move[1][0])
+                else:
+                    # first or second move (special policy) => sync call + execute
+                    response = self.bots[self.game.turn].pick_move(self.game, self.window, self.bot_event)
+                    self.execute_move(response["moves"][0])
+                # window update
+                self.update_after_move(False)
+                # send pseudo-event to keep loop going 
+                # in case of trials==0 and auto_move=True for both bots
+                self.window.write_event_value('PSEUDO', None)
+            else:
+                # mcts => async bot call in thread
+                self.launch_call_bot()
 
     def create_settings_window(self):
 
@@ -722,6 +721,12 @@ class TwixtbotUI():
     
     def handle_update_ui_event(self, event, values):
         if event == ct.EVENT_UPDATE_UI:
+            # wait for it to really finish
+            # self.logger.error("**** waiting for thread to finish, %s", self.thread.is_alive())
+            print("**** waiting for thread", self.thread.is_alive())
+            self.thread.join(2);
+            print("**** after waiting", self.thread.is_alive())
+            # self.logger.error("**** after waiting, %s", self.thread.is_alive())
             self.get_control(ct.K_SPINNER).Update(visible=False)
             self.update_after_move(False)            
             return True
@@ -815,6 +820,7 @@ def main():
             ui.bot_move()
 
         event, values = ui.get_event()
+        ui.logger.error("EVENT: %s, %s", str(event), str(values))
         
         if event == "__TIMEOUT__":
             continue
