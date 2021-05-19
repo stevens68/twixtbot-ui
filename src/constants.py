@@ -167,6 +167,8 @@ EVENT_SHORTCUT_TRIALS_2_MINUS = 'SHORTCUT_TRIALS_2_MINUS'
 
 EVENT_EXIT = "Exit"
 
+EVENT_UPDATE_UI = "UpdateUI"
+
 # Logging
 LOGGER = 'twixtbot-ui'
 LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(filename)s:(%(lineno)d] %(message)s'

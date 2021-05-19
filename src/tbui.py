@@ -388,22 +388,14 @@ class TwixtbotUI():
             response = self.bots[self.game.turn].pick_move(self.game, self.window, self.bot_event)
 
         if response["status"] == "done":
-            self.get_control(ct.K_SPINNER).Update(visible=False)
             if self.bot_event is None or not self.bot_event.is_set() or self.bot_event.get_context() == ct.ACCEPT_EVENT:
                 # bot has not been cancelled (but is finished or accepted)
                 self.execute_move(response["moves"][0])
-                self.update_after_move(False)
+                # self.window.write_event_value(ct.EVENT_UPDATE_UI, None)
             else:
-                # bot has been cancelled clear progress controls and visits
-                self.update_progress()
                 # reset history_at_root resets tree and visit counts
                 self.bots[self.game.turn].nm.history_at_root = None
 
-                # switch off auto move
-                if self.get_current(ct.K_AUTO_MOVE):
-                    self.set_current(ct.K_AUTO_MOVE, False)
-                    self.get_control(
-                        ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
 
     def launch_bot(self):
         
@@ -727,9 +719,20 @@ class TwixtbotUI():
             return update_slider(2, max, 0, -1)
 
         return False
+    
+    def handle_update_ui_event(self, event, values):
+        if event == ct.EVENT_UPDATE_UI:
+            self.get_control(ct.K_SPINNER).Update(visible=False)
+            self.update_after_move(False)            
+            return True
+        return False
 
     def handle_event(self, event, values):
 
+        
+        if self.handle_update_ui_event(event, values):
+            return
+        
         # menue events
         if self.handle_menue_event(event, values):
             return
