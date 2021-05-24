@@ -66,6 +66,7 @@ class TwixtbotUI():
         self.redo_moves = []
         self.next_move = None
         self.logger = logging.getLogger(ct.LOGGER)
+        self.ui_to_be_updated = threading.Event()
 
         # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
@@ -214,11 +215,11 @@ class TwixtbotUI():
         self.eval_moves_plot.update()
         self.eval_hist_plot.update()
         self.visit_plot.update()
+        self.next_move = None
 
     def update_evals(self):
         if not self.get_control(ct.K_SHOW_EVALUATION).get():
             self.clear_evals()
-            self.next_move = None
             return
 
         if not self.game_over(False):
@@ -231,11 +232,12 @@ class TwixtbotUI():
             values = {"moves": moves, "Y": P}
             self.eval_moves_plot.update(values, 1000)
 
+        """
         else:
             self.get_control(ct.K_EVAL_NUM).Update('')
             self.get_control(ct.K_EVAL_BAR).Update(0)
-            self.next_move = None
-            
+        """    
+        self.next_move = None
         # clean visits
         self.visit_plot.update()
         self.eval_hist_plot.update(self.moves_score)
@@ -385,9 +387,6 @@ class TwixtbotUI():
             # reset history_at_root resets tree and visit counts
             self.bots[self.game.turn].nm.history_at_root = None
         
-        # indicate that thread is about to finish and that window needs update
-        # as (TKinter doesn't like multi-threading)
-        self.window.write_event_value(ct.EVENT_UPDATE_UI, None)
         return
 
     def launch_call_bot(self):
@@ -397,6 +396,7 @@ class TwixtbotUI():
         self.window[ct.K_SPINNER[1]].Update(visible=True)
         self.bot_event = BotEvent()
         
+        self.ui_to_be_updated.set()
         self.thread = threading.Thread(target=self.call_bot, args=())
         self.timer = pmeter.ETA(100.0, max_seconds=20)
         self.thread.start()
@@ -539,21 +539,23 @@ class TwixtbotUI():
             self.game.play_swap()
         else:
             self.game.play(move)
-        #self.board.create_move_objects(len(self.game.history) - 1)
         self.game_over()
+        self.next_move = None
 
     def bot_move(self):
+        if self.next_move is None:
+            self.calc_eval()
         if not self.game_over():
             if (-2 * self.game.turn + 1) * self.next_move[0] > self.stgs.get(ct.K_RESIGN_THRESHOLD[1]):
                 # resign-threshold reached
                 self.visit_plot.update()
                 self.update_progress()
                 self.execute_move(twixt.RESIGN)
+                self.update_after_move(False)
             elif self.get_current(ct.K_TRIALS) == 0:
                 # no mcts
-                if len(self.game.history) >= 2 and self.next_move is not None:
+                if len(self.game.history) >= 2:
                     # we already have the next move from eval update => execute it 
-                    print("Next move is:", self.next_move[1])
                     self.execute_move(self.next_move[1][0])
                 else:
                     # first or second move (special policy) => sync call + execute
@@ -562,7 +564,7 @@ class TwixtbotUI():
                 # window update
                 self.update_after_move(False)
                 # send pseudo-event to keep loop going 
-                # in case of trials==0 and auto_move=True for both bots
+                # necessary in case of trials==0 and auto_move=True for both bots
                 self.window.write_event_value('PSEUDO', None)
             else:
                 # mcts => async bot call in thread
@@ -611,7 +613,7 @@ class TwixtbotUI():
         dialog.close()
 
     def get_event(self):
-        if self.thread_is_alive():
+        if self.thread_is_alive() or self.ui_to_be_updated.is_set():
             self.get_control(ct.K_SPINNER).UpdateAnimation(ct.SPINNER_IMAGE)
             # frequent read to update progress gif
             return self.window.read(timeout=200)
@@ -719,24 +721,8 @@ class TwixtbotUI():
 
         return False
     
-    def handle_update_ui_event(self, event, values):
-        if event == ct.EVENT_UPDATE_UI:
-            # wait for it to really finish
-            # self.logger.error("**** waiting for thread to finish, %s", self.thread.is_alive())
-            print("**** waiting for thread", self.thread.is_alive())
-            self.thread.join(2);
-            print("**** after waiting", self.thread.is_alive())
-            # self.logger.error("**** after waiting, %s", self.thread.is_alive())
-            self.get_control(ct.K_SPINNER).Update(visible=False)
-            self.update_after_move(False)            
-            return True
-        return False
 
     def handle_event(self, event, values):
-
-        
-        if self.handle_update_ui_event(event, values):
-            return
         
         # menue events
         if self.handle_menue_event(event, values):
@@ -816,11 +802,18 @@ def main():
 
     # Event Loop
     while True:
-        if ui.get_current(ct.K_AUTO_MOVE) and not ui.thread_is_alive():
-            ui.bot_move()
+        
+        
+        if not ui.thread_is_alive():
+            if ui.ui_to_be_updated.is_set():
+                # thread has finished, we must update UI now
+                ui.update_after_move(False)
+                ui.get_control(ct.K_SPINNER).Update(visible=False)
+                ui.ui_to_be_updated.clear()
+            if ui.get_current(ct.K_AUTO_MOVE):
+                ui.bot_move()
 
         event, values = ui.get_event()
-        ui.logger.error("EVENT: %s, %s", str(event), str(values))
         
         if event == "__TIMEOUT__":
             continue
