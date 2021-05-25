@@ -495,13 +495,19 @@ class TwixtbotUI():
             self.handle_accept_bot()
         elif event == ct.B_CANCEL:
             self.handle_cancel_bot()
-        elif event in [ct.K_BOARD[1], ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE, ct.K_VISUALIZE_MCTS[1], ct.K_HEATMAP[1],
-                        ct.EVENT_SHORTCUT_VISUALIZE_MCTS, ct.EVENT_SHORTCUT_HEATMAP]:
+        elif event in [ct.K_BOARD[1],
+                       ct.B_UNDO, ct.B_REDO, ct.B_RESIGN, ct.B_RESET, ct.B_BOT_MOVE,
+                       ct.K_VISUALIZE_MCTS[1], ct.EVENT_SHORTCUT_VISUALIZE_MCTS,
+                       ct.K_HEATMAP[1], ct.EVENT_SHORTCUT_HEATMAP,
+                       ct.K_SHOW_EVALUATION[1], ct.EVENT_SHORTCUT_SHOW_EVALUATION]:
             lt.popup("bot in progress. Click Accept or Cancel.")
+            # undo checkbox change
             if event == ct.K_VISUALIZE_MCTS[1]:
                 self.get_control(ct.K_VISUALIZE_MCTS).update(not self.get_control(ct.K_VISUALIZE_MCTS).get())
             elif event == ct.K_HEATMAP[1]:
                 self.get_control(ct.K_HEATMAP).update(not self.get_control(ct.K_HEATMAP).get())
+            elif event == ct.K_SHOW_EVALUATION[1]:
+                self.get_control(ct.K_SHOW_EVALUATION).update(not self.get_control(ct.K_SHOW_EVALUATION).get())
  
     def thread_is_alive(self):
         return hasattr(self, 'thread') and self.thread is not None and self.thread.is_alive()
@@ -730,13 +736,6 @@ class TwixtbotUI():
             self.update_bots()
             return
 
-
-        # click on evaluation checkbox (no shortcuts)
-        if event == ct.K_SHOW_EVALUATION[1]:
-            self.update_evals()
-            return
-
-
         # thread events
         if event == ct.K_THREAD[1]:
             # handle event sent from bot
@@ -760,6 +759,11 @@ class TwixtbotUI():
         # selection of mcts visualization
         if event == ct.K_VISUALIZE_MCTS[1]:
             self.update_bots()
+            return
+
+        # click on evaluation checkbox (no shortcuts)
+        if event == ct.K_SHOW_EVALUATION[1]:
+            self.update_evals()
             return
 
         # click on heatmap (no shortcuts)
