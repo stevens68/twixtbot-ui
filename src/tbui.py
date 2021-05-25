@@ -473,13 +473,12 @@ class TwixtbotUI():
         self.bot_event.set(ct.ACCEPT_EVENT)
 
     def handle_cancel_bot(self):
-        print("current player", self.game.turn_to_player())
         self.bot_event.set(ct.CANCEL_EVENT)
         # switch off auto move
-        if self.get_current(ct.K_AUTO_MOVE):
-            print("switching off auto-move for", self.game.turn_to_player())
-            self.set_current(ct.K_AUTO_MOVE, False)
-            self.get_control(ct.K_AUTO_MOVE, self.game.turn_to_player()).Update(False)
+        # (do not use self.game.turn_to_player() to determine current player during mcts)
+        p = 1 if self.get_control(ct.K_TURN_INDICATOR, 1).get() == ct.TURN_CHAR else 2
+        self.stgs.set(ct.K_AUTO_MOVE[p], False)
+        self.get_control(ct.K_AUTO_MOVE, p).Update(False)
 
     def handle_thread_event(self, values):
         self.logger.info("Bot response: %s", values)
