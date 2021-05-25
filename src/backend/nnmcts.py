@@ -142,7 +142,7 @@ class NeuralMCTS:
         move = naf.policy_index_point(game.turn, index)
 
         if top:
-            self.logger.info("selecting index=%d move=%s Q=%.3f P=%.5f N=%d",
+            self.logger.debug("selecting index=%d move=%s Q=%.3f P=%.5f N=%d",
                              index, str(move), node.Q[index], node.P[index], node.N[index])
 
         subnode = node.subnodes[index]
@@ -306,8 +306,8 @@ class NeuralMCTS:
         if self.root.proven:
             return self.proven_result(game)
 
-        self.logger.info("N=%s", self.root.N)
-        self.logger.info("Q=%s", self.root.Q)
+        self.logger.debug("N=%s", self.root.N)
+        self.logger.debug("Q=%s", self.root.Q)
 
         self.report = "%6.3f" % (
             self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
