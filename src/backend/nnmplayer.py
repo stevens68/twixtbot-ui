@@ -33,7 +33,7 @@ class Player:
             # assert not self.socket
             if self.evaluator is None:
                 self.evaluator = nneval.NNEvaluater(self.model)
-            
+
             nneval_ = self.evaluator
             
             def get_pw_ml(n, r):
@@ -110,7 +110,8 @@ class Player:
             # don't use MCTS but just evaluate and return best move
             _, moves, P = self.nm.eval_game(game)
             return self.nm.create_response(game, "done", 0,
-                                 0, moves=moves, P=[int(round(p * 1000)) for p in P])
+                                           0, moves=moves,
+                                           P=[int(round(p * 1000)) for p in P])
 
         N = self.nm.mcts(game, self.num_trials, window, event)
 
@@ -120,7 +121,8 @@ class Player:
         # array returned
         if isinstance(N, (str, twixt.Point)):
             return self.nm.create_response(game, "done", self.num_trials,
-                                 self.num_trials, True, P=[1000, 0, 0])
+                                           self.num_trials, True,
+                                           P=[1000, 0, 0])
 
         if self.temperature == 0.0:
             mx = N.max()
@@ -130,8 +132,11 @@ class Player:
         elif self.temperature == 0.5:
             weights = N ** 2
         self.logger.debug("weights=%s", weights)
-        index = numpy.random.choice(numpy.arange(
-            len(weights)), p=weights / weights.sum())
-        
+
+        # flake8 said index isn't used. Not sure why this code is here.
+        # Just to be sure: commenting out the code instead of deleting:
+        # index = numpy.random.choice(numpy.arange(
+        #     len(weights)), p=weights / weights.sum())
+
         return self.nm.create_response(game, "done", self.num_trials,
-                             self.num_trials, False)
+                                       self.num_trials, False)

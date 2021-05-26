@@ -13,7 +13,6 @@ MAXBEST = 3
 
 
 class Point(namedtuple('Point', 'x y')):
-
     def __new__(cls, *args):
 
         if len(args) == 2:
@@ -35,9 +34,11 @@ class Point(namedtuple('Point', 'x y')):
     def add_it(self, other):
 
         if isinstance(other, Point):
-            return Point(operator.add(self.x, other.x), operator.add(self.y, other.y))
+            return Point(operator.add(self.x, other.x),
+                         operator.add(self.y, other.y))
         elif len(other) == 2:
-            return Point(operator.add(self.x, other[0]), operator.add(self.y, other[1]))
+            return Point(operator.add(self.x, other[0]),
+                         operator.add(self.y, other[1]))
         else:
             raise ValueError("Cannot add")
 
@@ -46,9 +47,11 @@ class Point(namedtuple('Point', 'x y')):
     def subtract_it(self, other):
 
         if isinstance(other, Point):
-            return Point(operator.sub(self.x, other.x), operator.sub(self.y, other.y))
+            return Point(operator.sub(self.x, other.x),
+                         operator.sub(self.y, other.y))
         elif len(other) == 2:
-            return Point(operator.sub(self.x, other[0]), operator.sub(self.y, other[1]))
+            return Point(operator.sub(self.x, other[0]),
+                         operator.sub(self.y, other[1]))
         else:
             raise ValueError("Cannot subtract")
 
@@ -57,7 +60,8 @@ class Point(namedtuple('Point', 'x y')):
     def radd_it(self, other):
 
         if len(other) == 2:
-            return Point(operator.add(other[0], self.x), operator.add(other[1], self.y))
+            return Point(operator.add(other[0], self.x),
+                         operator.add(other[1], self.y))
         else:
             raise ValueError("Cannot add")
 
@@ -66,7 +70,8 @@ class Point(namedtuple('Point', 'x y')):
     def rsubtract_it(self, other):
 
         if len(other) == 2:
-            return Point(operator.sub(other[0], self.x), operator.sub(other[1], self.y))
+            return Point(operator.sub(other[0], self.x),
+                         operator.sub(other[1], self.y))
         else:
             raise ValueError("Cannot subtract")
 
@@ -201,13 +206,10 @@ class Game:
 
         return self.is_winning(1 - self.turn)
 
- 
-
     def is_winning(self, color):
 
         return "win" in self.reachable[color]
 
- 
     def play_swap(self):
 
         assert len(self.history) == 1
@@ -273,7 +275,8 @@ class Game:
                 continue
             if self.any_crossing_links(move, pt, 1 - self.turn):
                 continue
-            if not self.allow_scl and self.any_crossing_links(move, pt, self.turn):
+            if (not self.allow_scl and
+                    self.any_crossing_links(move, pt, self.turn)):
                 continue
 
             self.set_link(move, pt, self.turn, 1)
@@ -323,8 +326,10 @@ class Game:
             assert chk in my_reachable
             for dlink in Game.DLINKS:
                 other = chk + dlink
-                if self.inbounds(other) and other not in my_reachable \
-                        and self.get_peg(other, color) and self.get_link(chk, other, color):
+                if (self.inbounds(other) and
+                        other not in my_reachable and
+                        self.get_peg(other, color) and
+                        self.get_link(chk, other, color)):
                     added.append(other)
                     unvisited.append(other)
                     my_reachable.add(other)
@@ -443,7 +448,8 @@ class Game:
         dshort = Point((delta.x & 1) * delta.x, (delta.y & 1) * delta.y)
         dlong = Point((delta.x - dshort.x) / 2, (delta.y - dshort.y) / 2)
         if debug:
-            self.logger.debug("any_crossing_links. a=%s, b=%s, color=%s", a, b, color)
+            self.logger.debug(
+                "any_crossing_links. a=%s, b=%s, color=%s", a, b, color)
             self.logger.debug("delta=(%d,%d)", delta.x, delta.y)
             self.logger.debug("dlong=(%d,%d)", dlong.x, dlong.y)
             self.logger.debug("dshort=(%d,%d)", dshort.x, dshort.y)
@@ -467,7 +473,8 @@ class Game:
             d = a + dlong * cl[2] + dshort * cl[3]
             if debug:
                 self.logger.debug("checking %d,%d", c, d)
-            if self.inbounds(c) and self.inbounds(d) and self.get_link(c, d, color):
+            if (self.inbounds(c) and self.inbounds(d) and
+                    self.get_link(c, d, color)):
                 return True
 
         return False
@@ -504,16 +511,19 @@ class Game:
 
     @staticmethod
     def inbounds(p):
-        """ Tell us whether a given point is inside the numpy arrays; may still not be a valid place to play. """
+        """ Tell us whether a given point is inside the numpy arrays;
+            may still not be a valid place to play. """
         return p.x >= 0 and p.x < Game.SIZE and p.y >= 0 and p.y < Game.SIZE
 
     @staticmethod
     def inbounds_for_player(p, color):
 
         if color == Game.WHITE:
-            return p.x >= 1 and p.x < Game.SIZE - 1 and p.y >= 0 and p.y < Game.SIZE
+            return (p.x >= 1 and p.x < Game.SIZE - 1 and
+                    p.y >= 0 and p.y < Game.SIZE)
         elif color == Game.BLACK:
-            return p.x >= 0 and p.x < Game.SIZE and p.y >= 1 and p.y < Game.SIZE - 1
+            return (p.x >= 0 and p.x < Game.SIZE and
+                    p.y >= 1 and p.y < Game.SIZE - 1)
         else:
             return False
 

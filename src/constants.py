@@ -101,7 +101,8 @@ K_HIGHLIGHT_LAST_MOVE = ['highlight last move',
 K_SMART_ACCEPT = ['smart accept', 'SMART_ACCEPT', None, True]
 K_RESIGN_THRESHOLD = ['resign threshold', 'RESIGN_THRESHOLD', None, 0.95]
 
-K_LOG_LEVEL = ['Log level', 'LOG_LEVEL', None, logging.getLevelName(logging.ERROR)]
+K_LOG_LEVEL = ['Log level', 'LOG_LEVEL', None,
+               logging.getLevelName(logging.ERROR)]
 
 # keys - non-setting
 K_BOARD = [None, 'BOARD']
@@ -130,7 +131,8 @@ SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
                 K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_ROTATION,
                 K_BOARD_SIZE, K_LOG_LEVEL, K_SMART_ROOT, K_RESIGN_THRESHOLD,
-                K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL, K_HIGHLIGHT_LAST_MOVE]
+                K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL,
+                K_HIGHLIGHT_LAST_MOVE]
 
 
 WINDOW_TITLE = 'twixtbot-ui'
@@ -138,9 +140,10 @@ SETTINGS_DIALOG_TITLE = "Settings"
 ABOUT_DIALOG_TITLE = "About"
 
 MSG_REQUIRES_RESTART = "restart required"
-MSG_NO_CONFIG_FILE = 'No settings file found.\nCreating ' + \
-    SETINGS_FILE_NAME + ' with default settings.'
-MSG_ERROR_UPDATING_KEY = 'Problem updating settings from window values. key=%s, exc=%s'
+MSG_NO_CONFIG_FILE = (f'No settings file found.\nCreating '
+                      f'{SETINGS_FILE_NAME} with default settings.')
+MSG_ERROR_UPDATING_KEY = ('Problem updating settings from window values. '
+                          'key=%s, exc=%s')
 
 ITEM_FILE = "&File"
 ITEM_OPEN_FILE = "&Open File..."
@@ -180,7 +183,8 @@ EVENT_EXIT = "Exit"
 
 # Logging
 LOGGER = 'twixtbot-ui'
-LOG_FORMAT = '[%(levelname)s] [%(asctime)s] [%(filename)s:(%(lineno)d] %(message)s'
+LOG_FORMAT = ('[%(levelname)s] [%(asctime)s] [%(filename)s:(%(lineno)d] '
+              '%(message)s')
 
 # MCTS
 MCTS_TRIAL_CHUNK = 20
