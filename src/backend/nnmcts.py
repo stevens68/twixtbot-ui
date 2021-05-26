@@ -33,7 +33,7 @@ class NeuralMCTS:
         self.smart_init = kwargs.pop("smart_init", 0)
         self.board = kwargs.pop("board", None)
         self.visualize_mcts = kwargs.pop("visualize_mcts", None)
-        
+
         if kwargs:
             raise TypeError('Unexpected kwargs provided: %s' %
                             list(kwargs.keys()))
@@ -118,7 +118,8 @@ class NeuralMCTS:
                 maxes = (node.N == maxn)
                 num_maxes = numpy.count_nonzero(maxes)
                 assert num_maxes > 0
-                if num_maxes == 1 and maxn - vnz[numpy.argsort(vnz)[-2:]][0] > 1:
+                if (num_maxes == 1 and
+                        maxn - vnz[numpy.argsort(vnz)[-2:]][0] > 1):
                     # visit diff to second best is >1
                     winnables[maxes.argmax()] = 0
 
@@ -143,25 +144,26 @@ class NeuralMCTS:
 
         if top:
             self.logger.debug("selecting index=%d move=%s Q=%.3f P=%.5f N=%d",
-                             index, str(move), node.Q[index], node.P[index], node.N[index])
+                              index, str(move), node.Q[index],
+                              node.P[index], node.N[index])
 
         subnode = node.subnodes[index]
 
         game.play(move)
-        
-        #cif self.visualize_mcts:
+
+        # cif self.visualize_mcts:
         #    self.board.create_move_objects(len(game.history)-1, True)
-        
+
         if subnode:
             subscore = -self.visit_node(game, subnode)
         else:
             subnode = self.expand_leaf(game)
             node.subnodes[index] = subnode
             subscore = -subnode.score
-            
-        #if self.visualize_mcts:
+
+        # if self.visualize_mcts:
         #    self.board.undo_last_move_objects()
-            
+
         game.undo()
 
         node.N[index] += 1
@@ -237,7 +239,9 @@ class NeuralMCTS:
             self.report = "flose"
             return twixt.RESIGN
 
-    def create_response(self, game, status, num_trials=0, current_trials=0, proven=False, moves=None, P=None):
+    def create_response(self, game, status,
+                        num_trials=0, current_trials=0,
+                        proven=False, moves=None, P=None):
 
         resp = {
             "status": status,
@@ -261,7 +265,7 @@ class NeuralMCTS:
             resp["moves"] = moves
 
         return resp
-    
+
     def send_message(self, window, response):
         window.write_event_value('THREAD', response)
 
@@ -275,8 +279,11 @@ class NeuralMCTS:
             top_ixs = numpy.argsort(self.root.P)[-5:]
             if self.logger.level <= logging.INFO:
                 # if... to avoid unnecessary conversion
-                self.logger.info("eval=%.3f  %s", self.root.score, " ".join(["%s:%d" % 
-                                 (naf.policy_index_point(game, ix), int(self.root.P[ix] * 10000 + 0.5)) for ix in top_ixs]))
+                msg = f'eval={self.root.score:.3f} '
+                for ix in top_ixs:
+                    msg += (f'{naf.policy_index_point(game, ix)}: '
+                            f'{int(self.root.P[ix] * 10000 + 0.5)}')
+                self.logger.info(msg)
 
         if not self.root.proven:
             # for i in tqdm(range(trials), ncols=100, desc="processing",
@@ -292,9 +299,10 @@ class NeuralMCTS:
 
                 if event is not None and event.is_set():
                     break
-                    
+
                 if (i + 1) % ct.MCTS_TRIAL_CHUNK == 0:
-                    resp = self.create_response(game, "in-progress", trials, i + 1, False)
+                    resp = self.create_response(
+                        game, "in-progress", trials, i + 1, False)
                     self.send_message(window, resp)
                     if self.visualize_mcts:
                         self.clean_path(path)
@@ -312,13 +320,13 @@ class NeuralMCTS:
         self.report = "%6.3f" % (
             self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
         return self.root.N
-    
+
     def clean_path(self, path):
-            # remove current best path
-            for m in path:
-                for obj in m.objects:
-                    self.board.graph.delete_figure(obj)
-            del path[:]
+        # remove current best path
+        for m in path:
+            for obj in m.objects:
+                self.board.graph.delete_figure(obj)
+        del path[:]
 
     def traverse(self, game, path, level, node):
 
@@ -326,15 +334,14 @@ class NeuralMCTS:
         n = node.N[k]
         if n > 0:
             sn = node.subnodes[k]
-            move = naf.policy_index_point(game.turn % 2, k)            
+            move = naf.policy_index_point(game.turn % 2, k)
             game.play(move)
-                                       
+
             self.board.create_move_objects(len(game.history)-1, n)
-            path.append(self.board.history[-1]) 
+            path.append(self.board.history[-1])
 
             if sn is not None:
                 self.traverse(game, path, level + 1, sn)
-            
+
             game.undo()
             self.board.history.pop()
-                       

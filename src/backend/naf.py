@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 import math
 import numpy
-import sys
-import logging
-import constants as ct
 import backend.twixt as twixt
 
 
@@ -129,7 +126,6 @@ class NetInputs:
         if r & VFLIP_BIT:
             self.vflip()
 
-
     def to_input_arrays(self, use_recents=False):
 
         pegs = self.naf[:, :, 8:10]
@@ -159,8 +155,6 @@ class NetInputs:
 # planes are defined as:
 # 0-7  links
 # 8-9  pegs
-
-
 
 
 def hflip_policy_array(array):
@@ -234,10 +228,10 @@ def binary_array_string(arr):
     if len(arr.shape) == 1:
         return "".join("." if x == 0 else "*" for x in arr)
     elif len(arr.shape) == 2:
-        return "\n".join(binary_array_string(arr[:, y] for y in range(arr.shape[1])))
+        return "\n".join(binary_array_string(arr[:, y]
+                                             for y in range(arr.shape[1])))
     else:
         raise ValueError("only one/two dimensional arrays handled")
-
 
 
 def location_inputs(dest=None):
@@ -251,6 +245,7 @@ def location_inputs(dest=None):
     c[:, :, 0] = b
     c[:, :, 1] = b.T
     return c
+
 
 NUM_ROTATIONS = 4
 HFLIP_BIT = 1

@@ -26,7 +26,6 @@ class UiBoard(board.TwixtBoard):
                               background_color=ct.FIELD_BACKGROUND_COLOR,
                               key=ct.K_BOARD[1],
                               enable_events=True)
-        
 
     def draw(self, heatmap=None, complete=True):
         if complete or heatmap is not None:
@@ -40,7 +39,7 @@ class UiBoard(board.TwixtBoard):
                     self.create_move_objects(idx)
         else:
             gl = len(self.game.history)
-                # erase move before last move
+            # erase move before last move
             if gl > 1:
                 self.undo_last_move_objects()
                 self.create_move_objects(gl - 2)
@@ -60,11 +59,13 @@ class UiBoard(board.TwixtBoard):
             (x, y) = self._point_to_coords(self._move_to_point(move))
             coords = (x - 2 * self.cursor_label_factor,
                       y + 15 * self.cursor_label_factor)
-            self.current_cursor_label = self.graph.DrawText(move.upper(), coords,
-                                                            ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
+            self.current_cursor_label = self.graph.DrawText(
+                move.upper(), coords,
+                ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
             tl, br = self.graph.GetBoundingBox(self.current_cursor_label)
             self.rect_item = self.graph.DrawRectangle(
-                tl, br, line_color=ct.CURSOR_LABEL_BACKGROUND_COLOR, fill_color=ct.CURSOR_LABEL_BACKGROUND_COLOR, line_width=3)
+                tl, br, line_color=ct.CURSOR_LABEL_BACKGROUND_COLOR,
+                fill_color=ct.CURSOR_LABEL_BACKGROUND_COLOR, line_width=3)
             self.graph.BringFigureToFront(self.current_cursor_label)
 
     def _draw_labels(self):
@@ -72,25 +73,27 @@ class UiBoard(board.TwixtBoard):
             for i in range(self.size):
                 row_label = "%d" % (self.size - i)
                 # left row label
-                self.graph.DrawText(row_label, ((self.offset_factor - 1) * self.cell_width,
-                                                (i + self.offset_factor) * self.cell_width),
+                position = ((self.offset_factor - 1) * self.cell_width,
+                            (i + self.offset_factor) * self.cell_width)
+                self.graph.DrawText(row_label, position,
                                     ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
                 # right row label
-                self.graph.DrawText(row_label, ((self.size + self.offset_factor) * self.cell_width,
-                                                (i + self.offset_factor) * self.cell_width),
+                position = ((self.size + self.offset_factor) * self.cell_width,
+                            (i + self.offset_factor) * self.cell_width)
+                self.graph.DrawText(row_label, position,
                                     ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
 
             for i in range(self.size):
                 col_label = chr(ord('A') + i)
                 # top column label
-                self.graph.DrawText(col_label,
-                                    ((i + self.offset_factor) * self.cell_width,
-                                     (self.offset_factor - 1) * self.cell_width),
+                position = ((i + self.offset_factor) * self.cell_width,
+                            (self.offset_factor - 1) * self.cell_width)
+                self.graph.DrawText(col_label, position,
                                     ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
                 # bottom column label
-                self.graph.DrawText(col_label,
-                                    ((i + self.offset_factor) * self.cell_width,
-                                     (self.size + self.offset_factor) * self.cell_width),
+                position = ((i + self.offset_factor) * self.cell_width,
+                            (self.size + self.offset_factor) * self.cell_width)
+                self.graph.DrawText(col_label, position,
                                     ct.BOARD_LABEL_COLOR, ct.BOARD_LABEL_FONT)
 
     def _draw_heatmap_legend(self, heatmap):
@@ -116,7 +119,8 @@ class UiBoard(board.TwixtBoard):
             # Draw a circle around those moves with a p value
             self.graph.DrawCircle(
                 ((move.x + self.offset_factor) * self.cell_width,
-                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) * self.cell_width),
+                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) *
+                 self.cell_width),
                 self.hole_radius *
                 (1 + ct.HEATMAP_RADIUS_FACTOR * ct.HEATMAP_CIRCLE_FACTOR),
                 None, ct.HEATMAP_CIRCLE_COLOR)
@@ -128,7 +132,8 @@ class UiBoard(board.TwixtBoard):
             # Draw colored circle
             self.graph.DrawCircle(
                 ((move.x + self.offset_factor) * self.cell_width,
-                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) * self.cell_width),
+                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) *
+                 self.cell_width),
                 radius, rgb_color, rgb_color)
 
     def _draw_pegholes(self):
@@ -147,32 +152,38 @@ class UiBoard(board.TwixtBoard):
         s = self.size - 1
         w = self.cell_width
         self.graph.DrawLine((o + 1 * w, o + 1 * w + w / 3),
-                            (o + 1 * w, o + s * w - w / 3), self.stgs.get(ct.K_COLOR[2]), 3)
+                            (o + 1 * w, o + s * w - w / 3),
+                            self.stgs.get(ct.K_COLOR[2]), 3)
         self.graph.DrawLine((o + s * w, o + 1 * w + w / 3),
-                            (o + s * w, o + s * w - w / 3), self.stgs.get(ct.K_COLOR[2]), 3)
+                            (o + s * w, o + s * w - w / 3),
+                            self.stgs.get(ct.K_COLOR[2]), 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + 1 * w),
-                            (o + s * w - w / 3, o + 1 * w), self.stgs.get(ct.K_COLOR[1]), 3)
+                            (o + s * w - w / 3, o + 1 * w),
+                            self.stgs.get(ct.K_COLOR[1]), 3)
         self.graph.DrawLine((o + 1 * w + w / 3, o + s * w),
-                            (o + s * w - w / 3, o + s * w), self.stgs.get(ct.K_COLOR[1]), 3)
+                            (o + s * w - w / 3, o + s * w),
+                            self.stgs.get(ct.K_COLOR[1]), 3)
 
     def _draw_guidelines(self):
         if self.stgs.get(ct.K_SHOW_GUIDELINES[1]):
-            for p in [((1,  1), (15,  8)),
-                      ((15,  8), (22, 22)),
-                      ((22, 22), (8, 15)),
-                      ((8, 15), (1, 1)),
-                      ((1, 22), (15, 15)),
-                      ((15, 15), (22,  1)),
-                      ((22,  1), (8,  8)),
-                      ((8,  8), (1, 22))]:
-                self.graph.DrawLine(((p[0][0] + self.offset_factor) * self.cell_width,
-                                     (p[0][1] + self.offset_factor) * self.cell_width),
-                                    ((p[1][0] + self.offset_factor) * self.cell_width,
-                                     (p[1][1] + self.offset_factor) * self.cell_width),
-                                    ct.GUIDELINE_COLOR, .5)
+            for p in [[[1,  1], [15,  8]],
+                      [[15,  8], [22, 22]],
+                      [[22, 22], [8, 15]],
+                      [[8, 15], [1, 1]],
+                      [[1, 22], [15, 15]],
+                      [[15, 15], [22,  1]],
+                      [[22,  1], [8,  8]],
+                      [[8,  8], [1, 22]]]:
+
+                # scale board coordinates to pixel coordinates
+                for i1 in [0, 1]:
+                    for i2 in [0, 1]:
+                        p[i1][i2] = ((p[i1][i2] + self.offset_factor) *
+                                     self.cell_width)
+
+                self.graph.DrawLine(*p, ct.GUIDELINE_COLOR, .5)
 
     def get_move(self, coords):
-
         # returns (legalmove, pegposition)
         # pegposition:
         #    has the move coordinates of the peghole the mouse points to,
@@ -197,8 +208,9 @@ class UiBoard(board.TwixtBoard):
         x = round(x)
         y = round(y)
         move = chr(ord('a') + x) + "%d" % (self.size - y)
-        if len(self.game.history) == 1 and self._move_to_point(
-                move) == self.game.history[0] and self.stgs.get(ct.K_ALLOW_SWAP[1]):
+        if (len(self.game.history) == 1 and
+                self._move_to_point(move) == self.game.history[0] and
+                self.stgs.get(ct.K_ALLOW_SWAP[1])):
             return twixt.SWAP, move
 
         if x < 0 or x > self.size - 1 or y < 0 or y > self.size - 1:
@@ -207,10 +219,12 @@ class UiBoard(board.TwixtBoard):
         elif (x == 0 or x == self.size - 1) and (y == 0 or y == self.size - 1):
             # corner click
             return None, None
-        elif ((x == 0 or x == self.size - 1) and len(self.game.history) % 2 == 0):
+        elif ((x == 0 or x == self.size - 1) and
+                len(self.game.history) % 2 == 0):
             # white clicked on black's end line
             return None, move
-        elif ((y == 0 or y == self.size - 1) and len(self.game.history) % 2 == 1):
+        elif ((y == 0 or y == self.size - 1) and
+                len(self.game.history) % 2 == 1):
             # black clicked white's end line
             return None, move
 
