@@ -82,15 +82,15 @@ def parse_t1_file(content):
             'V# Direction of letters',
             'N# pierule?',
             'N# game already over?',
-            'L10', 'L17', 'Q15', 'Q8',  'S12', 'P11', 'O14', 'P19', 'V18', 'U15',
-            'V16', 'T17', 'U14', 'V17', 'W16', 'W15', 'F16', 'L19', 'F20', 'I14',
-            'F12', 'X13', 'G14', 'G8',  'I9',  'J9',  'J7',  'E9',  'G10', 'N18',
-            'J3', 'G20', 'G18', 'E21'
-        ]
+            'L10', 'L17', 'Q15', 'Q8',  'S12', 'P11', 'O14', 'P19', 'V18',
+            'U15', 'V16', 'T17', 'U14', 'V17', 'W16', 'W15', 'F16', 'L19',
+            'F20', 'I14', 'F12', 'X13', 'G14', 'G8',  'I9',  'J9',  'J7',
+            'E9',  'G10', 'N18', 'J3', 'G20', 'G18', 'E21']
         >>> parse_t1_file(content)
             (['Player', 'Computer'],
-             [l10, l17, q15, q8,  s12, p11, o14, p19, v18, u15, v16, t17, u14, v17, w16, w15, f16, 
-             l19, f20, i14, f12, x13, g14,  g8, i9,  j9, j7, e9, g10, n18, j3, g20, g18, e21])
+             [l10, l17, q15, q8,  s12, p11, o14, p19, v18, u15, v16, t17,
+              u14, v17, w16, w15, f16, l19, f20, i14, f12, x13, g14, g8, i9,
+              j9, j7, e9, g10, n18, j3, g20, g18, e21])
     """
     MOVES_STARTLINE = 13
     PLAYER_LINES = [3, 4]
@@ -126,10 +126,14 @@ def parse_tsgf_file(content):
 
     Examples:
         >>> content = [
-            '(;FF[4]EV[twixt.ld.DEFAULT]PB[agtoever]PW[Jan Krabbenbos]SZ[24]SO[https://www.littlegolem.net];b[pl];r[ps];b[pr];r[rt];b[ot];r[po];b[pn];r[qq];b[op];r[pg];b[nh];r[oj];b[oi];r[qi];b[nk];r[nf];b[mf])'
-        ]
+            ('(;FF[4]EV[twixt.ld.DEFAULT]PB[agtoever]PW[Jan Krabbenbos]SZ[24]'
+             'SO[https://www.littlegolem.net];b[pl];r[ps];b[pr];r[rt];b[ot];'
+             'r[po];b[pn];r[qq];b[op];r[pg];b[nh];r[oj];b[oi];r[qi];b[nk];'
+             'r[nf];b[mf])')]
         >>> parse_tsgf_file(content)
-            (['agtoever', 'Jan Krabbenbos'], [p12, p19, p18, r20, o20, p15, p14, q17, o16, p7, n8, o10, o9, q9, n11, n6, m6])
+            (['agtoever', 'Jan Krabbenbos'], [p12, p19, p18, r20, o20, p15,
+                                              p14, q17, o16, p7, n8, o10, o9,
+                                              q9, n11, n6, m6])
     """
     PLAYERS_STR = ('PB', 'PW')
     TURN_STR = ('r[', 'b[')
@@ -146,7 +150,8 @@ def parse_tsgf_file(content):
         raise ValueError("Can't read player names from tsgf file")
 
     try:
-        raw_moves = [field[2:field.find('|') if '|' in field else field.find(']')]
+        raw_moves = [field[2:field.find('|')
+                           if '|' in field else field.find(']')]
                      for field in content[0].split(FIELD_SEP)
                      if field[:2] in TURN_STR]
         moves = list(map(str2twixt, raw_moves))
@@ -202,7 +207,7 @@ def get_game(curent_cross_lines_setting=False):
     # Parse file
     try:
         if file_name[-2:].upper() == 'T1':
-            players, moves = parse_t1_file(content) 
+            players, moves = parse_t1_file(content)
             return players, moves, False
         elif file_name[-4:].lower() == 'tsgf':
             enable_crossing_lines = False
@@ -247,7 +252,8 @@ def save_game(players=['Player1', 'Player2'],
 
     # Get filename
     file_name = sg.PopupGetFile('Choose file', file_types=(
-        ("T1j Files", "*.T1"),), no_window=True, save_as=True, keep_on_top=True)
+        ("T1j Files", "*.T1"),),
+        no_window=True, save_as=True, keep_on_top=True)
 
     if file_name is None or file_name == "":
         return
@@ -256,7 +262,8 @@ def save_game(players=['Player1', 'Player2'],
     try:
         content = [
             '# File created by twixtbot-ui',
-            '# twixtbot-ui is a program to play TwixtT (https://github.com/stevens68/twixtbot-ui)',
+            ('# twixtbot-ui is a program to play TwixtT '
+             '(https://github.com/stevens68/twixtbot-ui)'),
             '1 # version of file-format',
             str(players[0]) + ' # Name of player 1',
             str(players[1]) + ' # Name of player 2',

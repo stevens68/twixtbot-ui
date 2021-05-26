@@ -28,7 +28,9 @@ class ThreeBarPlot():
                 offset = xmax * 0.02
                 for i, v in enumerate(values["Y"]):
                     ax1.text(v + offset, i + 0.27, str(v),
-                             color=ct.PLOT_LABEL_COLOR, fontfamily=ct.PLOT_LABEL_FONT[0], fontsize=ct.PLOT_LABEL_FONT[1])
+                             color=ct.PLOT_LABEL_COLOR,
+                             fontfamily=ct.PLOT_LABEL_FONT[0],
+                             fontsize=ct.PLOT_LABEL_FONT[1])
 
         plt.subplots_adjust(left=None, bottom=None,
                             right=None, top=None, wspace=0, hspace=0)
@@ -38,10 +40,10 @@ class ThreeBarPlot():
 
         fig, ax1 = plt.subplots(figsize=(2.4, 0.7))
 
-        ax1.tick_params(axis='x', which='major',
-                        labelcolor="black",  labeltop=False, labelbottom=False, top=False, bottom=False)
-        ax1.tick_params(axis='y', which='major',
-                        labelcolor="black",  labelleft=True, labelsize=8, pad=.8)
+        ax1.tick_params(axis='x', which='major', labelcolor="black", top=False,
+                        labeltop=False, labelbottom=False, bottom=False)
+        ax1.tick_params(axis='y', which='major', labelcolor="black",
+                        labelleft=True, labelsize=8, pad=.8)
 
         ax1.spines['bottom'].set_visible(False)
         ax1.spines['top'].set_visible(False)

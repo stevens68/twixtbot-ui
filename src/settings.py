@@ -73,7 +73,8 @@ class Settings():
                         # player 2
                         self.settings[key[2]] = values[key[2]]
                 except Exception as e:
-                    self.logger.error(ct.MSG_ERROR_UPDATING_KEY, str(key), str(e))
+                    self.logger.error(ct.MSG_ERROR_UPDATING_KEY,
+                                      str(key), str(e))
 
         with open(ct.SETTINGS_FILE, 'w') as f:
             jsondump(self.settings, f, indent=4, sort_keys=True)
