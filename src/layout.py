@@ -334,10 +334,10 @@ def st_row_cpuct(player):
                     key=ct.K_CPUCT[player], size=(5, 0))]
 
 
-def st_row_random_rotation(player):
-    return [st_label(ct.K_RANDOM_ROTATION[0]),
-            sg.Checkbox(text=None, default=ct.K_RANDOM_ROTATION[player + 2],
-                        key=ct.K_RANDOM_ROTATION[player])]
+def st_row_rotation(player):
+    return [st_label(ct.K_ROTATION[0]),
+           sg.Combo(ct.ROTATION_LIST, ct.K_ROTATION[player + 2], size=(15, 1),
+                     key=ct.K_ROTATION[player], readonly=True)]
 
 
 def st_row_smart_root(player):
@@ -353,7 +353,7 @@ def st_tab_player(player):
             st_row_auto_move(player),
             row_separator("   evaluation"),
             st_row_model_folder(player),
-            st_row_random_rotation(player),
+            st_row_rotation(player),
             row_separator("   MCTS"),
             st_row_trials(player),
             st_row_smart_root(player),

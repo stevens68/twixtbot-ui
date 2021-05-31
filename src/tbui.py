@@ -344,8 +344,8 @@ class TwixtbotUI():
                     self.stgs.get(ct.K_TRIALS[p]))
                 self.bots[t].temperature = float(
                     self.stgs.get(ct.K_TEMPERATURE[p]))
-                self.bots[t].random_rotation = self.stgs.get(
-                    ct.K_RANDOM_ROTATION[p])
+                self.bots[t].rotation = self.stgs.get(
+                    ct.K_ROTATION[p])
                 self.bots[t].add_noise = float(
                     self.stgs.get(ct.K_ADD_NOISE[p]))
                 # update bot's mcts object
@@ -363,7 +363,7 @@ class TwixtbotUI():
             "trials": self.stgs.get(ct.K_TRIALS[player]),
             "smart_root": self.stgs.get(ct.K_SMART_ROOT[player]),
             "temperature": self.stgs.get(ct.K_TEMPERATURE[player]),
-            "random_rotation": self.stgs.get(ct.K_RANDOM_ROTATION[player]),
+            "rotation": self.stgs.get(ct.K_ROTATION[player]),
             "add_noise": self.stgs.get(ct.K_ADD_NOISE[player]),
             "cpuct": self.stgs.get(ct.K_CPUCT[player]),
             "board": self.board,

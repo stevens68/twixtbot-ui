@@ -110,24 +110,15 @@ class Settings():
 
     def get_tooltip(self, player):
         # show settings on mouse over auto-move check box
-        text = ct.K_ALLOW_SWAP[0] + ":\t" + \
-            str(self.get(ct.K_ALLOW_SWAP[1])) + "   \n"
-        text += "allow scl" + ":\t" + \
-            str(self.get(ct.K_ALLOW_SCL[1])) + "   \n"
-        text += ct.K_SMART_ACCEPT[0] + ":\t" + \
-            str(self.get(ct.K_SMART_ACCEPT[1])) + "   \n"
+        text = ct.K_ALLOW_SWAP[0] + ":\t" + str(self.get(ct.K_ALLOW_SWAP[1])) + "   \n"
+        text += "allow scl" + ":\t" + str(self.get(ct.K_ALLOW_SCL[1])) + "   \n"
+        text += ct.K_SMART_ACCEPT[0] + ":\t" + str(self.get(ct.K_SMART_ACCEPT[1])) + "   \n"
         text += "----  evaluation  ------------------\n"
-        text += ct.K_MODEL_FOLDER[0] + ":\t" + \
-            str(self.get(ct.K_MODEL_FOLDER[player])) + "   \n"
-        text += ct.K_RANDOM_ROTATION[0] + ":\t" + \
-            str(self.get(ct.K_RANDOM_ROTATION[player])) + "   \n"
+        text += ct.K_MODEL_FOLDER[0] + ":\t" + str(self.get(ct.K_MODEL_FOLDER[player])) + "   \n"
+        text += ct.K_ROTATION[0] + ":\t\t" + str(self.get(ct.K_ROTATION[player])) + "   \n"
         text += "----  MCTS  ------------------------\n"
-        text += ct.K_SMART_ROOT[0] + ":\t" + \
-            str(self.get(ct.K_SMART_ROOT[player])) + "   \n"
-        text += ct.K_TEMPERATURE[0] + ":\t" + \
-            str(self.get(ct.K_TEMPERATURE[player])) + "   \n"
-        text += ct.K_ADD_NOISE[0] + ":\t" + \
-            str(self.get(ct.K_ADD_NOISE[player])) + "   \n"
-        text += ct.K_CPUCT[0] + ":\t\t" + \
-            str(self.get(ct.K_CPUCT[player])) + "   "
+        text += ct.K_SMART_ROOT[0] + ":\t" + str(self.get(ct.K_SMART_ROOT[player])) + "   \n"
+        text += ct.K_TEMPERATURE[0] + ":\t" + str(self.get(ct.K_TEMPERATURE[player])) + "   \n"
+        text += ct.K_ADD_NOISE[0] + ":\t" + str(self.get(ct.K_ADD_NOISE[player])) + "   \n"
+        text += ct.K_CPUCT[0] + ":\t\t" + str(self.get(ct.K_CPUCT[player])) + "   "
         return text

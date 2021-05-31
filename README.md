@@ -55,7 +55,7 @@ Place pegs by clicking on the board. You are in control of player1 and player2 a
 
 ### Bot move
 
-There is one dedicated bot for each player. The bots can have different settings. Click button *Bot Move* to let the reponsible bot do the next move. If you switch on *auto move* the bot will make its moves automatically.
+There is one dedicated bot for each player. The bots can have different settings. Click button *Bot Move* to let the responsible bot do the next move. If you switch on *auto move* the bot will make its moves automatically.
 
 ### Swap rule 
 
@@ -124,11 +124,14 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 
 - *color*:  choose your favorite colors for the players (default: red / black)
 - *name*: choose your favorite player names (default: Tom / Jerry)
-- *auto move*: if true, the bot makes a move autmatically (default: false)
-- *random rotation*: if true, the bot randomly chooses one of the four equivalent boards (rotation / mirroring) for evaluation (default: false)
+- *auto move*: if true, the bot makes a move automatically (default: false)
+- *rotation*: controls which of the four equivalent boards (rotation / mirroring) is used for evaluation (default off). The modes *average*, *best evaluation* and *best p-value* evaluate all four boards. The other five modes pick only one board and are faster.
+  - *average*: uses the average evaluation and average p-values
+  - *best evaluation*: choose board with the biggest evaluation and its p-values
+  - *best p-value*: choose board with the biggest p-value and its evaluation
 - *model folder*: no reason to change this unless you have a second network (default: `../model/pb`)
 - *trials*: number of MCTS iterations. Set it to 0 to switch off MCTS (default: 0)
-- *smart root*: if true, the leading move is not visted if it is more than one visit ahead. Of the remaining moves the one with the best UCB is chosen instead (default: false) 
+- *smart root*: if true, the leading move is not visited if it is more than one visit ahead. Of the remaining moves the one with the best UCB is visited instead (default: false) 
 - *temperature*: controls the policy which move is taken after MCTS: 
   - 0.0: choose move with highest number of visits; random choice for tie-break (default)
   - 0.5: random choice using probability distribution of squared number of visits

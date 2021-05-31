@@ -17,7 +17,7 @@ class Player:
         self.model = kwargs.get('model', None)
         self.num_trials = int(kwargs.get('trials', 100))
         self.temperature = float(kwargs.get('temperature', 0))
-        self.random_rotation = int(kwargs.get('random_rotation', 0))
+        self.rotation = kwargs.get('rotation', None)
 
         self.smart_root = int(kwargs.get('smart_root', 0))
         self.allow_swap = int(kwargs.get('allow_swap', 1))
@@ -35,24 +35,61 @@ class Player:
                 self.evaluator = nneval.NNEvaluater(self.model)
 
             nneval_ = self.evaluator
+            
+            def get_pw_ml(n, r):
+                p, m = nneval_.eval_one(n)
+                if len(p) == 3:
+                    p = naf.three_to_one(p)
+                if len(p) == 1 and len(p[0] == 3):
+                    p = naf.three_to_one(p[0])
+                m = naf.rotate_policy_array(m, r)
+                if len(m) == 1:
+                    m = m[0]
+                return p, m
 
             def nnfunc(game):
 
+                rot_map = {
+                    ct.ROT_OFF: 0,
+                    ct.ROT_FLIP_HOR: 1,
+                    ct.ROT_FLIP_VERT: 2,
+                    ct.ROT_FLIP_BOTH: 3
+                }
+          
                 nips = naf.NetInputs(game)
-                if self.random_rotation:
+
+                if self.rotation == ct.ROT_RAND: 
                     rot = random.randint(0, 3)
                     nips.rotate(rot)
+                    pw, ml = get_pw_ml(nips, rot)
+                elif self.rotation in [ct.ROT_OFF, ct.ROT_FLIP_HOR, ct.ROT_FLIP_VERT, ct.ROT_FLIP_BOTH]: 
+                    rot = rot_map[self.rotation]
+                    nips.rotate(rot)
+                    pw, ml = get_pw_ml(nips, rot)
+                elif self.rotation in [ct.ROT_AVG, ct.ROT_BEST_EVALUATION, ct.ROT_BEST_P_VALUE]:
+                    pwl, mll = [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
+                    pwl[0], mll[0] = get_pw_ml(nips, 0)
+                    for i in range(3):
+                        # i: 0 => nips rot 1 => nips is flipped hor  => 1 to flip ml hor
+                        # i: 1 => nips rot 2 => nips is flipped both => 3 to flip ml both
+                        # i: 2 => nips rot 1 => nips is flipped vert => 2 to flip ml vert
+                        nips.rotate(i % 2 + 1)  
+                        pwl[i + 1], mll[i + 1] = get_pw_ml(nips, (3 - i) % 3 + 1)
+                    
+                    if self.rotation == ct.ROT_AVG:
+                        pw, ml = sum(pwl) / 4.0, sum(mll) / 4.0
+                    elif self.rotation == ct.ROT_BEST_EVALUATION:
+                        imax = pwl.index(max(pwl))
+                        pw, ml = pwl[imax], mll[imax]
+                    elif self.rotation == ct.ROT_BEST_P_VALUE:
+                        p_max = [max(ml) for ml in mll]
+                        imax = p_max.index(max(p_max))
+                        pw, ml = pwl[imax], mll[imax]
                 else:
-                    rot = 0
-                pw, ml = nneval_.eval_one(nips)
-                if len(pw) == 3:
-                    pw = naf.three_to_one(pw)
-                if len(pw) == 1 and len(pw[0] == 3):
-                    pw = naf.three_to_one(pw[0])
-                ml = naf.rotate_policy_array(ml, rot)
-                if len(ml) == 1:
-                    ml = ml[0]
+                    self.logger.error("invalid rotation value: %s", self.rotation)
+                    
                 return pw, ml
+            
         else:
             raise Exception("Specify model or resource")
 
