@@ -64,11 +64,13 @@ TEMPERATURE_LIST = [0.0, 0.5, 1.0]
 ROT_OFF = "off"
 ROT_RAND = "random"
 ROT_AVG = "average"
+ROT_BEST_EVALUATION = "best evaluation"
+ROT_BEST_P_VALUE = "best p-value"
 ROT_FLIP_HOR = "flip horizontally"
 ROT_FLIP_VERT = "flip vertically"
 ROT_FLIP_BOTH = "flip both"
 
-ROTATION_LIST = [ROT_OFF, ROT_RAND, ROT_AVG, ROT_FLIP_HOR, ROT_FLIP_VERT, ROT_FLIP_BOTH]
+ROTATION_LIST = [ROT_OFF, ROT_RAND, ROT_AVG, ROT_BEST_EVALUATION, ROT_BEST_P_VALUE, ROT_FLIP_HOR, ROT_FLIP_VERT, ROT_FLIP_BOTH]
 
 # logging
 LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
