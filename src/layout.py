@@ -343,6 +343,11 @@ def st_row_rotation(player):
                      key=ct.K_ROTATION[player], readonly=True)]
 
 
+def st_row_level(player):
+    return [st_label(ct.K_LEVEL[0]),
+            sg.Combo(ct.LEVEL_LIST, ct.K_LEVEL[player + 2], size=(25, 1),
+                     key=ct.K_LEVEL[player], readonly=True)]
+
 def st_row_smart_root(player):
     return [st_label(ct.K_SMART_ROOT[0]),
             sg.Checkbox(text="", default=ct.K_SMART_ROOT[player + 2],
@@ -355,6 +360,7 @@ def st_tab_player(player):
             st_row_name(player),
             st_row_auto_move(player),
             row_separator("   evaluation"),
+            st_row_level(player),
             st_row_model_folder(player),
             st_row_rotation(player),
             row_separator("   MCTS"),

@@ -117,6 +117,7 @@ class Settings:
         text += "----  evaluation  ------------------\n"
         text += ct.K_MODEL_FOLDER[0] + ":\t" + str(self.get(ct.K_MODEL_FOLDER[player])) + "   \n"
         text += ct.K_ROTATION[0] + ":\t\t" + str(self.get(ct.K_ROTATION[player])) + "   \n"
+        text += ct.K_LEVEL[0] + ":\t\t" + str(self.get(ct.K_LEVEL[player])) + "   \n"
         text += "----  MCTS  ------------------------\n"
         text += ct.K_SMART_ROOT[0] + ":\t" + str(self.get(ct.K_SMART_ROOT[player])) + "   \n"
         text += ct.K_TEMPERATURE[0] + ":\t" + str(self.get(ct.K_TEMPERATURE[player])) + "   \n"

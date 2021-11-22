@@ -73,6 +73,17 @@ ROT_FLIP_BOTH = "flip both"
 ROTATION_LIST = [ROT_OFF, ROT_RAND, ROT_AVG, ROT_BEST_EVALUATION,
                  ROT_BEST_P_VALUE, ROT_FLIP_HOR, ROT_FLIP_VERT, ROT_FLIP_BOTH]
 
+LEV_GREEDY = "greedy"
+LEV_STOCH_100 = "stochastic 1.0"
+LEV_STOCH_90 = "stochastic 0.9"
+LEV_STOCH_80 = "stochastic 0.8"
+LEV_STOCH_60 = "stochastic 0.6"
+LEV_STOCH_30 = "stochastic 0.3"
+LEV_RANDOM = "random uniform"
+
+
+LEVEL_LIST = [LEV_GREEDY, LEV_STOCH_100, LEV_STOCH_90, LEV_STOCH_80, LEV_STOCH_60, LEV_STOCH_30, LEV_RANDOM]
+
 # logging
 LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 
@@ -90,6 +101,7 @@ K_SMART_ROOT = ['smart root', 'P1_SMART_ROOT',
 K_TEMPERATURE = ['temperature', 'P1_TEMPERATURE', 'P2_TEMPERATURE', 0.0, 0.0]
 K_CPUCT = ['cpuct', 'P1_CPUCT', 'P2_CPUCT', 1.0, 1.0]
 K_ROTATION = ['rotation', 'P1_ROTATION', 'P2_ROTATION', ROT_OFF, ROT_OFF]
+K_LEVEL = ['level', 'P1_LEVEL', 'P2_LEVEL', LEV_GREEDY, LEV_GREEDY]
 K_ADD_NOISE = ['add noise', 'P1_ADD_NOISE', 'P2_ADD_NOISE', 0.0, 0.0]
 
 # keys - general
@@ -132,7 +144,7 @@ K_THREAD = [None, 'THREAD']
 
 SETTING_KEYS = [K_ALLOW_SWAP, K_ALLOW_SCL, K_SMART_ACCEPT,
                 K_COLOR, K_NAME, K_AUTO_MOVE, K_TRIALS, K_MODEL_FOLDER,
-                K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_ROTATION,
+                K_TEMPERATURE, K_CPUCT, K_ADD_NOISE, K_ROTATION, K_LEVEL,
                 K_BOARD_SIZE, K_LOG_LEVEL, K_SMART_ROOT, K_RESIGN_THRESHOLD,
                 K_SHOW_LABELS, K_SHOW_GUIDELINES, K_SHOW_CURSOR_LABEL,
                 K_HIGHLIGHT_LAST_MOVE]

@@ -201,7 +201,6 @@ class TwixtbotUI:
 
         self.get_control(ct.K_MOVES).Update(text)
 
-    @property
     def calc_eval(self):
         score, moves, prob = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
@@ -226,7 +225,7 @@ class TwixtbotUI:
             return
 
         if not self.game_over(False):
-            sc, moves, prob = self.calc_eval
+            sc, moves, prob = self.calc_eval()
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
@@ -324,7 +323,7 @@ class TwixtbotUI:
         self.game.__init__(self.stgs.get(ct.K_ALLOW_SCL[1]))
         self.moves_score = {}
         # get eval of empty board to avoid gap at x=0 in plot in loaded games
-        self.calc_eval
+        self.calc_eval()
 
     def update_game(self):
         self.game.allow_scl = self.stgs.get(ct.K_ALLOW_SCL[1])
@@ -434,7 +433,7 @@ class TwixtbotUI:
             lt.popup("loading game...")
             for m in moves:
                 self.execute_move(m)
-                self.calc_eval
+                self.calc_eval()
         except Exception:
             lt.popup("invalid move: " + str(m))
 
@@ -563,7 +562,7 @@ class TwixtbotUI:
 
     def bot_move(self):
         if self.next_move is None:
-            self.calc_eval
+            self.calc_eval()
         if not self.game_over():
             if ((-2 * self.game.turn + 1) * self.next_move[0] >
                     self.stgs.get(ct.K_RESIGN_THRESHOLD[1])):
