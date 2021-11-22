@@ -6,7 +6,7 @@ import logging
 import constants as ct
 
 
-class Settings():
+class Settings:
     def __init__(self):
         self.logger = logging.getLogger(ct.LOGGER)
         self.load()
@@ -83,6 +83,7 @@ class Settings():
                       ] = old_board_size or self.settings[ct.K_BOARD_SIZE[1]]
 
     def reset_to_default(self, window):
+        global k
         for key in ct.SETTING_KEYS:  # update all settings with defaults
             try:
                 k = key[1]

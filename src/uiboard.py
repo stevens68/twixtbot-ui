@@ -123,7 +123,7 @@ class UiBoard(board.TwixtBoard):
                  self.cell_width),
                 self.hole_radius *
                 (1 + ct.HEATMAP_RADIUS_FACTOR * ct.HEATMAP_CIRCLE_FACTOR),
-                None, ct.HEATMAP_CIRCLE_COLOR)
+                "", ct.HEATMAP_CIRCLE_COLOR)
 
             radius = self.hole_radius
             radius *= (1 + ct.HEATMAP_RADIUS_FACTOR *
@@ -181,7 +181,7 @@ class UiBoard(board.TwixtBoard):
                         p[i1][i2] = ((p[i1][i2] + self.offset_factor) *
                                      self.cell_width)
 
-                self.graph.DrawLine(*p, ct.GUIDELINE_COLOR, .5)
+                self.graph.DrawLine(*p, ct.GUIDELINE_COLOR)
 
     def get_move(self, coords):
         # returns (legalmove, pegposition)
@@ -254,5 +254,5 @@ class UiBoard(board.TwixtBoard):
 
         return True
 
-    def create_move_objects(self, index, visits=None):
+    def create_move_objects(self, index, visits=None, **kwargs):
         return super().create_move_objects(self.game, index, visits)

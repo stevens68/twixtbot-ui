@@ -30,7 +30,7 @@ class BotEvent(threading.Event):
     def get_context(self):
         return self.context
 
-    def set(self, context):
+    def set_context(self, context):
         super().set()
         self.context = context
 
@@ -50,7 +50,7 @@ class ProgressWindow(sg.Window):
         self.refresh()
 
 
-class TwixtbotUI():
+class TwixtbotUI:
     def __init__(self, game, stgs, board):
         # Show splash screen during init
 
@@ -201,15 +201,16 @@ class TwixtbotUI():
 
         self.get_control(ct.K_MOVES).Update(text)
 
+    @property
     def calc_eval(self):
-        score, moves, P = self.bots[self.game.turn].nm.eval_game(self.game)
+        score, moves, prob = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
         sc = round((2 * self.game.turn - 1) * score, 3)
-        self.next_move = sc, moves, P
+        self.next_move = sc, moves, prob
         # Add sc to dict of historical scores
         self.moves_score[len(self.game.history)] = sc
 
-        return sc, moves, P
+        return sc, moves, prob
 
     def clear_evals(self):
         self.get_control(ct.K_EVAL_NUM).Update('')
@@ -225,13 +226,13 @@ class TwixtbotUI():
             return
 
         if not self.game_over(False):
-            sc, moves, P = self.calc_eval()
+            sc, moves, prob = self.calc_eval
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
 
             # update chart
-            values = {"moves": moves, "Y": P}
+            values = {"moves": moves, "Y": prob}
             self.eval_moves_plot.update(values, 1000)
 
         # clean visits
@@ -323,7 +324,7 @@ class TwixtbotUI():
         self.game.__init__(self.stgs.get(ct.K_ALLOW_SCL[1]))
         self.moves_score = {}
         # get eval of empty board to avoid gap at x=0 in plot in loaded games
-        self.calc_eval()
+        self.calc_eval
 
     def update_game(self):
         self.game.allow_scl = self.stgs.get(ct.K_ALLOW_SCL[1])
@@ -433,7 +434,7 @@ class TwixtbotUI():
             lt.popup("loading game...")
             for m in moves:
                 self.execute_move(m)
-                self.calc_eval()
+                self.calc_eval
         except Exception:
             lt.popup("invalid move: " + str(m))
 
@@ -562,7 +563,7 @@ class TwixtbotUI():
 
     def bot_move(self):
         if self.next_move is None:
-            self.calc_eval()
+            self.calc_eval
         if not self.game_over():
             if ((-2 * self.game.turn + 1) * self.next_move[0] >
                     self.stgs.get(ct.K_RESIGN_THRESHOLD[1])):
@@ -620,7 +621,8 @@ class TwixtbotUI():
         dialog.close()
         return event
 
-    def create_about_window(self):
+    @staticmethod
+    def create_about_window():
 
         ad = lt.AboutDialogLayout()
         layout = ad.get_layout()
@@ -645,7 +647,7 @@ class TwixtbotUI():
             # blocking read when no bot is processing
             return self.window.read()
 
-    def handle_menue_event(self, event, values):
+    def handle_menue_event(self, event):
         if event == ct.ITEM_SETTINGS.replace('&', ''):
             if self.settings_dialog() == ct.B_APPLY_SAVE:
                 self.update_settings_changed()
@@ -665,7 +667,7 @@ class TwixtbotUI():
 
         return False
 
-    def handle_button_event(self, event, values):
+    def handle_button_event(self, event):
         if event == ct.B_BOT_MOVE:
             self.bot_move()
             return True
@@ -692,7 +694,7 @@ class TwixtbotUI():
 
         return False
 
-    def handle_shortcut_event(self, event, values):
+    def handle_shortcut_event(self, event):
         if event == ct.EVENT_SHORTCUT_HEATMAP:
             # toggle heatmap checkbox and redraw board
             self.get_control(ct.K_HEATMAP).Update(
@@ -748,7 +750,7 @@ class TwixtbotUI():
 
     def handle_event(self, event, values):
         # menue events
-        if self.handle_menue_event(event, values):
+        if self.handle_menue_event(event):
             return
 
         # click on auto move or trials (no shortcuts)
@@ -770,12 +772,12 @@ class TwixtbotUI():
             self.handle_accept_and_cancel(event)
             return
 
-        # keyboard shortcurt event (buttons and control bar)
-        if self.handle_shortcut_event(event, values):
+        # keyboard shortcut event (buttons and control bar)
+        if self.handle_shortcut_event(event):
             return
 
         # button events while bot is not processing
-        if self.handle_button_event(event, values):
+        if self.handle_button_event(event):
             return
 
         # selection of mcts visualization
