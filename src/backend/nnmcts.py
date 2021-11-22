@@ -224,7 +224,7 @@ class NeuralMCTS:
         self.root = self.expand_leaf(game)
         top_ixs = numpy.argsort(self.root.P)[-maxbest:]
         moves = [naf.policy_index_point(game, ix) for ix in top_ixs][::-1]
-        P = [int(round(self.root.P[ix] * 1000)) for ix in top_ixs][::-1]
+        P = [self.root.P[ix] for ix in top_ixs][::-1]
         self.logger.debug("moves: %s, idx: %s", moves, top_ixs)
         return self.root.score, moves, P
 
@@ -252,6 +252,8 @@ class NeuralMCTS:
 
         if P is not None:
             resp["P"] = P.tolist() if type(P) != list else P
+        else:
+            resp["P"] = [1.0]
 
         if not moves:
             indices = numpy.argsort(self.root.N)[::-1][:twixt.MAXBEST]

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import random
+import numpy as np
 
 import backend.twixt as twixt
 import util.pmeter as pmeter
@@ -205,7 +207,7 @@ class TwixtbotUI:
         score, moves, prob = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
         sc = round((2 * self.game.turn - 1) * score, 3)
-        self.next_move = sc, moves, prob
+        self.next_move = {"score": sc, "moves": moves, "P": prob}
         # Add sc to dict of historical scores
         self.moves_score[len(self.game.history)] = sc
 
@@ -230,8 +232,8 @@ class TwixtbotUI:
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
 
-            # update chart
-            values = {"moves": moves, "Y": prob}
+            # update chart (use top 3 values only)
+            values = {"moves": moves[:3], "Y":  [int(round(p * 1000)) for p in prob[:3]]}
             self.eval_moves_plot.update(values, 1000)
 
         # clean visits
@@ -373,6 +375,22 @@ class TwixtbotUI:
         import backend.nnmplayer as nnmplayer
         self.bots[2 - player] = nnmplayer.Player(**args)
 
+    def _apply_level(self, response):
+
+        moves = response["moves"]
+        level = self.get_current(ct.K_LEVEL)
+        if len(moves) == 1 or level == ct.LEV_GREEDY:
+            # return best move
+            idx = 0
+        else:
+            # stochastic
+            idx = random.choices(np.arange(0, len(moves)), response["P"])[0]
+
+        m = moves[idx]
+        print("apply_level: ", response["moves"], response["P"], idx, m, response["P"][idx])
+
+        return m
+
     def call_bot(self):
         # mcts, or first/second move (we are in a thread)
         response = self.bots[self.game.turn].pick_move(
@@ -382,7 +400,8 @@ class TwixtbotUI:
             # bot has not been cancelled (but is finished or accepted)
             # so execute move.
             # execute move must be inside thread!
-            self.execute_move(response["moves"][0])
+            move = self._apply_level(response)
+            self.execute_move(move)
         else:
             # reset history_at_root resets tree and visit counts
             self.bots[self.game.turn].nm.history_at_root = None
@@ -476,10 +495,10 @@ class TwixtbotUI:
             self.execute_move(self.redo_moves.pop(), False)
 
     def handle_accept_bot(self):
-        self.bot_event.set(ct.ACCEPT_EVENT)
+        self.bot_event.set_context(ct.ACCEPT_EVENT)
 
     def handle_cancel_bot(self):
-        self.bot_event.set(ct.CANCEL_EVENT)
+        self.bot_event.set_context(ct.CANCEL_EVENT)
         # switch off auto move
         # (do not use self.game.turn_to_player() to determine current
         # player during mcts)
@@ -499,6 +518,8 @@ class TwixtbotUI:
         if (self.get_control(ct.K_SHOW_EVALUATION).get() and
                 "moves" in values and "current" in values and
                 len(values["moves"]) > 1):
+            # limit to top 3 moves
+            values["moves"] = values["moves"][:3]
             self.visit_plot.update(values, max(1, values["max"]))
 
     def handle_accept_and_cancel(self, event):
@@ -564,7 +585,7 @@ class TwixtbotUI:
         if self.next_move is None:
             self.calc_eval()
         if not self.game_over():
-            if ((-2 * self.game.turn + 1) * self.next_move[0] >
+            if ((-2 * self.game.turn + 1) * self.next_move["score"] >
                     self.stgs.get(ct.K_RESIGN_THRESHOLD[1])):
                 # resign-threshold reached
                 self.visit_plot.update()
@@ -574,15 +595,17 @@ class TwixtbotUI:
             elif self.get_current(ct.K_TRIALS) == 0:
                 # no mcts
                 if len(self.game.history) >= 2:
-                    # we already have the next move
+                    # we already have the next moves
                     # from eval update => execute it
-                    self.execute_move(self.next_move[1][0])
+                    move = self._apply_level(self.next_move)
+                    self.execute_move(move)
                 else:
                     # first or second move (special policy)
                     # => sync call + execute
                     response = self.bots[self.game.turn].pick_move(
                         self.game, self.window, self.bot_event)
-                    self.execute_move(response["moves"][0])
+                    move = self._apply_level(response)
+                    self.execute_move(move)
                 # window update
                 self.update_after_move(False)
                 # send pseudo-event to keep loop going

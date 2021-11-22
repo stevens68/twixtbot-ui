@@ -81,9 +81,8 @@ LEV_STOCH_60 = "stochastic 0.6"
 LEV_STOCH_30 = "stochastic 0.3"
 LEV_RANDOM = "random uniform"
 
-
-LEVEL_LIST = [LEV_GREEDY, LEV_STOCH_100, LEV_STOCH_90, LEV_STOCH_80, LEV_STOCH_60, LEV_STOCH_30, LEV_RANDOM]
-
+LEV_LIST = [LEV_GREEDY, LEV_STOCH_100, LEV_STOCH_90, LEV_STOCH_80, LEV_STOCH_60, LEV_STOCH_30, LEV_RANDOM]
+LEV_SPOILER = [None, 1.0, 0.9, 0.8, 0.6, 0.3, 0.0]
 # logging
 LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 

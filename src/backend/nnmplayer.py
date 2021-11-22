@@ -121,7 +121,7 @@ class Player:
             _, moves, P = self.nm.eval_game(game)
             return self.nm.create_response(game, "done", 0,
                                            0, moves=moves,
-                                           P=[int(round(p * 1000)) for p in P])
+                                           P=P)
 
         N = self.nm.mcts(game, self.num_trials, window, event)
 
@@ -131,8 +131,7 @@ class Player:
         # array returned
         if isinstance(N, (str, twixt.Point)):
             return self.nm.create_response(game, "done", self.num_trials,
-                                           self.num_trials, True,
-                                           P=[1000, 0, 0])
+                                           self.num_trials, True)
 
         if self.temperature == 0.0:
             mx = N.max()

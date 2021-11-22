@@ -345,7 +345,7 @@ def st_row_rotation(player):
 
 def st_row_level(player):
     return [st_label(ct.K_LEVEL[0]),
-            sg.Combo(ct.LEVEL_LIST, ct.K_LEVEL[player + 2], size=(25, 1),
+            sg.Combo(ct.LEV_LIST, ct.K_LEVEL[player + 2], size=(25, 1),
                      key=ct.K_LEVEL[player], readonly=True)]
 
 def st_row_smart_root(player):
