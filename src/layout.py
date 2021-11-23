@@ -279,7 +279,7 @@ def st_row_resign_threshold():
     return [st_label(ct.K_RESIGN_THRESHOLD[0]),
             sg.Spin(values=[float((x + 70.0) / 100.0) for x in range(31)],
                     initial_value=ct.K_RESIGN_THRESHOLD[3],
-                    key=ct.K_RESIGN_THRESHOLD[1], size=(5, 0))]
+                    key=ct.K_RESIGN_THRESHOLD[1], size=(5, 0), readonly=True)]
 
 
 def st_row_color(player):
@@ -327,14 +327,14 @@ def st_row_add_noise(player):
     return [st_label(ct.K_ADD_NOISE[0]),
             sg.Spin(values=[float(x / 100.0) for x in range(101)],
                     initial_value=ct.K_ADD_NOISE[player + 2],
-                    key=ct.K_ADD_NOISE[player], size=(5, 0))]
+                    key=ct.K_ADD_NOISE[player], size=(5, 0), readonly=True)]
 
 
 def st_row_cpuct(player):
     return [st_label(ct.K_CPUCT[0]),
             sg.Spin(values=[float(x / 100.0) for x in range(101)],
                     initial_value=ct.K_CPUCT[player + 2],
-                    key=ct.K_CPUCT[player], size=(5, 0))]
+                    key=ct.K_CPUCT[player], size=(5, 0), readonly=True)]
 
 
 def st_row_rotation(player):
@@ -345,8 +345,9 @@ def st_row_rotation(player):
 
 def st_row_level(player):
     return [st_label(ct.K_LEVEL[0]),
-            sg.Combo(ct.LEV_LIST, ct.K_LEVEL[player + 2], size=(25, 1),
-                     key=ct.K_LEVEL[player], readonly=True)]
+            sg.Spin(values=[float(x / 100.0) for x in range(101)],
+                    initial_value=ct.K_LEVEL[player + 2],
+                    key=ct.K_LEVEL[player], size=(5, 0), readonly=True)]
 
 def st_row_smart_root(player):
     return [st_label(ct.K_SMART_ROOT[0]),

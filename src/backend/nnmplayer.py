@@ -22,7 +22,8 @@ class Player:
         self.smart_root = int(kwargs.get('smart_root', 0))
         self.allow_swap = int(kwargs.get('allow_swap', 1))
         self.add_noise = float(kwargs.get('add_noise', 0))
-        self.cpuct = float(kwargs.get('cpuct', 1))
+        self.cpuct = float(kwargs.get('cpuct', 1.0))
+        self.level = float(kwargs.get('level', 1.0))
         self.board = kwargs.get('board', None)
         self.evaluator = kwargs.get('evaluator', None)
 
@@ -99,6 +100,7 @@ class Player:
             smart_root=self.smart_root,
             cpuct=self.cpuct,
             board=self.board,
+            level=self.level,
             visualize_mcts=False
         )
 
@@ -118,10 +120,10 @@ class Player:
 
         if self.num_trials == 0:
             # don't use MCTS but just evaluate and return best move
-            _, moves, P = self.nm.eval_game(game)
+            _, moves, P, Pscew = self.nm.eval_game(game)
             return self.nm.create_response(game, "done", 0,
                                            0, moves=moves,
-                                           P=P)
+                                           P=P, Pscew=Pscew)
 
         N = self.nm.mcts(game, self.num_trials, window, event)
 
