@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import random
+import numpy as np
 
 import backend.twixt as twixt
 import util.pmeter as pmeter
@@ -30,7 +32,7 @@ class BotEvent(threading.Event):
     def get_context(self):
         return self.context
 
-    def set(self, context):
+    def set_context(self, context):
         super().set()
         self.context = context
 
@@ -50,7 +52,7 @@ class ProgressWindow(sg.Window):
         self.refresh()
 
 
-class TwixtbotUI():
+class TwixtbotUI:
     def __init__(self, game, stgs, board):
         # Show splash screen during init
 
@@ -202,14 +204,14 @@ class TwixtbotUI():
         self.get_control(ct.K_MOVES).Update(text)
 
     def calc_eval(self):
-        score, moves, P = self.bots[self.game.turn].nm.eval_game(self.game)
+        score, moves, P, Pscew = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
         sc = round((2 * self.game.turn - 1) * score, 3)
-        self.next_move = sc, moves, P
+        self.next_move = {"score": sc, "moves": moves, "P": P, "Pscew": Pscew}
         # Add sc to dict of historical scores
         self.moves_score[len(self.game.history)] = sc
 
-        return sc, moves, P
+        return sc, moves, P, Pscew
 
     def clear_evals(self):
         self.get_control(ct.K_EVAL_NUM).Update('')
@@ -225,13 +227,13 @@ class TwixtbotUI():
             return
 
         if not self.game_over(False):
-            sc, moves, P = self.calc_eval()
+            sc, moves, P, _ = self.calc_eval()
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
 
-            # update chart
-            values = {"moves": moves, "Y": P}
+            # update chart (use top 3 values only)
+            values = {"moves": moves[:3], "Y":  [int(round(p * 1000)) for p in P[:3]]}
             self.eval_moves_plot.update(values, 1000)
 
         # clean visits
@@ -344,6 +346,8 @@ class TwixtbotUI():
                     self.stgs.get(ct.K_TRIALS[p]))
                 self.bots[t].temperature = float(
                     self.stgs.get(ct.K_TEMPERATURE[p]))
+                self.bots[t].level = float(
+                    self.stgs.get(ct.K_LEVEL[p]))
                 self.bots[t].rotation = self.stgs.get(
                     ct.K_ROTATION[p])
                 self.bots[t].add_noise = float(
@@ -361,6 +365,7 @@ class TwixtbotUI():
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
             "model": self.stgs.get(ct.K_MODEL_FOLDER[player]),
             "trials": self.stgs.get(ct.K_TRIALS[player]),
+            "level": self.stgs.get(ct.K_LEVEL[player]),
             "smart_root": self.stgs.get(ct.K_SMART_ROOT[player]),
             "temperature": self.stgs.get(ct.K_TEMPERATURE[player]),
             "rotation": self.stgs.get(ct.K_ROTATION[player]),
@@ -373,6 +378,19 @@ class TwixtbotUI():
         import backend.nnmplayer as nnmplayer
         self.bots[2 - player] = nnmplayer.Player(**args)
 
+    """
+            if idx > 0:
+                print("apply_level: ", response["moves"])
+                print("             ", response["P"])
+                print("q, p0New, d  ", q, p0new, d)
+                print("             ", prob)
+                print("             ", idx, moves[idx])
+    """
+
+    def _stochastic_choice(self, response):
+        idx = random.choices(np.arange(0, len(response["Pscew"])), response["Pscew"])[0]
+        return response["moves"][idx]
+
     def call_bot(self):
         # mcts, or first/second move (we are in a thread)
         response = self.bots[self.game.turn].pick_move(
@@ -382,7 +400,8 @@ class TwixtbotUI():
             # bot has not been cancelled (but is finished or accepted)
             # so execute move.
             # execute move must be inside thread!
-            self.execute_move(response["moves"][0])
+            move = self._stochastic_choice(response)
+            self.execute_move(move)
         else:
             # reset history_at_root resets tree and visit counts
             self.bots[self.game.turn].nm.history_at_root = None
@@ -476,10 +495,10 @@ class TwixtbotUI():
             self.execute_move(self.redo_moves.pop(), False)
 
     def handle_accept_bot(self):
-        self.bot_event.set(ct.ACCEPT_EVENT)
+        self.bot_event.set_context(ct.ACCEPT_EVENT)
 
     def handle_cancel_bot(self):
-        self.bot_event.set(ct.CANCEL_EVENT)
+        self.bot_event.set_context(ct.CANCEL_EVENT)
         # switch off auto move
         # (do not use self.game.turn_to_player() to determine current
         # player during mcts)
@@ -499,6 +518,9 @@ class TwixtbotUI():
         if (self.get_control(ct.K_SHOW_EVALUATION).get() and
                 "moves" in values and "current" in values and
                 len(values["moves"]) > 1):
+            # limit to top 3 moves
+            values["moves"] = values["moves"][:3]
+            values["Y"] = values["Y"][:3]
             self.visit_plot.update(values, max(1, values["max"]))
 
     def handle_accept_and_cancel(self, event):
@@ -564,7 +586,7 @@ class TwixtbotUI():
         if self.next_move is None:
             self.calc_eval()
         if not self.game_over():
-            if ((-2 * self.game.turn + 1) * self.next_move[0] >
+            if ((-2 * self.game.turn + 1) * self.next_move["score"] >
                     self.stgs.get(ct.K_RESIGN_THRESHOLD[1])):
                 # resign-threshold reached
                 self.visit_plot.update()
@@ -574,21 +596,24 @@ class TwixtbotUI():
             elif self.get_current(ct.K_TRIALS) == 0:
                 # no mcts
                 if len(self.game.history) >= 2:
-                    # we already have the next move
+                    # we already have the next moves
                     # from eval update => execute it
-                    self.execute_move(self.next_move[1][0])
+                    move = self._stochastic_choice(self.next_move)
+                    self.execute_move(move)
                 else:
                     # first or second move (special policy)
                     # => sync call + execute
                     response = self.bots[self.game.turn].pick_move(
                         self.game, self.window, self.bot_event)
-                    self.execute_move(response["moves"][0])
+                    move = self._stochastic_choice(response)
+                    self.execute_move(move)
                 # window update
                 self.update_after_move(False)
                 # send pseudo-event to keep loop going
                 # necessary in case of trials==0 and
                 # auto_move=True for both bots
-                self.window.write_event_value('PSEUDO', None)
+                if not self.game_over():
+                    self.window.write_event_value('PSEUDO', None)
             else:
                 # mcts => async bot call in thread
                 self.launch_call_bot()
@@ -620,7 +645,8 @@ class TwixtbotUI():
         dialog.close()
         return event
 
-    def create_about_window(self):
+    @staticmethod
+    def create_about_window():
 
         ad = lt.AboutDialogLayout()
         layout = ad.get_layout()
@@ -645,7 +671,7 @@ class TwixtbotUI():
             # blocking read when no bot is processing
             return self.window.read()
 
-    def handle_menue_event(self, event, values):
+    def handle_menue_event(self, event):
         if event == ct.ITEM_SETTINGS.replace('&', ''):
             if self.settings_dialog() == ct.B_APPLY_SAVE:
                 self.update_settings_changed()
@@ -665,7 +691,7 @@ class TwixtbotUI():
 
         return False
 
-    def handle_button_event(self, event, values):
+    def handle_button_event(self, event):
         if event == ct.B_BOT_MOVE:
             self.bot_move()
             return True
@@ -692,7 +718,7 @@ class TwixtbotUI():
 
         return False
 
-    def handle_shortcut_event(self, event, values):
+    def handle_shortcut_event(self, event):
         if event == ct.EVENT_SHORTCUT_HEATMAP:
             # toggle heatmap checkbox and redraw board
             self.get_control(ct.K_HEATMAP).Update(
@@ -748,7 +774,7 @@ class TwixtbotUI():
 
     def handle_event(self, event, values):
         # menue events
-        if self.handle_menue_event(event, values):
+        if self.handle_menue_event(event):
             return
 
         # click on auto move or trials (no shortcuts)
@@ -770,12 +796,12 @@ class TwixtbotUI():
             self.handle_accept_and_cancel(event)
             return
 
-        # keyboard shortcurt event (buttons and control bar)
-        if self.handle_shortcut_event(event, values):
+        # keyboard shortcut event (buttons and control bar)
+        if self.handle_shortcut_event(event):
             return
 
         # button events while bot is not processing
-        if self.handle_button_event(event, values):
+        if self.handle_button_event(event):
             return
 
         # selection of mcts visualization

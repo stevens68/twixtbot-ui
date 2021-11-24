@@ -29,6 +29,7 @@ class NeuralMCTS:
         """ sap = score and policy function, takes a game as input """
         self.cpuct = kwargs.pop("cpuct", 1.0)
         self.add_noise = kwargs.pop("add_noise", 0.25)
+        self.level = kwargs.pop("level", None)
         self.smart_root = kwargs.pop("smart_root", 0)
         self.smart_init = kwargs.pop("smart_init", 0)
         self.board = kwargs.pop("board", None)
@@ -151,18 +152,12 @@ class NeuralMCTS:
 
         game.play(move)
 
-        # cif self.visualize_mcts:
-        #    self.board.create_move_objects(len(game.history)-1, True)
-
         if subnode:
             subscore = -self.visit_node(game, subnode)
         else:
             subnode = self.expand_leaf(game)
             node.subnodes[index] = subnode
             subscore = -subnode.score
-
-        # if self.visualize_mcts:
-        #    self.board.undo_last_move_objects()
 
         game.undo()
 
@@ -215,7 +210,22 @@ class NeuralMCTS:
         indices = numpy.argsort(self.root.P[self.root.LMnz])
         pts = [str(naf.policy_index_point(game, self.root.LMnz[0][index]))
                for index in indices[-3:]]
+
         return ":" + ",".join(pts)
+
+    def _scew(self, P):
+        prob = P
+        q = self.level
+        # stochastic
+        avg = 1.0 / len(prob)
+        p0 = prob[0]
+        # scew P:  greedy <-- stochastic --> random uniform
+        # if q == 0.0 => set new p to avg
+        # if q == 0.5 => set new p to p (no change)
+        # if q == 1.0 => set new p[0] to 1, p[n>0] = 0 (greedy)
+        prob = [(-4*p+2*avg)*q*q + (4*p-3*avg)*q + avg for p in prob[1:]]
+        prob[0] = (-4*p0+2*avg+2)*q*q + (4*p0-3*avg-1)*q + avg
+        return prob
 
     def eval_game(self, game, maxbest=twixt.MAXBEST):
 
@@ -224,9 +234,12 @@ class NeuralMCTS:
         self.root = self.expand_leaf(game)
         top_ixs = numpy.argsort(self.root.P)[-maxbest:]
         moves = [naf.policy_index_point(game, ix) for ix in top_ixs][::-1]
-        P = [int(round(self.root.P[ix] * 1000)) for ix in top_ixs][::-1]
+        P = [self.root.P[ix] for ix in top_ixs][::-1]
+        # scew P
+        Pscew = self._scew(P)
+
         self.logger.debug("moves: %s, idx: %s", moves, top_ixs)
-        return self.root.score, moves, P
+        return self.root.score, moves, P, Pscew
 
     def proven_result(self, game):
         if self.root.winning_move:
@@ -241,7 +254,7 @@ class NeuralMCTS:
 
     def create_response(self, game, status,
                         num_trials=0, current_trials=0,
-                        proven=False, moves=None, P=None):
+                        proven=False, moves=None, P=None, Pscew=None):
 
         resp = {
             "status": status,
@@ -252,14 +265,21 @@ class NeuralMCTS:
 
         if P is not None:
             resp["P"] = P.tolist() if type(P) != list else P
+        else:
+            resp["P"] = [1.0]
+
+        if Pscew is not None:
+            resp["Pscew"] = Pscew.tolist() if type(Pscew) != list else P
+        else:
+            resp["Pscew"] = [1.0]
 
         if not moves:
             indices = numpy.argsort(self.root.N)[::-1][:twixt.MAXBEST]
             resp["moves"] = [naf.policy_index_point(
                 game.turn, i) for i in indices]
             resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]
-            resp["P"] = [int(round(p * 1000))
-                         for p in self.root.P[indices].tolist()]
+            resp["P"] = [p for p in self.root.P[indices].tolist()]
+            resp["Pscew"] = self._scew(resp["P"])
             # resp["Q"] = self.root.Q[indices].tolist()
         else:
             resp["moves"] = moves

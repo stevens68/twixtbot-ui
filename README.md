@@ -86,6 +86,13 @@ The policy head of the network evaluates each legal move. These p-values in rang
 
 ![Heatmap](img/Heatmap.JPG)
 
+### Policy
+
+By default the bots pick the best move returned by the network, i.e. the move with the highest p-value. This greedy
+policy can be changed to a stochastic policy by decreasing the config parameter "level" in the settings dialog. The
+lower the level, the weaker the bot, i.e the more often a weaker move is chosen.
+<br>Note that the "level" parameter is only applied when not using MCTS.
+
 ## MCTS
 
 The network is strong enough to win against most human players. If you want the bot to play even stronger you can switch on Monte-Carlo-Tree-Search. To do so choose a number of *trials* > 0. The more trials, the bigger the tree, i.e. the more boards will be evaluated. twixtbot-ui starts MCTS in a separate thread. Progress info is updated every 20 trials. The top three moves with the most visits are listed.<br><br> 
@@ -129,6 +136,15 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
   - *average*: uses the average evaluation and average p-values
   - *best evaluation*: choose board with the biggest evaluation and its p-values
   - *best p-value*: choose board with the biggest p-value and its evaluation
+- *level*: this parameter controls how "greedily" the best move is picked. The lower the level, the weaker the bot. 
+  Examples:
+  - 1.0 greedy: the move with the best p-value is always chosen (default)
+  - 0.95 greedy: the move with the best p-value is *almost* always chosen
+  - ...
+  - 0.5 stochastic choice using the p-values, i.e. if a move has a p-value of 0.3 it will be chosen with a 
+    probability of 0.3
+  - 0.0 random uniform: all legal moves have the same probaility to be chosen.
+    
 - *model folder*: no reason to change this unless you have a second network (default: `../model/pb`)
 - *trials*: number of MCTS iterations. Set it to 0 to switch off MCTS (default: 0)
 - *smart root*: if true, the leading move is not visited if it is more than one visit ahead. Of the remaining moves the one with the best UCB is visited instead (default: false) 

@@ -9,7 +9,7 @@ import constants as ct
 
 SWAP = "swap"
 RESIGN = "resign"
-MAXBEST = 3
+MAXBEST = 24**24
 
 
 class Point(namedtuple('Point', 'x y')):

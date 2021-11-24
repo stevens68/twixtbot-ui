@@ -5,11 +5,11 @@ import numpy as np
 import constants as ct
 
 
-class ThreeBarPlot():
+class ThreeBarPlot:
 
     def __init__(self, canvas, bar_color):
         self.bar_color = bar_color
-        self.prepare(canvas)
+        (self.sub_plot, self.agg) = self.prepare(canvas)
 
     def update(self, values=None, xmax=None):
 
@@ -52,11 +52,10 @@ class ThreeBarPlot():
         agg = FigureCanvasTkAgg(fig, canvas)
         agg.get_tk_widget().pack()
 
-        self.sub_plot = ax1
-        self.agg = agg
+        return ax1, agg
 
 
-class EvalHistPlot():
+class EvalHistPlot:
     def __init__(self, canvas, stgs):
         self.sub_plot = None
         self.agg = None

@@ -25,9 +25,9 @@ def text_field(text, key=None):
     return sg.Text(text, justification='l', size=(10 + ct.OFFSET, 1), key=key)
 
 
-def text_output(key, length, pad=None):
+def text_output(key, length, padding=None):
     bg_col = ct.OUTPUT_BACKGROUND_COLOR
-    return sg.Input(size=(length, 1), readonly=True, key=key, pad=pad,
+    return sg.Input(size=(length, 1), readonly=True, key=key, pad=padding,
                     disabled_readonly_background_color=bg_col,
                     text_color=ct.OUTPUT_TEXT_COLOR)
 
@@ -89,7 +89,7 @@ def row_auto_moves():
             sg.Checkbox(text="", enable_events=True, default=False,
                         key=ct.K_AUTO_MOVE[1], size=(7 + ct.OFFSET, 1)),
             sg.Checkbox(text="", enable_events=True, default=False,
-                        key=ct.K_AUTO_MOVE[2],  size=(7 + ct.OFFSET, 1))]
+                        key=ct.K_AUTO_MOVE[2], size=(7 + ct.OFFSET, 1))]
 
 
 def row_trials():
@@ -107,7 +107,7 @@ def get_progress_bar():
     return sg.ProgressBar(1000, orientation='h', size=(19, 20),
                           key=ct.K_PROGRESS_BAR[1], relief='RELIEF_RIDGE',
                           bar_color=(ct.PROGRESS_BAR_COLOR,
-                          ct.OUTPUT_BACKGROUND_COLOR))
+                                     ct.OUTPUT_BACKGROUND_COLOR))
 
 
 def row_progress_bar():
@@ -117,7 +117,7 @@ def row_progress_bar():
 
 def row_progress_nums():
     return [text_label(ct.K_PROGRESS_NUM[0]),
-            text_output(ct.K_PROGRESS_NUM[1], 29, pad=(4, 6)),
+            text_output(ct.K_PROGRESS_NUM[1], 29, padding=(4, 6)),
             sg.Image(ct.SPINNER_IMAGE, key=ct.K_SPINNER[1], visible=False)]
 
 
@@ -155,11 +155,25 @@ def row_eval_show_num():
 def row_heatmap():
     return [text_label(text=ct.K_HEATMAP[0]),
             sg.Checkbox("", enable_events=True, default=False,
-                        key=ct.K_HEATMAP[1],  size=(7 + ct.OFFSET, 1))
+                        key=ct.K_HEATMAP[1], size=(7 + ct.OFFSET, 1))
             ]
 
 
-class MainWindowLayout():
+def row_eval_moves():
+    bg_col = ct.OUTPUT_BACKGROUND_COLOR
+    return [text_label(ct.K_EVAL_MOVES[0]),
+            sg.Canvas(size=(240, 80), background_color=bg_col,
+                      key=ct.K_EVAL_MOVES[1])]
+
+
+def row_eval_hist():
+    bg_col = ct.OUTPUT_BACKGROUND_COLOR
+    return [text_label(ct.K_EVAL_HIST[0]),
+            sg.Canvas(size=(240, 80), background_color=bg_col,
+                      key=ct.K_EVAL_HIST[1])]
+
+
+class MainWindowLayout:
 
     def __init__(self, board, stgs):
         self.board = board
@@ -177,28 +191,16 @@ class MainWindowLayout():
         window.close()
         vsize = int(self.stgs.get(ct.K_BOARD_SIZE[1]) / (size[1] * 0.65))
         return [sg.ProgressBar(2000, orientation='v', size=(vsize, 8),
-                               key=ct.K_EVAL_BAR[1],  bar_color=colors,
+                               key=ct.K_EVAL_BAR[1], bar_color=colors,
                                pad=(0, 0)),
-                sg.ProgressBar(1, orientation='v', size=(0.1, 5),
-                               key="TESTEVAL",  bar_color=("white", "white"),
+                sg.ProgressBar(1, orientation='v', size=(0, 5),
+                               key="TESTEVAL", bar_color=("white", "white"),
                                pad=(0, 0))
                 ]
 
-    def row_eval_moves(self):
-        bg_col = ct.OUTPUT_BACKGROUND_COLOR
-        return [text_label(ct.K_EVAL_MOVES[0]),
-                sg.Canvas(size=(240, 80), background_color=bg_col,
-                          key=ct.K_EVAL_MOVES[1])]
-
-    def row_eval_hist(self):
-        bg_col = ct.OUTPUT_BACKGROUND_COLOR
-        return [text_label(ct.K_EVAL_HIST[0]),
-                sg.Canvas(size=(240, 80), background_color=bg_col,
-                          key=ct.K_EVAL_HIST[1])]
-
     def build_layout(self):
         menu_def = [[ct.ITEM_FILE, [ct.ITEM_OPEN_FILE, ct.ITEM_SAVE_FILE,
-                     ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
+                                    ct.ITEM_SETTINGS, ct.ITEM_EXIT]],
                     [ct.ITEM_HELP, [ct.ITEM_ABOUT]]]
 
         button_count = 7
@@ -222,8 +224,8 @@ class MainWindowLayout():
                                  row_moves(),
                                  row_separator("evaluation", True),
                                  row_eval_show_num(),
-                                 self.row_eval_hist(),
-                                 self.row_eval_moves(),
+                                 row_eval_hist(),
+                                 row_eval_moves(),
                                  row_heatmap(),
                                  row_separator("MCTS", True),
                                  row_trials(),
@@ -251,6 +253,7 @@ class MainWindowLayout():
     def get_layout(self):
         return self.layout
 
+
 # SettingsDialog
 
 
@@ -276,7 +279,7 @@ def st_row_resign_threshold():
     return [st_label(ct.K_RESIGN_THRESHOLD[0]),
             sg.Spin(values=[float((x + 70.0) / 100.0) for x in range(31)],
                     initial_value=ct.K_RESIGN_THRESHOLD[3],
-                    key=ct.K_RESIGN_THRESHOLD[1], size=(5, 0))]
+                    key=ct.K_RESIGN_THRESHOLD[1], size=(5, 0), readonly=True)]
 
 
 def st_row_color(player):
@@ -293,7 +296,7 @@ def st_row_name(player):
 
 def st_row_auto_move(player):
     return [st_label(ct.K_AUTO_MOVE[0]),
-            sg.Checkbox(text=None, default=ct.K_AUTO_MOVE[player + 2],
+            sg.Checkbox(text="", default=ct.K_AUTO_MOVE[player + 2],
                         key=ct.K_AUTO_MOVE[player])]
 
 
@@ -324,25 +327,31 @@ def st_row_add_noise(player):
     return [st_label(ct.K_ADD_NOISE[0]),
             sg.Spin(values=[float(x / 100.0) for x in range(101)],
                     initial_value=ct.K_ADD_NOISE[player + 2],
-                    key=ct.K_ADD_NOISE[player], size=(5, 0))]
+                    key=ct.K_ADD_NOISE[player], size=(5, 0), readonly=True)]
 
 
 def st_row_cpuct(player):
     return [st_label(ct.K_CPUCT[0]),
             sg.Spin(values=[float(x / 100.0) for x in range(101)],
                     initial_value=ct.K_CPUCT[player + 2],
-                    key=ct.K_CPUCT[player], size=(5, 0))]
+                    key=ct.K_CPUCT[player], size=(5, 0), readonly=True)]
 
 
 def st_row_rotation(player):
     return [st_label(ct.K_ROTATION[0]),
-           sg.Combo(ct.ROTATION_LIST, ct.K_ROTATION[player + 2], size=(15, 1),
+            sg.Combo(ct.ROTATION_LIST, ct.K_ROTATION[player + 2], size=(15, 1),
                      key=ct.K_ROTATION[player], readonly=True)]
 
 
+def st_row_level(player):
+    return [st_label(ct.K_LEVEL[0]),
+            sg.Spin(values=[float(x / 100.0) for x in range(101)],
+                    initial_value=ct.K_LEVEL[player + 2],
+                    key=ct.K_LEVEL[player], size=(5, 0), readonly=True)]
+
 def st_row_smart_root(player):
     return [st_label(ct.K_SMART_ROOT[0]),
-            sg.Checkbox(text=None, default=ct.K_SMART_ROOT[player + 2],
+            sg.Checkbox(text="", default=ct.K_SMART_ROOT[player + 2],
                         key=ct.K_SMART_ROOT[player])]
 
 
@@ -352,6 +361,7 @@ def st_tab_player(player):
             st_row_name(player),
             st_row_auto_move(player),
             row_separator("   evaluation"),
+            st_row_level(player),
             st_row_model_folder(player),
             st_row_rotation(player),
             row_separator("   MCTS"),
@@ -364,12 +374,14 @@ def st_tab_player(player):
             ]
 
 
-class SettingsDialogLayout():
+class SettingsDialogLayout:
 
     def __init__(self):
         self.layout = self.build_layout()
 
-    def build_layout(self):
+    @staticmethod
+    def build_layout():
+
         st_tab_general = [[sg.Text("")],
                           st_row_allow_swap(),
                           st_row_allow_scl(),
@@ -381,18 +393,18 @@ class SettingsDialogLayout():
                            sg.Text(ct.MSG_REQUIRES_RESTART,
                                    pad=((0, 20), (0, 0)))],
                           [st_label(ct.K_SHOW_LABELS[0]),
-                           sg.Checkbox(text=None, default=ct.K_SHOW_LABELS[3],
+                           sg.Checkbox(text="", default=ct.K_SHOW_LABELS[3],
                                        key=ct.K_SHOW_LABELS[1])],
                           [st_label(ct.K_SHOW_GUIDELINES[0]),
-                           sg.Checkbox(text=None,
+                           sg.Checkbox(text="",
                                        default=ct.K_SHOW_GUIDELINES[3],
                                        key=ct.K_SHOW_GUIDELINES[1])],
                           [st_label(ct.K_SHOW_CURSOR_LABEL[0]),
-                           sg.Checkbox(text=None,
+                           sg.Checkbox(text="",
                                        default=ct.K_SHOW_CURSOR_LABEL[3],
                                        key=ct.K_SHOW_CURSOR_LABEL[1])],
                           [st_label(ct.K_HIGHLIGHT_LAST_MOVE[0]),
-                           sg.Checkbox(text=None,
+                           sg.Checkbox(text="",
                                        default=ct.K_HIGHLIGHT_LAST_MOVE[3],
                                        key=ct.K_HIGHLIGHT_LAST_MOVE[1])],
                           row_separator(""),
@@ -432,12 +444,12 @@ class SettingsDialogLayout():
         return self.layout
 
 
-class AboutDialogLayout():
+class AboutDialogLayout:
 
     def __init__(self):
         self.layout = self.build_layout()
 
-    def build_layout(self):
+    def build_layout(self) -> object:
         s = (40, 1)
         return [
             [sg.Text("twixtbot engine and network by Jordan Lampe", size=s)],
@@ -454,7 +466,7 @@ class AboutDialogLayout():
         return self.layout
 
 
-class SplashScreenLayout():
+class SplashScreenLayout:
     def __init__(self):
         width = 35
         self.layout = [
