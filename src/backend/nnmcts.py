@@ -219,9 +219,10 @@ class NeuralMCTS:
         # stochastic
         avg = 1.0 / len(prob)
         p0 = prob[0]
-        # if q == 0.0 => set new q0 to avg
-        # if q == 0.5 => set new q0 to q0 (no change)
-        # if q == 1.0 => set new q0 to 1 (greedy)
+        # scew P:  greedy <-- stochastic --> random uniform
+        # if q == 0.0 => set new p to avg
+        # if q == 0.5 => set new p to p (no change)
+        # if q == 1.0 => set new p[0] to 1, p[n>0] = 0 (greedy)
         prob = [(-4*p+2*avg)*q*q + (4*p-3*avg)*q + avg for p in prob[1:]]
         prob[0] = (-4*p0+2*avg+2)*q*q + (4*p0-3*avg-1)*q + avg
         return prob
