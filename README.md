@@ -91,8 +91,7 @@ The policy head of the network evaluates each legal move. These p-values in rang
 By default the bots pick the best move returned by the network, i.e. the move with the highest p-value. This greedy
 policy can be changed to a stochastic policy by decreasing the config parameter "level" in the settings dialog. The
 lower the level, the weaker the bot, i.e the more often a weaker move is chosen.
-<br>Note that the "level" parameter is 
-only applied when not using MCTS.
+<br>Note that the "level" parameter is only applied when not using MCTS.
 
 ## MCTS
 
@@ -142,9 +141,9 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
   - 1.0 greedy: the move with the best p-value is always chosen (default)
   - 0.95 greedy: the move with the best p-value is *almost* always chosen
   - ...
-  - 0.5 stochastic choice using the p-values, i.e if a move has a p-value of 0.3 it will be chosen with a 
+  - 0.5 stochastic choice using the p-values, i.e. if a move has a p-value of 0.3 it will be chosen with a 
     probability of 0.3
-  - 0.0 random uniform: all legal moves have the same probalility to be chosen.
+  - 0.0 random uniform: all legal moves have the same probaility to be chosen.
     
 - *model folder*: no reason to change this unless you have a second network (default: `../model/pb`)
 - *trials*: number of MCTS iterations. Set it to 0 to switch off MCTS (default: 0)
