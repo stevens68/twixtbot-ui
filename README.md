@@ -144,7 +144,6 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
   - 0.5 stochastic choice using the p-values, i.e. if a move has a p-value of 0.3 it will be chosen with a 
     probability of 0.3
   - 0.0 random uniform: all legal moves have the same probaility to be chosen.
-    
 - *model folder*: no reason to change this unless you have a second network (default: `../model/pb`)
 - *trials*: number of MCTS iterations. Set it to 0 to switch off MCTS (default: 0)
 - *smart root*: if true, the leading move is not visited if it is more than one visit ahead. Of the remaining moves the one with the best UCB is visited instead (default: false) 
