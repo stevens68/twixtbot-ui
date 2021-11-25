@@ -22,6 +22,19 @@ python --version
 python -c "import struct; print(8 * struct.calcsize('P'))"
 ```
 
+<br>
+
+>In addition, Linux users must make sure Tkinter is installed. The installation command for Debian based 
+distributions is:
+>
+>`sudo apt-get install python3-tk`
+>
+>and for RPM-based distributions:
+>
+>`sudo yum install python3-tkinter`
+
+<br>
+
 Clone this repository using the following command or download the repository as ZIP file and extract it.
 
 ```
