@@ -86,7 +86,7 @@ class Heatmap:
         self.p_values = {}
         self.rgb_colors = {}
 
-        sc, self.policy_moves, p_val = self.bot.nm.eval_game(
+        sc, self.policy_moves, p_val, _ = self.bot.nm.eval_game(
             self.game, maxbest=self.game.SIZE**2)
         p_val = [int(round(p * 1000)) for p in p_val]
         for m, p in zip(self.policy_moves, p_val):
