@@ -151,8 +151,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
   - *best p-value*: choose board with the biggest p-value and its evaluation
 - *level*: this parameter controls how "greedily" the best move is picked. The lower the level, the weaker the bot. 
   Examples:
-  - 1.0 greedy: the move with the best p-value is always 
-  n (default)
+  - 1.0 greedy: the move with the best p-value is always chosen (default)
   - 0.95 greedy: the move with the best p-value is *almost* always chosen
   - ...
   - 0.5 stochastic choice using the p-values, i.e. if a move has a p-value of 0.3 it will be chosen with a 
