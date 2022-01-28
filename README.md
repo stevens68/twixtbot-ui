@@ -15,7 +15,7 @@ twixtbot-ui comes with all the neccessary twixtbot files in subfolder `./backend
 For Windows 10 there is an [executable installer](https://c.web.de/@337132546481460455/4HW9ryQDSuulyIESaKfc_g). It will install all necessary files and create a shortcut 'twixtbot-ui' in the Start Menu. The shortcut points to a script ```winlaunch.py``` that starts twixtbot-ui. The installation requires ~1.3 GByte of free disk space.
 
 #### Manual Installation
-For manual installation make sure you have Python3 installed. The Python version needs to support tensorflow 2.5. As of May 2021 this is true for Python 3.6, 3.7, 3.8 and 3.9 (64bit). Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
+For manual installation make sure you have Python3 installed. The Python version needs to support tensorflow 2.5, e.g. Python 3.6, 3.7, 3.8 and 3.9 (64bit). Consider using [virtual environments](https://docs.python.org/3/tutorial/venv.html) to switch between multiple Python versions on your system. To check the current version, use the following commands: 
 
 ```
 python --version
@@ -24,7 +24,7 @@ python -c "import struct; print(8 * struct.calcsize('P'))"
 
 <br>
 
->In addition, Linux users must make sure Tkinter is installed. The installation command for Debian based 
+>Linux users must make sure that Tkinter is installed. The installation command for Debian based 
 distributions is:
 >
 >`sudo apt-get install python3-tk`
@@ -54,7 +54,7 @@ cd src
 python tbui.py
 ```
 
-Ignore the tensorflow warnings and confirm the pop-up message that says that a settings file will be created. Wait a few seconds until the bots have been initialized. You should see the GUI with a clean TwixT board and the control bar on the right:
+Ignore the tensorflow warnings (if any) and confirm the pop-up message that says that a settings file will be created. Wait a few seconds until the bots have been initialized. You should see the GUI with the TwixT board and a control bar on the right:
 
 
 ![Empty TwixT board](img/EmptyBoard.JPG)
@@ -68,7 +68,7 @@ Place pegs by clicking on the board. You are in control of player1 and player2 a
 
 ### Bot move
 
-There is one dedicated bot for each player. The bots can have different settings. Click button *Bot Move* to let the responsible bot do the next move. If you switch on *auto move* the bot will make its moves automatically.
+There is one dedicated bot for each player. The bots can have different settings. Click *Bot Move* to let the bot do the next move. If you switch on *auto move* the bot will make its moves automatically.
 
 ### Swap rule 
 
@@ -92,7 +92,7 @@ After each move, the network evaluates the board. The value head [-1.0..1.0] ind
 
 #### policy head
 
-The policy head of the network evaluates each legal move. These p-values in range [0..1] indicate how promising a certain move for the current player is. A bar chart on the right shows the top three moves and their p-values. Switch on the *heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. The color coding is:
+The policy head of the network evaluates each legal move. These p-values in range [0..1] indicate how promising a that move is for the current player is. A bar chart on the right shows the top three moves and their p-values. Switch on the *heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. The color coding is:
 + light green: close to 100% of best p
 + light blue: close to 50% of best p
 + dark blue: close to 0% of best p<br>
@@ -104,7 +104,7 @@ The policy head of the network evaluates each legal move. These p-values in rang
 By default the bots pick the best move returned by the network, i.e. the move with the highest p-value. This greedy
 policy can be changed to a stochastic policy by decreasing the config parameter "level" in the settings dialog. The
 lower the level, the weaker the bot, i.e the more often a weaker move is chosen.
-<br>Note that the "level" parameter is only applied when not using MCTS.
+<br>Note that the "level" parameter only applies when not using MCTS.
 
 ## MCTS
 
@@ -151,7 +151,8 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
   - *best p-value*: choose board with the biggest p-value and its evaluation
 - *level*: this parameter controls how "greedily" the best move is picked. The lower the level, the weaker the bot. 
   Examples:
-  - 1.0 greedy: the move with the best p-value is always chosen (default)
+  - 1.0 greedy: the move with the best p-value is always 
+  n (default)
   - 0.95 greedy: the move with the best p-value is *almost* always chosen
   - ...
   - 0.5 stochastic choice using the p-values, i.e. if a move has a p-value of 0.3 it will be chosen with a 
