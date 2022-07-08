@@ -92,7 +92,7 @@ After each move, the network evaluates the board. The value head [-1.0..1.0] ind
 
 #### policy head
 
-The policy head of the network evaluates each legal move. These p-values in range [0..1] indicate how promising a that move is for the current player is. A bar chart on the right shows the top three moves and their p-values. Switch on the *heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. The color coding is:
+The policy head of the network evaluates each legal move. These p-values in range [0..1] indicate how promising a move for the current player is. A bar chart on the right shows the top three moves and their p-values. Switch on the *heatmap* checkbox below the bar chart to visualize all p-values > 0. The bigger and greener the spots, the better the p-value. The color coding is:
 + light green: close to 100% of best p
 + light blue: close to 50% of best p
 + dark blue: close to 0% of best p<br>
