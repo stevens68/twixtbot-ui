@@ -96,7 +96,7 @@ K_ADD_NOISE = ['add noise', 'P1_ADD_NOISE', 'P2_ADD_NOISE', 0.0, 0.0]
 
 # keys - general
 K_ALLOW_SWAP = ['allow swap', 'ALLOW_SWAP', None, True]
-K_ALLOW_SCL = ['allow self crossing links', 'ALLOW_SCL', None, False]
+K_ALLOW_SCL = ['allow crossing own links', 'ALLOW_SCL', None, False]
 K_BOARD_SIZE = ['board size (pixels)', 'BOARD_SIZE', None, 600]
 K_SHOW_LABELS = ['show labels', 'SHOW_LABELS', None, True]
 K_SHOW_GUIDELINES = ['show guidelines', 'SHOW_GUIDELINES', None, False]
