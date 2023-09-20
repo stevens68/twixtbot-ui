@@ -58,7 +58,7 @@ ACCEPT_EVENT = "accepted"
 CANCEL_EVENT = "cancelled"
 
 # settings
-BOARD_SIZE_LIST = [500, 600, 700, 800]
+BOARD_SIZE_LIST = [500, 600, 700, 800, 1000, 1200, 1500]
 TEMPERATURE_LIST = [0.0, 0.5, 1.0]
 
 ROT_OFF = "off"
