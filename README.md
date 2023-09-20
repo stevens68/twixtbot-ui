@@ -64,7 +64,7 @@ Ignore the tensorflow warnings (if any) and confirm the pop-up message that says
 
 ### Human move
 
-Place pegs by clicking on the board. You are in control of player1 and player2 at any time. Pegs are linked automatically. Change the settings *allow swap* and *allow crossing own links* (*File -> Settings...*) to enable or disable the swap rule or self-crossing links, resp. Link removal is not supported.
+Place pegs by clicking on the board. You are in control of player1 and player2 at any time. Pegs are linked automatically. Change the settings *allow swap* and *allow crossing own links* (*File -> Settings...*) to enable or disable the swap rule or crossing own links, resp. Link removal is not supported.
 
 ### Bot move
 
@@ -82,7 +82,7 @@ Click these buttons to undo the last move, redo undone moves, resign a game or s
 
 By default, both bots share the same neural network in folder `./model/pb`. The network has been taken from [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020. Some manual adjustments were necessary for tensorflow2 to read it. If you want to use another network that you have trained using twixtbot, have a look at the files in folder `./convert` to see what needs to be adjusted before twixtbot-ui can use it. Put the network into a separate folder and configure the folder in *File -> Settings...*.  
 
-Note that the network was trained with self-crossing links allowed, which can lead to incorrect evaluations in certain cases, if *allow self crossing links* is set to false (default). It doesn't make a big difference though in most cases.
+Note that the network was trained with crossing own links allowed, which can lead to incorrect evaluations in certain cases, if *allow crossing own links* is set to false (default). It doesn't make a big difference though in most cases.
 
 By default, the evaluation output of the network is displayed after each move. If you do not want to be distracted or influenced you can uncheck the *evaluation* checkbox. This also hides the *MCTS visits* bar chart.
 
@@ -129,7 +129,7 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
 #### Tab *General*
 
 + *allow swap*: switch on the swap rule (default: true)
-+ *allow self crossing links*:  paper-and-pencil variant of TwixT (default: false), 
++ *allow crossing own links*:  paper-and-pencil variant of TwixT (default: false), 
 + *board size*: number of pixels of a side of the board (default: 600)
 + *show labels*: display labels for rows and columns (default: true)
 + *show guidelines*: display lines that lead into the corners (default: false)
