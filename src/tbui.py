@@ -178,6 +178,9 @@ class TwixtbotUI:
         if self.game.result == twixt.RESIGN:
             turn[self.game.turn] = ""
             turn[1 - self.game.turn] = ct.TURN_RESIGNED
+        if self.game.result == twixt.DRAW:
+            turn[self.game.turn] = ct.TURN_DRAW
+            turn[1 - self.game.turn] = ct.TURN_DRAW
         elif self.game.just_won():
             turn[self.game.turn] = ct.TURN_HAS_WON
             turn[1 - self.game.turn] = ""
@@ -475,6 +478,11 @@ class TwixtbotUI:
             self.game.result = None
             self.redo_moves.append(twixt.RESIGN)
             return
+        elif self.game.result == twixt.DRAW:
+            self.game.result = None
+
+        # for now, draw detection does not support undo
+        self.game.reset_draw_boards()
 
         gl = len(self.game.history)
         if gl in self.moves_score:
@@ -565,6 +573,12 @@ class TwixtbotUI:
                          self.get_current(ct.K_NAME) + ' has resigned!')
             return True
 
+        elif self.game.is_a_draw():
+            self.game.result = twixt.DRAW
+            if display_message:
+                lt.popup('Game over: draw!')
+            return True
+
         return False
 
     def execute_move(self, move, clear_redo_moves=True):
@@ -578,7 +592,8 @@ class TwixtbotUI:
         elif move == twixt.SWAP:
             self.game.play_swap()
         else:
-            self.game.play(move)
+            # play move and update the draw board
+            self.game.play(move, True)
         self.game_over()
         self.next_move = None
 

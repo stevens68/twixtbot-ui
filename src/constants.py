@@ -35,6 +35,7 @@ HEATMAP_RGB_COLORS = [(0, 0, 255), (0, 255, 255), (0, 255, 0)]  # min/mid/max
 TURN_CHAR = '\u2588'  # block char
 TURN_HAS_WON = "has won"
 TURN_RESIGNED = "resigned"
+TURN_DRAW = "draw"
 
 OFFSET = 5
 

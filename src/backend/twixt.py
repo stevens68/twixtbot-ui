@@ -9,8 +9,8 @@ import constants as ct
 
 SWAP = "swap"
 RESIGN = "resign"
+DRAW = "draw"
 MAXBEST = 24**24
-
 
 class Point(namedtuple('Point', 'x y')):
     def __new__(cls, *args):
@@ -156,8 +156,10 @@ class Game:
     LINK_DIFFSIGN = 2
     BLACK = 0
     WHITE = 1
-    DLINKS = [(-2, -1), (-1, -2), (1, -2), (2, -1),
-              (2, 1), (1, 2), (-1, 2), (-2, 1)]
+    DLINKS            = [(-2, -1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]
+    DLINKS_RIGHTFIRST = [(2, -1), (2, 1), (1, -2), (1, 2), (-1, -2), (-1, 2), (-2, -1), (-2, 1)]
+    DLINKS_DOWNFIRST  = [(-1, 2), (1, 2), (-2, 1), (2, 1), (-2, -1), (2, -1), (-1, -2), (1, -2)]
+
     COLOR_NAME = ("BLACK", "WHITE")
 
     def __init__(self, allow_scl):
@@ -182,7 +184,18 @@ class Game:
                     self.open_pegs[Game.WHITE].add(p)
                 if y not in (0, Game.SIZE - 1):
                     self.open_pegs[Game.BLACK].add(p)
+
+        self.draw_board = []
+        self.reset_draw_boards()
+        
         # end __init__
+    
+
+    def reset_draw_boards(self):
+        self.draw_board = [DrawBoard(c) for c in range(2)]
+
+    def _flip_turn(self):
+        self.turn = 1 - self.turn
 
     def clone(self):
 
@@ -205,6 +218,10 @@ class Game:
     def just_won(self):
 
         return self.is_winning(1 - self.turn)
+
+    def is_a_draw(self):
+
+        return not (self.draw_board[0]._has_end_to_end_path() or self.draw_board[1]._has_end_to_end_path())
 
     def is_winning(self, color):
 
@@ -251,7 +268,7 @@ class Game:
         self.reachable[Game.BLACK] = set()
         self.reachable_history.pop()
 
-    def play(self, move):
+    def play(self, move, update_draw_boards=False):
 
         if move == SWAP:
             self.play_swap()
@@ -285,12 +302,19 @@ class Game:
 
         self.history.append(move)
         self.reachable_history.append(self._update_add_reachable(move))
-        self.turn = 1 - self.turn
+        
+        if update_draw_boards:
+            self._update_draw_boards(move)
+
+        self._flip_turn()
 
         self.open_pegs[0].remove(move)
         self.open_pegs[1].remove(move)
-
         # end play(self)
+
+    def _update_draw_boards(self, move):
+        self.draw_board[0]._clear_move(self, move)
+        self.draw_board[1]._clear_move(self, move)       
 
     def _update_add_reachable(self, move):
 
@@ -439,7 +463,7 @@ class Game:
         xmeet = (int_b - int_a) / (slope_a - slope_b)
         return a0.x < xmeet and a1.x > xmeet and b0.x < xmeet and b1.x > xmeet
 
-    def any_crossing_links(self, a, b, color):
+    def any_crossing_links(self, a, b, color, remove=False):
 
         # reverse parity crosses three times.
         debug = False
@@ -468,6 +492,7 @@ class Game:
             (1, 0, 2, 2)
         ]
 
+        found = False
         for cl in cross_links:
             c = a + dlong * cl[0] + dshort * cl[1]
             d = a + dlong * cl[2] + dshort * cl[3]
@@ -475,9 +500,13 @@ class Game:
                 self.logger.debug("checking %d,%d", c, d)
             if (self.inbounds(c) and self.inbounds(d) and
                     self.get_link(c, d, color)):
-                return True
+                found = True
+                if remove==False:
+                    break
+                else:
+                    self.set_link(c, d, color, 0)
 
-        return False
+        return found
 
     def undo(self):
 
@@ -626,6 +655,7 @@ class Game:
         return out + "\n"
 
 
+"""
 def get_thinker(spec):
     colon = spec.find(':')
     if colon == -1:
@@ -642,3 +672,100 @@ def get_thinker(spec):
     thinker.name = spec
     thinker.report = "-"
     return thinker
+"""
+
+
+
+class DrawBoard(Game):
+    def __init__(self, turn):
+        # a draw board always allows crossing own links
+        Game.__init__(self, True)
+        self.turn = turn
+        self._populate()
+
+    def reset_draw_boards(self):
+        # a draw board has no own draw boards
+        pass
+
+    def _flip_turn(self):
+        # turn does not alternate! one color per draw board only
+        pass
+
+    def undo(self):
+        raise Exception("DrawBoard doesn' implement undo()")
+
+    def undo_swap(self):
+        raise Exception("DrawBoard doesn' implement undo_swap()")
+
+    def play_swap(self):
+        raise Exception("DrawBoard doesn' implement play_swap()")
+
+    def _populate(self):
+        if (self.turn == Game.WHITE):
+            for x in range(1, Game.SIZE-1):
+                for y in range(0, Game.SIZE):
+                    self.play(Point(x, y), False)
+        elif (self.turn == Game.BLACK):
+            for x in range(0, Game.SIZE):
+                for y in range(1, Game.SIZE-1):
+                    self.play(Point(x, y), False)
+
+
+    def _update_draw_boards(self, move):
+        # draw bords do not have own draw boards
+        pass
+
+    def is_a_draw(self):
+        raise Exception("DrawBoard doesn' implement is_a_draw()")
+
+    def _clear_move(self, game, move):
+
+        if self.turn == game.turn and not game.allow_scl:
+            for dlink in Game.DLINKS:
+                pt = move + dlink
+                if not Game.inbounds(pt):
+                    continue
+                if game.get_link(move, pt, game.turn):
+                    # remove all links from draw board that cross any link that came with this peg
+                    self.any_crossing_links(move, pt, self.turn, True)
+
+        elif self.turn != game.turn:
+            for dlink in Game.DLINKS:
+                pt = move + dlink
+                if not Game.inbounds(pt):
+                    continue
+                if self.get_link(move, pt, self.turn):
+                    # remove all links from draw board that are adjacent to this peg
+                    self.set_link(move, pt, self.turn, 0)
+                if game.get_link(move, pt, game.turn):
+                    # remove all links from draw board that cross any link that came with this peg
+                    self.any_crossing_links(move, pt, self.turn, True)
+
+            # remov epeg from draw board
+            self.pegs[self.turn][move] = 0
+
+    def _has_end_to_end_path(self):
+        visited = []
+        link_range = Game.DLINKS_DOWNFIRST if self.turn == Game.WHITE else Game.DLINKS_RIGHTFIRST 
+        for i in range(1, Game.SIZE-1):
+            # (i,0) for WHITE. (0,i) for BLACK
+            pStart = Point(i * self.turn, i * (1 - self.turn))
+            if self.get_peg(pStart, self.turn) and pStart not in visited:
+                if self._find_path_to_end(pStart, visited, link_range):
+                    return True
+        return False
+
+    def _find_path_to_end(self, p, visited, link_range):
+        visited.append(p)
+        for dlink in link_range:
+            pt = p + dlink
+            if not Game.inbounds(pt):
+                continue
+            if self.get_link(p, pt, self.turn) and pt not in visited:
+                # if pt is on opposite endline - we found a path
+                if (self.turn == Game.WHITE and pt.y == Game.SIZE-1) or (self.turn == Game.BLACK and pt.x == Game.SIZE-1):
+                    return True
+                elif self._find_path_to_end(pt, visited, link_range):
+                    return True
+                # else continue and try next link
+        return False
