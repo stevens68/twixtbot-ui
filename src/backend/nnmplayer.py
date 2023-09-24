@@ -131,7 +131,7 @@ class Player:
 
         # When a forcing win or forcing draw move is found, there's no policy
         # array returned
-        if isinstance(N, (str, twixt.Point)):
+        if isinstance(N, (str, game.Point)):
             return self.nm.create_response(game, "done", self.num_trials,
                                            self.num_trials, True)
 

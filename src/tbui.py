@@ -482,7 +482,7 @@ class TwixtbotUI:
             self.game.result = None
 
         # for now, draw detection does not support undo
-        self.game.reset_draw_boards()
+        self.game.reset_inverse_games()
 
         gl = len(self.game.history)
         if gl in self.moves_score:
@@ -490,7 +490,8 @@ class TwixtbotUI:
 
         if gl > 0:
             self.redo_moves.append(self.game.history[-1])
-            self.game.undo()
+            # undo the move, incl. inverse boards
+            self.game.undo(True)
 
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):
@@ -590,9 +591,10 @@ class TwixtbotUI:
             self.game_over()
             return
         elif move == twixt.SWAP:
-            self.game.play_swap()
+            # swap and update the inverse boards
+            self.game.play_swap(True)
         else:
-            # play move and update the draw board
+            # play move and update the inverse boards
             self.game.play(move, True)
         self.game_over()
         self.next_move = None

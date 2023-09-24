@@ -6,7 +6,6 @@ from os import path
 TURN_COLOR = "white"
 PROGRESS_BAR_COLOR = "lightgreen"
 
-
 EVAL_PLOT_COLOR = "purple"
 VISITS_PLOT_COLOR = "blue"
 

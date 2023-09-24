@@ -1,154 +1,17 @@
 #! /usr/bin/env python
-import importlib
 import numpy
 import logging
-import operator
 from collections import namedtuple
 import constants as ct
-
+from backend.point import Point
+from backend.select_set import SelectSet
 
 SWAP = "swap"
 RESIGN = "resign"
 DRAW = "draw"
 MAXBEST = 24**24
 
-class Point(namedtuple('Point', 'x y')):
-    def __new__(cls, *args):
-
-        if len(args) == 2:
-            return tuple.__new__(cls, args)
-        elif len(args) == 1:
-            arg = args[0]
-            if type(arg) == str:
-                if arg[0] >= 'A' and arg[0] <= 'Z':
-                    x = ord(arg[0]) - ord('A')
-                else:
-                    x = ord(arg[0]) - ord('a')
-                y = int(arg[1:]) - 1
-                return tuple.__new__(cls, (x, y))
-            elif len(arg) == 2:
-                return tuple.__new__(cls, (arg[0], arg[1]))
-
-        raise ValueError("Bad initializer")
-
-    def add_it(self, other):
-
-        if isinstance(other, Point):
-            return Point(operator.add(self.x, other.x),
-                         operator.add(self.y, other.y))
-        elif len(other) == 2:
-            return Point(operator.add(self.x, other[0]),
-                         operator.add(self.y, other[1]))
-        else:
-            raise ValueError("Cannot add")
-
-    __add__ = add_it
-
-    def subtract_it(self, other):
-
-        if isinstance(other, Point):
-            return Point(operator.sub(self.x, other.x),
-                         operator.sub(self.y, other.y))
-        elif len(other) == 2:
-            return Point(operator.sub(self.x, other[0]),
-                         operator.sub(self.y, other[1]))
-        else:
-            raise ValueError("Cannot subtract")
-
-    __sub__ = subtract_it
-
-    def radd_it(self, other):
-
-        if len(other) == 2:
-            return Point(operator.add(other[0], self.x),
-                         operator.add(other[1], self.y))
-        else:
-            raise ValueError("Cannot add")
-
-    __radd__ = radd_it
-
-    def rsubtract_it(self, other):
-
-        if len(other) == 2:
-            return Point(operator.sub(other[0], self.x),
-                         operator.sub(other[1], self.y))
-        else:
-            raise ValueError("Cannot subtract")
-
-    __rsub__ = rsubtract_it
-
-    def __mul__(self, other):
-
-        return Point(self.x * other, self.y * other)
-
-    __rmul__ = __mul__
-
-    def __str__(self):
-
-        return chr(self.x + ord('a')) + str(self.y + 1)
-
-    def __repr__(self):
-
-        return self.__str__()
-
-    def flip(self):
-
-        return Point(self.y, self.x)
-
-
 LinkDescription = namedtuple('LinkDescription', 'p1 p2 owner')
-
-
-class SelectSet:
-
-    def __init__(self):
-
-        self.item_by_index = []
-        self.index_by_item = dict()
-
-    def clone(self):
-
-        copy = SelectSet()
-        copy.item_by_index = list(self.item_by_index)
-        copy.index_by_item = dict(self.index_by_item)
-        return copy
-
-    def add(self, x):
-
-        if x in self.index_by_item:
-            raise ValueError("duplicate element")
-
-        self.index_by_item[x] = len(self.item_by_index)
-        self.item_by_index.append(x)
-
-    def remove(self, x):
-
-        if x in self.index_by_item:
-            index = self.index_by_item[x]
-            if index == len(self.item_by_index) - 1:
-                self.item_by_index.pop()
-            else:
-                move = self.item_by_index.pop()
-                self.item_by_index[index] = move
-                self.index_by_item[move] = index
-            del self.index_by_item[x]
-
-    def __contains__(self, x):
-
-        return x in self.index_by_item
-
-    def __len__(self):
-
-        return len(self.item_by_index)
-
-    def __getitem__(self, i):
-
-        return self.item_by_index[i]
-
-    def pick(self, rng):
-
-        return rng.choice(self.item_by_index)
-
 
 class Game:
     SIZE = 24
@@ -185,14 +48,14 @@ class Game:
                 if y not in (0, Game.SIZE - 1):
                     self.open_pegs[Game.BLACK].add(p)
 
-        self.draw_board = []
-        self.reset_draw_boards()
+        self.inverse_game = []
+        self.reset_inverse_games()
         
         # end __init__
     
 
-    def reset_draw_boards(self):
-        self.draw_board = [DrawBoard(c) for c in range(2)]
+    def reset_inverse_games(self):
+        self.inverse_game = [InverseGame(c) for c in range(2)]
 
     def _flip_turn(self):
         self.turn = 1 - self.turn
@@ -220,8 +83,7 @@ class Game:
         return self.is_winning(1 - self.turn)
 
     def is_a_draw(self):
-
-        return not (self.draw_board[0]._has_end_to_end_path() or self.draw_board[1]._has_end_to_end_path())
+        return not (self.inverse_game[0]._has_end_to_end_path() or self.inverse_game[1]._has_end_to_end_path())
 
     def is_winning(self, color):
 
@@ -235,6 +97,10 @@ class Game:
         self.pegs[Game.WHITE][a] = 0
         self.pegs[Game.BLACK][b] = 1
         self.history.append(SWAP)
+
+        self.reset_inverse_games()
+        self._play_inverse_games(b, self.turn)
+
         self.turn = Game.WHITE
 
         self.reachable[Game.BLACK] = set()
@@ -259,6 +125,10 @@ class Game:
         self.pegs[Game.WHITE][a] = 1
         self.pegs[Game.BLACK][b] = 0
         self.history.pop()
+
+        self.reset_inverse_games()
+        self._play_inverse_games(a, self.turn)
+
         self.turn = Game.BLACK
 
         self.reachable[Game.WHITE] = set()
@@ -268,7 +138,7 @@ class Game:
         self.reachable[Game.BLACK] = set()
         self.reachable_history.pop()
 
-    def play(self, move, update_draw_boards=False):
+    def play(self, move, check_draw=False):
 
         if move == SWAP:
             self.play_swap()
@@ -303,8 +173,8 @@ class Game:
         self.history.append(move)
         self.reachable_history.append(self._update_add_reachable(move))
         
-        if update_draw_boards:
-            self._update_draw_boards(move)
+        if check_draw:
+            self._play_inverse_games(move, self.turn)
 
         self._flip_turn()
 
@@ -312,9 +182,10 @@ class Game:
         self.open_pegs[1].remove(move)
         # end play(self)
 
-    def _update_draw_boards(self, move):
-        self.draw_board[0]._clear_move(self, move)
-        self.draw_board[1]._clear_move(self, move)       
+    def _play_inverse_games(self, move, turn):
+        self.inverse_game[0]._clear_move(self, move, turn)
+        self.inverse_game[1]._clear_move(self, move, turn)       
+
 
     def _update_add_reachable(self, move):
 
@@ -463,7 +334,7 @@ class Game:
         xmeet = (int_b - int_a) / (slope_a - slope_b)
         return a0.x < xmeet and a1.x > xmeet and b0.x < xmeet and b1.x > xmeet
 
-    def any_crossing_links(self, a, b, color, remove=False):
+    def any_crossing_links(self, a, b, color, value=None):
 
         # reverse parity crosses three times.
         debug = False
@@ -501,14 +372,14 @@ class Game:
             if (self.inbounds(c) and self.inbounds(d) and
                     self.get_link(c, d, color)):
                 found = True
-                if remove==False:
+                if value is None:
                     break
                 else:
-                    self.set_link(c, d, color, 0)
+                    self.set_link(c, d, color, value)
 
         return found
 
-    def undo(self):
+    def undo(self, check_draw=False):
 
         assert len(self.history) > 0
         uturn = 1 - self.turn
@@ -536,7 +407,17 @@ class Game:
             self.open_pegs[Game.WHITE].add(umove)
         if umove.y not in (0, Game.SIZE - 1):
             self.open_pegs[Game.BLACK].add(umove)
+
+        if check_draw:
+            self.reset_inverse_games()
+            for idx, move in enumerate(self.history):
+                turn = 1 - (idx % 2) 
+                self._play_inverse_games(move, turn)
+
+
         # end undo
+
+        
 
     @staticmethod
     def inbounds(p):
@@ -655,50 +536,30 @@ class Game:
         return out + "\n"
 
 
-"""
-def get_thinker(spec):
-    colon = spec.find(':')
-    if colon == -1:
-        modname = spec
-        kwargs = dict()
-    else:
-        modname = spec[:colon]
-        kwargs = {arg.split("=")[0]: arg.split("=")[1]
-                  for arg in spec[colon + 1:].split(",")}
 
-    mod = importlib.import_module(modname)
-    cls = getattr(mod, 'Player')
-    thinker = cls(**kwargs)
-    thinker.name = spec
-    thinker.report = "-"
-    return thinker
-"""
-
-
-
-class DrawBoard(Game):
+class InverseGame(Game):
     def __init__(self, turn):
-        # a draw board always allows crossing own links
+        # an inverse game always allows crossing own links
         Game.__init__(self, True)
         self.turn = turn
         self._populate()
 
-    def reset_draw_boards(self):
-        # a draw board has no own draw boards
+    def reset_inverse_games(self):
+        # an inverse game has no own inverse games
         pass
 
     def _flip_turn(self):
-        # turn does not alternate! one color per draw board only
+        # turn does not alternate on inverse game
         pass
 
     def undo(self):
-        raise Exception("DrawBoard doesn' implement undo()")
+        raise Exception("InverseGame doesn't implement undo()")
 
     def undo_swap(self):
-        raise Exception("DrawBoard doesn' implement undo_swap()")
+        raise Exception("InverseGame doesn't implement undo_swap()")
 
     def play_swap(self):
-        raise Exception("DrawBoard doesn' implement play_swap()")
+        raise Exception("InverseGame doesn't implement play_swap()")
 
     def _populate(self):
         if (self.turn == Game.WHITE):
@@ -711,37 +572,43 @@ class DrawBoard(Game):
                     self.play(Point(x, y), False)
 
 
-    def _update_draw_boards(self, move):
-        # draw bords do not have own draw boards
+    def _play_inverse_games(self, move, turn):
+        # draw bords do not have own inverse games
+        pass
+
+    def undo_inverse_games(self, move):
+        # draw bords do not have own inverse games
         pass
 
     def is_a_draw(self):
-        raise Exception("DrawBoard doesn' implement is_a_draw()")
+        raise Exception("InverseGame doesn' implement is_a_draw()")
 
-    def _clear_move(self, game, move):
+    def _clear_move(self, game, move, turn):
 
-        if self.turn == game.turn and not game.allow_scl:
+        
+
+        if self.turn == turn and not game.allow_scl:
             for dlink in Game.DLINKS:
                 pt = move + dlink
                 if not Game.inbounds(pt):
                     continue
-                if game.get_link(move, pt, game.turn):
-                    # remove all links from draw board that cross any link that came with this peg
-                    self.any_crossing_links(move, pt, self.turn, True)
+                if game.get_link(move, pt, turn):
+                    # remove all links from inverse game that cross any link that came with this peg
+                    self.any_crossing_links(move, pt, self.turn, 0)
 
-        elif self.turn != game.turn:
+        elif self.turn != turn:
             for dlink in Game.DLINKS:
                 pt = move + dlink
                 if not Game.inbounds(pt):
                     continue
                 if self.get_link(move, pt, self.turn):
-                    # remove all links from draw board that are adjacent to this peg
+                    # remove all links from inverse game that are adjacent to this peg
                     self.set_link(move, pt, self.turn, 0)
-                if game.get_link(move, pt, game.turn):
-                    # remove all links from draw board that cross any link that came with this peg
-                    self.any_crossing_links(move, pt, self.turn, True)
+                if game.get_link(move, pt, turn):
+                    # remove all links from inverse game that cross any link that came with this peg
+                    self.any_crossing_links(move, pt, self.turn, 0)
 
-            # remov epeg from draw board
+            # remove epeg from inverse game
             self.pegs[self.turn][move] = 0
 
     def _has_end_to_end_path(self):
@@ -769,3 +636,4 @@ class DrawBoard(Game):
                     return True
                 # else continue and try next link
         return False
+
