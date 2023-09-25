@@ -11,6 +11,14 @@
             "program": "${file}",
             "cwd": "${fileDirname}",
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "Python: tbui.py",
+            "type": "python",
+            "request": "launch",
+            "program": "tbui.py",
+            "cwd": "D:\\twixtbot-ui\\src",
+            "console": "integratedTerminal"
+        }        
     ]
 }

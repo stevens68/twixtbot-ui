@@ -37,6 +37,7 @@ def pad(s):
 
 
 def row_separator(text, line=False):
+    # navbar: a thin horizontal line to stucture the controls
     if line:
         return (sg.Text(text, font=ct.SEPARATOR_FONT),
                 sg.HSeparator(pad=((5, 18), (4, 2))))
@@ -45,7 +46,7 @@ def row_separator(text, line=False):
 
 
 def get_color_square(player):
-    # create a small Graph (peg) to display the player color
+    # navbar: a small Graph (peg) to display the player's color
     size = 16
     color_square = sg.Graph(canvas_size=(size, size),
                             graph_bottom_left=(0, 0),

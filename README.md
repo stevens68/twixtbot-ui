@@ -1,3 +1,33 @@
+
+<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [twixtbot-ui](#twixtbot-ui)
+  - [Get started](#get-started)
+      - [Windows Installer](#windows-installer)
+      - [Manual Installation](#manual-installation)
+  - [Play TwixT](#play-twixt)
+    - [Human move](#human-move)
+    - [Bot move](#bot-move)
+    - [Swap rule](#swap-rule)
+    - [Undo, Redo, Resign, Reset](#undo-redo-resign-reset)
+    - [Draw](#draw)
+  - [Evaluation](#evaluation)
+      - [value head](#value-head)
+      - [policy head](#policy-head)
+    - [Policy](#policy)
+  - [MCTS](#mcts)
+  - [Settings](#settings)
+      - [Tab *General*](#tab-general)
+      - [Tab *Player 1 / 2*](#tab-player-1--2)
+  - [Loading and saving games](#loading-and-saving-games)
+      - [T1J files](#t1j-files)
+    - [Keyboard shortcuts](#keyboard-shortcuts)
+    - [Contributors](#contributors)
+
+<!-- /code_chunk_output -->
+
 # twixtbot-ui
 
 twixtbot-ui is a graphical user interface on top of [twixtbot](https://github.com/BonyJordan/twixtbot). twixtbot is an engine for the game [TwixT](https://en.wikipedia.org/wiki/TwixT)
@@ -78,6 +108,12 @@ Human players *swap* by clicking on the first peg. The peg will be replaced by a
 
 Click these buttons to undo the last move, redo undone moves, resign a game or start a new game, resp. You cannot click these buttons during MCTS.
 
+### Draw
+
+Drawn games - which are rare in TwixT - are detected automatically. A pop-up indicates that the game is over. You still can undo and redo moves. For an example of a drawn game, see [drawngame.T1](games/drawngame.T1) 
+>Note, that draws are not detected by the bot during MCTS, i.e. the bot does not know whether it has hit a drawn position while searching the tree.
+
+
 ## Evaluation
 
 By default, both bots share the same neural network in folder `./model/pb`. The network has been taken from [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020. Some manual adjustments were necessary for tensorflow2 to read it. If you want to use another network that you have trained using twixtbot, have a look at the files in folder `./convert` to see what needs to be adjusted before twixtbot-ui can use it. Put the network into a separate folder and configure the folder in *File -> Settings...*.  
@@ -102,9 +138,9 @@ The policy head of the network evaluates each legal move. These p-values in rang
 ### Policy
 
 By default the bots pick the best move returned by the network, i.e. the move with the highest p-value. This greedy
-policy can be changed to a stochastic policy by decreasing the config parameter "level" in the settings dialog. The
+policy can be changed to a stochastic policy by decreasing the config parameter *level* in the settings dialog. The
 lower the level, the weaker the bot, i.e the more often a weaker move is chosen.
-<br>Note that the "level" parameter only applies when not using MCTS.
+<br>Note that the *level* parameter only applies when not using MCTS.
 
 ## MCTS
 
@@ -116,7 +152,7 @@ If you check the *visualize* checkbox, the current line with the most visits wil
 
 In many cases MCTS will not lead to a different move than initially suggested by the network. Click *Accept* to accept the current best move. Click *Cancel* to abort; this will also set *auto move* to false. 
 
-Note that for the first move and the swap move the bot does not use the evaluation of the network and MCTS.
+Note that for the first move and the swap move the bot does not use the evaluation of the network and does not use MCTS.
 
 ## Settings
 

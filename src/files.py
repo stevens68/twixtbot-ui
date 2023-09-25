@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from backend import twixt
+import backend.twixt as twixt
 import layout as lt
 import string
 

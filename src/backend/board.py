@@ -1,6 +1,7 @@
 import backend.twixt as twixt
 import constants as ct
 from PySimpleGUI.PySimpleGUI import TEXT_LOCATION_BOTTOM_LEFT
+from backend.point import Point
 
 
 def if_else0(condition, value):
@@ -18,6 +19,7 @@ class TBWHistory:
 
 class TwixtBoard:
     def __init__(self, stgs):
+        self.offset_factor = 2.5
         self.size = twixt.Game.SIZE
         self.history = []
         self.known_moves = set()
@@ -30,8 +32,9 @@ class TwixtBoard:
                 ((self.size - point[1] - 1) + self.offset_factor) *
                 self.cell_width)
 
-    def _move_to_point(self, move):
-        return twixt.Point(ord(move[0]) - ord('a'), int(move[1:]) - 1)
+    @staticmethod
+    def _move_to_point(move):
+        return Point(ord(move[0]) - ord('a'), int(move[1:]) - 1)
 
     def _create_drawn_peg(self, point, coloridx,
                           highlight_last_move=False, visits=None):
@@ -76,14 +79,14 @@ class TwixtBoard:
 
     def create_move_objects(self, game, index, visits=None):
         move = game.history[index]
-        if not isinstance(move, twixt.Point):
+        if not isinstance(move, Point):
             # swap case: flip first move
             if len(self.history) > 0:
                 c1 = self.history.pop().objects[0]
                 self.graph.delete_figure(c1)
             self.known_moves.clear()
             m1 = game.history[0]
-            move = twixt.Point(m1.y, m1.x)
+            move = Point(m1.y, m1.x)
             # game.use_swap = True
 
         color = (index + 1) & 1
