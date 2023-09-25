@@ -110,7 +110,8 @@ Click these buttons to undo the last move, redo undone moves, resign a game or s
 
 ### Draw
 
-Drawn games are detected automatically, indicated by a pop-up message. As with 
+Drawn games - which are rare in TwixT - are detected automatically. A pop-up indicates that the game is over. You still can undo and redo moves. For an example of a drawn game, see [drawngame.T1](games/drawngame.T1) 
+>Note, that draws are not detected by the bot during MCTS, i.e. the bot does not know whether it has hit a drawn position while searching the tree.
 
 
 ## Evaluation
@@ -137,9 +138,9 @@ The policy head of the network evaluates each legal move. These p-values in rang
 ### Policy
 
 By default the bots pick the best move returned by the network, i.e. the move with the highest p-value. This greedy
-policy can be changed to a stochastic policy by decreasing the config parameter "level" in the settings dialog. The
+policy can be changed to a stochastic policy by decreasing the config parameter *level* in the settings dialog. The
 lower the level, the weaker the bot, i.e the more often a weaker move is chosen.
-<br>Note that the "level" parameter only applies when not using MCTS.
+<br>Note that the *level* parameter only applies when not using MCTS.
 
 ## MCTS
 
@@ -151,7 +152,7 @@ If you check the *visualize* checkbox, the current line with the most visits wil
 
 In many cases MCTS will not lead to a different move than initially suggested by the network. Click *Accept* to accept the current best move. Click *Cancel* to abort; this will also set *auto move* to false. 
 
-Note that for the first move and the swap move the bot does not use the evaluation of the network and MCTS.
+Note that for the first move and the swap move the bot does not use the evaluation of the network and does not use MCTS.
 
 ## Settings
 
