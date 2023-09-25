@@ -19,6 +19,7 @@ class TBWHistory:
 
 class TwixtBoard:
     def __init__(self, stgs):
+        self.offset_factor = 2.5
         self.size = twixt.Game.SIZE
         self.history = []
         self.known_moves = set()
@@ -31,7 +32,8 @@ class TwixtBoard:
                 ((self.size - point[1] - 1) + self.offset_factor) *
                 self.cell_width)
 
-    def _move_to_point(self, move):
+    @staticmethod
+    def _move_to_point(move):
         return Point(ord(move[0]) - ord('a'), int(move[1:]) - 1)
 
     def _create_drawn_peg(self, point, coloridx,

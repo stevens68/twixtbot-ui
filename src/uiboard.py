@@ -1,8 +1,9 @@
 import itertools
 import PySimpleGUI as sg
 import backend.board as board
+from backend.board import TwixtBoard
 import backend.twixt as twixt
-import backend.point as Point
+from backend.point import Point
 import constants as ct
 
 
@@ -20,7 +21,6 @@ class UiBoard(board.TwixtBoard):
         self.cell_width = bp / (twixt.Game.SIZE + 4)
         self.peg_radius = self.cell_width / 3.8
         self.hole_radius = self.cell_width / 10
-        self.offset_factor = 2.5
         self.graph = sg.Graph(canvas_size=(bp, bp),
                               graph_bottom_left=(0, 0),
                               graph_top_right=(bp, bp),
@@ -57,7 +57,7 @@ class UiBoard(board.TwixtBoard):
             self.current_cursor_label = None
             self.graph.delete_figure(self.rect_item)
         elif move is not None and self.current_cursor_label is None:
-            (x, y) = self._point_to_coords(self._move_to_point(move))
+            (x, y) = self._point_to_coords(TwixtBoard._move_to_point(move))
             coords = (x - 2 * self.cursor_label_factor,
                       y + 15 * self.cursor_label_factor)
             self.current_cursor_label = self.graph.DrawText(
@@ -99,9 +99,9 @@ class UiBoard(board.TwixtBoard):
         y = round(y)
         move = chr(ord('a') + x) + "%d" % (self.size - y)
         if (len(self.game.history) == 1 and
-                self._move_to_point(move) == self.game.history[0] and
+                TwixtBoard._move_to_point(move) == self.game.history[0] and
                 self.stgs.get(ct.K_ALLOW_SWAP[1])):
-            return twixt_game.SWAP, move
+            return twixt.SWAP, move
 
         if x < 0 or x > self.size - 1 or y < 0 or y > self.size - 1:
             # overboard click
@@ -174,7 +174,7 @@ class UiBoard(board.TwixtBoard):
             # Draw a circle around those moves with a p value
             self.graph.DrawCircle(
                 ((move.x + self.offset_factor) * self.cell_width,
-                 (twixt_game.Game.SIZE - move.y - 1 + self.offset_factor) *
+                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) *
                  self.cell_width),
                 self.hole_radius *
                 (1 + ct.HEATMAP_RADIUS_FACTOR * ct.HEATMAP_CIRCLE_FACTOR),
@@ -187,7 +187,7 @@ class UiBoard(board.TwixtBoard):
             # Draw colored circle
             self.graph.DrawCircle(
                 ((move.x + self.offset_factor) * self.cell_width,
-                 (twixt_game.Game.SIZE - move.y - 1 + self.offset_factor) *
+                 (twixt.Game.SIZE - move.y - 1 + self.offset_factor) *
                  self.cell_width),
                 radius, rgb_color, rgb_color)
 
@@ -240,7 +240,7 @@ class UiBoard(board.TwixtBoard):
 
     def _valid_spot(self, move):
 
-        p = self._move_to_point(move)
+        p = TwixtBoard._move_to_point(move)
         if len(self.game.history) >= 2 and self.game.history[1] == twixt.SWAP:
             # game is swapped
             if p in self.game.history[2:]:

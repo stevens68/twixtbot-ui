@@ -5,6 +5,7 @@ from collections import namedtuple
 import constants as ct
 from backend.point import Point
 from backend.select_set import SelectSet
+from backend.board import TwixtBoard
 
 SWAP = "swap"
 RESIGN = "resign"
@@ -62,7 +63,7 @@ class Game:
 
     def clone(self):
 
-        copy = Game()
+        copy = Game(self.allow_scl)
         copy.history = list(self.history)
         copy.pegs = numpy.array(self.pegs)
         copy.links = numpy.array(self.links)
@@ -410,8 +411,15 @@ class Game:
 
         if check_draw:
             self.reset_inverse_games()
-            for idx, move in enumerate(self.history):
-                turn = 1 - (idx % 2) 
+            if len(self.history) >= 2 and self.history[1] == SWAP:
+                turn = Game.BLACK
+                self._play_inverse_games(self.history[0], turn)
+                start = 2
+            else:
+                start = 0
+
+            for idx, move in enumerate(self.history[start:]):
+                turn = 1 - (idx % 2)
                 self._play_inverse_games(move, turn)
 
 
@@ -585,8 +593,6 @@ class InverseGame(Game):
 
     def _clear_move(self, game, move, turn):
 
-        
-
         if self.turn == turn and not game.allow_scl:
             for dlink in Game.DLINKS:
                 pt = move + dlink
@@ -637,3 +643,10 @@ class InverseGame(Game):
                 # else continue and try next link
         return False
 
+    def clone(self):
+
+        copy = InverseGame(self.turn)
+        copy.pegs = numpy.array(self.pegs)
+        copy.links = numpy.array(self.links)
+        copy.turn = self.turn
+        return copy

@@ -481,9 +481,6 @@ class TwixtbotUI:
         elif self.game.result == twixt.DRAW:
             self.game.result = None
 
-        # for now, draw detection does not support undo
-        self.game.reset_inverse_games()
-
         gl = len(self.game.history)
         if gl in self.moves_score:
             del self.moves_score[gl]
@@ -591,8 +588,7 @@ class TwixtbotUI:
             self.game_over()
             return
         elif move == twixt.SWAP:
-            # swap and update the inverse boards
-            self.game.play_swap(True)
+            self.game.play_swap()
         else:
             # play move and update the inverse boards
             self.game.play(move, True)
