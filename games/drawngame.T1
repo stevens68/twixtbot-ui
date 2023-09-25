@@ -1,0 +1,72 @@
+# File created by twixtbot-ui
+# twixtbot-ui is a program to play TwixtT (https://github.com/stevens68/twixtbot-ui)
+1 # version of file-format
+ # Name of player 1
+ # Name of player 2
+24 # y-size of board
+24 # x-size of board
+H # player 1 human or computer
+H # player 2 human or computer
+1 # starting player (1 plays top-down)
+V # direction of letters
+Y # pierule?
+Y # game already over?
+I9
+M5
+M9
+I5
+G10
+G6
+O6
+P4
+R5
+I16
+L16
+Q5
+Q3
+P7
+P8
+Q6
+S7
+Q9
+S10
+T11
+Q11
+S8
+T9
+S9
+Q8
+N3
+T10
+P11
+O12
+Q10
+O10
+V10
+R8
+N12
+O11
+L13
+P14
+G15
+P9
+X11
+P18
+J14
+Q20
+O5
+R1
+U9
+Q24
+E14
+Q16
+K6
+R22
+U10
+R10
+C15
+R9
+W8
+P10
+A14
+
