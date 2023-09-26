@@ -571,8 +571,7 @@ class TwixtbotUI:
                          self.get_current(ct.K_NAME) + ' has resigned!')
             return True
 
-        elif self.game.is_a_draw():
-            self.game.result = twixt.DRAW
+        elif self.game.result == twixt.DRAW:
             if display_message:
                 lt.popup('Game over: draw!')
             return True
@@ -591,7 +590,7 @@ class TwixtbotUI:
             self.game.play_swap()
         else:
             # play move and update the inverse boards
-            self.game.play(move, True)
+            self.game.play(move)
         self.game_over()
         self.next_move = None
 

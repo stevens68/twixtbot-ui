@@ -8,7 +8,7 @@ import backend.nneval as nneval
 import backend.nnmcts as nnmcts
 import backend.swapmodel as swapmodel
 import backend.twixt as twixt
-
+from backend.point import Point
 
 class Player:
 
@@ -131,7 +131,7 @@ class Player:
 
         # When a forcing win or forcing draw move is found, there's no policy
         # array returned
-        if isinstance(N, (str, game.Point)):
+        if isinstance(N, (str, Point)):
             return self.nm.create_response(game, "done", self.num_trials,
                                            self.num_trials, True)
 

@@ -48,15 +48,9 @@ class Game:
                     self.open_pegs[Game.WHITE].add(p)
                 if y not in (0, Game.SIZE - 1):
                     self.open_pegs[Game.BLACK].add(p)
-
-        self.inverse_game = []
-        self.reset_inverse_games()
         
         # end __init__
     
-
-    def reset_inverse_games(self):
-        self.inverse_game = [InverseGame(c) for c in range(2)]
 
     def _flip_turn(self):
         self.turn = 1 - self.turn
@@ -83,8 +77,8 @@ class Game:
 
         return self.is_winning(1 - self.turn)
 
-    def is_a_draw(self):
-        return not (self.inverse_game[0]._has_end_to_end_path() or self.inverse_game[1]._has_end_to_end_path())
+    def _is_a_draw(self):
+        return not (self._has_end_to_end_path(0) or self._has_end_to_end_path(1))
 
     def is_winning(self, color):
 
@@ -98,9 +92,6 @@ class Game:
         self.pegs[Game.WHITE][a] = 0
         self.pegs[Game.BLACK][b] = 1
         self.history.append(SWAP)
-
-        self.reset_inverse_games()
-        self._play_inverse_games(b, self.turn)
 
         self.turn = Game.WHITE
 
@@ -126,9 +117,6 @@ class Game:
         self.pegs[Game.WHITE][a] = 1
         self.pegs[Game.BLACK][b] = 0
         self.history.pop()
-
-        self.reset_inverse_games()
-        self._play_inverse_games(a, self.turn)
 
         self.turn = Game.BLACK
 
@@ -174,19 +162,15 @@ class Game:
         self.history.append(move)
         self.reachable_history.append(self._update_add_reachable(move))
         
-        if check_draw:
-            self._play_inverse_games(move, self.turn)
-
         self._flip_turn()
 
         self.open_pegs[0].remove(move)
         self.open_pegs[1].remove(move)
+
+        if self._is_a_draw():
+            self.result = DRAW
+
         # end play(self)
-
-    def _play_inverse_games(self, move, turn):
-        self.inverse_game[0]._clear_move(self, move, turn)
-        self.inverse_game[1]._clear_move(self, move, turn)       
-
 
     def _update_add_reachable(self, move):
 
@@ -373,11 +357,7 @@ class Game:
             if (self.inbounds(c) and self.inbounds(d) and
                     self.get_link(c, d, color)):
                 found = True
-                if value is None:
-                    break
-                else:
-                    self.set_link(c, d, color, value)
-
+                self.set_link(c, d, color, 1)
         return found
 
     def undo(self, check_draw=False):
@@ -409,24 +389,8 @@ class Game:
         if umove.y not in (0, Game.SIZE - 1):
             self.open_pegs[Game.BLACK].add(umove)
 
-        if check_draw:
-            self.reset_inverse_games()
-            if len(self.history) >= 2 and self.history[1] == SWAP:
-                turn = Game.BLACK
-                self._play_inverse_games(self.history[0], turn)
-                start = 2
-            else:
-                start = 0
-
-            for idx, move in enumerate(self.history[start:]):
-                turn = 1 - (idx % 2)
-                self._play_inverse_games(move, turn)
-
-
         # end undo
-
-        
-
+             
     @staticmethod
     def inbounds(p):
         """ Tell us whether a given point is inside the numpy arrays;
@@ -543,110 +507,32 @@ class Game:
 
         return out + "\n"
 
-
-
-class InverseGame(Game):
-    def __init__(self, turn):
-        # an inverse game always allows crossing own links
-        Game.__init__(self, True)
-        self.turn = turn
-        self._populate()
-
-    def reset_inverse_games(self):
-        # an inverse game has no own inverse games
-        pass
-
-    def _flip_turn(self):
-        # turn does not alternate on inverse game
-        pass
-
-    def undo(self):
-        raise Exception("InverseGame doesn't implement undo()")
-
-    def undo_swap(self):
-        raise Exception("InverseGame doesn't implement undo_swap()")
-
-    def play_swap(self):
-        raise Exception("InverseGame doesn't implement play_swap()")
-
-    def _populate(self):
-        if (self.turn == Game.WHITE):
-            for x in range(1, Game.SIZE-1):
-                for y in range(0, Game.SIZE):
-                    self.play(Point(x, y), False)
-        elif (self.turn == Game.BLACK):
-            for x in range(0, Game.SIZE):
-                for y in range(1, Game.SIZE-1):
-                    self.play(Point(x, y), False)
-
-
-    def _play_inverse_games(self, move, turn):
-        # draw bords do not have own inverse games
-        pass
-
-    def undo_inverse_games(self, move):
-        # draw bords do not have own inverse games
-        pass
-
-    def is_a_draw(self):
-        raise Exception("InverseGame doesn' implement is_a_draw()")
-
-    def _clear_move(self, game, move, turn):
-
-        if self.turn == turn and not game.allow_scl:
-            for dlink in Game.DLINKS:
-                pt = move + dlink
-                if not Game.inbounds(pt):
-                    continue
-                if game.get_link(move, pt, turn):
-                    # remove all links from inverse game that cross any link that came with this peg
-                    self.any_crossing_links(move, pt, self.turn, 0)
-
-        elif self.turn != turn:
-            for dlink in Game.DLINKS:
-                pt = move + dlink
-                if not Game.inbounds(pt):
-                    continue
-                if self.get_link(move, pt, self.turn):
-                    # remove all links from inverse game that are adjacent to this peg
-                    self.set_link(move, pt, self.turn, 0)
-                if game.get_link(move, pt, turn):
-                    # remove all links from inverse game that cross any link that came with this peg
-                    self.any_crossing_links(move, pt, self.turn, 0)
-
-            # remove epeg from inverse game
-            self.pegs[self.turn][move] = 0
-
-    def _has_end_to_end_path(self):
+    def _has_end_to_end_path(self, turn):
+        check_board = Game(True)
         visited = []
-        link_range = Game.DLINKS_DOWNFIRST if self.turn == Game.WHITE else Game.DLINKS_RIGHTFIRST 
+        link_range = Game.DLINKS_DOWNFIRST if turn == Game.WHITE else Game.DLINKS_RIGHTFIRST 
         for i in range(1, Game.SIZE-1):
             # (i,0) for WHITE. (0,i) for BLACK
-            pStart = Point(i * self.turn, i * (1 - self.turn))
-            if self.get_peg(pStart, self.turn) and pStart not in visited:
-                if self._find_path_to_end(pStart, visited, link_range):
-                    return True
+            pStart = Point(i * turn, i * (1 - turn))
+            check_board.pegs[turn][pStart] = 1
+            if self._find_path_to_end(check_board, turn, pStart, visited, link_range):
+                return True
         return False
 
-    def _find_path_to_end(self, p, visited, link_range):
+    def _find_path_to_end(self, check_board, turn, p, visited, link_range):
         visited.append(p)
         for dlink in link_range:
             pt = p + dlink
-            if not Game.inbounds(pt):
-                continue
-            if self.get_link(p, pt, self.turn) and pt not in visited:
-                # if pt is on opposite endline - we found a path
-                if (self.turn == Game.WHITE and pt.y == Game.SIZE-1) or (self.turn == Game.BLACK and pt.x == Game.SIZE-1):
-                    return True
-                elif self._find_path_to_end(pt, visited, link_range):
-                    return True
-                # else continue and try next link
+            if self.inbounds_for_player(pt, turn) and pt not in visited and not self.pegs[1-turn][pt]:
+                # pt is a valid move (empty or own color)
+                if not self.any_crossing_links(p, pt, 1-turn) and (self.allow_scl or not self.any_crossing_links(p, pt, turn)):
+                    # there are no links crossing link (p, pt)
+                    check_board.pegs[turn][pt] = 1
+                    check_board.set_link(p, pt, turn, 1)
+                    # if pt is on opposite endline - we found a path
+                    if (turn == Game.WHITE and pt.y == Game.SIZE-1) or (turn == Game.BLACK and pt.x == Game.SIZE-1):
+                        return True
+                    elif self._find_path_to_end(check_board, turn, pt, visited, link_range):
+                        return True
         return False
 
-    def clone(self):
-
-        copy = InverseGame(self.turn)
-        copy.pegs = numpy.array(self.pegs)
-        copy.links = numpy.array(self.links)
-        copy.turn = self.turn
-        return copy

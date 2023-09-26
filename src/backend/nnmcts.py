@@ -6,6 +6,7 @@ import logging
 import backend.naf as naf
 import backend.twixt as twixt
 import constants as ct
+from backend.point import Point
 
 
 class EvalNode:
@@ -195,7 +196,7 @@ class NeuralMCTS:
 
         while i < len(game.history) and self.root:
             move = game.history[i]
-            if not isinstance(move, game.Point):
+            if not isinstance(move, Point):
                 self.history_at_root = None
                 self.root = None
                 return
