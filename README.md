@@ -1,33 +1,4 @@
 
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
-
-<!-- code_chunk_output -->
-
-- [twixtbot-ui](#twixtbot-ui)
-  - [Get started](#get-started)
-      - [Windows Installer](#windows-installer)
-      - [Manual Installation](#manual-installation)
-  - [Play TwixT](#play-twixt)
-    - [Human move](#human-move)
-    - [Bot move](#bot-move)
-    - [Swap rule](#swap-rule)
-    - [Undo, Redo, Resign, Reset](#undo-redo-resign-reset)
-    - [Draw](#draw)
-  - [Evaluation](#evaluation)
-      - [value head](#value-head)
-      - [policy head](#policy-head)
-    - [Policy](#policy)
-  - [MCTS](#mcts)
-  - [Settings](#settings)
-      - [Tab *General*](#tab-general)
-      - [Tab *Player 1 / 2*](#tab-player-1--2)
-  - [Loading and saving games](#loading-and-saving-games)
-      - [T1J files](#t1j-files)
-    - [Keyboard shortcuts](#keyboard-shortcuts)
-    - [Contributors](#contributors)
-
-<!-- /code_chunk_output -->
-
 # twixtbot-ui
 
 twixtbot-ui is a graphical user interface on top of [twixtbot](https://github.com/BonyJordan/twixtbot). twixtbot is an engine for the game [TwixT](https://en.wikipedia.org/wiki/TwixT)

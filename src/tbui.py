@@ -487,7 +487,8 @@ class TwixtbotUI:
 
         if gl > 0:
             self.redo_moves.append(self.game.history[-1])
-            self.game.undo()
+            # undo the move, incl. inverse boards
+            self.game.undo(True)
 
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):

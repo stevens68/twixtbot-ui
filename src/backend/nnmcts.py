@@ -251,7 +251,7 @@ class NeuralMCTS:
             return self.root.drawing_move
         else:
             self.report = "flose"
-            return twixt.RESIGN
+            return game.RESIGN
 
     def create_response(self, game, status,
                         num_trials=0, current_trials=0,
@@ -275,7 +275,7 @@ class NeuralMCTS:
             resp["Pscew"] = [1.0]
 
         if not moves:
-            indices = numpy.argsort(self.root.N)[::-1][:twixt.MAXBEST]
+            indices = numpy.argsort(self.root.N)[::-1][:game.MAXBEST]
             resp["moves"] = [naf.policy_index_point(
                 game.turn, i) for i in indices]
             resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]

@@ -127,7 +127,7 @@ class Game:
         self.reachable[Game.BLACK] = set()
         self.reachable_history.pop()
 
-    def play(self, move):
+    def play(self, move, check_draw=False):
 
         if move == SWAP:
             self.play_swap()
@@ -319,7 +319,7 @@ class Game:
         xmeet = (int_b - int_a) / (slope_a - slope_b)
         return a0.x < xmeet and a1.x > xmeet and b0.x < xmeet and b1.x > xmeet
 
-    def any_crossing_links(self, a, b, color):
+    def any_crossing_links(self, a, b, color, value=None):
 
         # reverse parity crosses three times.
         debug = False
@@ -358,10 +358,9 @@ class Game:
                     self.get_link(c, d, color)):
                 found = True
                 self.set_link(c, d, color, 1)
-
         return found
 
-    def undo(self):
+    def undo(self, check_draw=False):
 
         assert len(self.history) > 0
         uturn = 1 - self.turn
@@ -391,8 +390,7 @@ class Game:
             self.open_pegs[Game.BLACK].add(umove)
 
         # end undo
-       
-
+             
     @staticmethod
     def inbounds(p):
         """ Tell us whether a given point is inside the numpy arrays;
