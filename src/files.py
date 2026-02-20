@@ -1,13 +1,13 @@
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import backend.twixt as twixt
 import layout as lt
 import string
 
 
-def str2twixt(move):
+def str_to_twixt(move):
     """ Converts one move string to a twixt backend class move.
 
-    Handles both T1-style coordinates (e.g.: 'd5', 'f18'') as well as tsgf-
+    Handles both T1-style coordinates (e.g.: 'd5', 'f18'') and tsgf-
     style coordinates (e.g.: 'fg', 'bi') as well as special strings
     ('swap' and 'resign'). It can handle letter in upper as well as lowercase.
 
@@ -21,19 +21,19 @@ def str2twixt(move):
         ValueError if the move_str can't be parsed in any valid format
 
     Examples:
-        >>> str2twixt('b3')
+        >>> str_to_twixt('b3')
         b3
-        >>> str2twixt('i18')
+        >>> str_to_twixt('i18')
         i18
-        >>> str2twixt('fj')
+        >>> str_to_twixt('fj')
         f10
-        >>> str2twixt('swap')
+        >>> str_to_twixt('swap')
         'swap'
-        >>> str2twixt('resign')
+        >>> str_to_twixt('resign')
         'resign'
-        >>> str2twixt('123')
+        >>> str_to_twixt('123')
         ValueError: Can't parse move: '123'
-        >>> str2twixt('invalid')
+        >>> str_to_twixt('invalid')
         ValueError: Can't parse move: 'invalid'
     """
 
@@ -80,7 +80,7 @@ def parse_t1_file(content):
             'C# player 2 human or computer',
             '1# starting player (1 plays top-down)',
             'V# Direction of letters',
-            'N# pierule?',
+            'N# pie rule?',
             'N# game already over?',
             'L10', 'L17', 'Q15', 'Q8',  'S12', 'P11', 'O14', 'P19', 'V18',
             'U15', 'V16', 'T17', 'U14', 'V17', 'W16', 'W15', 'F16', 'L19',
@@ -98,16 +98,16 @@ def parse_t1_file(content):
     comment_char = '#'
 
     try:
-        players = [content[linenr].split(comment_char)[0]
-                   for linenr in player_lines]
+        players = [content[line_nr].split(comment_char)[0]
+                   for line_nr in player_lines]
     except Exception:
         raise ValueError("Can't read player names from T1 file")
 
     try:
-        moves = [str2twixt(move) for move in content[moves_start_line:]
+        moves = [str_to_twixt(move) for move in content[moves_start_line:]
                  if len(move) > 0]
     except Exception:
-        # Just pass on the exception from str2twixt
+        # Just pass on the exception from str_to_twixt
         raise
 
     return players, moves
@@ -156,31 +156,31 @@ def parse_tsgf_file(content):
                            if '|' in field else field.find(']')]
                      for field in content[0].split(field_sep)
                      if field[:2] in turn_str]
-        moves = list(map(str2twixt, raw_moves))
+        moves = list(map(str_to_twixt, raw_moves))
     except Exception:
-        # Just pass on the exception from str2twixt
+        # Just pass on the exception from str_to_twixt
         raise
 
     return players, moves
 
 
-def get_game(curent_cross_lines_setting=False):
+def get_game(current_cross_lines_setting=False):
     """Returns (players, moves) from a file, chosen by the user
 
     Shows a file-open dialog to the user.
     The chosen file is read and parsed into players and moves.
     If the file is a tsgf file, the user is asked if the setting
     to allow crossing lines should be enabled, because Little Golem
-    plays with corring lines allowed by default.
+    plays with crossing lines allowed by default.
     The resulting player name list and moves list is returned.
-    Finally a boolean is returned, which indicates if crossing lines
+    Finally, a boolean is returned, which indicates if crossing lines
     should be set to enabled (True) or if it should be left
     in the current state (False).
     Exceptions that occur while opening and/or parsing the file
     are handled within this function.
 
     Args:
-        curent_cross_lines_setting (bool): current setting for crossing lines
+        current_cross_lines_setting (bool): current setting for crossing lines
 
     Returns:
         tuple: (list: players as strings,
@@ -202,7 +202,7 @@ def get_game(curent_cross_lines_setting=False):
     try:
         with open(file_name, "tr") as f:
             content = list(map(lambda s: s.strip(), f.readlines()))
-    except Exception:
+    except OSError:
         sg.popup_ok(f"Can't open {file_name} as a valid Twixt file.")
         return return_on_failure
 
@@ -213,9 +213,9 @@ def get_game(curent_cross_lines_setting=False):
             return players, moves, False
         elif file_name[-4:].lower() == 'tsgf':
             enable_crossing_lines = False
-            if not curent_cross_lines_setting:
+            if not current_cross_lines_setting:
                 enable_crossing_lines = sg.popup_yes_no(
-                    "You have opened a .tsgf file, which propably comes "
+                    "You have opened a .tsgf file, which probably comes "
                     "from LittleGolem. By default, LittleGolem allows "
                     "crossing lines. You don't have crossing lines enabled. "
                     "Do you want to enable crossing lines?",
@@ -230,10 +230,7 @@ def get_game(curent_cross_lines_setting=False):
     return return_on_failure
 
 
-def save_game(players=['Player1', 'Player2'],
-              moves=[''],
-              board_size=24,
-              game_over=False):
+def save_game(players=None, moves=None, board_size=24, game_over=False):
     """ Saves a Twixt game to T1 file, chosen by the user
 
     Shows a file-save dialog to the user.
@@ -251,6 +248,10 @@ def save_game(players=['Player1', 'Player2'],
     Returns:
         None
     """
+    if players is None:
+        players = ['Player1', 'Player2']
+    if moves is None:
+        moves = ['']
 
     # Get filename
     file_name = sg.PopupGetFile('Choose file', file_types=(
@@ -275,7 +276,7 @@ def save_game(players=['Player1', 'Player2'],
             'H # player 2 human or computer',
             '1 # starting player (1 plays top-down)',
             'V # direction of letters',
-            'Y # pierule?',
+            'Y # pie rule?',
             ('Y' if game_over else 'N') + ' # game already over?'
         ]
 
@@ -290,7 +291,7 @@ def save_game(players=['Player1', 'Player2'],
     try:
         with open(file_name, "tw") as f:
             f.write('\n'.join(content))
-    except Exception:
+    except OSError:
         sg.popup_ok(f"Can't write {file_name}. Game is NOT saved!")
         return
 

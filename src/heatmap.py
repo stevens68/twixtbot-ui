@@ -2,7 +2,7 @@
 import constants as ct
 
 
-def p_to_rgbstring(p):
+def p_to_rgb_string(p):
     """ Converts a probability ([0..1]) value to an RGB color string
 
     The heatmap is based on 3 anchor points: minimum value (p=0), middle
@@ -16,7 +16,7 @@ def p_to_rgbstring(p):
     Returns:
         an RGB string with 3 hex values (e.g.: '#RRGGBB')
     """
-    assert(p >= 0 and p <= 1)
+    assert(0 <= p <= 1)
 
     # Determine the colors to be mixed and calculate factor [0..1]
     if p > 0.5:
@@ -34,11 +34,23 @@ def p_to_rgbstring(p):
     return '#' + ''.join(f'{c:02x}' for c in rgb)
 
 
+def heatmap_legend(num_steps=ct.HEATMAP_LEGEND_STEPS):
+    """ Returns a list of heatmap RGB values for a heatmap legend
+
+    Args:
+        num_steps: length of the returned list minus 1
+
+    Returns:
+        a list of RGB strings
+    """
+    return [p_to_rgb_string(p / num_steps) for p in range(num_steps + 1)]
+
+
 class Heatmap:
     """ Contains data and functions to plot a heatmap on the Twixt board
 
     The constructor also calculates the heatmap. After the
-    constructor is called, it isn't nessecary to call .calculate()
+    constructor is called, it isn't necessary to call .calculate()
 
     **ALWAYS** instantiate Heatmap with game and bot.
 
@@ -63,17 +75,7 @@ class Heatmap:
         self.p_values = {}
         self.rgb_colors = {}
         self.calculate()
-
-    def heatmap_legend(self, num_steps=ct.HEATMAP_LEGEND_STEPS):
-        """ Returns a list of heatmap RGB values for a heatmap legend
-
-        Args:
-            num_steps: length of the returned list minus 1
-
-        Returns:
-            a list of RGB strings
-        """
-        return [p_to_rgbstring(p / num_steps) for p in range(num_steps + 1)]
+        self.policy_moves = []
 
     def calculate(self):
         """ Calculates the heatmap by evaluating the policy of the bot
@@ -94,4 +96,4 @@ class Heatmap:
                 # all the rest of the p-values will be 0; break loop
                 break
             self.p_values[m] = p / p_val[0]
-            self.rgb_colors[m] = p_to_rgbstring(p / p_val[0])
+            self.rgb_colors[m] = p_to_rgb_string(p / p_val[0])

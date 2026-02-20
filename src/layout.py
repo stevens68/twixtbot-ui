@@ -1,4 +1,4 @@
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import constants as ct
 
 
@@ -37,7 +37,7 @@ def pad(s):
 
 
 def row_separator(text, line=False):
-    # navbar: a thin horizontal line to stucture the controls
+    # navbar: a thin horizontal line to structure the controls
     if line:
         return (sg.Text(text, font=ct.SEPARATOR_FONT),
                 sg.HSeparator(pad=((5, 18), (4, 2))))
@@ -445,23 +445,24 @@ class SettingsDialogLayout:
         return self.layout
 
 
+def build_layout() -> object:
+    s = (40, 1)
+    return [
+        [sg.Text("twixtbot engine and network by Jordan Lampe", size=s)],
+        [sg.Text("https://github.com/BonyJordan/twixtbot", size=s)],
+        [sg.Text("", size=s)],
+        [sg.Text(
+            "twixtbot-ui frontend by stevens68 and contributors", size=s)],
+        [sg.Text("https://github.com/stevens68/twixtbot-ui", size=s)],
+        [sg.Text("", size=s)],
+        [sg.Button(ct.B_OK, size=(10, 1), focus=True)]
+    ]
+
+
 class AboutDialogLayout:
 
     def __init__(self):
-        self.layout = self.build_layout()
-
-    def build_layout(self) -> object:
-        s = (40, 1)
-        return [
-            [sg.Text("twixtbot engine and network by Jordan Lampe", size=s)],
-            [sg.Text("https://github.com/BonyJordan/twixtbot", size=s)],
-            [sg.Text("", size=s)],
-            [sg.Text(
-                "twixtbot-ui frontend by stevens68 and contributors", size=s)],
-            [sg.Text("https://github.com/stevens68/twixtbot-ui", size=s)],
-            [sg.Text("", size=s)],
-            [sg.Button(ct.B_OK, size=(10, 1), focus=True)]
-        ]
+        self.layout = build_layout()
 
     def get_layout(self):
         return self.layout

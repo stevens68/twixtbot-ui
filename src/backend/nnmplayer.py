@@ -3,12 +3,12 @@ import numpy
 import random
 import logging
 import constants as ct
-import backend.naf as naf
-import backend.nneval as nneval
-import backend.nnmcts as nnmcts
-import backend.swapmodel as swapmodel
-import backend.twixt as twixt
-from backend.point import Point
+from . import naf
+from . import nneval
+from . import nnmcts
+from . import swapmodel
+from . import twixt
+from .point import Point
 
 class Player:
 

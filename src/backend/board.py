@@ -1,7 +1,7 @@
-import backend.twixt as twixt
 import constants as ct
-from PySimpleGUI.PySimpleGUI import TEXT_LOCATION_BOTTOM_LEFT
-from backend.point import Point
+from FreeSimpleGUI import TEXT_LOCATION_BOTTOM_LEFT
+from .point import Point
+from . import twixt
 
 
 def if_else0(condition, value):
@@ -26,6 +26,9 @@ class TwixtBoard:
 
         self.stgs = stgs
         self.visit_offset = self.stgs.get(ct.K_BOARD_SIZE[1]) / 120
+        self.cell_width = 40  # Default value, adjust as needed
+        self.peg_radius = 10  # Default value, adjust as needed
+        self.graph = None     # Should be set to the drawing object externally
 
     def _point_to_coords(self, point):
         return ((point[0] + self.offset_factor) * self.cell_width,
@@ -36,10 +39,10 @@ class TwixtBoard:
     def _move_to_point(move):
         return Point(ord(move[0]) - ord('a'), int(move[1:]) - 1)
 
-    def _create_drawn_peg(self, point, coloridx,
+    def _create_drawn_peg(self, point, color_idx,
                           highlight_last_move=False, visits=None):
 
-        if coloridx == 1:
+        if color_idx == 1:
             color = self.stgs.get(ct.K_COLOR[1])
         else:
             color = self.stgs.get(ct.K_COLOR[2])

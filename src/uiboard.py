@@ -1,5 +1,5 @@
 import itertools
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import backend.board as board
 from backend.board import TwixtBoard
 import backend.twixt as twixt

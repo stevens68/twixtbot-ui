@@ -5,11 +5,31 @@ import numpy as np
 import constants as ct
 
 
+# noinspection SpellCheckingInspection
+def prepare(canvas):
+
+    fig, ax1 = plt.subplots(figsize=(2.4, 0.7))
+
+    ax1.tick_params(axis='x', which='major', labelcolor="black", top=False,
+                    labeltop=False, labelbottom=False, bottom=False)
+    ax1.tick_params(axis='y', which='major', labelcolor="black",
+                    labelleft=True, labelsize=8, pad=.8)
+
+    ax1.spines['bottom'].set_visible(False)
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+
+    agg = FigureCanvasTkAgg(fig, canvas)
+    agg.get_tk_widget().pack()
+
+    return ax1, agg
+
+
 class ThreeBarPlot:
 
     def __init__(self, canvas, bar_color):
         self.bar_color = bar_color
-        (self.sub_plot, self.agg) = self.prepare(canvas)
+        (self.sub_plot, self.agg) = prepare(canvas)
 
     def update(self, values=None, xmax=None):
 
@@ -35,24 +55,6 @@ class ThreeBarPlot:
         plt.subplots_adjust(left=None, bottom=None,
                             right=None, top=None, wspace=0, hspace=0)
         self.agg.draw()
-
-    def prepare(self, canvas):
-
-        fig, ax1 = plt.subplots(figsize=(2.4, 0.7))
-
-        ax1.tick_params(axis='x', which='major', labelcolor="black", top=False,
-                        labeltop=False, labelbottom=False, bottom=False)
-        ax1.tick_params(axis='y', which='major', labelcolor="black",
-                        labelleft=True, labelsize=8, pad=.8)
-
-        ax1.spines['bottom'].set_visible(False)
-        ax1.spines['top'].set_visible(False)
-        ax1.spines['right'].set_visible(False)
-
-        agg = FigureCanvasTkAgg(fig, canvas)
-        agg.get_tk_widget().pack()
-
-        return ax1, agg
 
 
 class EvalHistPlot:

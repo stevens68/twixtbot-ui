@@ -6,7 +6,7 @@ import random
 import sys
 import logging
 import constants as ct
-import backend.twixt as twixt
+from . import twixt
 
 logger = logging.getLogger(ct.LOGGER)
 

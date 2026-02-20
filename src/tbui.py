@@ -16,7 +16,7 @@ import uiboard
 
 from tkinter import ttk
 
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import threading
 import time
 import logging
@@ -262,7 +262,7 @@ class TwixtbotUI:
                 diff = values["Y"][0] - values["Y"][1]
                 if diff > max_value - value:
                     # 2nd best cannot catch up => accept (if not already
-                    # cancelled)
+                    # canceled)
                     if self.bot_event.get_context() != ct.CANCEL_EVENT:
                         self.handle_accept_bot()
 
@@ -400,7 +400,7 @@ class TwixtbotUI:
             self.game, self.window, self.bot_event)
         if (self.bot_event is None or not self.bot_event.is_set() or
                 self.bot_event.get_context() == ct.ACCEPT_EVENT):
-            # bot has not been cancelled (but is finished or accepted)
+            # bot has not been canceled (but is finished or accepted)
             # so execute move.
             # execute move must be inside thread!
             move = self._stochastic_choice(response)

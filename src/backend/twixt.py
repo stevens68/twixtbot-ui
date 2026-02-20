@@ -3,9 +3,9 @@ import numpy
 import logging
 from collections import namedtuple
 import constants as ct
-from backend.point import Point
-from backend.select_set import SelectSet
-from backend.board import TwixtBoard
+from .point import Point
+Point = Point  # Expose Point in the module namespace for other modules to use as twixt.Point
+from .select_set import SelectSet
 
 SWAP = "swap"
 RESIGN = "resign"
@@ -13,6 +13,23 @@ DRAW = "draw"
 MAXBEST = 24**24
 
 LinkDescription = namedtuple('LinkDescription', 'p1 p2 owner')
+
+
+def get_link_index(a, b, color):
+
+    ix1 = color
+
+    if (a.x + b.x) % 2 != 0:
+        ix1 += Game.LINK_LONGY
+
+    cx = int((a.x + b.x) // 2)
+    cy = int((a.y + b.y) // 2)
+
+    if (b.y - a.y) * (b.x - a.x) < 0:
+        ix1 += Game.LINK_DIFFSIGN
+
+    return ix1, (cx, cy)
+
 
 class Game:
     SIZE = 24
@@ -127,7 +144,7 @@ class Game:
         self.reachable[Game.BLACK] = set()
         self.reachable_history.pop()
 
-    def play(self, move, check_draw=False):
+    def play(self, move):
 
         if move == SWAP:
             self.play_swap()
@@ -136,7 +153,7 @@ class Game:
         if type(move) == str:
             move = Point(move)
 
-        assert Game.inbounds(move), (move)
+        assert Game.inbounds(move), move
         assert self.pegs[0][move] == 0, (0, self.pegs[0], move, self.history)
         assert self.pegs[1][move] == 0, (1, self.pegs[1], move, self.history)
 
@@ -240,29 +257,14 @@ class Game:
 
     def get_link(self, a, b, color):
 
-        ix1, ix2 = self.get_link_index(a, b, color)
+        ix1, ix2 = get_link_index(a, b, color)
         self.logger.debug("x1,x2: %s, %s", ix1, ix2)
         return self.links[ix1][ix2]
 
     def set_link(self, a, b, color, value):
 
-        ix1, ix2 = self.get_link_index(a, b, color)
+        ix1, ix2 = get_link_index(a, b, color)
         self.links[ix1][ix2] = value
-
-    def get_link_index(self, a, b, color):
-
-        ix1 = color
-
-        if (a.x + b.x) % 2 != 0:
-            ix1 += Game.LINK_LONGY
-
-        cx = int((a.x + b.x) // 2)
-        cy = int((a.y + b.y) // 2)
-
-        if (b.y - a.y) * (b.x - a.x) < 0:
-            ix1 += Game.LINK_DIFFSIGN
-
-        return ix1, (cx, cy)
 
     @staticmethod
     def describe_link(index, x, y):
@@ -317,9 +319,9 @@ class Game:
         int_a = a0.y - slope_a * a0.x
         int_b = b0.y - slope_b * b0.x
         xmeet = (int_b - int_a) / (slope_a - slope_b)
-        return a0.x < xmeet and a1.x > xmeet and b0.x < xmeet and b1.x > xmeet
+        return a0.x < xmeet < a1.x and b0.x < xmeet < b1.x
 
-    def any_crossing_links(self, a, b, color, value=None):
+    def any_crossing_links(self, a, b, color):
 
         # reverse parity crosses three times.
         debug = False
@@ -360,7 +362,7 @@ class Game:
                 self.set_link(c, d, color, 1)
         return found
 
-    def undo(self, check_draw=False):
+    def undo(self):
 
         assert len(self.history) > 0
         uturn = 1 - self.turn
@@ -381,7 +383,7 @@ class Game:
         self.turn = uturn
         rh = self.reachable_history.pop()
         for p in rh:
-            assert p in self.reachable[uturn], (p)
+            assert p in self.reachable[uturn], p
             self.reachable[uturn].remove(p)
 
         if umove.x not in (0, Game.SIZE - 1):
@@ -395,17 +397,17 @@ class Game:
     def inbounds(p):
         """ Tell us whether a given point is inside the numpy arrays;
             may still not be a valid place to play. """
-        return p.x >= 0 and p.x < Game.SIZE and p.y >= 0 and p.y < Game.SIZE
+        return 0 <= p.x < Game.SIZE and 0 <= p.y < Game.SIZE
 
     @staticmethod
     def inbounds_for_player(p, color):
 
         if color == Game.WHITE:
-            return (p.x >= 1 and p.x < Game.SIZE - 1 and
-                    p.y >= 0 and p.y < Game.SIZE)
+            return (1 <= p.x < Game.SIZE - 1 and
+                    0 <= p.y < Game.SIZE)
         elif color == Game.BLACK:
-            return (p.x >= 0 and p.x < Game.SIZE and
-                    p.y >= 1 and p.y < Game.SIZE - 1)
+            return (0 <= p.x < Game.SIZE and
+                    1 <= p.y < Game.SIZE - 1)
         else:
             return False
 
@@ -463,7 +465,7 @@ class Game:
             else:
                 out += "."
 
-        return out + " %-2d\n" % (y)
+        return out + " %-2d\n" % y
 
     def _str_tween_row(self, y):
 
@@ -513,9 +515,9 @@ class Game:
         link_range = Game.DLINKS_DOWNFIRST if turn == Game.WHITE else Game.DLINKS_RIGHTFIRST 
         for i in range(1, Game.SIZE-1):
             # (i,0) for WHITE. (0,i) for BLACK
-            pStart = Point(i * turn, i * (1 - turn))
-            check_board.pegs[turn][pStart] = 1
-            if self._find_path_to_end(check_board, turn, pStart, visited, link_range):
+            p_start = Point(i * turn, i * (1 - turn))
+            check_board.pegs[turn][p_start] = 1
+            if self._find_path_to_end(check_board, turn, p_start, visited, link_range):
                 return True
         return False
 

@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 import math
 import numpy
-import backend.twixt as twixt
+from . import twixt
+from .point import Point
 
 
 class NetInputs:
@@ -91,7 +92,7 @@ class NetInputs:
                 self.naf[:-1, :, color + dix +
                          vix] = tmp[1:, :, color + adix + vix]
 
-        self.recents = [twixt.Point(twixt.Game.SIZE - 1 - p.x, p.y)
+        self.recents = [Point(twixt.Game.SIZE - 1 - p.x, p.y)
                         for p in self.recents]
 
     def vflip(self):
@@ -115,7 +116,7 @@ class NetInputs:
                 # horizontals need to be shifted.
                 self.naf[:, :-1, color + dix] = tmp[:, 1:, color + adix]
 
-        self.recents = [twixt.Point(p.x, twixt.Game.SIZE - 1 - p.y)
+        self.recents = [Point(p.x, twixt.Game.SIZE - 1 - p.y)
                         for p in self.recents]
 
     def rotate(self, r):
@@ -186,9 +187,9 @@ def policy_index_point(thing, index):
     assert 0 <= minor and minor < twixt.Game.SIZE
 
     if color == twixt.Game.WHITE:
-        return twixt.Point(major + 1, minor)
+        return Point(major + 1, minor)
     else:
-        return twixt.Point(minor, major + 1)
+        return Point(minor, major + 1)
 
 
 def policy_point_index(thing, point):

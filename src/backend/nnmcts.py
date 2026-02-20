@@ -3,11 +3,10 @@ import math
 import numpy
 import logging
 
-import backend.naf as naf
-import backend.twixt as twixt
+from . import naf
+from . import twixt
 import constants as ct
-from backend.point import Point
-
+from .point import Point
 
 class EvalNode:
 

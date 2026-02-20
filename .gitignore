@@ -153,3 +153,7 @@ pynsist_pkgs/
 profile.py
 out.txt
 profile.cmd
+
+
+
+.idea/

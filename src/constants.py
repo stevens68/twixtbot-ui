@@ -43,8 +43,8 @@ MOVES_FONT = ("Courier", 10)
 SEPARATOR_FONT = ("Arial", 9, "italic")
 
 # files and folders
-SETINGS_FILE_NAME = "config.json"
-SETTINGS_FILE = path.join(path.dirname(__file__), SETINGS_FILE_NAME)
+SETTINGS_FILE_NAME = "config.json"
+SETTINGS_FILE = path.join(path.dirname(__file__), SETTINGS_FILE_NAME)
 MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), '../model/pb'))
 SPINNER_IMAGE = str(pathlib.Path(__file__).parent.joinpath(
     r'../img/wheel.gif'))
@@ -146,7 +146,7 @@ ABOUT_DIALOG_TITLE = "About"
 
 MSG_REQUIRES_RESTART = "restart required"
 MSG_NO_CONFIG_FILE = (f'No settings file found.\nCreating '
-                      f'{SETINGS_FILE_NAME} with default settings.')
+                      f'{SETTINGS_FILE_NAME} with default settings.')
 MSG_ERROR_UPDATING_KEY = ('Problem updating settings from window values. '
                           'key=%s, exc=%s')
 
