@@ -74,6 +74,8 @@ class TwixtbotUI:
         self.next_move = None
         self.logger = logging.getLogger(ct.LOGGER)
         self.ui_to_be_updated = threading.Event()
+        self.thread = None
+        self.timer = None
 
         # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
@@ -214,8 +216,8 @@ class TwixtbotUI:
         else:
             turn = ['', ct.TURN_CHAR]
 
-        self.get_control(ct.K_TURN_INDICATOR, 1).Update(turn[0])
-        self.get_control(ct.K_TURN_INDICATOR, 2).Update(turn[1])
+        self.get_control(ct.K_TURN_INDICATOR, 1).update(value=turn[0])
+        self.get_control(ct.K_TURN_INDICATOR, 2).update(value=turn[1])
 
     def update_history(self):
         text = ""
@@ -232,18 +234,18 @@ class TwixtbotUI:
         self.get_control(ct.K_MOVES).Update(text)
 
     def calc_eval(self):
-        score, moves, P, Pscew = self.bots[self.game.turn].nm.eval_game(self.game)
+        score, moves, p, pscew = self.bots[self.game.turn].nm.eval_game(self.game)
         # get score from white's perspective
         sc = round((2 * self.game.turn - 1) * score, 3)
-        self.next_move = {"score": sc, "moves": moves, "P": P, "Pscew": Pscew}
+        self.next_move = {"score": sc, "moves": moves, "P": p, "Pscew": pscew}
         # Add sc to dict of historical scores
         self.moves_score[len(self.game.history)] = sc
 
-        return sc, moves, P, Pscew
+        return sc, moves, p, pscew
 
     def clear_evals(self):
-        self.get_control(ct.K_EVAL_NUM).Update('')
-        self.get_control(ct.K_EVAL_BAR).Update(0)
+        self.get_control(ct.K_EVAL_NUM).update(value='')
+        self.get_control(ct.K_EVAL_BAR).update(value=0)
         self.eval_moves_plot.update()
         self.eval_hist_plot.update()
         self.visit_plot.update()
@@ -255,13 +257,13 @@ class TwixtbotUI:
             return
 
         if not self.game_over(False):
-            sc, moves, P, _ = self.calc_eval()
+            sc, moves, p, _ = self.calc_eval()
 
             self.get_control(ct.K_EVAL_NUM).Update(sc)
             self.get_control(ct.K_EVAL_BAR).Update(1000 * sc + 1000)
 
             # update chart (use top 3 values only)
-            values = {"moves": moves[:3], "Y":  [int(round(p * 1000)) for p in P[:3]]}
+            values = {"moves": moves[:3], "Y":  [int(round(p * 1000)) for p in p[:3]]}
             self.eval_moves_plot.update(values, 1000)
 
         # clean visits
@@ -303,7 +305,7 @@ class TwixtbotUI:
             self.timer.update(v)
             text += self.timer.getstatus()
 
-        self.get_control(ct.K_PROGRESS_NUM).Update(text)
+        self.get_control(ct.K_PROGRESS_NUM).update(value=text)
         self.get_control(ct.K_PROGRESS_BAR).UpdateBar(value, max_value)
 
     def update_after_move(self, complete=True):
@@ -472,14 +474,13 @@ class TwixtbotUI:
         self.reset_game()
 
         # replay game
-        try:
-            lt.popup("loading game...")
-            for m in moves:
+        lt.popup("loading game...")
+        for m in moves:
+            try:
                 self.execute_move(m)
                 self.calc_eval()
-        except Exception:
-            lt.popup("invalid move: " + str(m))
-
+            except twixt.InvalidMoveError:
+                lt.popup("invalid move: " + str(m))
         self.update_after_move()
 
     def handle_save_file(self):

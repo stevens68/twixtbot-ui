@@ -10,6 +10,7 @@ from . import constants as ct
 class Settings:
     def __init__(self):
         self.logger = logging.getLogger(ct.LOGGER)
+        self.settings = {}
         self.load()
 
     def get(self, key):
@@ -37,10 +38,11 @@ class Settings:
     def load(self):
         try:
             with open(ct.SETTINGS_FILE, 'r') as f:
-                self.settings = jsonload(f)
+                settings = jsonload(f) or {}
                 # backward compatibility: set board_size to new min 500
-                self.settings[ct.K_BOARD_SIZE[1]] = max(
-                    min(ct.BOARD_SIZE_LIST), self.settings[ct.K_BOARD_SIZE[1]])
+                settings[ct.K_BOARD_SIZE[1]] = max(
+                    min(ct.BOARD_SIZE_LIST), settings[ct.K_BOARD_SIZE[1]])
+                self.settings = settings
         except OSError:
             sg.popup(ct.MSG_NO_CONFIG_FILE, keep_on_top=True)
             self.settings = {}

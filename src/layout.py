@@ -190,7 +190,7 @@ class MainWindowLayout:
         window = sg.Window('test', layout, finalize=True)
         size = window['-TEXT-'].get_size()
         window.close()
-        vsize = int(self.stgs.get(ct.K_BOARD_SIZE[1]) / (size[1] * 0.65))
+        vsize = int(self.stgs.get(ct.K_BOARD_SIZE[1]) / (size[1] * 0.4))
         return [sg.ProgressBar(2000, orientation='v', size=(vsize, 8),
                                key=ct.K_EVAL_BAR[1], bar_color=colors,
                                pad=(0, 0)),

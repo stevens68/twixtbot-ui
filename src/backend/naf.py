@@ -16,6 +16,7 @@ class NetInputs:
 
     def __init__(self, thing):
         self.naf = numpy.zeros(self.NAF_DIMS, dtype=numpy.uint8)
+        self.recents = []
         self.init_from_game(thing)
 
     def init_from_game(self, game):
@@ -229,8 +230,7 @@ def binary_array_string(arr):
     if len(arr.shape) == 1:
         return "".join("." if x == 0 else "*" for x in arr)
     elif len(arr.shape) == 2:
-        return "\n".join(binary_array_string(arr[:, y]
-                                             for y in range(arr.shape[1])))
+        return "\n".join(binary_array_string(arr[:, y]) for y in range(arr.shape[1]))
     else:
         raise ValueError("only one/two dimensional arrays handled")
 
@@ -265,13 +265,13 @@ def rotate_policy_array(pa, r):
 
 def three_to_one(three):
     """ Take a three-vector of logits and return a score between -1 and 1 """
-    lL, lD, lW = three
-    eL = math.exp(lL - lD)
-    eW = math.exp(lW - lD)
-    div = 1.0 + eL + eW
-    pW = eW / div
-    pL = eL / div
-    return pW - pL
+    l_l, l_d, l_w = three
+    e_l = math.exp(l_l - l_d)
+    e_w = math.exp(l_w - l_d)
+    div = 1.0 + e_l + e_w
+    p_w = e_w / div
+    p_l = e_l / div
+    return p_w - p_l
 
 
 def one_to_three(one):

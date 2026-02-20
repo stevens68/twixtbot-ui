@@ -153,9 +153,12 @@ class Game:
         if type(move) == str:
             move = Point(move)
 
-        assert Game.inbounds(move), move
-        assert self.pegs[0][move] == 0, (0, self.pegs[0], move, self.history)
-        assert self.pegs[1][move] == 0, (1, self.pegs[1], move, self.history)
+        if not Game.inbounds(move):
+            raise InvalidMoveError(f"Move out of bounds: {move}")
+        if self.pegs[0][move] != 0:
+            raise InvalidMoveError(f"Cell already occupied for BLACK: {move}, {self.pegs[0]}, {self.history}")
+        if self.pegs[1][move] != 0:
+            raise InvalidMoveError(f"Cell already occupied for WHITE: {move}, {self.pegs[1]}, {self.history}")
 
         if self.turn == Game.WHITE:
             assert move.x != 0 and move.x != Game.SIZE - 1
@@ -538,3 +541,6 @@ class Game:
                         return True
         return False
 
+
+class InvalidMoveError(Exception):
+    pass

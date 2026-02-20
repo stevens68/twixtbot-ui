@@ -11,7 +11,6 @@ from .point import Point
 class EvalNode:
 
     def __init__(self):
-
         k = twixt.Game.SIZE * (twixt.Game.SIZE - 2)
         self.N = numpy.zeros(k)
         self.Q = numpy.zeros(k)
@@ -21,6 +20,12 @@ class EvalNode:
         self.winning_move = None
         self.drawing_move = None
         self.subnodes = [None] * k
+        self.LM = None
+        self.LMnz = None
+
+
+def send_message(window, response):
+    window.write_event_value('THREAD', response)
 
 
 class NeuralMCTS:
@@ -42,9 +47,13 @@ class NeuralMCTS:
         self.root = None
         self.history_at_root = None
         self.logger = logging.getLogger(ct.LOGGER)
+        self.proven = False
+        self.score = None
+        self.drawing_move = None
+        self.report = None
 
     def expand_leaf(self, game):
-        """ Create a brand new leaf node for the current game state
+        """ Create a brand-new leaf node for the current game state
             and return it. """
 
         leaf = EvalNode()
@@ -75,7 +84,7 @@ class NeuralMCTS:
         el = numpy.exp(movelogits - maxlogit)
         divisor = el[leaf.LMnz].sum()
         leaf.P = el / divisor
-        # stevens68: set P to 0 for non-legal moves. Otherwise
+        # stevens68: set P to 0 for non-legal moves. Otherwise,
         # illegal move might become best move in upcoming draws (move #100+)
         leaf.P[numpy.where(leaf.LM == 0)[0]] = 0
         # leaf.P *= leaf.LM
@@ -126,19 +135,19 @@ class NeuralMCTS:
 
                 nsum = node.N.sum()  # don't need to filter since all are 0
                 stv = math.sqrt(nsum + 1.0)
-                U = node.Q + self.cpuct * node.P * stv / (1.0 + node.N)
+                u = node.Q + self.cpuct * node.P * stv / (1.0 + node.N)
 
                 wnz = numpy.nonzero(winnables)
-                nz_index = U[wnz].argmax()
+                nz_index = u[wnz].argmax()
                 index = wnz[0][nz_index]
         else:
             # At least one node worth visiting.  Figure out which one to
             # visit...
             nsum = node.N.sum()  # don't need to filter since all are 0
             stv = math.sqrt(nsum + 1.0)
-            U = node.Q + self.cpuct * node.P * stv / (1.0 + node.N)
+            u = node.Q + self.cpuct * node.P * stv / (1.0 + node.N)
 
-            nz_index = U[node.LMnz].argmax()
+            nz_index = u[node.LMnz].argmax()
             index = node.LMnz[0][nz_index]
 
         move = naf.policy_index_point(game.turn, index)
@@ -213,8 +222,8 @@ class NeuralMCTS:
 
         return ":" + ",".join(pts)
 
-    def _scew(self, P):
-        prob = P
+    def _scew(self, p):
+        prob = p
         q = self.level
         # stochastic
         avg = 1.0 / len(prob)
@@ -223,8 +232,8 @@ class NeuralMCTS:
         # if q == 0.0 => set new p to avg
         # if q == 0.5 => set new p to p (no change)
         # if q == 1.0 => set new p[0] to 1, p[n>0] = 0 (greedy)
-        prob = [(-4*p+2*avg)*q*q + (4*p-3*avg)*q + avg for p in prob[1:]]
-        prob[0] = (-4*p0+2*avg+2)*q*q + (4*p0-3*avg-1)*q + avg
+        prob = [(-4*x+2*avg)*q*q + (4*x-3*avg)*q + avg for x in prob[1:]]
+        prob.insert(0, (-4*p0+2*avg+2)*q*q + (4*p0-3*avg-1)*q + avg)
         return prob
 
     def eval_game(self, game, maxbest=twixt.MAXBEST):
@@ -234,12 +243,11 @@ class NeuralMCTS:
         self.root = self.expand_leaf(game)
         top_ixs = numpy.argsort(self.root.P)[-maxbest:]
         moves = [naf.policy_index_point(game, ix) for ix in top_ixs][::-1]
-        P = [self.root.P[ix] for ix in top_ixs][::-1]
-        # scew P
-        Pscew = self._scew(P)
+        p = [self.root.P[ix] for ix in top_ixs][::-1]
+        pscew = self._scew(p)
 
         self.logger.debug("moves: %s, idx: %s", moves, top_ixs)
-        return self.root.score, moves, P, Pscew
+        return self.root.score, moves, p, pscew
 
     def proven_result(self, game):
         if self.root.winning_move:
@@ -254,7 +262,7 @@ class NeuralMCTS:
 
     def create_response(self, game, status,
                         num_trials=0, current_trials=0,
-                        proven=False, moves=None, P=None, Pscew=None):
+                        proven=False, moves=None, p=None, pscew=None):
 
         resp = {
             "status": status,
@@ -263,13 +271,13 @@ class NeuralMCTS:
             "proven": proven
         }
 
-        if P is not None:
-            resp["P"] = P.tolist() if type(P) != list else P
+        if p is not None:
+            resp["P"] = p.tolist() if type(p) != list else p
         else:
             resp["P"] = [1.0]
 
-        if Pscew is not None:
-            resp["Pscew"] = Pscew.tolist() if type(Pscew) != list else P
+        if pscew is not None:
+            resp["Pscew"] = pscew.tolist() if type(pscew) != list else p
         else:
             resp["Pscew"] = [1.0]
 
@@ -278,7 +286,7 @@ class NeuralMCTS:
             resp["moves"] = [naf.policy_index_point(
                 game.turn, i) for i in indices]
             resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]
-            resp["P"] = [p for p in self.root.P[indices].tolist()]
+            resp["P"] = [x for x in self.root.P[indices].tolist()]
             resp["Pscew"] = self._scew(resp["P"])
             # resp["Q"] = self.root.Q[indices].tolist()
         else:
@@ -286,12 +294,10 @@ class NeuralMCTS:
 
         return resp
 
-    def send_message(self, window, response):
-        window.write_event_value('THREAD', response)
-
     def mcts(self, game, trials, window, event):
         """ Using the neural net, compute the move visit count vector """
 
+        path = []  # Ensure path is always defined
         self.compute_root(game)
         if self.root is None:
             self.root = self.expand_leaf(game)
@@ -308,7 +314,6 @@ class NeuralMCTS:
         if not self.root.proven:
             # for i in tqdm(range(trials), ncols=100, desc="processing",
             # file=sys.stdout):
-            path = []
             for i in range(trials):
                 assert not self.root.proven
                 self.visit_node(game, self.root, True,
@@ -323,7 +328,7 @@ class NeuralMCTS:
                 if (i + 1) % ct.MCTS_TRIAL_CHUNK == 0:
                     resp = self.create_response(
                         game, "in-progress", trials, i + 1, False)
-                    self.send_message(window, resp)
+                    send_message(window, resp)
                     if self.visualize_mcts:
                         self.clean_path(path)
                         self.traverse(game, path, 0, self.root)
@@ -338,7 +343,7 @@ class NeuralMCTS:
         self.logger.debug("Q=%s", self.root.Q)
 
         self.report = "%6.3f" % (
-            self.root.Q[numpy.argmax(self.root.N)]) + self.top_moves_str(game)
+            float(self.root.Q[numpy.argmax(self.root.N)])) + self.top_moves_str(game)
         return self.root.N
 
     def clean_path(self, path):

@@ -11,7 +11,8 @@ import time
 import threading
 
 __author__ = 'Denis Barmenkov <denis.barmenkov@gmail.com>'
-__source__ = 'http://code.activestate.com/recipes/577002-precise-console-progress-meter-with-eta-calculatio/?in=user-57155'
+# noinspection HttpUrlsUsage
+__source__ = 'http://code.activestate.com/recipes/577002-precise-console-progress-meter-with-eta-calculatio/?in=user-57155'  # noqa: S105
 
 
 def format_sec(sec):
