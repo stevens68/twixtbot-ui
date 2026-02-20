@@ -200,7 +200,10 @@ def get_game(current_cross_lines_setting=False):
 
     # Open file
     try:
-        with open(file_name, "tr") as f:
+        with open(file_name, "r", encoding="utf-8") as f:
+            content = list(map(lambda s: s.strip(), f.readlines()))
+    except UnicodeDecodeError:
+        with open(file_name, "r", encoding="latin-1") as f:
             content = list(map(lambda s: s.strip(), f.readlines()))
     except OSError:
         sg.popup_ok(f"Can't open {file_name} as a valid Twixt file.")
