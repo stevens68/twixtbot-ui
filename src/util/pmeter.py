@@ -1,10 +1,11 @@
-'''
+"""
 pmeter.py -- Precise console progress meter with ETA calculation
 
 Some code inherited from CFV sources (cfv.sf.net)
 
 2010-01-11 20:23
-'''
+"""
+
 import sys
 import time
 import threading
@@ -21,13 +22,13 @@ def format_sec(sec):
 
 
 class ETA(object):
-    '''
-    calculate ETA (Estimated Time of Arrival :)
+    """
+    calculate ETA (Estimated Time of Arrival)
     for some events
 
     Save few last update points or some seconds.
-    Help fight statistics after hibernate :)
-    '''
+    Help fight statistics after hibernate
+    """
 
     def __init__(self, wanted_size, max_point=20, max_seconds=30):
         self.wanted_size = wanted_size
@@ -112,9 +113,6 @@ class ProgressMeter(object):
         percent_str = '         %.2f%%' % percent
         percent_str = percent_str[-7:]
 
-        if cursize == self.size:
-            percent = 100.0
-
         eta = self.eta_calculator.getstatus()
 
         message = ('%s:%s %s%s ETA: %s' % (self.label, percent_str,
@@ -123,10 +121,10 @@ class ProgressMeter(object):
         self.outstream.flush()
         self.prev_message = message
 
-        self.last_update_time = time.time()()
+        self.last_update_time = time.time()
 
     def update_left(self, left):
-        '''
+        """
         useful in multithreaded environment when processing job pool:
 
         Main:
@@ -135,7 +133,7 @@ class ProgressMeter(object):
         In thread.run():
             job = joblist.pop(0)
             pm.update_left(len(joblist))
-        '''
+        """
         self.update(self.size - left)
 
     def update(self, cursize):

@@ -2,7 +2,7 @@
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
-import constants as ct
+from . import constants as ct
 
 
 # noinspection SpellCheckingInspection

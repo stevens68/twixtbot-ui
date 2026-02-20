@@ -2,7 +2,7 @@
 import numpy
 import random
 import logging
-import constants as ct
+from .. import constants as ct
 from . import naf
 from . import nneval
 from . import nnmcts

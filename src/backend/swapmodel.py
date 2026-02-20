@@ -5,7 +5,7 @@ import numpy
 import random
 import sys
 import logging
-import constants as ct
+from .. import constants as ct
 from . import twixt
 
 logger = logging.getLogger(ct.LOGGER)
@@ -18,12 +18,12 @@ def _xy_predictors(xres, yres):
 def _point_predictors(p):
     x = p.x
     y = p.y
-    S2 = twixt.Game.SIZE // 2
-    if x >= S2:
-        x = 2 * S2 - x - 1
-    if y >= S2:
-        y = 2 * S2 - y - 1
-    assert x > 0 and x < S2 and y >= 0 and y < S2
+    s2 = twixt.Game.SIZE // 2
+    if x >= s2:
+        x = 2 * s2 - x - 1
+    if y >= s2:
+        y = 2 * s2 - y - 1
+    assert 0 < x < s2 and 0 <= y < s2
 
     xres = x - 6.0
     yres = y - 5.5

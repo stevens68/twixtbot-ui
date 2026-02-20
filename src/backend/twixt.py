@@ -2,7 +2,7 @@
 import numpy
 import logging
 from collections import namedtuple
-import constants as ct
+from .. import constants as ct
 from .point import Point
 Point = Point  # Expose Point in the module namespace for other modules to use as twixt.Point
 from .select_set import SelectSet

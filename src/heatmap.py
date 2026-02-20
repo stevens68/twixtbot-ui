@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import constants as ct
+from . import constants as ct
 
 
 def p_to_rgb_string(p):

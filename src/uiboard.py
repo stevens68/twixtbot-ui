@@ -1,10 +1,10 @@
 import itertools
 import FreeSimpleGUI as sg
-import backend.board as board
-from backend.board import TwixtBoard
-import backend.twixt as twixt
-from backend.point import Point
-import constants as ct
+from .backend import board
+from .backend.board import TwixtBoard
+from .backend import twixt
+from .backend.point import Point
+from . import constants as ct
 
 
 class UiBoard(board.TwixtBoard):

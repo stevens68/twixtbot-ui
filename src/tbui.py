@@ -3,16 +3,16 @@
 import random
 import numpy as np
 
-import backend.twixt as twixt
-import util.pmeter as pmeter
+import src.backend.twixt as twixt
+import src.util.pmeter as pmeter
 
-import constants as ct
-import settings as st
-import layout as lt
-import files as fi
-import plot as pt
-import heatmap as hm
-import uiboard
+import src.constants as ct
+import src.settings as st
+import src.layout as lt
+import src.files as fi
+import src.plot as pt
+import src.heatmap as hm
+import src.uiboard as uiboard
 
 from tkinter import ttk
 
@@ -50,6 +50,11 @@ class ProgressWindow(sg.Window):
         self.__getitem__(ct.K_SPLASH_PROGRESS_BAR[0]).UpdateBar(progress, 100)
         self.__getitem__(ct.K_SPLASH_STATUS_TEXT[0]).Update(text)
         self.refresh()
+
+
+def _stochastic_choice(response):
+    idx = random.choices(np.arange(0, len(response["Pscew"])), response["Pscew"])[0]
+    return response["moves"][idx]
 
 
 class TwixtbotUI:
@@ -120,21 +125,41 @@ class TwixtbotUI:
 
         # import
         init_window.update('importing modules ...', 30)
-        import backend.nnmplayer as nnmplayer  # noqa: F401
+        import src.backend.nnmplayer as nnmplayer  # noqa: F401
 
-        # Initialize and warm-up bots
-        self.bots = [None, None]
+        # Initialize bots as Player objects
+        args1 = {
+            "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
+            "model": self.stgs.get(ct.K_MODEL_FOLDER[1]),
+            "trials": self.stgs.get(ct.K_TRIALS[1]),
+            "level": self.stgs.get(ct.K_LEVEL[1]),
+            "smart_root": self.stgs.get(ct.K_SMART_ROOT[1]),
+            "temperature": self.stgs.get(ct.K_TEMPERATURE[1]),
+            "rotation": self.stgs.get(ct.K_ROTATION[1]),
+            "add_noise": self.stgs.get(ct.K_ADD_NOISE[1]),
+            "cpuct": self.stgs.get(ct.K_CPUCT[1]),
+            "board": self.board,
+            "evaluator": None
+        }
+        args2 = {
+            "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
+            "model": self.stgs.get(ct.K_MODEL_FOLDER[2]),
+            "trials": self.stgs.get(ct.K_TRIALS[2]),
+            "level": self.stgs.get(ct.K_LEVEL[2]),
+            "smart_root": self.stgs.get(ct.K_SMART_ROOT[2]),
+            "temperature": self.stgs.get(ct.K_TEMPERATURE[2]),
+            "rotation": self.stgs.get(ct.K_ROTATION[2]),
+            "add_noise": self.stgs.get(ct.K_ADD_NOISE[2]),
+            "cpuct": self.stgs.get(ct.K_CPUCT[2]),
+            "board": self.board,
+            "evaluator": None
+        }
+        self.bots = [
+            nnmplayer.Player(**args1),
+            nnmplayer.Player(**args2)
+        ]
 
-        if self.stgs.same_models():
-            init_window.update('initializing bots ...', 60)
-            self.init_bot(1)  # init bot[1]
-            self.init_bot(2, self.bots[1].evaluator)
-        else:
-            init_window.update('initializing bot 1 ...', 50)
-            self.init_bot(1)
-            init_window.update('initializing bot 2 ...', 70)
-            self.init_bot(2)
-
+        # Warm up bots
         init_window.update('warming up bots ...', 90)
         self.bots[0].nm.eval_game(self.game)
         self.bots[1].nm.eval_game(self.game)
@@ -378,7 +403,7 @@ class TwixtbotUI:
             "evaluator": evaluator
         }
 
-        import backend.nnmplayer as nnmplayer
+        import src.backend.nnmplayer as nnmplayer
         self.bots[2 - player] = nnmplayer.Player(**args)
 
     """
@@ -390,10 +415,6 @@ class TwixtbotUI:
                 print("             ", idx, moves[idx])
     """
 
-    def _stochastic_choice(self, response):
-        idx = random.choices(np.arange(0, len(response["Pscew"])), response["Pscew"])[0]
-        return response["moves"][idx]
-
     def call_bot(self):
         # mcts, or first/second move (we are in a thread)
         response = self.bots[self.game.turn].pick_move(
@@ -403,7 +424,7 @@ class TwixtbotUI:
             # bot has not been canceled (but is finished or accepted)
             # so execute move.
             # execute move must be inside thread!
-            move = self._stochastic_choice(response)
+            move = _stochastic_choice(response)
             self.execute_move(move)
         else:
             # reset history_at_root resets tree and visit counts
@@ -488,7 +509,7 @@ class TwixtbotUI:
         if gl > 0:
             self.redo_moves.append(self.game.history[-1])
             # undo the move, incl. inverse boards
-            self.game.undo(True)
+            self.game.undo()
 
         # switch off auto move
         if self.get_current(ct.K_AUTO_MOVE):
@@ -610,14 +631,14 @@ class TwixtbotUI:
                 if len(self.game.history) >= 2:
                     # we already have the next moves
                     # from eval update => execute it
-                    move = self._stochastic_choice(self.next_move)
+                    move = _stochastic_choice(self.next_move)
                     self.execute_move(move)
                 else:
                     # first or second move (special policy)
                     # => sync call + execute
                     response = self.bots[self.game.turn].pick_move(
                         self.game, self.window, self.bot_event)
-                    move = self._stochastic_choice(response)
+                    move = _stochastic_choice(response)
                     self.execute_move(move)
                 # window update
                 self.update_after_move(False)

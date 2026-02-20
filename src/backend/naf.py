@@ -76,9 +76,9 @@ class NetInputs:
 
         tmp = numpy.flip(self.naf, 0)
 
-        S = twixt.Game.SIZE
+        s = twixt.Game.SIZE
         vix = twixt.Game.LINK_LONGY
-        self.naf = numpy.zeros((S, S, 11), dtype=numpy.uint8)
+        self.naf = numpy.zeros((s, s, 11), dtype=numpy.uint8)
         self.naf[:, :, 10] = tmp[:, :, 10]
         for color in range(2):
             self.naf[:, :, 8 + color] = tmp[:, :, 8 + color]
@@ -99,9 +99,9 @@ class NetInputs:
 
         tmp = numpy.flip(self.naf, 1)
 
-        S = twixt.Game.SIZE
+        s = twixt.Game.SIZE
         vix = twixt.Game.LINK_LONGY
-        self.naf = numpy.zeros((S, S, 11), dtype=numpy.uint8)
+        self.naf = numpy.zeros((s, s, 11), dtype=numpy.uint8)
         self.naf[:, :, 10] = tmp[:, :, 10]
 
         for color in range(2):
@@ -121,7 +121,7 @@ class NetInputs:
 
     def rotate(self, r):
 
-        assert r >= 0 and r < NUM_ROTATIONS
+        assert 0 <= r < NUM_ROTATIONS
         if r & HFLIP_BIT:
             self.hflip()
         if r & VFLIP_BIT:
@@ -159,17 +159,17 @@ class NetInputs:
 
 
 def hflip_policy_array(array):
-    S = twixt.Game.SIZE
-    rect = numpy.reshape(array, (S - 2, S))
+    s = twixt.Game.SIZE
+    rect = numpy.reshape(array, (s - 2, s))
     r2 = numpy.flip(rect, 0)
-    return numpy.reshape(r2, (S * (S - 2),))
+    return numpy.reshape(r2, (s * (s - 2),))
 
 
 def vflip_policy_array(array):
-    S = twixt.Game.SIZE
-    rect = numpy.reshape(array, (S - 2, S))
+    s = twixt.Game.SIZE
+    rect = numpy.reshape(array, (s - 2, s))
     r2 = numpy.flip(rect, 1)
-    return numpy.reshape(r2, (S * (S - 2),))
+    return numpy.reshape(r2, (s * (s - 2),))
 
 
 def policy_index_point(thing, index):
@@ -183,8 +183,8 @@ def policy_index_point(thing, index):
 
     major, minor = divmod(index, twixt.Game.SIZE)
 
-    assert 0 <= major and major < twixt.Game.SIZE - 2
-    assert 0 <= minor and minor < twixt.Game.SIZE
+    assert 0 <= major < twixt.Game.SIZE - 2
+    assert 0 <= minor < twixt.Game.SIZE
 
     if color == twixt.Game.WHITE:
         return Point(major + 1, minor)
@@ -208,8 +208,8 @@ def policy_point_index(thing, point):
         major = point.y - 1
         minor = point.x
 
-    assert 0 <= major and major < twixt.Game.SIZE - 2, (major, minor)
-    assert 0 <= minor and minor < twixt.Game.SIZE, (major, minor)
+    assert 0 <= major < twixt.Game.SIZE - 2, (major, minor)
+    assert 0 <= minor < twixt.Game.SIZE, (major, minor)
 
     return major * twixt.Game.SIZE + minor
 
@@ -236,11 +236,11 @@ def binary_array_string(arr):
 
 
 def location_inputs(dest=None):
-    S = twixt.Game.SIZE
+    s = twixt.Game.SIZE
     a = numpy.arange(0, 1, 1.0 / twixt.Game.SIZE, dtype=numpy.float32)
-    b = numpy.tile(a, (S, 1))
+    b = numpy.tile(a, (s, 1))
     if dest is None:
-        c = numpy.zeros((S, S, 2))
+        c = numpy.zeros((s, s, 2))
     else:
         c = dest
     c[:, :, 0] = b
@@ -254,7 +254,7 @@ VFLIP_BIT = 2
 
 
 def rotate_policy_array(pa, r):
-    assert r >= 0 and r < NUM_ROTATIONS
+    assert 0 <= r < NUM_ROTATIONS
     x = pa
     if r & HFLIP_BIT:
         x = hflip_policy_array(x)

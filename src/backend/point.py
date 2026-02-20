@@ -9,7 +9,7 @@ class Point(namedtuple('Point', 'x y')):
         elif len(args) == 1:
             arg = args[0]
             if type(arg) == str:
-                if arg[0] >= 'A' and arg[0] <= 'Z':
+                if 'A' <= arg[0] <= 'Z':
                     x = ord(arg[0]) - ord('A')
                 else:
                     x = ord(arg[0]) - ord('a')

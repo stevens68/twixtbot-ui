@@ -1,4 +1,4 @@
-import constants as ct
+from .. import constants as ct
 from FreeSimpleGUI import TEXT_LOCATION_BOTTOM_LEFT
 from .point import Point
 from . import twixt

@@ -1,5 +1,5 @@
 import FreeSimpleGUI as sg
-import constants as ct
+from . import constants as ct
 
 
 def popup(message):

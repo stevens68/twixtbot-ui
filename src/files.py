@@ -1,6 +1,6 @@
 import FreeSimpleGUI as sg
-import backend.twixt as twixt
-import layout as lt
+from .backend import twixt
+from . import layout as lt
 import string
 
 

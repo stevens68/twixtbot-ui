@@ -4,7 +4,7 @@ from json import (load as jsonload, dump as jsondump)
 import pathlib
 import logging
 
-import constants as ct
+from . import constants as ct
 
 
 class Settings:

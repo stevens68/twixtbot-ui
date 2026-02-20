@@ -1,6 +1,6 @@
 import os
 import logging
-import constants as ct
+from .. import constants as ct
 
 # Suppress Tensorflow info messages and warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'

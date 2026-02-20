@@ -5,7 +5,7 @@ import logging
 
 from . import naf
 from . import twixt
-import constants as ct
+from .. import constants as ct
 from .point import Point
 
 class EvalNode:
@@ -274,7 +274,7 @@ class NeuralMCTS:
             resp["Pscew"] = [1.0]
 
         if not moves:
-            indices = numpy.argsort(self.root.N)[::-1][:game.MAXBEST]
+            indices = numpy.argsort(self.root.N)[::-1][:twixt.MAXBEST]
             resp["moves"] = [naf.policy_index_point(
                 game.turn, i) for i in indices]
             resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]
