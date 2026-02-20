@@ -1,27 +1,25 @@
 
 # twixtbot-ui
 
-twixtbot-ui is a graphical user interface on top of [twixtbot](https://github.com/BonyJordan/twixtbot). twixtbot is an engine for the game [TwixT](https://en.wikipedia.org/wiki/TwixT)
-that has been developed by Jordan Lampe. It uses [AlphaZero](https://en.wikipedia.org/wiki/AlphaZero) techniques, i.e. a neural network plus Monte-Carlo-Tree-Search and plays extremely strong. See its ratings at [littlegolem.net](https://littlegolem.net/jsp/games/gamedetail.jsp?gtid=twixt). It's brilliant! Big round of applause to Jordan!
+twixtbot-ui is a graphical user interface on top of [twixtbot](https://github.com/BonyJordan/twixtbot). twixtbot is an engine for the game [TwixT](https://en.wikipedia.org/wiki/TwixT) developed by Jordan Lampe. It uses [AlphaZero](https://en.wikipedia.org/wiki/AlphaZero) techniques, i.e. a neural network plus Monte-Carlo-Tree-Search and plays brilliant! Big round of applause to Jordan!
 
-twixtbot-ui brings twixtbot to your desktop in a simple standalone python program. You can play against the bot, have it evaluate past games or have two bots play against each other using different settings.
+twixtbot-ui brings twixtbot to your desktop in a simple standalone python program based on [FreeSimpleGUI](https://github.com/spyoungtech/FreeSimpleGUI). You can play against the bot, have it evaluate past games or have two bots play against each other using different settings.
 
-twixtbot-ui comes with all the necessary twixtbot files in subfolder `./backend` so there is no dependency to the twixtbot repository. The twixtbot code runs as part of twixtbot-ui; no server needs to be started beforehand.   
+twixtbot-ui comes with all the necessary twixtbot files in subfolder `./backend` so there is no dependency to the twixtbot repository.    
 
 ![A Twixt game](img/A-Game.JPG)
 
-## Get started
+## Installation
 
-#### Manual Installation
-Make sure you have python version installed that supports the modules in `requirements.txt`, e.g. python 3.13: 
+Make sure you have a python version installed that supports the modules in `requirements.txt`. As of Feb 2026 this is true for python 3.11, 3.12 or 3.13.
 
-Clone this repository using the following command or download the repository as ZIP file and extract it.
+Clone this repository or download and extract it.
 
 ```
 git clone https://github.com/stevens68/twixtbot-ui
 ```
 
-At the command line, change to the ```twixtbot-ui``` directory &ndash; or ```twixtbot-ui-master``` if you extracted a ZIP file &ndash; and install the necessary modules:
+Change to directory ```twixtbot-ui``` &ndash; or ```twixtbot-ui-master``` if you extracted it &ndash; and install the necessary modules using your favorite package manager, e.g. pip or uv. Example:
 
 ```
 python -m pip install -r requirements.txt
@@ -43,7 +41,7 @@ Confirm the pop-up message that says that a settings file will be created. After
 
 ### Human move
 
-Place pegs by clicking on the board. You are in control of player1 and player2 at any time. Pegs are linked automatically. Change the settings *allow swap* and *allow crossing own links* (*File → Settings...*) to enable or disable the swap rule or crossing own links, resp. Link removal is not supported.
+Place pegs by clicking on the board. You are in control of player1 and player2 at any time. Pegs are linked automatically. Change the settings *allow swap* and *allow crossing own links* (*File → Settings...*) to enable or disable the swap rule or cross-own-links, resp. Link removal is not supported.
 
 ### Bot move
 
@@ -61,7 +59,6 @@ Click these buttons to undo the last move, redo undone moves, resign a game or s
 
 Drawn games - which are rare in TwixT - are detected automatically. A pop-up indicates that the game is over. You still can undo and redo moves. For an example of a drawn game, see [drawngame.T1](games/drawngame.T1) 
 >Note, that draws are not detected by the bot during MCTS, i.e. the bot does not know whether it has hit a drawn position while searching the tree.
-
 
 ## Evaluation
 
@@ -95,7 +92,7 @@ lower the level, the weaker the bot, i.e. the more often a weaker move is chosen
 
 The network is strong enough to win against most human players. If you want the bot to play even stronger you can switch on Monte-Carlo-Tree-Search. To do so choose a number of *trials* > 0. The more trials, the bigger the tree, i.e. the more boards will be evaluated. twixtbot-ui starts MCTS in a separate thread. Progress info is updated every 20 trials. The top three moves with the most visits are listed.<br><br> 
 If *smart accept* is switched on, the max number of trials will be reduced automatically depending on the visit difference between the leading move and the second best.<br><br>
-If you check the *visualize* checkbox, the current line with the most visits will be displayed on the board so you can get an idea in which direction the bot is "thinking". In the example below, the line is S18 (3185), R14 (230), R11 (193), etc. 
+If *visualize* is enabled, the current line with the most visits will be displayed on the board so you can get an idea in which direction the bot is "thinking". In the example below, the line is S18 (3185), R14 (230), R11 (193), etc. 
 
 ![Visualize MCTS](img/VisMCTS.JPG)
 
