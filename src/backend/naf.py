@@ -1,20 +1,22 @@
 #! /usr/bin/env python
 import math
 import numpy
-import backend.twixt as twixt
+from . import twixt
+from .point import Point
 
 
 class NetInputs:
-    HEADER = 'JTwx'
+    HEADER = "JTwx"
     HEADER_BYTES = len(HEADER)
     NUM_RECENTS = 4
     FRONT_BYTES = HEADER_BYTES + 2 * NUM_RECENTS
-    EXPANDED_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE ** 2
-    COMPACT_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE ** 2 / 8
+    EXPANDED_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE**2
+    COMPACT_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE**2 / 8
     NAF_DIMS = (twixt.Game.SIZE, twixt.Game.SIZE, 11)
 
     def __init__(self, thing):
         self.naf = numpy.zeros(self.NAF_DIMS, dtype=numpy.uint8)
+        self.recents = []
         self.init_from_game(thing)
 
     def init_from_game(self, game):
@@ -53,7 +55,7 @@ class NetInputs:
         swap_mode = False
         while len(rev_recents) < self.NUM_RECENTS and i < len(game.history):
             h = game.history[-i]
-            if h == 'swap':
+            if h == "swap":
                 assert not swap_mode
                 swap_mode = True
                 i += 1
@@ -75,9 +77,9 @@ class NetInputs:
 
         tmp = numpy.flip(self.naf, 0)
 
-        S = twixt.Game.SIZE
+        s = twixt.Game.SIZE
         vix = twixt.Game.LINK_LONGY
-        self.naf = numpy.zeros((S, S, 11), dtype=numpy.uint8)
+        self.naf = numpy.zeros((s, s, 11), dtype=numpy.uint8)
         self.naf[:, :, 10] = tmp[:, :, 10]
         for color in range(2):
             self.naf[:, :, 8 + color] = tmp[:, :, 8 + color]
@@ -88,19 +90,17 @@ class NetInputs:
                 # non verticals are easy
                 self.naf[:, :, color + dix] = tmp[:, :, color + adix]
                 # verticals need to be shifted.
-                self.naf[:-1, :, color + dix +
-                         vix] = tmp[1:, :, color + adix + vix]
+                self.naf[:-1, :, color + dix + vix] = tmp[1:, :, color + adix + vix]
 
-        self.recents = [twixt.Point(twixt.Game.SIZE - 1 - p.x, p.y)
-                        for p in self.recents]
+        self.recents = [Point(twixt.Game.SIZE - 1 - p.x, p.y) for p in self.recents]
 
     def vflip(self):
 
         tmp = numpy.flip(self.naf, 1)
 
-        S = twixt.Game.SIZE
+        s = twixt.Game.SIZE
         vix = twixt.Game.LINK_LONGY
-        self.naf = numpy.zeros((S, S, 11), dtype=numpy.uint8)
+        self.naf = numpy.zeros((s, s, 11), dtype=numpy.uint8)
         self.naf[:, :, 10] = tmp[:, :, 10]
 
         for color in range(2):
@@ -110,17 +110,15 @@ class NetInputs:
                 dix = diffsign * twixt.Game.LINK_DIFFSIGN
                 adix = (1 - diffsign) * twixt.Game.LINK_DIFFSIGN
                 # verticals are easy
-                self.naf[:, :, color + dix +
-                         vix] = tmp[:, :, color + adix + vix]
+                self.naf[:, :, color + dix + vix] = tmp[:, :, color + adix + vix]
                 # horizontals need to be shifted.
                 self.naf[:, :-1, color + dix] = tmp[:, 1:, color + adix]
 
-        self.recents = [twixt.Point(p.x, twixt.Game.SIZE - 1 - p.y)
-                        for p in self.recents]
+        self.recents = [Point(p.x, twixt.Game.SIZE - 1 - p.y) for p in self.recents]
 
     def rotate(self, r):
 
-        assert r >= 0 and r < NUM_ROTATIONS
+        assert 0 <= r < NUM_ROTATIONS
         if r & HFLIP_BIT:
             self.hflip()
         if r & VFLIP_BIT:
@@ -143,12 +141,14 @@ class NetInputs:
 
         if use_recents:
             locs = numpy.zeros(
-                (twixt.Game.SIZE, twixt.Game.SIZE, 3), dtype=numpy.float32)
+                (twixt.Game.SIZE, twixt.Game.SIZE, 3), dtype=numpy.float32
+            )
             location_inputs(locs)
             locs[:, :, 2] = self.naf[:, :, 10]
             return pegs, links, locs
         else:
             return pegs, links, location_inputs()
+
 
 # naf is the Numpy Array Format.  It is always "swapped" so that "white"
 #  is on play.  The shape is (S,S,10) where S = twixt.Game.SIZE.  The 10
@@ -158,17 +158,17 @@ class NetInputs:
 
 
 def hflip_policy_array(array):
-    S = twixt.Game.SIZE
-    rect = numpy.reshape(array, (S - 2, S))
+    s = twixt.Game.SIZE
+    rect = numpy.reshape(array, (s - 2, s))
     r2 = numpy.flip(rect, 0)
-    return numpy.reshape(r2, (S * (S - 2),))
+    return numpy.reshape(r2, (s * (s - 2),))
 
 
 def vflip_policy_array(array):
-    S = twixt.Game.SIZE
-    rect = numpy.reshape(array, (S - 2, S))
+    s = twixt.Game.SIZE
+    rect = numpy.reshape(array, (s - 2, s))
     r2 = numpy.flip(rect, 1)
-    return numpy.reshape(r2, (S * (S - 2),))
+    return numpy.reshape(r2, (s * (s - 2),))
 
 
 def policy_index_point(thing, index):
@@ -182,13 +182,13 @@ def policy_index_point(thing, index):
 
     major, minor = divmod(index, twixt.Game.SIZE)
 
-    assert 0 <= major and major < twixt.Game.SIZE - 2
-    assert 0 <= minor and minor < twixt.Game.SIZE
+    assert 0 <= major < twixt.Game.SIZE - 2
+    assert 0 <= minor < twixt.Game.SIZE
 
     if color == twixt.Game.WHITE:
-        return twixt.Point(major + 1, minor)
+        return Point(major + 1, minor)
     else:
-        return twixt.Point(minor, major + 1)
+        return Point(minor, major + 1)
 
 
 def policy_point_index(thing, point):
@@ -207,20 +207,22 @@ def policy_point_index(thing, point):
         major = point.y - 1
         minor = point.x
 
-    assert 0 <= major and major < twixt.Game.SIZE - 2, (major, minor)
-    assert 0 <= minor and minor < twixt.Game.SIZE, (major, minor)
+    assert 0 <= major < twixt.Game.SIZE - 2, (major, minor)
+    assert 0 <= minor < twixt.Game.SIZE, (major, minor)
 
     return major * twixt.Game.SIZE + minor
 
 
 def legal_move_policy_array(game):
     if game.turn == game.WHITE:
-        pegsum = (game.pegs[0][1:game.SIZE - 1, :] +
-                  game.pegs[1][1:game.SIZE - 1, :]).flatten()
+        pegsum = (
+            game.pegs[0][1 : game.SIZE - 1, :] + game.pegs[1][1 : game.SIZE - 1, :]
+        ).flatten()
     else:
         assert game.turn == game.BLACK
-        pegsum = (game.pegs[0][:, 1:game.SIZE - 1] +
-                  game.pegs[1][:, 1:game.SIZE - 1]).T.flatten()
+        pegsum = (
+            game.pegs[0][:, 1 : game.SIZE - 1] + game.pegs[1][:, 1 : game.SIZE - 1]
+        ).T.flatten()
     return 1 - pegsum
 
 
@@ -228,18 +230,17 @@ def binary_array_string(arr):
     if len(arr.shape) == 1:
         return "".join("." if x == 0 else "*" for x in arr)
     elif len(arr.shape) == 2:
-        return "\n".join(binary_array_string(arr[:, y]
-                                             for y in range(arr.shape[1])))
+        return "\n".join(binary_array_string(arr[:, y]) for y in range(arr.shape[1]))
     else:
         raise ValueError("only one/two dimensional arrays handled")
 
 
 def location_inputs(dest=None):
-    S = twixt.Game.SIZE
+    s = twixt.Game.SIZE
     a = numpy.arange(0, 1, 1.0 / twixt.Game.SIZE, dtype=numpy.float32)
-    b = numpy.tile(a, (S, 1))
+    b = numpy.tile(a, (s, 1))
     if dest is None:
-        c = numpy.zeros((S, S, 2))
+        c = numpy.zeros((s, s, 2))
     else:
         c = dest
     c[:, :, 0] = b
@@ -253,7 +254,7 @@ VFLIP_BIT = 2
 
 
 def rotate_policy_array(pa, r):
-    assert r >= 0 and r < NUM_ROTATIONS
+    assert 0 <= r < NUM_ROTATIONS
     x = pa
     if r & HFLIP_BIT:
         x = hflip_policy_array(x)
@@ -263,16 +264,16 @@ def rotate_policy_array(pa, r):
 
 
 def three_to_one(three):
-    """ Take a three-vector of logits and return a score between -1 and 1 """
-    lL, lD, lW = three
-    eL = math.exp(lL - lD)
-    eW = math.exp(lW - lD)
-    div = 1.0 + eL + eW
-    pW = eW / div
-    pL = eL / div
-    return pW - pL
+    """Take a three-vector of logits and return a score between -1 and 1"""
+    l_l, l_d, l_w = three
+    e_l = math.exp(l_l - l_d)
+    e_w = math.exp(l_w - l_d)
+    div = 1.0 + e_l + e_w
+    p_w = e_w / div
+    p_l = e_l / div
+    return p_w - p_l
 
 
 def one_to_three(one):
-    """ Take a score -1, 0, or 1, and return the three vector of labels """
+    """Take a score -1, 0, or 1, and return the three vector of labels"""
     return ((1, 0, 0), (0, 1, 0), (0, 0, 1))[one + 1]

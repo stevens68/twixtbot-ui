@@ -1,17 +1,17 @@
 import os
 import logging
-import constants as ct
+from .. import constants as ct
 
 # Suppress Tensorflow info messages and warnings
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_XLA_FLAGS"] = "--tf_xla_enable_xla_devices"
 import tensorflow.compat.v1 as tf  # noqa E402
+
 tf.get_logger().setLevel(ct.K_LOG_LEVEL[3])
 tf.disable_v2_behavior()
 
 
 class NNEvaluater:
-
     def __init__(self, model):
 
         export_dir = os.path.join(os.getcwd(), model)
@@ -21,7 +21,8 @@ class NNEvaluater:
         tf.saved_model.loader.load(
             sess=self.sess,
             tags=[tf.saved_model.tag_constants.SERVING],
-            export_dir=export_dir)
+            export_dir=export_dir,
+        )
         graph = tf.get_default_graph()
 
         self.pegx_t = graph.get_tensor_by_name("pegx:0")
@@ -32,7 +33,7 @@ class NNEvaluater:
         self.pwin_t = graph.get_tensor_by_name("pwin:0")
         self.movelogits_t = graph.get_tensor_by_name("movelogits:0")
 
-        self.use_recents = (int(self.locx_t.shape[3]) == 3)
+        self.use_recents = int(self.locx_t.shape[3]) == 3
 
     def eval_one(self, nip):
 
@@ -42,10 +43,7 @@ class NNEvaluater:
             self.pegx_t: [pegs],
             self.linkx_t: [links],
             self.locx_t: [locs],
-            self.is_training_t: None
+            self.is_training_t: None,
         }
 
-        return self.sess.run(
-            [self.pwin_t, self.movelogits_t],
-            feed_dict=feed_dict
-        )
+        return self.sess.run([self.pwin_t, self.movelogits_t], feed_dict=feed_dict)

@@ -1,33 +1,35 @@
-'''
+"""
 pmeter.py -- Precise console progress meter with ETA calculation
 
 Some code inherited from CFV sources (cfv.sf.net)
 
 2010-01-11 20:23
-'''
+"""
+
 import sys
 import time
 import threading
 
-__author__ = 'Denis Barmenkov <denis.barmenkov@gmail.com>'
-__source__ = 'http://code.activestate.com/recipes/577002-precise-console-progress-meter-with-eta-calculatio/?in=user-57155'
+__author__ = "Denis Barmenkov <denis.barmenkov@gmail.com>"
+# noinspection HttpUrlsUsage
+__source__ = "http://code.activestate.com/recipes/577002-precise-console-progress-meter-with-eta-calculatio/?in=user-57155"  # noqa: S105
 
 
 def format_sec(sec):
     sec = round(sec)
     min_, sec = divmod(sec, 60)
     hour, min_ = divmod(min_, 60)
-    return '%d:%02d:%02d' % (hour, min_, sec)
+    return "%d:%02d:%02d" % (hour, min_, sec)
 
 
 class ETA(object):
-    '''
-    calculate ETA (Estimated Time of Arrival :)
+    """
+    calculate ETA (Estimated Time of Arrival)
     for some events
 
     Save few last update points or some seconds.
-    Help fight statistics after hibernate :)
-    '''
+    Help fight statistics after hibernate
+    """
 
     def __init__(self, wanted_size, max_point=20, max_seconds=30):
         self.wanted_size = wanted_size
@@ -35,7 +37,7 @@ class ETA(object):
         self.max_point = max_point
         self.max_seconds = max_seconds
         self.points.append([time.time(), 0])
-        self.eta = 'N/A'
+        self.eta = "N/A"
 
     def _cleanup(self):
         if len(self.points) < 2:
@@ -43,8 +45,10 @@ class ETA(object):
         else:
             last_point_time = self.points[-1][0]
             while len(self.points) > 2:
-                if last_point_time - self.points[0][0] > self.max_seconds and \
-                   len(self.points) > self.max_point:
+                if (
+                    last_point_time - self.points[0][0] > self.max_seconds
+                    and len(self.points) > self.max_point
+                ):
                     self.points.pop(0)
                 else:
                     break
@@ -70,15 +74,14 @@ class ETA(object):
 
 
 class ProgressMeter(object):
-
     def __init__(self, steps=20, min_update_delta=0.1, outstream=sys.stdout):
         self.wantsteps = steps
-        self.prev_message = ''
+        self.prev_message = ""
         self.last_update_time = -100
         self.needrefresh = 1
         self.times = list()
-        self.done_char = '#'
-        self.left_char = '.'
+        self.done_char = "#"
+        self.left_char = "."
         self.eta_calculator = None
         # max 25 fps on redraw :)
         self.min_update_delta = max(min_update_delta, 0.04)
@@ -109,24 +112,26 @@ class ProgressMeter(object):
         donesteps = (cursize * self.steps) / self.size
         stepsleft = self.steps - donesteps
         percent = 100.0 * float(cursize) / float(self.size)
-        percent_str = '         %.2f%%' % percent
+        percent_str = "         %.2f%%" % percent
         percent_str = percent_str[-7:]
-
-        if cursize == self.size:
-            percent = 100.0
 
         eta = self.eta_calculator.getstatus()
 
-        message = ('%s:%s %s%s ETA: %s' % (self.label, percent_str,
-                                           self.done_char * donesteps, self.left_char * stepsleft, eta))
-        self.outstream.write('\b' * len(self.prev_message) + message)
+        message = "%s:%s %s%s ETA: %s" % (
+            self.label,
+            percent_str,
+            self.done_char * donesteps,
+            self.left_char * stepsleft,
+            eta,
+        )
+        self.outstream.write("\b" * len(self.prev_message) + message)
         self.outstream.flush()
         self.prev_message = message
 
-        self.last_update_time = time.time()()
+        self.last_update_time = time.time()
 
     def update_left(self, left):
-        '''
+        """
         useful in multithreaded environment when processing job pool:
 
         Main:
@@ -135,7 +140,7 @@ class ProgressMeter(object):
         In thread.run():
             job = joblist.pop(0)
             pm.update_left(len(joblist))
-        '''
+        """
         self.update(self.size - left)
 
     def update(self, cursize):
@@ -154,14 +159,14 @@ class ProgressMeter(object):
     def cleanup(self):
         self.work_mutex.acquire()
         if not self.needrefresh:
-            self.outstream.write('\r' + ' ' * len(self.prev_message) + '\r')
+            self.outstream.write("\r" + " " * len(self.prev_message) + "\r")
             self.needrefresh = 1
         self.work_mutex.release()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     progress = ProgressMeter(30, outstream=sys.stderr)
-    progress.init('Progress Label', 500)
+    progress.init("Progress Label", 500)
     for i in range(500 + 1):
         time.sleep(0.01)
         progress.update(i)

@@ -136,6 +136,7 @@ dmypy.json
 .pydevproject
 
 config.json
+dummy_settings.json
 
 # OSX
 .DS_Store
@@ -153,3 +154,7 @@ pynsist_pkgs/
 profile.py
 out.txt
 profile.cmd
+
+
+
+.idea/

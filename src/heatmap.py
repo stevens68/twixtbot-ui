@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-import constants as ct
+from . import constants as ct
 
 
-def p_to_rgbstring(p):
-    """ Converts a probability ([0..1]) value to an RGB color string
+def p_to_rgb_string(p):
+    """Converts a probability ([0..1]) value to an RGB color string
 
     The heatmap is based on 3 anchor points: minimum value (p=0), middle
     value (p=0.5) and maximum value (p=1). Each of those points is related
@@ -16,7 +16,7 @@ def p_to_rgbstring(p):
     Returns:
         an RGB string with 3 hex values (e.g.: '#RRGGBB')
     """
-    assert(p >= 0 and p <= 1)
+    assert 0 <= p <= 1
 
     # Determine the colors to be mixed and calculate factor [0..1]
     if p > 0.5:
@@ -27,18 +27,29 @@ def p_to_rgbstring(p):
         col1, col2 = ct.HEATMAP_RGB_COLORS[0:2]
 
     # Apply factor for col1 and col2
-    rgb = [int((1 - f) * rgb1 + f * rgb2)
-           for rgb1, rgb2 in zip(col1, col2)]
+    rgb = [int((1 - f) * rgb1 + f * rgb2) for rgb1, rgb2 in zip(col1, col2)]
 
     # convert rgb list to string and return
-    return '#' + ''.join(f'{c:02x}' for c in rgb)
+    return "#" + "".join(f"{c:02x}" for c in rgb)
+
+
+def heatmap_legend(num_steps=ct.HEATMAP_LEGEND_STEPS):
+    """Returns a list of heatmap RGB values for a heatmap legend
+
+    Args:
+        num_steps: length of the returned list minus 1
+
+    Returns:
+        a list of RGB strings
+    """
+    return [p_to_rgb_string(p / num_steps) for p in range(num_steps + 1)]
 
 
 class Heatmap:
-    """ Contains data and functions to plot a heatmap on the Twixt board
+    """Contains data and functions to plot a heatmap on the Twixt board
 
     The constructor also calculates the heatmap. After the
-    constructor is called, it isn't nessecary to call .calculate()
+    constructor is called, it isn't necessary to call .calculate()
 
     **ALWAYS** instantiate Heatmap with game and bot.
 
@@ -56,42 +67,33 @@ class Heatmap:
 
     def __init__(self, game=None, bot=None):
         if game is None or bot is None:
-            raise ValueError('Instantiate Heatmap with game and bot!')
+            raise ValueError("Instantiate Heatmap with game and bot!")
 
         self.game = game
         self.bot = bot
         self.p_values = {}
         self.rgb_colors = {}
         self.calculate()
-
-    def heatmap_legend(self, num_steps=ct.HEATMAP_LEGEND_STEPS):
-        """ Returns a list of heatmap RGB values for a heatmap legend
-
-        Args:
-            num_steps: length of the returned list minus 1
-
-        Returns:
-            a list of RGB strings
-        """
-        return [p_to_rgbstring(p / num_steps) for p in range(num_steps + 1)]
+        self.policy_moves = []
 
     def calculate(self):
-        """ Calculates the heatmap by evaluating the policy of the bot
+        """Calculates the heatmap by evaluating the policy of the bot
 
         This method updates the p_values and rgb_colors in the Heatmap.
         """
-        assert(self.game is not None)
-        assert(self.bot is not None)
+        assert self.game is not None
+        assert self.bot is not None
 
         self.p_values = {}
         self.rgb_colors = {}
 
         sc, self.policy_moves, p_val, _ = self.bot.nm.eval_game(
-            self.game, maxbest=self.game.SIZE**2)
+            self.game, maxbest=self.game.SIZE**2
+        )
         p_val = [int(round(p * 1000)) for p in p_val]
         for m, p in zip(self.policy_moves, p_val):
             if p == 0:
                 # all the rest of the p-values will be 0; break loop
                 break
             self.p_values[m] = p / p_val[0]
-            self.rgb_colors[m] = p_to_rgbstring(p / p_val[0])
+            self.rgb_colors[m] = p_to_rgb_string(p / p_val[0])

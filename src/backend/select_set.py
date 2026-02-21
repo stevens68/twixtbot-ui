@@ -1,6 +1,4 @@
-
 class SelectSet:
-
     def __init__(self):
 
         self.item_by_index = []

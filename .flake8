@@ -1,0 +1,11 @@
+[flake8]
+# Stop the build if there are Python syntax errors or undefined names
+select = E9,F63,F7,F82
+# Treat all errors as warnings, set max complexity and line length
+exit-zero = true
+max-complexity = 10
+max-line-length = 127
+count = true
+show-source = true
+statistics = true
+exclude = __pycache__,venv*,*.pyc,.venv*
