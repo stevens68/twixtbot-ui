@@ -44,12 +44,12 @@ def pad(s):
 def row_separator(text, line=False):
     # navbar: a thin horizontal line to structure the controls
     if line:
-        return (
+        return [
             sg.Text(text, font=ct.SEPARATOR_FONT),
-            sg.HSeparator(pad=((5, 18), (4, 2))),
-        )
+            sg.HSeparator(pad=((5, 18), (4, 2)),)
+        ]
     else:
-        return sg.Text(text, font=ct.SEPARATOR_FONT), sg.Text(" ")
+        return [sg.Text(text, font=ct.SEPARATOR_FONT), sg.Text(" ")]
 
 
 def get_color_square(player):

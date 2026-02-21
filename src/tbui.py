@@ -173,11 +173,9 @@ class TwixtbotUI:
         init_window.close()
 
     def __del__(self):
-        if hasattr(self, "window"):
-            self.window.close()
-        del self.stgs
-        del self.game
-        del self.board
+        # Safely delete stgs if it exists
+        if hasattr(self, 'stgs'):
+            del self.stgs
 
     def get_control(self, key, player=None):
         if player:
