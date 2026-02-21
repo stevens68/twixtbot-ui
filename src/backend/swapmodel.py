@@ -71,7 +71,10 @@ def first_move_report():
     points, locations = points_and_locs()
     cum = locations[-1]
     for i, point_for_report in enumerate(points):
-        if point_for_report.x >= twixt.Game.SIZE // 2 or point_for_report.y >= twixt.Game.SIZE // 2:
+        if (
+            point_for_report.x >= twixt.Game.SIZE // 2
+            or point_for_report.y >= twixt.Game.SIZE // 2
+        ):
             continue
         pct = 4.0 * (locations[i + 1] - locations[i]) / cum
         logger.info("%3s %5.2f" % (str(point_for_report), pct * 100))

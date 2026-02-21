@@ -14,12 +14,12 @@ import tensorflow.compat.v1 as tf
 loaded_graph = tf.Graph()
 with tf.Session(graph=loaded_graph) as sess:
     # Restore from checkpoint
-    loader = tf.train.import_meta_graph('./six-917000.meta')
-    loader.restore(sess, './six-917000')
+    loader = tf.train.import_meta_graph("./six-917000.meta")
+    loader.restore(sess, "./six-917000")
 
     # Export checkpoint to SavedModel
-    builder = tf.saved_model.builder.SavedModelBuilder('./newmodel')
-    builder.add_meta_graph_and_variables(sess,
-                                         [tf.saved_model.SERVING],
-                                         strip_default_attrs=True)
+    builder = tf.saved_model.builder.SavedModelBuilder("./newmodel")
+    builder.add_meta_graph_and_variables(
+        sess, [tf.saved_model.SERVING], strip_default_attrs=True
+    )
     builder.save(as_text=True)

@@ -3,15 +3,20 @@ import numpy as np
 from src.backend.naf import NetInputs
 from src.backend.point import Point
 
+
 class DummyGame:
     SIZE = 24
     WHITE = 0
     BLACK = 1
+
     def __init__(self):
         self.turn = self.WHITE
-        self.links = [np.zeros((self.SIZE, self.SIZE), dtype=np.uint8) for _ in range(8)]
+        self.links = [
+            np.zeros((self.SIZE, self.SIZE), dtype=np.uint8) for _ in range(8)
+        ]
         self.pegs = [np.zeros((self.SIZE, self.SIZE), dtype=np.uint8) for _ in range(2)]
         self.history = []
+
 
 class TestNetInputs(unittest.TestCase):
     def setUp(self):
@@ -48,6 +53,6 @@ class TestNetInputs(unittest.TestCase):
         self.assertEqual(links.shape, (self.game.SIZE, self.game.SIZE, 8))
         self.assertEqual(locs.shape, (self.game.SIZE, self.game.SIZE, 3))
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

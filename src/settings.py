@@ -1,6 +1,7 @@
 import FreeSimpleGUI as sg
+
 # noinspection SpellCheckingInspection
-from json import (load as jsonload, dump as jsondump)
+from json import load as jsonload, dump as jsondump
 import pathlib
 import logging
 
@@ -32,16 +33,19 @@ class Settings:
             self.settings[event] = values[event]
 
     def same_models(self):
-        return pathlib.Path(self.get(ct.K_MODEL_FOLDER[1])).absolute() == \
-            pathlib.Path(self.get(ct.K_MODEL_FOLDER[2])).absolute()
+        return (
+            pathlib.Path(self.get(ct.K_MODEL_FOLDER[1])).absolute()
+            == pathlib.Path(self.get(ct.K_MODEL_FOLDER[2])).absolute()
+        )
 
     def load(self):
         try:
-            with open(ct.SETTINGS_FILE, 'r') as f:
+            with open(ct.SETTINGS_FILE, "r") as f:
                 settings = jsonload(f) or {}
                 # backward compatibility: set board_size to new min 500
                 settings[ct.K_BOARD_SIZE[1]] = max(
-                    min(ct.BOARD_SIZE_LIST), settings[ct.K_BOARD_SIZE[1]])
+                    min(ct.BOARD_SIZE_LIST), settings[ct.K_BOARD_SIZE[1]]
+                )
                 self.settings = settings
         except OSError:
             sg.popup(ct.MSG_NO_CONFIG_FILE, keep_on_top=True)
@@ -76,14 +80,14 @@ class Settings:
                         # player 2
                         self.settings[key[2]] = values[key[2]]
                 except Exception as e:
-                    self.logger.error(ct.MSG_ERROR_UPDATING_KEY,
-                                      str(key), str(e))
+                    self.logger.error(ct.MSG_ERROR_UPDATING_KEY, str(key), str(e))
 
-        with open(ct.SETTINGS_FILE, 'w') as f:
+        with open(ct.SETTINGS_FILE, "w") as f:
             jsondump(self.settings, f, indent=4, sort_keys=True)
 
-        self.settings[ct.K_BOARD_SIZE[1]
-                      ] = old_board_size or self.settings[ct.K_BOARD_SIZE[1]]
+        self.settings[ct.K_BOARD_SIZE[1]] = (
+            old_board_size or self.settings[ct.K_BOARD_SIZE[1]]
+        )
 
     def reset_to_default(self, window):
         for key in ct.SETTING_KEYS:  # update all settings with defaults
@@ -113,14 +117,35 @@ class Settings:
         # show settings on mouse over auto-move check box
         text = ct.K_ALLOW_SWAP[0] + ":\t" + str(self.get(ct.K_ALLOW_SWAP[1])) + "   \n"
         text += "allow scl" + ":\t" + str(self.get(ct.K_ALLOW_SCL[1])) + "   \n"
-        text += ct.K_SMART_ACCEPT[0] + ":\t" + str(self.get(ct.K_SMART_ACCEPT[1])) + "   \n"
+        text += (
+            ct.K_SMART_ACCEPT[0] + ":\t" + str(self.get(ct.K_SMART_ACCEPT[1])) + "   \n"
+        )
         text += "----  evaluation  ------------------\n"
-        text += ct.K_MODEL_FOLDER[0] + ":\t" + str(self.get(ct.K_MODEL_FOLDER[player])) + "   \n"
-        text += ct.K_ROTATION[0] + ":\t\t" + str(self.get(ct.K_ROTATION[player])) + "   \n"
+        text += (
+            ct.K_MODEL_FOLDER[0]
+            + ":\t"
+            + str(self.get(ct.K_MODEL_FOLDER[player]))
+            + "   \n"
+        )
+        text += (
+            ct.K_ROTATION[0] + ":\t\t" + str(self.get(ct.K_ROTATION[player])) + "   \n"
+        )
         text += ct.K_LEVEL[0] + ":\t\t" + str(self.get(ct.K_LEVEL[player])) + "   \n"
         text += "----  MCTS  ------------------------\n"
-        text += ct.K_SMART_ROOT[0] + ":\t" + str(self.get(ct.K_SMART_ROOT[player])) + "   \n"
-        text += ct.K_TEMPERATURE[0] + ":\t" + str(self.get(ct.K_TEMPERATURE[player])) + "   \n"
-        text += ct.K_ADD_NOISE[0] + ":\t" + str(self.get(ct.K_ADD_NOISE[player])) + "   \n"
+        text += (
+            ct.K_SMART_ROOT[0]
+            + ":\t"
+            + str(self.get(ct.K_SMART_ROOT[player]))
+            + "   \n"
+        )
+        text += (
+            ct.K_TEMPERATURE[0]
+            + ":\t"
+            + str(self.get(ct.K_TEMPERATURE[player]))
+            + "   \n"
+        )
+        text += (
+            ct.K_ADD_NOISE[0] + ":\t" + str(self.get(ct.K_ADD_NOISE[player])) + "   \n"
+        )
         text += ct.K_CPUCT[0] + ":\t\t" + str(self.get(ct.K_CPUCT[player])) + "   "
         return text

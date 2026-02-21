@@ -1,35 +1,49 @@
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import unittest
 from src.plot import ThreeBarPlot, EvalHistPlot
 
+
 class DummyCanvas:
     pass
+
+
 class DummyStgs:
     def get(self, key):
         return "#000000"
+
 
 class DummyAgg:
     def draw(self):
         pass
 
+
 class DummySubPlot:
     def clear(self):
         pass
+
     def invert_yaxis(self):
         pass
+
     def set_xlim(self, xmin=None, xmax=None):
         pass
+
     def barh(self, ind, y, color=None, tick_label=None):
         pass
+
     def text(self, x, y, s, color=None, fontfamily=None, fontsize=None):
         pass
+
     def bar(self, keys, values, color=None):
         pass
 
+
 # Patch prepare to return dummy objects
 import src.plot
+
 src.plot.prepare = lambda canvas: (DummySubPlot(), DummyAgg())
+
 
 class TestThreeBarPlot(unittest.TestCase):
     def test_init_and_update(self):
@@ -39,9 +53,11 @@ class TestThreeBarPlot(unittest.TestCase):
         plot.update(None, xmax=10)
         self.assertEqual(plot.bar_color, "#ff0000")
 
+
 class PatchedEvalHistPlot(EvalHistPlot):
     def prepare(self, canvas):
         self.sub_plot, self.agg = DummySubPlot(), DummyAgg()
+
 
 class TestEvalHistPlot(unittest.TestCase):
     def test_init_and_update(self):
@@ -51,5 +67,6 @@ class TestEvalHistPlot(unittest.TestCase):
         plot.update(None)
         self.assertIsInstance(plot.stgs, DummyStgs)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

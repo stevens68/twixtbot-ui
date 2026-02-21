@@ -5,7 +5,7 @@ import string
 
 
 def str_to_twixt(move):
-    """ Converts one move string to a twixt backend class move.
+    """Converts one move string to a twixt backend class move.
 
     Handles both T1-style coordinates (e.g.: 'd5', 'f18'') and tsgf-
     style coordinates (e.g.: 'fg', 'bi') as well as special strings
@@ -49,7 +49,7 @@ def str_to_twixt(move):
 
     # Handle tsgf-stype moves
     elif len(move) == 2 and all(c in string.ascii_letters for c in move):
-        return twixt.Point(move[0] + str(ord(move[1].lower()) - ord('a') + 1))
+        return twixt.Point(move[0] + str(ord(move[1].lower()) - ord("a") + 1))
 
     # Can't handle move. Throw exception
     raise ValueError(f"Can't parse move: '{move}'")
@@ -95,17 +95,17 @@ def parse_t1_file(content):
     """
     moves_start_line = 13
     player_lines = [3, 4]
-    comment_char = '#'
+    comment_char = "#"
 
     try:
-        players = [content[line_nr].split(comment_char)[0]
-                   for line_nr in player_lines]
+        players = [content[line_nr].split(comment_char)[0] for line_nr in player_lines]
     except Exception:
         raise ValueError("Can't read player names from T1 file")
 
     try:
-        moves = [str_to_twixt(move) for move in content[moves_start_line:]
-                 if len(move) > 0]
+        moves = [
+            str_to_twixt(move) for move in content[moves_start_line:] if len(move) > 0
+        ]
     except Exception:
         # Just pass on the exception from str_to_twixt
         raise
@@ -137,25 +137,27 @@ def parse_tsgf_file(content):
                                               p14, q17, o16, p7, n8, o10, o9,
                                               q9, n11, n6, m6])
     """
-    players_str = ('PB', 'PW')
-    turn_str = ('r[', 'b[')
-    field_sep = ';'
+    players_str = ("PB", "PW")
+    turn_str = ("r[", "b[")
+    field_sep = ";"
 
     if len(content) > 1:
-        raise ValueError('Found more than 1 line in a tsgf file.')
+        raise ValueError("Found more than 1 line in a tsgf file.")
 
     try:
         player_idx = [content[0].find(key) for key in players_str]
-        players = [content[0][idx + 3:content[0].find(']', idx)]
-                   for idx in player_idx]
+        players = [
+            content[0][idx + 3 : content[0].find("]", idx)] for idx in player_idx
+        ]
     except Exception:
         raise ValueError("Can't read player names from tsgf file")
 
     try:
-        raw_moves = [field[2:field.find('|')
-                           if '|' in field else field.find(']')]
-                     for field in content[0].split(field_sep)
-                     if field[:2] in turn_str]
+        raw_moves = [
+            field[2 : field.find("|") if "|" in field else field.find("]")]
+            for field in content[0].split(field_sep)
+            if field[:2] in turn_str
+        ]
         moves = list(map(str_to_twixt, raw_moves))
     except Exception:
         # Just pass on the exception from str_to_twixt
@@ -190,10 +192,16 @@ def get_game(current_cross_lines_setting=False):
     return_on_failure = None, None, False
 
     # Get filename
-    file_name = sg.PopupGetFile('Choose file', file_types=(
-        ("All Files", "*.*"),
-        ("T1j Files", "*.T1"),
-        ("Little Golem Files", "*.tsgf")), no_window=True, keep_on_top=True)
+    file_name = sg.PopupGetFile(
+        "Choose file",
+        file_types=(
+            ("All Files", "*.*"),
+            ("T1j Files", "*.T1"),
+            ("Little Golem Files", "*.tsgf"),
+        ),
+        no_window=True,
+        keep_on_top=True,
+    )
 
     if file_name is None or file_name == "":
         return return_on_failure
@@ -211,18 +219,22 @@ def get_game(current_cross_lines_setting=False):
 
     # Parse file
     try:
-        if file_name[-2:].upper() == 'T1':
+        if file_name[-2:].upper() == "T1":
             players, moves = parse_t1_file(content)
             return players, moves, False
-        elif file_name[-4:].lower() == 'tsgf':
+        elif file_name[-4:].lower() == "tsgf":
             enable_crossing_lines = False
             if not current_cross_lines_setting:
-                enable_crossing_lines = sg.popup_yes_no(
-                    "You have opened a .tsgf file, which probably comes "
-                    "from LittleGolem. By default, LittleGolem allows "
-                    "crossing lines. You don't have crossing lines enabled. "
-                    "Do you want to enable crossing lines?",
-                    title='Enable crossing lines?') == "Yes"
+                enable_crossing_lines = (
+                    sg.popup_yes_no(
+                        "You have opened a .tsgf file, which probably comes "
+                        "from LittleGolem. By default, LittleGolem allows "
+                        "crossing lines. You don't have crossing lines enabled. "
+                        "Do you want to enable crossing lines?",
+                        title="Enable crossing lines?",
+                    )
+                    == "Yes"
+                )
             players, moves = parse_tsgf_file(content)
             return players, moves, enable_crossing_lines
         else:
@@ -234,7 +246,7 @@ def get_game(current_cross_lines_setting=False):
 
 
 def save_game(players=None, moves=None, board_size=24, game_over=False):
-    """ Saves a Twixt game to T1 file, chosen by the user
+    """Saves a Twixt game to T1 file, chosen by the user
 
     Shows a file-save dialog to the user.
     The twixt game given by the function parameters are saved to the file.
@@ -252,14 +264,18 @@ def save_game(players=None, moves=None, board_size=24, game_over=False):
         None
     """
     if players is None:
-        players = ['Player1', 'Player2']
+        players = ["Player1", "Player2"]
     if moves is None:
-        moves = ['']
+        moves = [""]
 
     # Get filename
-    file_name = sg.PopupGetFile('Choose file', file_types=(
-        ("T1j Files", "*.T1"),),
-        no_window=True, save_as=True, keep_on_top=True)
+    file_name = sg.PopupGetFile(
+        "Choose file",
+        file_types=(("T1j Files", "*.T1"),),
+        no_window=True,
+        save_as=True,
+        keep_on_top=True,
+    )
 
     if file_name is None or file_name == "":
         return
@@ -267,36 +283,39 @@ def save_game(players=None, moves=None, board_size=24, game_over=False):
     # Build file contents
     try:
         content = [
-            '# File created by twixtbot-ui',
-            ('# twixtbot-ui is a program to play TwixtT '
-             '(https://github.com/stevens68/twixtbot-ui)'),
-            '1 # version of file-format',
-            str(players[0]) + ' # Name of player 1',
-            str(players[1]) + ' # Name of player 2',
-            str(board_size) + ' # y-size of board',
-            str(board_size) + ' # x-size of board',
-            'H # player 1 human or computer',
-            'H # player 2 human or computer',
-            '1 # starting player (1 plays top-down)',
-            'V # direction of letters',
-            'Y # pie rule?',
-            ('Y' if game_over else 'N') + ' # game already over?'
+            "# File created by twixtbot-ui",
+            (
+                "# twixtbot-ui is a program to play TwixtT "
+                "(https://github.com/stevens68/twixtbot-ui)"
+            ),
+            "1 # version of file-format",
+            str(players[0]) + " # Name of player 1",
+            str(players[1]) + " # Name of player 2",
+            str(board_size) + " # y-size of board",
+            str(board_size) + " # x-size of board",
+            "H # player 1 human or computer",
+            "H # player 2 human or computer",
+            "1 # starting player (1 plays top-down)",
+            "V # direction of letters",
+            "Y # pie rule?",
+            ("Y" if game_over else "N") + " # game already over?",
         ]
 
         content += [str(m).upper() for m in moves]
 
     except Exception as e:
-        sg.popup_ok('Could not create file contents. Game is NOT saved!\n'
-                    f'Python error: {e}')
+        sg.popup_ok(
+            f"Could not create file contents. Game is NOT saved!\nPython error: {e}"
+        )
         return
 
     # Write file
     try:
         with open(file_name, "tw") as f:
-            f.write('\n'.join(content))
+            f.write("\n".join(content))
     except OSError:
         sg.popup_ok(f"Can't write {file_name}. Game is NOT saved!")
         return
 
-    sg.popup_ok(f'Game saved successfully as {file_name}')
+    sg.popup_ok(f"Game saved successfully as {file_name}")
     return

@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from src.backend.twixt import Game
 
+
 class TestGame(unittest.TestCase):
     def setUp(self):
         self.game = Game(allow_scl=False)
@@ -24,7 +25,7 @@ class TestGame(unittest.TestCase):
         self.assertEqual(self.game.turn, orig_turn)
 
     def test_clone(self):
-        self.game.history.append('move')
+        self.game.history.append("move")
         clone = self.game.clone()
         self.assertEqual(clone.history, self.game.history)
         self.assertTrue(np.array_equal(clone.pegs, self.game.pegs))
@@ -34,6 +35,6 @@ class TestGame(unittest.TestCase):
         self.assertEqual(len(clone.reachable), 2)
         self.assertEqual(clone.reachable_history, self.game.reachable_history)
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

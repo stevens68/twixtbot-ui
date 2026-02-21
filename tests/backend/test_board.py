@@ -1,15 +1,18 @@
 import unittest
 from src.backend.board import TBWHistory, TwixtBoard
 
+
 class DummyStgs:
     def get(self, key):
         return 120
 
+
 class TestTBWHistory(unittest.TestCase):
     def test_init(self):
-        h = TBWHistory('move')
-        self.assertEqual(h.move, 'move')
+        h = TBWHistory("move")
+        self.assertEqual(h.move, "move")
         self.assertEqual(h.objects, [])
+
 
 class TestTwixtBoard(unittest.TestCase):
     def setUp(self):
@@ -31,10 +34,10 @@ class TestTwixtBoard(unittest.TestCase):
         self.assertEqual(len(coords), 2)
 
     def test_move_to_point(self):
-        point = self.board._move_to_point('b3')
+        point = self.board._move_to_point("b3")
         self.assertEqual(point.x, 1)
         self.assertEqual(point.y, 2)
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

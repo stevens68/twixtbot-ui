@@ -11,22 +11,22 @@ from . import swapmodel
 from . import twixt
 from .point import Point
 
-class Player:
 
+class Player:
     def __init__(self, **kwargs):
         self.logger = logging.getLogger(ct.LOGGER)
-        self.model = kwargs.get('model', None)
-        self.num_trials = int(kwargs.get('trials', 100))
-        self.temperature = float(kwargs.get('temperature', 0))
-        self.rotation = kwargs.get('rotation', None)
+        self.model = kwargs.get("model", None)
+        self.num_trials = int(kwargs.get("trials", 100))
+        self.temperature = float(kwargs.get("temperature", 0))
+        self.rotation = kwargs.get("rotation", None)
 
-        self.smart_root = int(kwargs.get('smart_root', 0))
-        self.allow_swap = int(kwargs.get('allow_swap', 1))
-        self.add_noise = float(kwargs.get('add_noise', 0))
-        self.cpuct = float(kwargs.get('cpuct', 1.0))
-        self.level = float(kwargs.get('level', 1.0))
-        self.board = kwargs.get('board', None)
-        self.evaluator = kwargs.get('evaluator', None)
+        self.smart_root = int(kwargs.get("smart_root", 0))
+        self.allow_swap = int(kwargs.get("allow_swap", 1))
+        self.add_noise = float(kwargs.get("add_noise", 0))
+        self.cpuct = float(kwargs.get("cpuct", 1.0))
+        self.level = float(kwargs.get("level", 1.0))
+        self.board = kwargs.get("board", None)
+        self.evaluator = kwargs.get("evaluator", None)
         self.report = None
 
         if self.temperature not in (0.0, 0.5, 1.0):
@@ -38,7 +38,7 @@ class Player:
                 self.evaluator = nneval.NNEvaluater(self.model)
 
             nneval_ = self.evaluator
-            
+
             def get_pw_ml(n, r):
                 p, m = nneval_.eval_one(n)
                 if len(p) == 3:
@@ -56,7 +56,7 @@ class Player:
                     ct.ROT_OFF: 0,
                     ct.ROT_FLIP_HOR: 1,
                     ct.ROT_FLIP_VERT: 2,
-                    ct.ROT_FLIP_BOTH: 3
+                    ct.ROT_FLIP_BOTH: 3,
                 }
 
                 nips = naf.NetInputs(game)
@@ -65,11 +65,20 @@ class Player:
                     rot = random.randint(0, 3)
                     nips.rotate(rot)
                     pw, ml = get_pw_ml(nips, rot)
-                elif self.rotation in [ct.ROT_OFF, ct.ROT_FLIP_HOR, ct.ROT_FLIP_VERT, ct.ROT_FLIP_BOTH]: 
+                elif self.rotation in [
+                    ct.ROT_OFF,
+                    ct.ROT_FLIP_HOR,
+                    ct.ROT_FLIP_VERT,
+                    ct.ROT_FLIP_BOTH,
+                ]:
                     rot = rot_map[self.rotation]
                     nips.rotate(rot)
                     pw, ml = get_pw_ml(nips, rot)
-                elif self.rotation in [ct.ROT_AVG, ct.ROT_BEST_EVALUATION, ct.ROT_BEST_P_VALUE]:
+                elif self.rotation in [
+                    ct.ROT_AVG,
+                    ct.ROT_BEST_EVALUATION,
+                    ct.ROT_BEST_P_VALUE,
+                ]:
                     pwl, mll = [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
                     pwl[0], mll[0] = get_pw_ml(nips, 0)
                     for i in range(3):
@@ -85,7 +94,13 @@ class Player:
                         imax = pwl.index(max(pwl))
                         pw, ml = pwl[imax], mll[imax]
                     elif self.rotation == ct.ROT_BEST_P_VALUE:
-                        p_max = [max(ml) if isinstance(ml, collections.abc.Iterable) and not isinstance(ml, (str, bytes)) else ml for ml in mll]
+                        p_max = [
+                            max(ml)
+                            if isinstance(ml, collections.abc.Iterable)
+                            and not isinstance(ml, (str, bytes))
+                            else ml
+                            for ml in mll
+                        ]
                         imax = p_max.index(max(p_max))
                         pw, ml = pwl[imax], mll[imax]
                 else:
@@ -93,7 +108,7 @@ class Player:
                     raise ValueError(f"Invalid rotation value: {self.rotation}")
 
                 return pw, ml
-            
+
         else:
             raise Exception("Specify model or resource")
 
@@ -104,12 +119,11 @@ class Player:
             cpuct=self.cpuct,
             board=self.board,
             level=self.level,
-            visualize_mcts=False
+            visualize_mcts=False,
         )
 
     def pick_move(self, game, window=None, event=None):
         if self.allow_swap and len(game.history) < 2:
-
             if len(game.history) == 0:
                 self.report = "swapmodel"
                 m = swapmodel.choose_first_move()
@@ -124,9 +138,9 @@ class Player:
         if self.num_trials == 0:
             # don't use MCTS but just evaluate and return best move
             _, moves, p, pscew = self.nm.eval_game(game)
-            return self.nm.create_response(game, "done", 0,
-                                           0, moves=moves,
-                                           p=p, pscew=pscew)
+            return self.nm.create_response(
+                game, "done", 0, 0, moves=moves, p=p, pscew=pscew
+            )
 
         n = self.nm.mcts(game, self.num_trials, window, event)
 
@@ -135,8 +149,9 @@ class Player:
         # When a forcing win or forcing draw move is found, there's no policy
         # array returned
         if isinstance(n, (str, Point)):
-            return self.nm.create_response(game, "done", self.num_trials,
-                                           self.num_trials, True)
+            return self.nm.create_response(
+                game, "done", self.num_trials, self.num_trials, True
+            )
 
         if self.temperature == 0.0:
             mx = n.max()
@@ -144,7 +159,7 @@ class Player:
         elif self.temperature == 1.0:
             weights = n
         elif self.temperature == 0.5:
-            weights = n ** 2
+            weights = n**2
         else:
             raise ValueError(f"Unsupported temperature: {self.temperature}")
         self.logger.debug("weights=%s", weights)
@@ -154,5 +169,6 @@ class Player:
         # index = numpy.random.choice(numpy.arange(
         #     len(weights)), p=weights / weights.sum())
 
-        return self.nm.create_response(game, "done", self.num_trials,
-                                       self.num_trials, False)
+        return self.nm.create_response(
+            game, "done", self.num_trials, self.num_trials, False
+        )

@@ -4,6 +4,7 @@ import logging
 from collections import namedtuple
 from .. import constants as ct
 from .point import Point
+
 Point = Point  # Expose Point in the module namespace for other modules to use as twixt.Point
 from .select_set import SelectSet
 
@@ -12,7 +13,7 @@ RESIGN = "resign"
 DRAW = "draw"
 MAXBEST = 24**24
 
-LinkDescription = namedtuple('LinkDescription', 'p1 p2 owner')
+LinkDescription = namedtuple("LinkDescription", "p1 p2 owner")
 
 
 def get_link_index(a, b, color):
@@ -31,15 +32,46 @@ def get_link_index(a, b, color):
     return ix1, (cx, cy)
 
 
+def _get_link_char(ne_link, nw_link, x, special_char):
+    if ne_link and nw_link:
+        return "X"
+    elif ne_link:
+        return "/"
+    elif nw_link:
+        return "\\"
+    elif x in (1, Game.SIZE - 1):
+        return special_char
+    else:
+        return " "
+
+
 class Game:
     SIZE = 24
     LINK_LONGY = 4
     LINK_DIFFSIGN = 2
     BLACK = 0
     WHITE = 1
-    DLINKS            = [(-2, -1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]
-    DLINKS_RIGHTFIRST = [(2, -1), (2, 1), (1, -2), (1, 2), (-1, -2), (-1, 2), (-2, -1), (-2, 1)]
-    DLINKS_DOWNFIRST  = [(-1, 2), (1, 2), (-2, 1), (2, 1), (-2, -1), (2, -1), (-1, -2), (1, -2)]
+    DLINKS = [(-2, -1), (-1, -2), (1, -2), (2, -1), (2, 1), (1, 2), (-1, 2), (-2, 1)]
+    DLINKS_RIGHTFIRST = [
+        (2, -1),
+        (2, 1),
+        (1, -2),
+        (1, 2),
+        (-1, -2),
+        (-1, 2),
+        (-2, -1),
+        (-2, 1),
+    ]
+    DLINKS_DOWNFIRST = [
+        (-1, 2),
+        (1, 2),
+        (-2, 1),
+        (2, 1),
+        (-2, -1),
+        (2, -1),
+        (-1, -2),
+        (1, -2),
+    ]
 
     COLOR_NAME = ("BLACK", "WHITE")
 
@@ -49,10 +81,8 @@ class Game:
 
         self.result = None
         self.history = []
-        self.pegs = [numpy.zeros((Game.SIZE, Game.SIZE), numpy.int8)
-                     for _ in range(2)]
-        self.links = [numpy.zeros((Game.SIZE, Game.SIZE), numpy.int8)
-                      for _ in range(8)]
+        self.pegs = [numpy.zeros((Game.SIZE, Game.SIZE), numpy.int8) for _ in range(2)]
+        self.links = [numpy.zeros((Game.SIZE, Game.SIZE), numpy.int8) for _ in range(8)]
         self.turn = Game.WHITE
         self.open_pegs = [SelectSet(), SelectSet()]
         self.reachable = [set(), set()]
@@ -65,9 +95,8 @@ class Game:
                     self.open_pegs[Game.WHITE].add(p)
                 if y not in (0, Game.SIZE - 1):
                     self.open_pegs[Game.BLACK].add(p)
-        
+
         # end __init__
-    
 
     def _flip_turn(self):
         self.turn = 1 - self.turn
@@ -101,6 +130,14 @@ class Game:
 
         return "win" in self.reachable[color]
 
+    def _swap_reachable(self, from_color, to_color):
+        """Swap all points in reachable[from_color] to reachable[to_color], swapping x and y."""
+        self.reachable[to_color] = set()
+        for p in self.reachable[from_color]:
+            q = Point(p.y, p.x)
+            self.reachable[to_color].add(q)
+        self.reachable[from_color] = set()
+
     def play_swap(self):
 
         assert len(self.history) == 1
@@ -112,11 +149,8 @@ class Game:
 
         self.turn = Game.WHITE
 
-        self.reachable[Game.BLACK] = set()
-        for p in self.reachable[Game.WHITE]:
-            q = Point(p.y, p.x)
-            self.reachable[Game.BLACK].add(q)
-        self.reachable[Game.WHITE] = set()
+        self._swap_reachable(Game.WHITE, Game.BLACK)
+
         self.reachable_history.append([])
 
         """
@@ -137,11 +171,8 @@ class Game:
 
         self.turn = Game.BLACK
 
-        self.reachable[Game.WHITE] = set()
-        for p in self.reachable[Game.BLACK]:
-            q = Point(p.y, p.x)
-            self.reachable[Game.WHITE].add(q)
-        self.reachable[Game.BLACK] = set()
+        self._swap_reachable(Game.BLACK, Game.WHITE)
+
         self.reachable_history.pop()
 
     def play(self, move):
@@ -156,9 +187,13 @@ class Game:
         if not Game.inbounds(move):
             raise InvalidMoveError(f"Move out of bounds: {move}")
         if self.pegs[0][move] != 0:
-            raise InvalidMoveError(f"Cell already occupied for BLACK: {move}, {self.pegs[0]}, {self.history}")
+            raise InvalidMoveError(
+                f"Cell already occupied for BLACK: {move}, {self.pegs[0]}, {self.history}"
+            )
         if self.pegs[1][move] != 0:
-            raise InvalidMoveError(f"Cell already occupied for WHITE: {move}, {self.pegs[1]}, {self.history}")
+            raise InvalidMoveError(
+                f"Cell already occupied for WHITE: {move}, {self.pegs[1]}, {self.history}"
+            )
 
         if self.turn == Game.WHITE:
             assert move.x != 0 and move.x != Game.SIZE - 1
@@ -171,8 +206,7 @@ class Game:
                 continue
             if self.any_crossing_links(move, pt, 1 - self.turn):
                 continue
-            if (not self.allow_scl and
-                    self.any_crossing_links(move, pt, self.turn)):
+            if not self.allow_scl and self.any_crossing_links(move, pt, self.turn):
                 continue
 
             self.set_link(move, pt, self.turn, 1)
@@ -181,7 +215,7 @@ class Game:
 
         self.history.append(move)
         self.reachable_history.append(self._update_add_reachable(move))
-        
+
         self._flip_turn()
 
         self.open_pegs[0].remove(move)
@@ -226,10 +260,12 @@ class Game:
             assert chk in my_reachable
             for dlink in Game.DLINKS:
                 other = chk + dlink
-                if (self.inbounds(other) and
-                        other not in my_reachable and
-                        self.get_peg(other, color) and
-                        self.get_link(chk, other, color)):
+                if (
+                    self.inbounds(other)
+                    and other not in my_reachable
+                    and self.get_peg(other, color)
+                    and self.get_link(chk, other, color)
+                ):
                     added.append(other)
                     unvisited.append(other)
                     my_reachable.add(other)
@@ -333,8 +369,7 @@ class Game:
         dshort = Point((delta.x & 1) * delta.x, (delta.y & 1) * delta.y)
         dlong = Point((delta.x - dshort.x) / 2, (delta.y - dshort.y) / 2)
         if debug:
-            self.logger.debug(
-                "any_crossing_links. a=%s, b=%s, color=%s", a, b, color)
+            self.logger.debug("any_crossing_links. a=%s, b=%s, color=%s", a, b, color)
             self.logger.debug("delta=(%d,%d)", delta.x, delta.y)
             self.logger.debug("dlong=(%d,%d)", dlong.x, dlong.y)
             self.logger.debug("dshort=(%d,%d)", dshort.x, dshort.y)
@@ -343,14 +378,12 @@ class Game:
             (-1, 1, 1, 0),
             (0, 1, 2, 0),
             (1, 1, 3, 0),
-
             (0, 1, 1, -1),
             (0, 2, 1, 0),
             (1, 1, 2, -1),
             (1, 2, 2, 0),
-
             (0, -1, 1, 1),
-            (1, 0, 2, 2)
+            (1, 0, 2, 2),
         ]
 
         found = False
@@ -359,8 +392,7 @@ class Game:
             d = a + dlong * cl[2] + dshort * cl[3]
             if debug:
                 self.logger.debug("checking %d,%d", c, d)
-            if (self.inbounds(c) and self.inbounds(d) and
-                    self.get_link(c, d, color)):
+            if self.inbounds(c) and self.inbounds(d) and self.get_link(c, d, color):
                 found = True
                 self.set_link(c, d, color, 1)
         return found
@@ -395,29 +427,28 @@ class Game:
             self.open_pegs[Game.BLACK].add(umove)
 
         # end undo
-             
+
     @staticmethod
     def inbounds(p):
-        """ Tell us whether a given point is inside the numpy arrays;
-            may still not be a valid place to play. """
+        """Tell us whether a given point is inside the numpy arrays;
+        may still not be a valid place to play."""
         return 0 <= p.x < Game.SIZE and 0 <= p.y < Game.SIZE
 
     @staticmethod
     def inbounds_for_player(p, color):
 
         if color == Game.WHITE:
-            return (1 <= p.x < Game.SIZE - 1 and
-                    0 <= p.y < Game.SIZE)
+            return 1 <= p.x < Game.SIZE - 1 and 0 <= p.y < Game.SIZE
         elif color == Game.BLACK:
-            return (0 <= p.x < Game.SIZE and
-                    1 <= p.y < Game.SIZE - 1)
+            return 0 <= p.x < Game.SIZE and 1 <= p.y < Game.SIZE - 1
         else:
             return False
 
     def __str__(self):
 
-        topline = "   " + "   ".join([chr(ord('A') + i)
-                                      for i in range(Game.SIZE)]) + "\n"
+        topline = (
+            "   " + "   ".join([chr(ord("A") + i) for i in range(Game.SIZE)]) + "\n"
+        )
         out = topline
         for y in range(Game.SIZE):
             if y > 0:
@@ -446,17 +477,7 @@ class Game:
                 ne_link = self.get_link(sw, ne, 0) + self.get_link(sw, ne, 1)
                 nw_link = self.get_link(se, nw, 0) + self.get_link(se, nw, 1)
 
-                if ne_link and nw_link:
-                    lc = "X"
-                elif ne_link:
-                    lc = "/"
-                elif nw_link:
-                    lc = "\\"
-                elif x in (1, Game.SIZE - 1):
-                    lc = xb_char
-                else:
-                    lc = " "
-
+                lc = _get_link_char(ne_link, nw_link, x, xb_char)
                 out += " " + lc + " "
 
             if self.pegs[0][x, y]:
@@ -498,16 +519,7 @@ class Game:
             ne_link = self.get_link(sw, ne, 0) + self.get_link(sw, ne, 1)
             nw_link = self.get_link(se, nw, 0) + self.get_link(se, nw, 1)
 
-            if ne_link and nw_link:
-                lc = "X"
-            elif ne_link:
-                lc = "/"
-            elif nw_link:
-                lc = "\\"
-            elif x in (1, Game.SIZE - 1):
-                lc = nadachar
-            else:
-                lc = " "
+            lc = _get_link_char(ne_link, nw_link, x, nadachar)
             out += lc
 
         return out + "\n"
@@ -515,8 +527,10 @@ class Game:
     def _has_end_to_end_path(self, turn):
         check_board = Game(True)
         visited = []
-        link_range = Game.DLINKS_DOWNFIRST if turn == Game.WHITE else Game.DLINKS_RIGHTFIRST 
-        for i in range(1, Game.SIZE-1):
+        link_range = (
+            Game.DLINKS_DOWNFIRST if turn == Game.WHITE else Game.DLINKS_RIGHTFIRST
+        )
+        for i in range(1, Game.SIZE - 1):
             # (i,0) for WHITE. (0,i) for BLACK
             p_start = Point(i * turn, i * (1 - turn))
             check_board.pegs[turn][p_start] = 1
@@ -528,16 +542,26 @@ class Game:
         visited.append(p)
         for dlink in link_range:
             pt = p + dlink
-            if self.inbounds_for_player(pt, turn) and pt not in visited and not self.pegs[1-turn][pt]:
+            if (
+                self.inbounds_for_player(pt, turn)
+                and pt not in visited
+                and not self.pegs[1 - turn][pt]
+            ):
                 # pt is a valid move (empty or own color)
-                if not self.any_crossing_links(p, pt, 1-turn) and (self.allow_scl or not self.any_crossing_links(p, pt, turn)):
+                if not self.any_crossing_links(p, pt, 1 - turn) and (
+                    self.allow_scl or not self.any_crossing_links(p, pt, turn)
+                ):
                     # there are no links crossing link (p, pt)
                     check_board.pegs[turn][pt] = 1
                     check_board.set_link(p, pt, turn, 1)
                     # if pt is on opposite endline - we found a path
-                    if (turn == Game.WHITE and pt.y == Game.SIZE-1) or (turn == Game.BLACK and pt.x == Game.SIZE-1):
+                    if (turn == Game.WHITE and pt.y == Game.SIZE - 1) or (
+                        turn == Game.BLACK and pt.x == Game.SIZE - 1
+                    ):
                         return True
-                    elif self._find_path_to_end(check_board, turn, pt, visited, link_range):
+                    elif self._find_path_to_end(
+                        check_board, turn, pt, visited, link_range
+                    ):
                         return True
         return False
 

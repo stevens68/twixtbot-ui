@@ -1,6 +1,7 @@
 import unittest
 from src.backend.point import Point
 
+
 class TestPoint(unittest.TestCase):
     def test_init_xy(self):
         p = Point(3, 5)
@@ -8,16 +9,16 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(p.y, 5)
 
     def test_init_str_lower(self):
-        p = Point('d6')
+        p = Point("d6")
         self.assertEqual(p.x, 3)
         self.assertEqual(p.y, 5)
-        self.assertEqual(str(p), 'd6')
+        self.assertEqual(str(p), "d6")
 
     def test_init_str_upper(self):
-        p = Point('D6')
+        p = Point("D6")
         self.assertEqual(p.x, 3)
         self.assertEqual(p.y, 5)
-        self.assertEqual(str(p), 'd6')
+        self.assertEqual(str(p), "d6")
 
     def test_init_tuple(self):
         p = Point((2, 7))
@@ -45,8 +46,8 @@ class TestPoint(unittest.TestCase):
 
     def test_str_and_repr(self):
         p = Point(1, 9)
-        self.assertEqual(str(p), 'b10')
-        self.assertEqual(repr(p), 'b10')
+        self.assertEqual(str(p), "b10")
+        self.assertEqual(repr(p), "b10")
 
     def test_flip(self):
         p = Point(2, 5)
@@ -54,12 +55,12 @@ class TestPoint(unittest.TestCase):
 
     def test_invalid_init(self):
         with self.assertRaises(ValueError):
-            Point('invalid')
+            Point("invalid")
         with self.assertRaises(ValueError):
             Point(1, 2, 3)
         with self.assertRaises(ValueError):
             Point([1])
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

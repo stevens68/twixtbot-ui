@@ -2,10 +2,13 @@ import unittest
 import numpy as np
 from src.backend.nnmcts import EvalNode
 
+
 class DummyGame:
     class SIZE:
         pass
+
     SIZE = 24
+
 
 class TestEvalNode(unittest.TestCase):
     def setUp(self):
@@ -24,6 +27,6 @@ class TestEvalNode(unittest.TestCase):
         self.assertIsNone(self.node.LM)
         self.assertIsNone(self.node.LMnz)
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

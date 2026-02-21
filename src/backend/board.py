@@ -28,19 +28,21 @@ class TwixtBoard:
         self.visit_offset = self.stgs.get(ct.K_BOARD_SIZE[1]) / 120
         self.cell_width = 40  # Default value, adjust as needed
         self.peg_radius = 10  # Default value, adjust as needed
-        self.graph = None     # Should be set to the drawing object externally
+        self.graph = None  # Should be set to the drawing object externally
 
     def _point_to_coords(self, point):
-        return ((point[0] + self.offset_factor) * self.cell_width,
-                ((self.size - point[1] - 1) + self.offset_factor) *
-                self.cell_width)
+        return (
+            (point[0] + self.offset_factor) * self.cell_width,
+            ((self.size - point[1] - 1) + self.offset_factor) * self.cell_width,
+        )
 
     @staticmethod
     def _move_to_point(move):
-        return Point(ord(move[0]) - ord('a'), int(move[1:]) - 1)
+        return Point(ord(move[0]) - ord("a"), int(move[1:]) - 1)
 
-    def _create_drawn_peg(self, point, color_idx,
-                          highlight_last_move=False, visits=None):
+    def _create_drawn_peg(
+        self, point, color_idx, highlight_last_move=False, visits=None
+    ):
 
         if color_idx == 1:
             color = self.stgs.get(ct.K_COLOR[1])
@@ -61,8 +63,9 @@ class TwixtBoard:
         else:
             fill_color = color
 
-        peg = self.graph.DrawCircle(self._point_to_coords(
-            point), pr, fill_color, line_color, lw)
+        peg = self.graph.DrawCircle(
+            self._point_to_coords(point), pr, fill_color, line_color, lw
+        )
 
         return peg
 
@@ -74,9 +77,13 @@ class TwixtBoard:
             color = self.stgs.get(ct.K_COLOR[2])
 
         (x, y) = self._point_to_coords(point)
-        label = self.graph.DrawText(str(int(visits)), (x, y+self.visit_offset),
-                                    color, font=ct.VISITS_LABEL_FONT,
-                                    text_location=TEXT_LOCATION_BOTTOM_LEFT)
+        label = self.graph.DrawText(
+            str(int(visits)),
+            (x, y + self.visit_offset),
+            color,
+            font=ct.VISITS_LABEL_FONT,
+            text_location=TEXT_LOCATION_BOTTOM_LEFT,
+        )
 
         return label
 
@@ -97,10 +104,14 @@ class TwixtBoard:
         nho = TBWHistory(move)
         self.history.append(nho)
 
-        highlight_last_move = visits is None and self.stgs.get(
-            ct.K_HIGHLIGHT_LAST_MOVE[1]) and index == len(game.history) - 1
-        nho.objects.append(self._create_drawn_peg(
-            move, color, highlight_last_move, visits))
+        highlight_last_move = (
+            visits is None
+            and self.stgs.get(ct.K_HIGHLIGHT_LAST_MOVE[1])
+            and index == len(game.history) - 1
+        )
+        nho.objects.append(
+            self._create_drawn_peg(move, color, highlight_last_move, visits)
+        )
         self.known_moves.add(move)
         if visits is not None:
             nho.objects.append(self._create_visits_label(move, color, visits))
@@ -110,7 +121,8 @@ class TwixtBoard:
             if other in self.known_moves:
                 if game.safe_get_link(move, other, color):
                     nho.objects.append(
-                        self._create_drawn_link(move, other, color, visits))
+                        self._create_drawn_link(move, other, color, visits)
+                    )
 
     def undo_last_move_objects(self):
         if len(self.history) > 0:
@@ -123,12 +135,15 @@ class TwixtBoard:
         # carray = [gr.color_rgb(0,0,0),
         #           gr.color_rgb(150,150,150),
         #           gr.color_rgb(255,0,0)]
-        carray = [self.stgs.get(ct.K_COLOR[2]),
-                  self.stgs.get(ct.K_COLOR[1]),
-                  self.stgs.get(ct.K_COLOR[1])]
+        carray = [
+            self.stgs.get(ct.K_COLOR[2]),
+            self.stgs.get(ct.K_COLOR[1]),
+            self.stgs.get(ct.K_COLOR[1]),
+        ]
 
         lw = 2 if visits is not None else 5
 
-        line = self.graph.DrawLine(self._point_to_coords(
-            p1), self._point_to_coords(p2), carray[color], lw)
+        line = self.graph.DrawLine(
+            self._point_to_coords(p1), self._point_to_coords(p2), carray[color], lw
+        )
         return line

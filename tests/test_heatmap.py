@@ -1,17 +1,21 @@
 import unittest
 from src.heatmap import Heatmap
 
+
 class DummyGame:
     SIZE = 24
     pass
+
 
 class DummyNM:
     def eval_game(self, game, maxbest=None):
         return 0.0, [], [], []
 
+
 class DummyBot:
     def __init__(self):
         self.nm = DummyNM()
+
 
 class TestHeatmap(unittest.TestCase):
     def test_init_missing_args(self):
@@ -31,5 +35,6 @@ class TestHeatmap(unittest.TestCase):
         self.assertIsInstance(h.rgb_colors, dict)
         self.assertIsInstance(h.policy_moves, list)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -6,12 +6,12 @@ from .point import Point
 
 
 class NetInputs:
-    HEADER = 'JTwx'
+    HEADER = "JTwx"
     HEADER_BYTES = len(HEADER)
     NUM_RECENTS = 4
     FRONT_BYTES = HEADER_BYTES + 2 * NUM_RECENTS
-    EXPANDED_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE ** 2
-    COMPACT_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE ** 2 / 8
+    EXPANDED_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE**2
+    COMPACT_SIZE = FRONT_BYTES + 10 * twixt.Game.SIZE**2 / 8
     NAF_DIMS = (twixt.Game.SIZE, twixt.Game.SIZE, 11)
 
     def __init__(self, thing):
@@ -55,7 +55,7 @@ class NetInputs:
         swap_mode = False
         while len(rev_recents) < self.NUM_RECENTS and i < len(game.history):
             h = game.history[-i]
-            if h == 'swap':
+            if h == "swap":
                 assert not swap_mode
                 swap_mode = True
                 i += 1
@@ -90,11 +90,9 @@ class NetInputs:
                 # non verticals are easy
                 self.naf[:, :, color + dix] = tmp[:, :, color + adix]
                 # verticals need to be shifted.
-                self.naf[:-1, :, color + dix +
-                         vix] = tmp[1:, :, color + adix + vix]
+                self.naf[:-1, :, color + dix + vix] = tmp[1:, :, color + adix + vix]
 
-        self.recents = [Point(twixt.Game.SIZE - 1 - p.x, p.y)
-                        for p in self.recents]
+        self.recents = [Point(twixt.Game.SIZE - 1 - p.x, p.y) for p in self.recents]
 
     def vflip(self):
 
@@ -112,13 +110,11 @@ class NetInputs:
                 dix = diffsign * twixt.Game.LINK_DIFFSIGN
                 adix = (1 - diffsign) * twixt.Game.LINK_DIFFSIGN
                 # verticals are easy
-                self.naf[:, :, color + dix +
-                         vix] = tmp[:, :, color + adix + vix]
+                self.naf[:, :, color + dix + vix] = tmp[:, :, color + adix + vix]
                 # horizontals need to be shifted.
                 self.naf[:, :-1, color + dix] = tmp[:, 1:, color + adix]
 
-        self.recents = [Point(p.x, twixt.Game.SIZE - 1 - p.y)
-                        for p in self.recents]
+        self.recents = [Point(p.x, twixt.Game.SIZE - 1 - p.y) for p in self.recents]
 
     def rotate(self, r):
 
@@ -145,12 +141,14 @@ class NetInputs:
 
         if use_recents:
             locs = numpy.zeros(
-                (twixt.Game.SIZE, twixt.Game.SIZE, 3), dtype=numpy.float32)
+                (twixt.Game.SIZE, twixt.Game.SIZE, 3), dtype=numpy.float32
+            )
             location_inputs(locs)
             locs[:, :, 2] = self.naf[:, :, 10]
             return pegs, links, locs
         else:
             return pegs, links, location_inputs()
+
 
 # naf is the Numpy Array Format.  It is always "swapped" so that "white"
 #  is on play.  The shape is (S,S,10) where S = twixt.Game.SIZE.  The 10
@@ -217,12 +215,14 @@ def policy_point_index(thing, point):
 
 def legal_move_policy_array(game):
     if game.turn == game.WHITE:
-        pegsum = (game.pegs[0][1:game.SIZE - 1, :] +
-                  game.pegs[1][1:game.SIZE - 1, :]).flatten()
+        pegsum = (
+            game.pegs[0][1 : game.SIZE - 1, :] + game.pegs[1][1 : game.SIZE - 1, :]
+        ).flatten()
     else:
         assert game.turn == game.BLACK
-        pegsum = (game.pegs[0][:, 1:game.SIZE - 1] +
-                  game.pegs[1][:, 1:game.SIZE - 1]).T.flatten()
+        pegsum = (
+            game.pegs[0][:, 1 : game.SIZE - 1] + game.pegs[1][:, 1 : game.SIZE - 1]
+        ).T.flatten()
     return 1 - pegsum
 
 
@@ -264,7 +264,7 @@ def rotate_policy_array(pa, r):
 
 
 def three_to_one(three):
-    """ Take a three-vector of logits and return a score between -1 and 1 """
+    """Take a three-vector of logits and return a score between -1 and 1"""
     l_l, l_d, l_w = three
     e_l = math.exp(l_l - l_d)
     e_w = math.exp(l_w - l_d)
@@ -275,5 +275,5 @@ def three_to_one(three):
 
 
 def one_to_three(one):
-    """ Take a score -1, 0, or 1, and return the three vector of labels """
+    """Take a score -1, 0, or 1, and return the three vector of labels"""
     return ((1, 0, 0), (0, 1, 0), (0, 0, 1))[one + 1]

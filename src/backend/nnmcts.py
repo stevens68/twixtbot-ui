@@ -8,8 +8,8 @@ from . import twixt
 from .. import constants as ct
 from .point import Point
 
-class EvalNode:
 
+class EvalNode:
     def __init__(self):
         k = twixt.Game.SIZE * (twixt.Game.SIZE - 2)
         self.N = numpy.zeros(k)
@@ -25,13 +25,12 @@ class EvalNode:
 
 
 def send_message(window, response):
-    window.write_event_value('THREAD', response)
+    window.write_event_value("THREAD", response)
 
 
 class NeuralMCTS:
-
     def __init__(self, sap, **kwargs):
-        """ sap = score and policy function, takes a game as input """
+        """sap = score and policy function, takes a game as input"""
         self.cpuct = kwargs.pop("cpuct", 1.0)
         self.add_noise = kwargs.pop("add_noise", 0.25)
         self.level = kwargs.pop("level", None)
@@ -41,8 +40,7 @@ class NeuralMCTS:
         self.visualize_mcts = kwargs.pop("visualize_mcts", None)
 
         if kwargs:
-            raise TypeError('Unexpected kwargs provided: %s' %
-                            list(kwargs.keys()))
+            raise TypeError("Unexpected kwargs provided: %s" % list(kwargs.keys()))
         self.sap = sap
         self.root = None
         self.history_at_root = None
@@ -53,8 +51,8 @@ class NeuralMCTS:
         self.report = None
 
     def expand_leaf(self, game):
-        """ Create a brand-new leaf node for the current game state
-            and return it. """
+        """Create a brand-new leaf node for the current game state
+        and return it."""
 
         leaf = EvalNode()
 
@@ -93,17 +91,18 @@ class NeuralMCTS:
         self.logger.debug("raw P: %s", leaf.P)
 
         if self.add_noise:
-            leaf.P[leaf.LMnz] *= (1.0 - self.add_noise)
-            leaf.P[leaf.LMnz] += self.add_noise * \
-                numpy.random.dirichlet(0.03 * numpy.ones(len(leaf.LMnz[0])))
+            leaf.P[leaf.LMnz] *= 1.0 - self.add_noise
+            leaf.P[leaf.LMnz] += self.add_noise * numpy.random.dirichlet(
+                0.03 * numpy.ones(len(leaf.LMnz[0]))
+            )
 
         self.logger.debug("after noise P: %s", leaf.P)
         return leaf
         # end expand_leaf()
 
     def visit_node(self, game, node, top=False, trials=None):
-        """ Visit a node, return the evaluation from the
-            point of view of the player currently to play. """
+        """Visit a node, return the evaluation from the
+        point of view of the player currently to play."""
 
         assert not game.just_won()
         if not node.LM.any():
@@ -120,16 +119,19 @@ class NeuralMCTS:
             maxn = vnz.max()
             winnables = (node.N > maxn - trials) & node.LM
             num_winnables = numpy.count_nonzero(winnables)
-            assert num_winnables > 0, (maxn, trials, numpy.array_str(
-                node.N), numpy.array_str(node.LM))
+            assert num_winnables > 0, (
+                maxn,
+                trials,
+                numpy.array_str(node.N),
+                numpy.array_str(node.LM),
+            )
             if num_winnables == 1:
                 index = winnables.argmax()
             else:
-                maxes = (node.N == maxn)
+                maxes = node.N == maxn
                 num_maxes = numpy.count_nonzero(maxes)
                 assert num_maxes > 0
-                if (num_maxes == 1 and
-                        maxn - vnz[numpy.argsort(vnz)[-2:]][0] > 1):
+                if num_maxes == 1 and maxn - vnz[numpy.argsort(vnz)[-2:]][0] > 1:
                     # visit diff to second best is >1
                     winnables[maxes.argmax()] = 0
 
@@ -153,9 +155,14 @@ class NeuralMCTS:
         move = naf.policy_index_point(game.turn, index)
 
         if top:
-            self.logger.debug("selecting index=%d move=%s Q=%.3f P=%.5f N=%d",
-                              index, str(move), node.Q[index],
-                              node.P[index], node.N[index])
+            self.logger.debug(
+                "selecting index=%d move=%s Q=%.3f P=%.5f N=%d",
+                index,
+                str(move),
+                node.Q[index],
+                node.P[index],
+                node.N[index],
+            )
 
         subnode = node.subnodes[index]
 
@@ -217,8 +224,10 @@ class NeuralMCTS:
 
     def top_moves_str(self, game):
         indices = numpy.argsort(self.root.P[self.root.LMnz])
-        pts = [str(naf.policy_index_point(game, self.root.LMnz[0][index]))
-               for index in indices[-3:]]
+        pts = [
+            str(naf.policy_index_point(game, self.root.LMnz[0][index]))
+            for index in indices[-3:]
+        ]
 
         return ":" + ",".join(pts)
 
@@ -232,8 +241,12 @@ class NeuralMCTS:
         # if q == 0.0 => set new p to avg
         # if q == 0.5 => set new p to p (no change)
         # if q == 1.0 => set new p[0] to 1, p[n>0] = 0 (greedy)
-        prob = [(-4*x+2*avg)*q*q + (4*x-3*avg)*q + avg for x in prob[1:]]
-        prob.insert(0, (-4*p0+2*avg+2)*q*q + (4*p0-3*avg-1)*q + avg)
+        prob = [
+            (-4 * x + 2 * avg) * q * q + (4 * x - 3 * avg) * q + avg for x in prob[1:]
+        ]
+        prob.insert(
+            0, (-4 * p0 + 2 * avg + 2) * q * q + (4 * p0 - 3 * avg - 1) * q + avg
+        )
         return prob
 
     def eval_game(self, game, maxbest=twixt.MAXBEST):
@@ -260,15 +273,23 @@ class NeuralMCTS:
             self.report = "flose"
             return game.RESIGN
 
-    def create_response(self, game, status,
-                        num_trials=0, current_trials=0,
-                        proven=False, moves=None, p=None, pscew=None):
+    def create_response(
+        self,
+        game,
+        status,
+        num_trials=0,
+        current_trials=0,
+        proven=False,
+        moves=None,
+        p=None,
+        pscew=None,
+    ):
 
         resp = {
             "status": status,
             "current": current_trials,
             "max": num_trials,
-            "proven": proven
+            "proven": proven,
         }
 
         if p is not None:
@@ -282,9 +303,8 @@ class NeuralMCTS:
             resp["Pscew"] = [1.0]
 
         if not moves:
-            indices = numpy.argsort(self.root.N)[::-1][:twixt.MAXBEST]
-            resp["moves"] = [naf.policy_index_point(
-                game.turn, i) for i in indices]
+            indices = numpy.argsort(self.root.N)[::-1][: twixt.MAXBEST]
+            resp["moves"] = [naf.policy_index_point(game.turn, i) for i in indices]
             resp["Y"] = [int(n) for n in self.root.N[indices].tolist()]
             resp["P"] = [x for x in self.root.P[indices].tolist()]
             resp["Pscew"] = self._scew(resp["P"])
@@ -295,7 +315,7 @@ class NeuralMCTS:
         return resp
 
     def mcts(self, game, trials, window, event):
-        """ Using the neural net, compute the move visit count vector """
+        """Using the neural net, compute the move visit count vector"""
 
         path = []  # Ensure path is always defined
         self.compute_root(game)
@@ -305,10 +325,12 @@ class NeuralMCTS:
             top_ixs = numpy.argsort(self.root.P)[-5:]
             if self.logger.level <= logging.INFO:
                 # if... to avoid unnecessary conversion
-                msg = f'eval={self.root.score:.3f} '
+                msg = f"eval={self.root.score:.3f} "
                 for ix in top_ixs:
-                    msg += (f'{naf.policy_index_point(game, ix)}: '
-                            f'{int(self.root.P[ix] * 10000 + 0.5)}')
+                    msg += (
+                        f"{naf.policy_index_point(game, ix)}: "
+                        f"{int(self.root.P[ix] * 10000 + 0.5)}"
+                    )
                 self.logger.info(msg)
 
         if not self.root.proven:
@@ -316,8 +338,7 @@ class NeuralMCTS:
             # file=sys.stdout):
             for i in range(trials):
                 assert not self.root.proven
-                self.visit_node(game, self.root, True,
-                                trials - i)
+                self.visit_node(game, self.root, True, trials - i)
 
                 if self.root.proven:
                     break
@@ -327,7 +348,8 @@ class NeuralMCTS:
 
                 if (i + 1) % ct.MCTS_TRIAL_CHUNK == 0:
                     resp = self.create_response(
-                        game, "in-progress", trials, i + 1, False)
+                        game, "in-progress", trials, i + 1, False
+                    )
                     send_message(window, resp)
                     if self.visualize_mcts:
                         self.clean_path(path)
@@ -343,7 +365,8 @@ class NeuralMCTS:
         self.logger.debug("Q=%s", self.root.Q)
 
         self.report = "%6.3f" % (
-            float(self.root.Q[numpy.argmax(self.root.N)])) + self.top_moves_str(game)
+            float(self.root.Q[numpy.argmax(self.root.N)])
+        ) + self.top_moves_str(game)
         return self.root.N
 
     def clean_path(self, path):
@@ -362,7 +385,7 @@ class NeuralMCTS:
             move = naf.policy_index_point(game.turn % 2, k)
             game.play(move)
 
-            self.board.create_move_objects(len(game.history)-1, n)
+            self.board.create_move_objects(len(game.history) - 1, n)
             path.append(self.board.history[-1])
 
             if sn is not None:
