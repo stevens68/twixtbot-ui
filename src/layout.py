@@ -263,12 +263,8 @@ class MainWindowLayout:
     def col_eval_bar(self):
         colors = (self.stgs.get(ct.K_COLOR[1]), self.stgs.get(ct.K_COLOR[2]))
 
-        # create dummy window to get line height in pixels
-        layout = [[sg.Text(text="test", key="-TEXT-", font=("Helvetica", 10))]]
-        window = sg.Window("test", layout, finalize=True)
-        size = window["-TEXT-"].get_size()
-        window.close()
-        vsize = int(self.stgs.get(ct.K_BOARD_SIZE[1]) / (size[1] * 0.4))
+        # Calculate eval bar vertical size based on board size without creating dummy window
+        vsize = max(10, int(self.stgs.get(ct.K_BOARD_SIZE[1]) / 6.4))
         return [
             sg.ProgressBar(
                 2000,

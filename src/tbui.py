@@ -118,7 +118,7 @@ class TwixtbotUI:
         self.window.bind("<Alt-v>", ct.EVENT_SHORTCUT_VISUALIZE_MCTS)
         self.window.bind("<Alt-KeyPress-1>", ct.EVENT_SHORTCUT_AUTOMOVE_1)
         self.window.bind("<Alt-KeyPress-2>", ct.EVENT_SHORTCUT_AUTOMOVE_2)
-        self.window.bind("<Alt-Right->", ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
+        self.window.bind("<Alt-Right->>", ct.EVENT_SHORTCUT_TRIALS_1_PLUS)
         self.window.bind("<Alt-Left->", ct.EVENT_SHORTCUT_TRIALS_1_MINUS)
         self.window.bind("<Alt-Shift-Right->", ct.EVENT_SHORTCUT_TRIALS_2_PLUS)
         self.window.bind("<Alt-Shift-Left->", ct.EVENT_SHORTCUT_TRIALS_2_MINUS)
@@ -172,6 +172,11 @@ class TwixtbotUI:
         init_window.update("ready to play", 100)
         time.sleep(1)
         init_window.close()
+
+        self.window.bring_to_front()
+        if hasattr(self.window, "TKroot") and self.window.TKroot:
+            self.window.TKroot.lift()
+            self.window.TKroot.focus_force()
 
     def get_control(self, key, player=None):
         if player:
