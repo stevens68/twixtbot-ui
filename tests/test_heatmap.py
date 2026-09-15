@@ -77,6 +77,33 @@ class TestHeatmap(unittest.TestCase):
         self.assertIsInstance(h.p_values, dict)
         self.assertIsInstance(h.rgb_colors, dict)
         self.assertIsInstance(h.policy_moves, list)
+        self.assertEqual(h.heatmap_legend(), heatmap_legend())
+        self.assertEqual(Heatmap.heatmap_legend(), heatmap_legend())
+
+    def test_calculate_with_moves(self):
+        m1 = Point(5, 5)
+        m2 = Point(6, 7)
+        m3 = Point(8, 9)
+        moves = [m1, m2, m3]
+        p_vals = [0.8, 0.4, 0.0]
+
+        bot = DummyBot(moves=moves, p_vals=p_vals)
+        game = DummyGame()
+        h = Heatmap(game=game, bot=bot)
+
+        # p_values are normalized relative to top move (p_val / p_val[0])
+        # p_val is multiplied by 1000 and rounded: 800 and 400
+        self.assertIn(m1, h.p_values)
+        self.assertIn(m2, h.p_values)
+        self.assertNotIn(m3, h.p_values)  # 0 probability breaks the loop
+
+        self.assertAlmostEqual(h.p_values[m1], 1.0)
+        self.assertAlmostEqual(h.p_values[m2], 0.5)
+
+        self.assertIn(m1, h.rgb_colors)
+        self.assertIn(m2, h.rgb_colors)
+        self.assertEqual(h.rgb_colors[m1], p_to_rgb_string(1.0))
+        self.assertEqual(h.rgb_colors[m2], p_to_rgb_string(0.5))
 
     def test_calculate_with_moves(self):
         m1 = Point(5, 5)
