@@ -314,10 +314,29 @@ class NeuralMCTS:
 
         return resp
 
+    def get_best_path(self, game, node):
+        path = []
+        curr_node = node
+        moves_played = 0
+        while curr_node is not None:
+            k = numpy.argmax(curr_node.N)
+            n = curr_node.N[k]
+            if n <= 0:
+                break
+            move = naf.policy_index_point(game.turn % 2, k)
+            path.append((move, int(n)))
+            game.play(move)
+            moves_played += 1
+            curr_node = curr_node.subnodes[k]
+
+        for _ in range(moves_played):
+            game.undo()
+
+        return path
+
     def mcts(self, game, trials, window, event):
         """Using the neural net, compute the move visit count vector"""
 
-        path = []  # Ensure path is always defined
         self.compute_root(game)
         if self.root is None:
             self.root = self.expand_leaf(game)
@@ -350,13 +369,9 @@ class NeuralMCTS:
                     resp = self.create_response(
                         game, "in-progress", trials, i + 1, False
                     )
-                    send_message(window, resp)
                     if self.visualize_mcts:
-                        self.clean_path(path)
-                        self.traverse(game, path, 0, self.root)
-
-        if self.visualize_mcts:
-            self.clean_path(path)
+                        resp["best_path"] = self.get_best_path(game, self.root)
+                    send_message(window, resp)
 
         if self.root.proven:
             return self.proven_result(game)
@@ -368,28 +383,3 @@ class NeuralMCTS:
             float(self.root.Q[numpy.argmax(self.root.N)])
         ) + self.top_moves_str(game)
         return self.root.N
-
-    def clean_path(self, path):
-        # remove current best path
-        for m in path:
-            for obj in m.objects:
-                self.board.graph.delete_figure(obj)
-        del path[:]
-
-    def traverse(self, game, path, level, node):
-
-        k = numpy.argmax(node.N)
-        n = node.N[k]
-        if n > 0:
-            sn = node.subnodes[k]
-            move = naf.policy_index_point(game.turn % 2, k)
-            game.play(move)
-
-            self.board.create_move_objects(len(game.history) - 1, n)
-            path.append(self.board.history[-1])
-
-            if sn is not None:
-                self.traverse(game, path, level + 1, sn)
-
-            game.undo()
-            self.board.history.pop()

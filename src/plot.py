@@ -1,5 +1,5 @@
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
 from . import constants as ct
 
@@ -7,7 +7,8 @@ from . import constants as ct
 # noinspection SpellCheckingInspection
 def prepare(canvas):
 
-    fig, ax1 = plt.subplots(figsize=(2.4, 0.7))
+    fig = Figure(figsize=(2.4, 0.7))
+    ax1 = fig.add_subplot(111)
 
     ax1.tick_params(
         axis="x",
@@ -66,10 +67,12 @@ class ThreeBarPlot:
                         fontsize=ct.PLOT_LABEL_FONT[1],
                     )
 
-        plt.subplots_adjust(
-            left=None, bottom=None, right=None, top=None, wspace=0, hspace=0
-        )
-        self.agg.draw()
+        if hasattr(self, "agg") and self.agg is not None and hasattr(self.agg, "figure") and self.agg.figure is not None:
+            self.agg.figure.subplots_adjust(
+                left=None, bottom=None, right=None, top=None, wspace=0, hspace=0
+            )
+        if hasattr(self, "agg") and self.agg is not None:
+            self.agg.draw()
 
 
 class EvalHistPlot:
@@ -97,17 +100,21 @@ class EvalHistPlot:
             )
 
             xmax = max(10, len(values))
-            plt.xlim(-1, xmax)
-            plt.xticks(np.arange(0, xmax, xmax // 6))
-            plt.ylim([-1, 1])
+            ax1.set_xlim(-1, xmax)
+            step = max(1, xmax // 6)
+            ax1.set_xticks(np.arange(0, xmax, step))
+            ax1.set_ylim(-1, 1)
 
-        plt.subplots_adjust(
-            left=None, bottom=0.3, right=None, top=0.9, wspace=0, hspace=0
-        )
-        self.agg.draw()
+        if hasattr(self, "agg") and self.agg is not None and hasattr(self.agg, "figure") and self.agg.figure is not None:
+            self.agg.figure.subplots_adjust(
+                left=None, bottom=0.3, right=None, top=0.9, wspace=0, hspace=0
+            )
+        if hasattr(self, "agg") and self.agg is not None:
+            self.agg.draw()
 
     def prepare(self, canvas):
-        fig, ax1 = plt.subplots(figsize=(2.4, 0.7))
+        fig = Figure(figsize=(2.4, 0.7))
+        ax1 = fig.add_subplot(111)
 
         ax1.tick_params(
             axis="x",

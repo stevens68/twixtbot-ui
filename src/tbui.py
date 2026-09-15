@@ -80,6 +80,7 @@ class TwixtbotUI:
         self.ui_to_be_updated = threading.Event()
         self.thread = None
         self.timer = None
+        self.vis_path_objects = []
 
         # Setup main GUI window
         layout = lt.MainWindowLayout(board, stgs).get_layout()
@@ -172,11 +173,6 @@ class TwixtbotUI:
         time.sleep(1)
         init_window.close()
 
-    def __del__(self):
-        # Safely delete stgs if it exists
-        if hasattr(self, 'stgs'):
-            del self.stgs
-
     def get_control(self, key, player=None):
         if player:
             return self.window[key[player]]
@@ -237,7 +233,38 @@ class TwixtbotUI:
 
         return sc, moves, p, pscew
 
+    def clean_vis_path(self):
+        if hasattr(self, "vis_path_objects") and self.vis_path_objects:
+            for obj in self.vis_path_objects:
+                self.board.graph.delete_figure(obj)
+            self.vis_path_objects = []
+
+    def draw_vis_path(self, path):
+        self.clean_vis_path()
+        if not path or not self.get_control(ct.K_VISUALIZE_MCTS).get():
+            return
+
+        drawn_moves = set(self.board.known_moves)
+        for move, visits in path:
+            color = (len(self.game.history) + 1) & 1
+            peg = self.board._create_drawn_peg(move, color, False, visits)
+            self.vis_path_objects.append(peg)
+            label = self.board._create_visits_label(move, color, visits)
+            self.vis_path_objects.append(label)
+            drawn_moves.add(move)
+
+            self.game.play(move)
+            for dlink in self.game.DLINKS:
+                other = move + dlink
+                if other in drawn_moves and self.game.safe_get_link(move, other, color):
+                    link = self.board._create_drawn_link(move, other, color, visits)
+                    self.vis_path_objects.append(link)
+
+        for _ in range(len(path)):
+            self.game.undo()
+
     def clear_evals(self):
+        self.clean_vis_path()
         self.get_control(ct.K_EVAL_NUM).update(value="")
         self.get_control(ct.K_EVAL_BAR).update(value=0)
         self.eval_moves_plot.update()
@@ -311,6 +338,7 @@ class TwixtbotUI:
         self.get_control(ct.K_PROGRESS_BAR).UpdateBar(value, max_value)
 
     def update_after_move(self, complete=True):
+        self.clean_vis_path()
         if self.get_control(ct.K_HEATMAP).get():
             heatmap = hm.Heatmap(self.game, self.bots[self.game.turn])
         else:
@@ -521,9 +549,11 @@ class TwixtbotUI:
             self.execute_move(self.redo_moves.pop(), False)
 
     def handle_accept_bot(self):
+        self.clean_vis_path()
         self.bot_event.set_context(ct.ACCEPT_EVENT)
 
     def handle_cancel_bot(self):
+        self.clean_vis_path()
         self.bot_event.set_context(ct.CANCEL_EVENT)
         # switch off auto move
         # (do not use self.game.turn_to_player() to determine current
@@ -551,6 +581,9 @@ class TwixtbotUI:
             values["moves"] = values["moves"][:3]
             values["Y"] = values["Y"][:3]
             self.visit_plot.update(values, max(1, values["max"]))
+
+        if "best_path" in values:
+            self.draw_vis_path(values["best_path"])
 
     def handle_accept_and_cancel(self, event):
         if event == ct.B_ACCEPT:

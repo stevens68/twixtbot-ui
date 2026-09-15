@@ -43,7 +43,7 @@ class Player:
                 p, m = nneval_.eval_one(n)
                 if len(p) == 3:
                     p = naf.three_to_one(p)
-                if len(p) == 1 and len(p[0] == 3):
+                if len(p) == 1 and len(p[0]) == 3:
                     p = naf.three_to_one(p[0])
                 m = naf.rotate_policy_array(m, r)
                 if len(m) == 1:

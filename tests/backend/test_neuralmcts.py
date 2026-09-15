@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from src.backend.nnmcts import NeuralMCTS, EvalNode
+from src.backend.point import Point
 
 
 class DummyGame:
@@ -18,6 +19,15 @@ class DummyGame:
 
     def just_won(self):
         return False
+
+    def play(self, move):
+        self.history.append(move)
+        self.turn = 1 - self.turn
+
+    def undo(self):
+        if self.history:
+            self.history.pop()
+            self.turn = 1 - self.turn
 
 
 def dummy_sap(game):
@@ -56,6 +66,23 @@ class TestNeuralMCTS(unittest.TestCase):
         self.assertTrue(leaf.proven)
         self.assertEqual(leaf.score, -1)
         self.assertEqual(leaf.LMnz, "just_won")
+
+    def test_get_best_path(self):
+        root = EvalNode()
+        root.N[5] = 10
+        child = EvalNode()
+        child.N[12] = 4
+        root.subnodes[5] = child
+
+        path = self.mcts.get_best_path(self.game, root)
+        self.assertEqual(len(path), 2)
+        self.assertIsInstance(path[0][0], Point)
+        self.assertEqual(path[0][1], 10)
+        self.assertIsInstance(path[1][0], Point)
+        self.assertEqual(path[1][1], 4)
+        # Ensure game state is fully restored
+        self.assertEqual(len(self.game.history), 0)
+        self.assertEqual(self.game.turn, DummyGame.WHITE)
 
 
 if __name__ == "__main__":
