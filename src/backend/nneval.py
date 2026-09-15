@@ -13,9 +13,28 @@ tf.disable_v2_behavior()
 
 class NNEvaluater:
     def __init__(self, model):
-
-        export_dir = os.path.join(os.getcwd(), model)
         self.logger = logging.getLogger(ct.LOGGER)
+
+        # Robustly resolve model directory whether relative to CWD, src/, or absolute
+        if os.path.isabs(model) and os.path.exists(model):
+            export_dir = model
+        elif os.path.exists(os.path.join(os.getcwd(), model)):
+            export_dir = os.path.join(os.getcwd(), model)
+        else:
+            # Try relative to src/ directory
+            src_dir = os.path.dirname(os.path.dirname(__file__))
+            candidate_from_src = os.path.normpath(os.path.join(src_dir, model))
+            # Try relative to project root
+            project_root = os.path.dirname(src_dir)
+            candidate_from_root = os.path.normpath(os.path.join(project_root, model))
+
+            if os.path.exists(candidate_from_src):
+                export_dir = candidate_from_src
+            elif os.path.exists(candidate_from_root):
+                export_dir = candidate_from_root
+            else:
+                export_dir = os.path.join(os.getcwd(), model)
+
         self.sess = tf.Session()
         tf.get_logger().setLevel(self.logger.getEffectiveLevel())
         tf.saved_model.loader.load(

@@ -14,7 +14,15 @@ class DummyStgs:
         return "#000000"
 
 
+class DummyFigure:
+    def subplots_adjust(self, **kwargs):
+        pass
+
+
 class DummyAgg:
+    def __init__(self):
+        self.figure = DummyFigure()
+
     def draw(self):
         pass
 
@@ -27,6 +35,12 @@ class DummySubPlot:
         pass
 
     def set_xlim(self, xmin=None, xmax=None):
+        pass
+
+    def set_xticks(self, ticks):
+        pass
+
+    def set_ylim(self, *args, **kwargs):
         pass
 
     def barh(self, ind, y, color=None, tick_label=None):
