@@ -10,8 +10,10 @@ twixtbot-ui comes with all the necessary twixtbot files in subfolder `./src/back
 
 ## Installation
 
-Make sure you have a python version installed that supports the modules in `requirements.txt`. As of Feb 2026 this is true for python 3.11, 3.12 or 3.13.
+Make sure you have a supported Python version installed (Python 3.11, 3.12, or 3.13).
 
+> **Note on Python versions:** Python 3.14+ is currently **not supported** because TensorFlow does not support Python 3.14+.
+>
 > **Note for Linux users:** FreeSimpleGUI relies on Tkinter. If not already present, install it via your package manager (e.g., `sudo apt install python3-tk`).
 
 Clone this repository or download and extract it:
@@ -48,8 +50,6 @@ Start twixtbot-ui:
 
 ```bash
 python -m src.tbui
-# or
-python src/tbui.py
 ```
 
 Confirm the pop-up message that says that a settings file will be created. After a few seconds you should see the GUI with the TwixT board and a control bar on the right:
