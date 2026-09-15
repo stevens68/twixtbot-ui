@@ -73,8 +73,13 @@ class Heatmap:
         self.bot = bot
         self.p_values = {}
         self.rgb_colors = {}
-        self.calculate()
         self.policy_moves = []
+        self.calculate()
+
+    @staticmethod
+    def heatmap_legend(num_steps=ct.HEATMAP_LEGEND_STEPS):
+        """Returns a list of heatmap RGB values for a heatmap legend."""
+        return heatmap_legend(num_steps)
 
     def calculate(self):
         """Calculates the heatmap by evaluating the policy of the bot

@@ -77,6 +77,8 @@ class TestHeatmap(unittest.TestCase):
         self.assertIsInstance(h.p_values, dict)
         self.assertIsInstance(h.rgb_colors, dict)
         self.assertIsInstance(h.policy_moves, list)
+        self.assertEqual(h.heatmap_legend(), heatmap_legend())
+        self.assertEqual(Heatmap.heatmap_legend(), heatmap_legend())
 
     def test_calculate_with_moves(self):
         m1 = Point(5, 5)
