@@ -262,26 +262,17 @@ class MainWindowLayout:
 
     def col_eval_bar(self):
         colors = (self.stgs.get(ct.K_COLOR[1]), self.stgs.get(ct.K_COLOR[2]))
+        board_size = self.stgs.get(ct.K_BOARD_SIZE[1])
 
-        # Calculate eval bar vertical size based on board size without creating dummy window
-        vsize = max(10, int(self.stgs.get(ct.K_BOARD_SIZE[1]) / 6.4))
         return [
             sg.ProgressBar(
                 2000,
                 orientation="v",
-                size=(vsize, 8),
+                size_px=(board_size, 8),
                 key=ct.K_EVAL_BAR[1],
                 bar_color=colors,
                 pad=(0, 0),
-            ),
-            sg.ProgressBar(
-                1,
-                orientation="v",
-                size=(0, 5),
-                key="TESTEVAL",
-                bar_color=("white", "white"),
-                pad=(0, 0),
-            ),
+            )
         ]
 
     def build_layout(self):
@@ -305,7 +296,7 @@ class MainWindowLayout:
             sg.Button(ct.B_RESET, size=(bw, 1)),
         ]
 
-        eval_bar_col = sg.Column([self.col_eval_bar()])
+        eval_bar_col = sg.Column([self.col_eval_bar()], vertical_alignment="top")
 
         control_col = sg.Column(
             [
@@ -329,7 +320,7 @@ class MainWindowLayout:
             vertical_alignment="top",
         )
 
-        board_col = sg.Column([[self.board.graph]])
+        board_col = sg.Column([[self.board.graph]], vertical_alignment="top")
 
         layout = [
             [sg.Menu(menu_def, tearoff=False)],
