@@ -1,11 +1,10 @@
-
 # twixtbot-ui
 
 twixtbot-ui is a graphical user interface on top of [twixtbot](https://github.com/BonyJordan/twixtbot). twixtbot is an engine for the game [TwixT](https://en.wikipedia.org/wiki/TwixT) developed by Jordan Lampe. It uses [AlphaZero](https://en.wikipedia.org/wiki/AlphaZero) techniques, i.e. a neural network plus Monte-Carlo-Tree-Search and plays brilliant! Big round of applause to Jordan!
 
 twixtbot-ui brings twixtbot to your desktop in a simple standalone python program based on [FreeSimpleGUI](https://github.com/spyoungtech/FreeSimpleGUI). You can play against the bot, have it evaluate past games or have two bots play against each other using different settings.
 
-twixtbot-ui comes with all the necessary twixtbot files in subfolder `./backend` so there is no dependency to the twixtbot repository.    
+twixtbot-ui comes with all the necessary twixtbot files in subfolder `./src/backend` so there is no dependency to the twixtbot repository.    
 
 ![A Twixt game](img/A-Game.JPG)
 
@@ -13,22 +12,44 @@ twixtbot-ui comes with all the necessary twixtbot files in subfolder `./backend`
 
 Make sure you have a python version installed that supports the modules in `requirements.txt`. As of Feb 2026 this is true for python 3.11, 3.12 or 3.13.
 
-Clone this repository or download and extract it.
+> **Note for Linux users:** FreeSimpleGUI relies on Tkinter. If not already present, install it via your package manager (e.g., `sudo apt install python3-tk`).
 
-```
+Clone this repository or download and extract it:
+
+```bash
 git clone https://github.com/stevens68/twixtbot-ui
 ```
 
-Change to directory ```twixtbot-ui``` &ndash; or ```twixtbot-ui-master``` if you extracted it &ndash; and install the necessary modules using your favorite package manager, e.g. pip or uv. Example:
+Change to directory `twixtbot-ui` &ndash; or `twixtbot-ui-master` if you extracted it:
 
+```bash
+cd twixtbot-ui
 ```
+
+Create and activate a virtual environment (optional but recommended):
+
+```bash
+python -m venv .venv
+
+# On Linux / macOS:
+source .venv/bin/activate
+
+# On Windows:
+.venv\Scripts\activate
+```
+
+Install the necessary modules using your favorite package manager, e.g. pip or uv:
+
+```bash
 python -m pip install -r requirements.txt
 ```
 
 Start twixtbot-ui:
 
-```
-python -m src/tbui
+```bash
+python -m src.tbui
+# or
+python src/tbui.py
 ```
 
 Confirm the pop-up message that says that a settings file will be created. After a few seconds you should see the GUI with the TwixT board and a control bar on the right:
@@ -49,7 +70,7 @@ There is one dedicated bot for each player. The bots can have different settings
 
 ### Swap rule 
 
-Human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
+Human players *swap* by clicking on the first peg. The peg will be replaced by a black peg, mirrored at the diagonal. twixtbot has its own swap policy (see `./src/backend/swapmodel.py`). The bot will swap any first move on row 7 to 18 plus moves B6, C6, V6, W6, B19, C19, V19, W19.
 
 ### Undo, Redo, Resign, Reset
 
@@ -62,7 +83,7 @@ Drawn games - which are rare in TwixT - are detected automatically. A pop-up ind
 
 ## Evaluation
 
-By default, both bots share the same neural network in folder `./model/pb`. The network has been taken from [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020. Some manual adjustments were necessary for tensorflow2 to read it. If you want to use another network that you have trained using twixtbot, have a look at the files in folder `./convert` to see what needs to be adjusted before twixtbot-ui can use it. Put the network into a separate folder and configure the folder in *File → Settings...*.  
+By default, both bots share the same neural network in folder `./model/pb`. The network has been taken from [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020. Some manual adjustments were necessary for tensorflow2 to read it. If you want to use another network that you have trained using twixtbot, have a look at the files in folder `./src/convert` to see what needs to be adjusted before twixtbot-ui can use it. Put the network into a separate folder and configure the folder in *File → Settings...*.  
 
 Note that the network was trained with cross-own-links allowed, which can lead to incorrect evaluations in certain cases, if *allow cross-own-links* is set to false (default). It doesn't make a big difference though in most cases.
 
@@ -104,7 +125,7 @@ Note that for the first move and the swap move the bot does not use the evaluati
 
 All settings can be changed and saved via *File → Settings...*. Most changes are effective immediately and can be applied in the middle of a game. Click button *Reset to default* to reset the values in all three tabs. 
 
-<img src="img/Settings.JPG" alt="drawing" width="600"/>
+<img src="img/Settings.JPG" alt="Settings Dialog" width="600"/>
 
 Parameters *auto move* and *trials* can also be changed in the control panel of the main window. These changes won't be saved when you exit the program. In the main window, to see the current settings in a tooltip, hover the mouse over the *auto move* checkboxes. 
 
@@ -208,6 +229,13 @@ resign
     </tbody>
 </table>
 
+## Running Tests
+
+Run the test suite using Python's built-in `unittest`:
+
+```bash
+python -m unittest discover -s tests
+```
 
 ### Contributors
 
