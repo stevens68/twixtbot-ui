@@ -4,13 +4,16 @@
 
 import argparse
 import os
+import sys
 
 import numpy as np
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
 import tensorflow.compat.v1 as tf  # noqa: E402
 
+from src.backend.naf import NetInputs  # noqa: E402
 from src.backend.nneval import NNEvaluater  # noqa: E402
 from src.backend.point import Point  # noqa: E402
 from src.backend.twixt import Game, SWAP  # noqa: E402
@@ -19,21 +22,18 @@ from src.backend.twixt import Game, SWAP  # noqa: E402
 def load_t1_moves(path):
     with open(path, "r", encoding="utf-8") as f:
         lines = [line.strip() for line in f]
-
     return [line for line in lines[13:] if line and not line.startswith("#")]
 
 
 def build_games(t1_path, count):
     game = Game(allow_scl=True)
     games = [game.clone()]
-
     for raw_move in load_t1_moves(t1_path):
         move = SWAP if raw_move.lower() == SWAP else Point(raw_move)
         game.play(move)
         games.append(game.clone())
         if len(games) >= count:
             break
-
     return games
 
 
@@ -48,16 +48,10 @@ def main():
     games = build_games(args.game, args.positions)
     evaluator = NNEvaluater(args.model)
 
-    pegs = []
-    links = []
-    locs = []
-    pwin = []
-    movelogits = []
-
+    pegs, links, locs, pwin, movelogits = [], [], [], [], []
     for game in games:
-        nip = __import__("src.backend.naf", fromlist=["NetInputs"]).NetInputs(game)
+        nip = NetInputs(game)
         p, m = evaluator.eval_one(nip)
-
         pwin.append(np.asarray(p))
         movelogits.append(np.asarray(m))
         p_arr, l_arr, loc_arr = nip.to_input_arrays(evaluator.use_recents)
