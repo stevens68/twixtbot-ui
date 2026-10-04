@@ -52,6 +52,7 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator,
     # chooses it randomly via swapmodel.choose_first_move(), so it is not a
     # useful backend-parity test.
     game.play(opening_move)
+    print(f"           {backend}: {opening_move}", end="", flush=True)
 
     while True:
         response = player.pick_move(game, window=NULL_WINDOW)
@@ -63,9 +64,7 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator,
             )
 
         game.play(moves[0])
-
-        if len(game.history) % 10 == 0:
-            print(f"           {backend}: {len(game.history)} moves...", flush=True)
+        print(f" {moves[0]}", end="", flush=True)
 
         if game.result == twixt.DRAW:
             winner = None
@@ -78,6 +77,8 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator,
         if game.is_winning(twixt.Game.BLACK):
             winner = twixt.Game.BLACK
             break
+
+    print(flush=True)
 
     return {
         "seed": seed,
@@ -103,8 +104,6 @@ def compare_games(args):
         # deterministic greedy network trajectory from move 2 onward.
         random.seed(seed)
         opening_move = swapmodel.choose_first_move()
-        print(f"opening move: {opening_move}", flush=True)
-
         started = time.perf_counter()
         tf_game = play_game(
             "tensorflow",
