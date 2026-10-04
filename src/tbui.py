@@ -413,6 +413,7 @@ class TwixtbotUI:
 
         args = {
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
+            "model": ct.MODEL_FOLDER,
             "trials": self.stgs.get(ct.K_TRIALS[player]),
             "level": self.stgs.get(ct.K_LEVEL[player]),
             "smart_root": self.stgs.get(ct.K_SMART_ROOT[player]),
