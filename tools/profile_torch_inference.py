@@ -46,6 +46,27 @@ def benchmark(model, inputs, warmup, iterations):
     return elapsed / iterations
 
 
+def benchmark_parts(model, np_inputs, warmup, iterations):
+    inputs = [torch.from_numpy(x).unsqueeze(0).float() for x in np_inputs]
+    with torch.inference_mode():
+        for _ in range(warmup):
+            model(*inputs)
+        started = time.perf_counter()
+        for _ in range(iterations):
+            [torch.from_numpy(x).unsqueeze(0).float() for x in np_inputs]
+        input_time = (time.perf_counter() - started) / iterations
+        started = time.perf_counter()
+        for _ in range(iterations):
+            pwin, movelogits = model(*inputs)
+        forward_time = (time.perf_counter() - started) / iterations
+        started = time.perf_counter()
+        for _ in range(iterations):
+            pwin.cpu().numpy()
+            movelogits.cpu().numpy()
+        output_time = (time.perf_counter() - started) / iterations
+    return input_time, forward_time, output_time
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -74,6 +95,17 @@ def main():
             f"{avg * 1000:8.3f} ms/inference  "
             f"{1.0 / avg:8.1f} inferences/s"
         )
+
+    print()
+    np_inputs = tuple(x.numpy() for x in make_inputs(model, 1))
+    input_time, forward_time, output_time = benchmark_parts(
+        model, np_inputs, args.warmup, args.iterations
+    )
+    print("Evaluator parts (batch=1):")
+    print(f"input conversion:  {input_time * 1000:8.3f} ms")
+    print(f"model forward:     {forward_time * 1000:8.3f} ms")
+    print(f"output conversion: {output_time * 1000:8.3f} ms")
+    print(f"sum:               {(input_time + forward_time + output_time) * 1000:8.3f} ms")
 
     print()
     print("Thread-count sweep (batch=1):")
