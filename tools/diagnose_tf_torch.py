@@ -136,6 +136,30 @@ def main():
         diff = np.max(np.abs(torch_nhwc - tf_value))
         print(f"{name:20} max_abs={diff:.6g}")
 
+    # Compare the actual model outputs too. This catches post-convolution
+    # differences such as the policy crop/reshape and value-head BN/FC path.
+    with torch.no_grad():
+        torch_pwin, torch_policy = net(
+            torch.from_numpy(ref["pegs"]).float(),
+            torch.from_numpy(ref["links"]).float(),
+            torch.from_numpy(ref["locs"]).float(),
+        )
+
+    print()
+    print("Final output parity:")
+    for name, torch_value, tf_name in (
+        ("pwin", torch_pwin.numpy(), "pwin:0"),
+        ("movelogits", torch_policy.numpy(), "movelogits:0"),
+    ):
+        tf_value = sess.run(graph.get_tensor_by_name(tf_name), feed_dict={
+            graph.get_tensor_by_name("pegx:0"): ref["pegs"],
+            graph.get_tensor_by_name("linkx:0"): ref["links"],
+            graph.get_tensor_by_name("locx:0"): ref["locs"],
+            graph.get_tensor_by_name("is_training:0"): False,
+        })
+        diff = np.max(np.abs(torch_value - tf_value))
+        print(f"{name:20} max_abs={diff:.6g}")
+
     print()
     print("TensorFlow convolution ops:")
     for prefix, _ in groups:
