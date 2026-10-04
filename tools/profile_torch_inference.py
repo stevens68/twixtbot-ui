@@ -235,6 +235,21 @@ def main():
     print(f"sum:               {(input_time + forward_time + output_time) * 1000:8.3f} ms")
 
     print()
+    print("Channels-last benchmark (batch=1):")
+    inputs = make_inputs(model, 1)
+    channels_last_model = model.to(memory_format=torch.channels_last)
+    channels_last_inputs = tuple(
+        x.permute(0, 3, 1, 2).contiguous(memory_format=torch.channels_last)
+        for x in inputs
+    )
+    avg = benchmark(channels_last_model, channels_last_inputs, args.warmup, args.iterations)
+    print(
+        f"channels_last  {avg * 1000:8.3f} ms/inference  "
+        f"{1.0 / avg:8.1f} inferences/s"
+    )
+    channels_last_model.to(memory_format=torch.contiguous_format)
+
+    print()
     print("torch.compile benchmark (batch=1):")
     inputs = make_inputs(model, 1)
     try:
