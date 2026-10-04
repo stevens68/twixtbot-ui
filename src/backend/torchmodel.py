@@ -30,11 +30,13 @@ class TwixtNet(nn.Module):
         value_reductions=2,
         value_padding="VALID",
         bn_eps=1e-3,
+        channels_last=False,
     ):
         super().__init__()
         loc_channels = 3 if use_recents else 2
         self.use_recents = use_recents
         self.value_triple = value_triple
+        self.channels_last = channels_last
 
         self.location = nn.Conv2d(loc_channels, channels, 1, bias=False)
         self.pegs = nn.Conv2d(2, channels, 5, padding=2, bias=False)
