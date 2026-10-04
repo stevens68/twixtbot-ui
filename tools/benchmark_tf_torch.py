@@ -12,8 +12,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src import constants as ct
-from src.backend import swapmodel, torchnneval, twixt
+from src.backend import nneval, swapmodel, torchnneval, twixt
 from src.backend.nnmplayer import Player
+
+
+class _NullWindow:
+    def write_event_value(self, *_args):
+        pass
+
+
+NULL_WINDOW = _NullWindow()
 
 
 class TimedEvaluator:
@@ -54,7 +62,7 @@ def play_game(player, seed, opening_move):
 
     started = time.perf_counter()
     while True:
-        response = player.pick_move(game, window=None)
+        response = player.pick_move(game, window=NULL_WINDOW)
         moves = response.get("moves", [])
         if not moves:
             raise RuntimeError("no move returned")
@@ -91,7 +99,7 @@ def main():
 
     model = str(Path(args.model))
     print("Loading TensorFlow model...", flush=True)
-    tf_eval = TimedEvaluator(torchnneval.create_evaluator("tensorflow", model))
+    tf_eval = TimedEvaluator(nneval.NNEvaluater(model))
     print("Loading PyTorch model...", flush=True)
     torch_eval = TimedEvaluator(torchnneval.create_evaluator("pytorch", model))
 
