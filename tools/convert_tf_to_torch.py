@@ -50,6 +50,23 @@ def numbered_names(data, pattern):
     )
 
 
+def bn_scopes(data, prefix):
+    pattern = re.escape(prefix) + r"/BatchNorm(?:_(\d+))?/gamma"
+    names = [
+        name[:-len("/gamma")]
+        for name in data
+        if re.fullmatch(pattern, name)
+    ]
+
+    def suffix(scope):
+        match = re.fullmatch(
+            re.escape(prefix) + r"/BatchNorm(?:_(\d+))?", scope
+        )
+        return 0 if match.group(1) is None else int(match.group(1))
+
+    return sorted(names, key=suffix)
+
+
 def infer_config(data, loc_channels, pwin_shape):
     channels = int(data["primary_location/Variable"].shape[-1])
     blocks = {
@@ -62,9 +79,6 @@ def infer_config(data, loc_channels, pwin_shape):
 
     block_count = max(blocks) + 1 if blocks else 0
 
-    # Do not rely on Variable_N suffixes to identify the value-head layers:
-    # the number of reduction convolutions changes which suffix belongs to
-    # the FC and output layers.
     pwin_weights = numbered_names(data, r"pwin/Variable(?:_(\d+))?")
     conv_names = [name for name in pwin_weights if data[name].ndim == 4]
     linear_names = [name for name in pwin_weights if data[name].ndim == 2]
@@ -102,7 +116,6 @@ def infer_config(data, loc_channels, pwin_shape):
         raise ValueError(f"unsupported value-head spatial size: {spatial_sq}")
 
     if value_reductions:
-        # mkbig.py's 5x5/stride-2 VALID and SAME modes have distinct final sizes.
         valid_spatial = 24
         for _ in range(value_reductions):
             if valid_spatial < 5:
@@ -158,19 +171,27 @@ def main():
 
     net = TwixtNet(**config)
 
+    primary_bn_scopes = bn_scopes(data, "primary")
+    if len(primary_bn_scopes) != 1:
+        raise ValueError(f"expected one primary BatchNorm, found {primary_bn_scopes}")
     conv(net.location, data, "primary_location/Variable")
     conv(net.pegs, data, "primary_pegs/Variable")
     conv(net.links, data, "primary_links/Variable")
-    bn(net.primary_bn, data, "primary/BatchNorm")
+    bn(net.primary_bn, data, primary_bn_scopes[0])
 
     for i, block in enumerate(net.blocks):
         scope = f"block{i}"
+        block_bn_scopes = bn_scopes(data, scope)
+        if len(block_bn_scopes) != 2:
+            raise ValueError(
+                f"expected two BatchNorms for {scope}, found {block_bn_scopes}"
+            )
         conv(block.conv1, data, f"{scope}/Variable")
-        bn(block.bn1, data, f"{scope}/BatchNorm")
+        bn(block.bn1, data, block_bn_scopes[0])
         conv(block.conv2, data, f"{scope}/Variable_1")
-        bn(block.bn2, data, f"{scope}/BatchNorm_1")
+        bn(block.bn2, data, block_bn_scopes[1])
 
-    value_bn_names = numbered_names(data, r"pwin/BatchNorm(?:_(\d+))?")
+    value_bn_names = bn_scopes(data, "pwin")
     if len(value_bn_names) != len(value_conv_names) + 1:
         raise ValueError(
             "unexpected value-head BatchNorm count: "
@@ -190,8 +211,13 @@ def main():
     bn(net.value_bn_fc, data, value_bn_names[-1])
     linear(net.value_out, data, value_out_name)
 
+    policy_bn_scopes = bn_scopes(data, "movelogits")
+    if len(policy_bn_scopes) != 1:
+        raise ValueError(
+            f"expected one policy BatchNorm, found {policy_bn_scopes}"
+        )
     conv(net.policy_conv1, data, "movelogits/Variable")
-    bn(net.policy_bn, data, "movelogits/BatchNorm")
+    bn(net.policy_bn, data, policy_bn_scopes[0])
     conv(net.policy_conv2, data, "movelogits/Variable_1")
 
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
