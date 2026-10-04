@@ -11,8 +11,12 @@ import argparse
 import json
 import random
 import statistics
+import sys
 import time
 from pathlib import Path
+
+# Allow this script to be run directly from the repository root.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src import constants as ct
 from src.backend import torchnneval, twixt
