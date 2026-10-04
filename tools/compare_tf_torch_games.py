@@ -31,7 +31,7 @@ class _NullWindow:
 NULL_WINDOW = _NullWindow()
 
 
-def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator):
+def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator, opening_move):
     random.seed(seed)
 
     player = Player(
@@ -48,6 +48,10 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator)
     )
 
     game = twixt.Game(allow_scl=False)
+    # The first move is intentionally supplied by the caller. The real bot
+    # chooses it randomly via swapmodel.choose_first_move(), so it is not a
+    # useful backend-parity test.
+    game.play(opening_move)
 
     while True:
         response = player.pick_move(game, window=NULL_WINDOW)
@@ -95,6 +99,11 @@ def compare_games(args):
     for i in range(args.games):
         print(f"\n=== Game {i + 1}/{args.games} ===", flush=True)
         seed = args.seed + i
+        # Use the same randomized opening for both backends, then compare the
+        # deterministic greedy network trajectory from move 2 onward.
+        random.seed(seed)
+        opening_move = torchnneval.swapmodel.choose_first_move()
+        print(f"opening move: {opening_move}", flush=True)
 
         started = time.perf_counter()
         tf_game = play_game(
@@ -106,6 +115,7 @@ def compare_games(args):
             args.cpuct,
             args.level,
             tf_evaluator,
+            opening_move,
         )
         tf_seconds = time.perf_counter() - started
 
@@ -119,6 +129,7 @@ def compare_games(args):
             args.cpuct,
             args.level,
             torch_evaluator,
+            opening_move,
         )
         torch_seconds = time.perf_counter() - started
 
@@ -224,8 +235,8 @@ def main():
     parser.add_argument(
         "--trials",
         type=int,
-        default=100,
-        help="MCTS trials per move (default: 100)",
+        default=0,
+        help="MCTS trials per move; 0 uses greedy network policy (default: 0)",
     )
     parser.add_argument(
         "--model",
