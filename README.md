@@ -10,9 +10,8 @@ twixtbot-ui comes with all the necessary twixtbot files in subfolder `./src/back
 
 ## Installation
 
-Make sure you have a supported Python version installed (Python 3.11, 3.12, 3.13, or 3.14).
+Make sure you have a supported Python version installed (Python 3.12, 3.13, or 3.14).
 
->
 > **Note:** FreeSimpleGUI relies on Tkinter. On Linux, install it via your package manager (e.g., `sudo apt install python3-tk`) if necessary.
 
 Clone this repository or download and extract it:
