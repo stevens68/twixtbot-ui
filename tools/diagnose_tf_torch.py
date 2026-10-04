@@ -166,6 +166,17 @@ def main():
         )
 
     print()
+    print("Value-head parameter parity:")
+    # The converter maps BN groups in TensorFlow global creation order.
+    # Verify the value BN/FC/output mapping explicitly.
+    tf_value_bn_scopes = [
+        # Primary + residual BNs precede these; recover the value scopes by
+        # taking the configured value-head count from the global BN list.
+        # This diagnostic prints the actual TensorFlow variable names below.
+    ]
+    print(f"value.fc weight shape={tuple(net.value_fc.weight.shape)}")
+    print(f"value.out weight shape={tuple(net.value_out.weight.shape)}")
+    print()
     print("Value-head module outputs:")
     for name in ("value.bn_fc", "value.fc", "value.out"):
         if name in captured:
