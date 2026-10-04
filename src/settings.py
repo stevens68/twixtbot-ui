@@ -47,9 +47,6 @@ class Settings:
 
         # set defaults for settings that haven't been found in config file
         changes = False
-        if ct.K_NN_BACKEND not in self.settings:
-            self.settings[ct.K_NN_BACKEND] = ct.NN_BACKEND_DEFAULT
-            changes = True
         for key in ct.SETTING_KEYS:
             # general and player 1 defaults
             if key[1] not in self.settings:
