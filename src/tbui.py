@@ -129,14 +129,12 @@ class TwixtbotUI:
 
         # import
         init_window.update("importing modules ...", 30)
-        import src.backend.torchnneval as torchnneval
+        import src.backend.nneval as nneval
 
-        # Initialize bots as Player objects.
+        # Initialize bots as Player objects using the shared PyTorch evaluator.
         self.bots = [None, None]
+        evaluator = nneval.NNEvaluater(ct.MODEL_FOLDER)
         for player in [1, 2]:
-            evaluator = torchnneval.create_evaluator(
-                self.stgs.get(ct.K_NN_BACKEND), ct.MODEL_FOLDER
-            )
             self.init_bot(player, evaluator=evaluator)
 
         # Warm up bots
