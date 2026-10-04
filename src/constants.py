@@ -97,13 +97,6 @@ LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 K_COLOR = ["color", "P1_COLOR", "P2_COLOR", "red", "black"]
 K_NAME = ["name", "P1_NAME", "P2_NAME", "Tom", "Jerry"]
 K_AUTO_MOVE = ["auto move", "P1_AUTO_MOVE", "P2_AUTO_MOVE", False, False]
-K_MODEL_FOLDER = [
-    "model folder",
-    "P1_MODEL_FOLDER",
-    "P2_MODEL_FOLDER",
-    "../model/pb",
-    "../model/pb",
-]
 K_RANDOM_ROTATION = [
     "random rotation",
     "P1_RANDOM_ROTATION",
@@ -166,7 +159,6 @@ SETTING_KEYS = [
     K_NAME,
     K_AUTO_MOVE,
     K_TRIALS,
-    K_MODEL_FOLDER,
     K_TEMPERATURE,
     K_CPUCT,
     K_ADD_NOISE,

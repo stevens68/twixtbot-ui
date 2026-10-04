@@ -400,18 +400,6 @@ def st_row_auto_move(player):
     ]
 
 
-def st_row_model_folder(player):
-    return [
-        st_label(ct.K_MODEL_FOLDER[0]),
-        sg.Input(key=ct.K_MODEL_FOLDER[player], size=(30, 1)),
-        sg.FolderBrowse(
-            target=ct.K_MODEL_FOLDER[player],
-            initial_folder=ct.K_MODEL_FOLDER[player + 2],
-        ),
-        sg.Text(ct.MSG_REQUIRES_RESTART),
-    ]
-
-
 def st_row_trials(player):
     return [
         st_label(ct.K_TRIALS[0]),
@@ -509,7 +497,6 @@ def st_tab_player(player):
         st_row_auto_move(player),
         row_separator("   evaluation"),
         st_row_level(player),
-        st_row_model_folder(player),
         st_row_rotation(player),
         row_separator("   MCTS"),
         st_row_trials(player),

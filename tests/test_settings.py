@@ -12,7 +12,6 @@ class DummyConstants:
     ]
     K_BOARD_SIZE = ("desc", "key1")
     BOARD_SIZE_LIST = [500, 600]
-    K_MODEL_FOLDER = ("desc", "key1", "key2")
     K_ALLOW_SWAP = ("Allow Swap", "key1")
     K_ALLOW_SCL = ("Allow SCL", "key3")
     K_SMART_ACCEPT = ("Smart Accept", "key4")
@@ -73,25 +72,6 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(s.get("key1"), 123)
         s.update("key3", {"key3": "123"})
         self.assertEqual(s.get("key3"), 123)
-
-    @patch("src.settings.logging.getLogger")
-    @patch("src.settings.sg.popup")
-    @patch(
-        "src.settings.jsonload",
-        return_value={"key1": 500, "key2": "dummy_path", "key3": "123", "key4": "val4"},
-    )
-    @patch("src.settings.pathlib.Path")
-    def test_same_models(self, mock_path, mock_jsonload, mock_popup, mock_logger):
-        s = Settings()
-        # Create two mock Path objects
-        mock_path.side_effect = lambda val: MagicMock(
-            as_posix=lambda: val, absolute=lambda: val
-        )
-        s.set("key1", "dummy_path")
-        s.set("key2", "dummy_path")
-        self.assertTrue(s.same_models())
-        s.set("key2", "other_path")
-        self.assertFalse(s.same_models())
 
     @patch("src.settings.jsondump")
     @patch(

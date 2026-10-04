@@ -134,9 +134,8 @@ class TwixtbotUI:
         # Initialize bots as Player objects.
         self.bots = [None, None]
         for player in [1, 2]:
-            model = self.stgs.get(ct.K_MODEL_FOLDER[player])
             evaluator = torchnneval.create_evaluator(
-                self.stgs.get(ct.K_NN_BACKEND), model
+                self.stgs.get(ct.K_NN_BACKEND), ct.MODEL_FOLDER
             )
             self.init_bot(player, evaluator=evaluator)
 
@@ -414,7 +413,6 @@ class TwixtbotUI:
 
         args = {
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
-            "model": self.stgs.get(ct.K_MODEL_FOLDER[player]),
             "trials": self.stgs.get(ct.K_TRIALS[player]),
             "level": self.stgs.get(ct.K_LEVEL[player]),
             "smart_root": self.stgs.get(ct.K_SMART_ROOT[player]),
