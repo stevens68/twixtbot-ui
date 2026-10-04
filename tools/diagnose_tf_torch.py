@@ -114,12 +114,17 @@ def main():
         ]
         value_filter_values = sess.run(value_filters)
 
-        values = sess.run(tensors, feed_dict={
+        feed_dict = {
             graph.get_tensor_by_name("pegx:0"): ref["pegs"],
             graph.get_tensor_by_name("linkx:0"): ref["links"],
             graph.get_tensor_by_name("locx:0"): ref["locs"],
             graph.get_tensor_by_name("is_training:0"): False,
-        })
+        }
+        values = sess.run(tensors, feed_dict=feed_dict)
+        tf_pwin = sess.run(graph.get_tensor_by_name("pwin:0"), feed_dict=feed_dict)
+        tf_policy = sess.run(
+            graph.get_tensor_by_name("movelogits:0"), feed_dict=feed_dict
+        )
 
     print("Value-conv weight parity:")
     for i, tf_filter in enumerate(value_filter_values):
@@ -147,18 +152,11 @@ def main():
 
     print()
     print("Final output parity:")
-    for name, torch_value, tf_name in (
-        ("pwin", torch_pwin.numpy(), "pwin:0"),
-        ("movelogits", torch_policy.numpy(), "movelogits:0"),
-    ):
-        tf_value = sess.run(graph.get_tensor_by_name(tf_name), feed_dict={
-            graph.get_tensor_by_name("pegx:0"): ref["pegs"],
-            graph.get_tensor_by_name("linkx:0"): ref["links"],
-            graph.get_tensor_by_name("locx:0"): ref["locs"],
-            graph.get_tensor_by_name("is_training:0"): False,
-        })
-        diff = np.max(np.abs(torch_value - tf_value))
-        print(f"{name:20} max_abs={diff:.6g}")
+    print(f"{'pwin':20} max_abs={np.max(np.abs(torch_pwin.numpy() - tf_pwin)):.6g}")
+    print(
+        f"{'movelogits':20} "
+        f"max_abs={np.max(np.abs(torch_policy.numpy() - tf_policy)):.6g}"
+    )
 
     print()
     print("TensorFlow convolution ops:")
