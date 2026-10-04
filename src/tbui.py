@@ -129,36 +129,13 @@ class TwixtbotUI:
 
         # import
         init_window.update("importing modules ...", 30)
-        import src.backend.nnmplayer as nnmplayer  # noqa: F401
+        import src.backend.nneval as nneval
 
-        # Initialize bots as Player objects
-        args1 = {
-            "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
-            "model": self.stgs.get(ct.K_MODEL_FOLDER[1]),
-            "trials": self.stgs.get(ct.K_TRIALS[1]),
-            "level": self.stgs.get(ct.K_LEVEL[1]),
-            "smart_root": self.stgs.get(ct.K_SMART_ROOT[1]),
-            "temperature": self.stgs.get(ct.K_TEMPERATURE[1]),
-            "rotation": self.stgs.get(ct.K_ROTATION[1]),
-            "add_noise": self.stgs.get(ct.K_ADD_NOISE[1]),
-            "cpuct": self.stgs.get(ct.K_CPUCT[1]),
-            "board": self.board,
-            "evaluator": None,
-        }
-        args2 = {
-            "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
-            "model": self.stgs.get(ct.K_MODEL_FOLDER[2]),
-            "trials": self.stgs.get(ct.K_TRIALS[2]),
-            "level": self.stgs.get(ct.K_LEVEL[2]),
-            "smart_root": self.stgs.get(ct.K_SMART_ROOT[2]),
-            "temperature": self.stgs.get(ct.K_TEMPERATURE[2]),
-            "rotation": self.stgs.get(ct.K_ROTATION[2]),
-            "add_noise": self.stgs.get(ct.K_ADD_NOISE[2]),
-            "cpuct": self.stgs.get(ct.K_CPUCT[2]),
-            "board": self.board,
-            "evaluator": None,
-        }
-        self.bots = [nnmplayer.Player(**args1), nnmplayer.Player(**args2)]
+        # Initialize bots as Player objects using the shared PyTorch evaluator.
+        self.bots = [None, None]
+        evaluator = nneval.NNEvaluater(ct.MODEL_FOLDER)
+        for player in [1, 2]:
+            self.init_bot(player, evaluator=evaluator)
 
         # Warm up bots
         init_window.update("warming up bots ...", 90)
@@ -434,7 +411,7 @@ class TwixtbotUI:
 
         args = {
             "allow_swap": self.stgs.get(ct.K_ALLOW_SWAP[1]),
-            "model": self.stgs.get(ct.K_MODEL_FOLDER[player]),
+            "model": ct.MODEL_FOLDER,
             "trials": self.stgs.get(ct.K_TRIALS[player]),
             "level": self.stgs.get(ct.K_LEVEL[player]),
             "smart_root": self.stgs.get(ct.K_SMART_ROOT[player]),

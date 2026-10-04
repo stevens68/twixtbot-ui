@@ -10,9 +10,8 @@ twixtbot-ui comes with all the necessary twixtbot files in subfolder `./src/back
 
 ## Installation
 
-Make sure you have a supported Python version installed (Python 3.11, 3.12, or 3.13).
+Make sure you have a supported Python version installed (Python 3.11, 3.12, 3.13, or 3.14).
 
-> **Note:** Do not use Python 3.14+; It does not support the required tensorflow version.
 >
 > **Note:** FreeSimpleGUI relies on Tkinter. On Linux, install it via your package manager (e.g., `sudo apt install python3-tk`) if necessary.
 
@@ -80,9 +79,9 @@ Drawn games - which are rare in TwixT - are detected automatically. A pop-up ind
 
 ## Evaluation
 
-By default, both bots share the same neural network in folder `./model/pb`. The network has been taken from [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020. Some manual adjustments were necessary for tensorflow2 to read it. If you want to use another network that you have trained using twixtbot, have a look at the files in folder `./src/convert` to see what needs to be adjusted before twixtbot-ui can use it. Put the network into a separate folder and configure the folder in *File → Settings...*.  
+The PyTorch network is stored as `./model/torch.pt`. It is based on the network originally trained for [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020 and was converted to PyTorch while preserving the original network architecture and outputs.  
 
-Note that the network was trained with cross-own-links allowed, which can lead to incorrect evaluations in certain cases, if *allow cross-own-links* is set to false (default). It doesn't make a big difference though in most cases.
+Note that the network was trained with *allow cross-own-links* = true. If the twixtbot-ui setting *allow cross-own-links* is set to false (default), this can lead to wrong evaluations in very rare case.
 
 By default, the evaluation output of the network is displayed after each move. If you do not want to be distracted or influenced you can uncheck the *evaluation* checkbox. This also hides the *MCTS visits* bar chart.
 
@@ -157,7 +156,6 @@ Parameters *auto move* and *trials* can also be changed in the control panel of 
   - 0.5 stochastic choice using the p-values, i.e. if a move has a p-value of 0.3 it will be chosen with a 
     probability of 0.3
   - 0.0 random uniform: all legal moves have the same probability to be chosen.
-- *model folder*: no reason to change this unless you have a second network (default: `./model/pb`)
 - *trials*: number of MCTS iterations. Set it to 0 to switch off MCTS (default: 0)
 - *smart root*: if true, the leading move is not visited if it is more than one visit ahead. Of the remaining moves the one with the best UCB is visited instead (default: false) 
 - *temperature*: controls the policy which move is taken after MCTS: 

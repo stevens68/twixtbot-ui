@@ -54,7 +54,7 @@ SEPARATOR_FONT = ("Arial", 9, "italic")
 # files and folders
 SETTINGS_FILE_NAME = "config.json"
 SETTINGS_FILE = path.join(path.dirname(__file__), SETTINGS_FILE_NAME)
-MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), "../model/pb"))
+MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), "../model/torch.pt"))
 SPINNER_IMAGE = str(pathlib.Path(__file__).parent.joinpath(r"../img/wheel.gif"))
 
 # limits
@@ -97,13 +97,6 @@ LOG_LEVEL_LIST = list(map(logging.getLevelName, range(10, 60, 10)))
 K_COLOR = ["color", "P1_COLOR", "P2_COLOR", "red", "black"]
 K_NAME = ["name", "P1_NAME", "P2_NAME", "Tom", "Jerry"]
 K_AUTO_MOVE = ["auto move", "P1_AUTO_MOVE", "P2_AUTO_MOVE", False, False]
-K_MODEL_FOLDER = [
-    "model folder",
-    "P1_MODEL_FOLDER",
-    "P2_MODEL_FOLDER",
-    "../model/pb",
-    "../model/pb",
-]
 K_RANDOM_ROTATION = [
     "random rotation",
     "P1_RANDOM_ROTATION",
@@ -131,6 +124,7 @@ K_SMART_ACCEPT = ["smart accept", "SMART_ACCEPT", None, True]
 K_RESIGN_THRESHOLD = ["resign threshold", "RESIGN_THRESHOLD", None, 0.95]
 
 K_LOG_LEVEL = ["Log level", "LOG_LEVEL", None, logging.getLevelName(logging.ERROR)]
+
 
 # keys - non-setting
 K_BOARD = [None, "BOARD"]
@@ -162,7 +156,6 @@ SETTING_KEYS = [
     K_NAME,
     K_AUTO_MOVE,
     K_TRIALS,
-    K_MODEL_FOLDER,
     K_TEMPERATURE,
     K_CPUCT,
     K_ADD_NOISE,

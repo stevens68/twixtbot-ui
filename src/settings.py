@@ -32,12 +32,6 @@ class Settings:
         else:
             self.settings[event] = values[event]
 
-    def same_models(self):
-        return (
-            pathlib.Path(self.get(ct.K_MODEL_FOLDER[1])).absolute()
-            == pathlib.Path(self.get(ct.K_MODEL_FOLDER[2])).absolute()
-        )
-
     def load(self):
         try:
             with open(ct.SETTINGS_FILE, "r") as f:
@@ -121,12 +115,6 @@ class Settings:
             ct.K_SMART_ACCEPT[0] + ":\t" + str(self.get(ct.K_SMART_ACCEPT[1])) + "   \n"
         )
         text += "----  evaluation  ------------------\n"
-        text += (
-            ct.K_MODEL_FOLDER[0]
-            + ":\t"
-            + str(self.get(ct.K_MODEL_FOLDER[player]))
-            + "   \n"
-        )
         text += (
             ct.K_ROTATION[0] + ":\t\t" + str(self.get(ct.K_ROTATION[player])) + "   \n"
         )

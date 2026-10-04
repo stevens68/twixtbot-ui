@@ -8,7 +8,7 @@ class DummyModel:
 
 class TestNNEvaluater(unittest.TestCase):
     def test_init(self):
-        # Should raise error because model directory and TensorFlow are not available
+        # Should raise an error because the model checkpoint does not exist
         with self.assertRaises(Exception):
             NNEvaluater("nonexistent_model_dir")
 
