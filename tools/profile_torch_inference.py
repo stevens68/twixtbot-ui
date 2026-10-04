@@ -67,6 +67,122 @@ def benchmark_parts(model, np_inputs, warmup, iterations):
     return input_time, forward_time, output_time
 
 
+def benchmark_sections(model, inputs, warmup, iterations):
+    pegs = inputs[0].permute(0, 3, 1, 2)
+    links = inputs[1].permute(0, 3, 1, 2)
+    locs = inputs[2].permute(0, 3, 1, 2)
+
+    def forward_sections():
+        links_padded = torch.nn.functional.pad(links, (1, 2, 1, 2))
+        h = model.location(locs) + model.pegs(pegs) + model.links(links_padded)
+        h = torch.abs(model.primary_bn(h))
+
+        for block in model.blocks:
+            h = block(h)
+
+        policy = torch.abs(model.policy_bn(model.policy_conv1(h)))
+        policy = model.policy_conv2(policy)
+        policy = policy[:, :, 1:-1, :].reshape(policy.shape[0], -1)
+
+        v = h
+        for conv, bn in zip(model.value_conv, model.value_bn):
+            if model.value_padding == "SAME":
+                height, width = v.shape[-2:]
+                out_h = (height + 1) // 2
+                out_w = (width + 1) // 2
+                pad_h = max((out_h - 1) * 2 + 5 - height, 0)
+                pad_w = max((out_w - 1) * 2 + 5 - width, 0)
+                v = torch.nn.functional.pad(
+                    v,
+                    (
+                        pad_w // 2,
+                        pad_w - pad_w // 2,
+                        pad_h // 2,
+                        pad_h - pad_h // 2,
+                    ),
+                )
+            v = torch.abs(bn(conv(v)))
+
+        v = v.permute(0, 2, 3, 1).flatten(1)
+        v = torch.abs(model.value_bn_fc(model.value_fc(v)))
+        model.value_out(v)
+
+    with torch.inference_mode():
+        for _ in range(warmup):
+            forward_sections()
+
+        def timed(fn):
+            started = time.perf_counter()
+            for _ in range(iterations):
+                fn()
+            return (time.perf_counter() - started) / iterations
+
+        primary = timed(
+            lambda: (
+                model.location(locs)
+                + model.pegs(pegs)
+                + model.links(
+                    torch.nn.functional.pad(links, (1, 2, 1, 2))
+                )
+            )
+        )
+
+        h = model.location(locs) + model.pegs(pegs) + model.links(
+            torch.nn.functional.pad(links, (1, 2, 1, 2))
+        )
+        h = torch.abs(model.primary_bn(h))
+
+        residual = timed(
+            lambda: run_residual_blocks(model.blocks, h)
+        )
+
+        h = run_residual_blocks(model.blocks, h)
+        policy = timed(
+            lambda: run_policy(model, h)
+        )
+        value = timed(
+            lambda: run_value(model, h)
+        )
+
+    return primary, residual, policy, value
+
+
+def run_residual_blocks(blocks, h):
+    for block in blocks:
+        h = block(h)
+    return h
+
+
+def run_policy(model, h):
+    policy = torch.abs(model.policy_bn(model.policy_conv1(h)))
+    policy = model.policy_conv2(policy)
+    return policy[:, :, 1:-1, :].reshape(policy.shape[0], -1)
+
+
+def run_value(model, h):
+    v = h
+    for conv, bn in zip(model.value_conv, model.value_bn):
+        if model.value_padding == "SAME":
+            height, width = v.shape[-2:]
+            out_h = (height + 1) // 2
+            out_w = (width + 1) // 2
+            pad_h = max((out_h - 1) * 2 + 5 - height, 0)
+            pad_w = max((out_w - 1) * 2 + 5 - width, 0)
+            v = torch.nn.functional.pad(
+                v,
+                (
+                    pad_w // 2,
+                    pad_w - pad_w // 2,
+                    pad_h // 2,
+                    pad_h - pad_h // 2,
+                ),
+            )
+        v = torch.abs(bn(conv(v)))
+    v = v.permute(0, 2, 3, 1).flatten(1)
+    v = torch.abs(model.value_bn_fc(model.value_fc(v)))
+    return model.value_out(v)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -95,6 +211,17 @@ def main():
             f"{avg * 1000:8.3f} ms/inference  "
             f"{1.0 / avg:8.1f} inferences/s"
         )
+
+    print()
+    section_inputs = make_inputs(model, 1)
+    primary, residual, policy, value = benchmark_sections(
+        model, section_inputs, args.warmup, args.iterations
+    )
+    print("Model sections (batch=1):")
+    print(f"primary:   {primary * 1000:8.3f} ms")
+    print(f"residual:  {residual * 1000:8.3f} ms")
+    print(f"policy:    {policy * 1000:8.3f} ms")
+    print(f"value:     {value * 1000:8.3f} ms")
 
     print()
     np_inputs = tuple(x.numpy()[0] for x in make_inputs(model, 1))
