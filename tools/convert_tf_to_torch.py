@@ -39,6 +39,17 @@ def bn(module, data, scope):
     )
 
 
+def numbered_names(data, pattern):
+    def suffix(name):
+        match = re.fullmatch(pattern, name)
+        return 0 if match.group(1) is None else int(match.group(1))
+
+    return sorted(
+        (name for name in data if re.fullmatch(pattern, name)),
+        key=suffix,
+    )
+
+
 def infer_config(data, loc_channels, pwin_shape):
     channels = int(data["primary_location/Variable"].shape[-1])
     blocks = {
@@ -50,16 +61,37 @@ def infer_config(data, loc_channels, pwin_shape):
         raise ValueError(f"non-contiguous residual block names: {sorted(blocks)}")
 
     block_count = max(blocks) + 1 if blocks else 0
-    value_fc_shape = data["pwin/Variable_2"].shape
-    value_hidden = int(value_fc_shape[1])
-    value_reductions = len([
-        name for name in data
-        if re.fullmatch(r"pwin/Variable(?:_\d+)?", name)
-    ]) - 2
-    if value_reductions < 0:
-        raise ValueError("could not infer value-head convolution count")
 
-    fc_inputs = int(value_fc_shape[0])
+    # Do not rely on Variable_N suffixes to identify the value-head layers:
+    # the number of reduction convolutions changes which suffix belongs to
+    # the FC and output layers.
+    pwin_weights = numbered_names(data, r"pwin/Variable(?:_(\d+))?")
+    conv_names = [name for name in pwin_weights if data[name].ndim == 4]
+    linear_names = [name for name in pwin_weights if data[name].ndim == 2]
+
+    output_names = [
+        name for name in linear_names if int(data[name].shape[1]) == int(pwin_shape[1])
+    ]
+    if len(output_names) != 1:
+        raise ValueError(
+            "could not identify value-head output weight; "
+            f"2D pwin weights={[(n, data[n].shape) for n in linear_names]}"
+        )
+    value_out_name = output_names[0]
+
+    fc_names = [name for name in linear_names if name != value_out_name]
+    if len(fc_names) != 1:
+        raise ValueError(
+            "could not identify value-head FC weight; "
+            f"2D pwin weights={[(n, data[n].shape) for n in linear_names]}"
+        )
+    value_fc_name = fc_names[0]
+
+    value_reductions = len(conv_names)
+    value_fc_shape = data[value_fc_name]
+    value_hidden = int(value_fc_shape.shape[1])
+
+    fc_inputs = int(value_fc_shape.shape[0])
     if fc_inputs % channels:
         raise ValueError(
             f"value FC input size {fc_inputs} is not divisible by channels {channels}"
@@ -73,10 +105,15 @@ def infer_config(data, loc_channels, pwin_shape):
         # mkbig.py's 5x5/stride-2 VALID and SAME modes have distinct final sizes.
         valid_spatial = 24
         for _ in range(value_reductions):
+            if valid_spatial < 5:
+                valid_spatial = -1
+                break
             valid_spatial = (valid_spatial - 5) // 2 + 1
+
         same_spatial = 24
         for _ in range(value_reductions):
             same_spatial = (same_spatial + 1) // 2
+
         if spatial == valid_spatial:
             value_padding = "VALID"
         elif spatial == same_spatial:
@@ -97,7 +134,7 @@ def infer_config(data, loc_channels, pwin_shape):
         "value_reductions": value_reductions,
         "value_padding": value_padding,
     }
-    return config
+    return config, conv_names, value_fc_name, value_out_name
 
 
 def main():
@@ -115,7 +152,9 @@ def main():
         data = values(sess)
         locx = graph.get_tensor_by_name("locx:0")
         pwin = graph.get_tensor_by_name("pwin:0")
-        config = infer_config(data, locx.shape[3], pwin.shape)
+        config, value_conv_names, value_fc_name, value_out_name = infer_config(
+            data, locx.shape[3], pwin.shape
+        )
 
     net = TwixtNet(**config)
 
@@ -131,14 +170,25 @@ def main():
         conv(block.conv2, data, f"{scope}/Variable_1")
         bn(block.bn2, data, f"{scope}/BatchNorm_1")
 
-    for i, (conv_layer, bn_layer) in enumerate(zip(net.value_conv, net.value_bn)):
-        suffix = "" if i == 0 else f"_{i}"
-        conv(conv_layer, data, f"pwin/Variable{suffix}")
-        bn(bn_layer, data, f"pwin/BatchNorm{suffix}")
+    value_bn_names = numbered_names(data, r"pwin/BatchNorm(?:_(\d+))?")
+    if len(value_bn_names) != len(value_conv_names) + 1:
+        raise ValueError(
+            "unexpected value-head BatchNorm count: "
+            f"{[(n, data[n + '/gamma'].shape) for n in value_bn_names]}"
+        )
 
-    linear(net.value_fc, data, "pwin/Variable_2")
-    bn(net.value_bn_fc, data, "pwin/BatchNorm_2")
-    linear(net.value_out, data, "pwin/Variable_3")
+    for conv_layer, bn_layer, weight_name, bn_name in zip(
+        net.value_conv,
+        net.value_bn,
+        value_conv_names,
+        value_bn_names[:-1],
+    ):
+        conv(conv_layer, data, weight_name)
+        bn(bn_layer, data, bn_name)
+
+    linear(net.value_fc, data, value_fc_name)
+    bn(net.value_bn_fc, data, value_bn_names[-1])
+    linear(net.value_out, data, value_out_name)
 
     conv(net.policy_conv1, data, "movelogits/Variable")
     bn(net.policy_bn, data, "movelogits/BatchNorm")
