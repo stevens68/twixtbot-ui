@@ -242,7 +242,26 @@ def main():
         x.permute(0, 3, 1, 2).contiguous(memory_format=torch.channels_last)
         for x in inputs
     )
-    avg = benchmark(channels_last_model, channels_last_inputs, args.warmup, args.iterations)
+
+    class ChannelsLastWrapper(torch.nn.Module):
+        def __init__(self, wrapped):
+            super().__init__()
+            self.wrapped = wrapped
+
+        def forward(self, pegs, links, locs):
+            return self.wrapped(
+                pegs.permute(0, 2, 3, 1),
+                links.permute(0, 2, 3, 1),
+                locs.permute(0, 2, 3, 1),
+            )
+
+    channels_last_wrapper = ChannelsLastWrapper(channels_last_model)
+    avg = benchmark(
+        channels_last_wrapper,
+        channels_last_inputs,
+        args.warmup,
+        args.iterations,
+    )
     print(
         f"channels_last  {avg * 1000:8.3f} ms/inference  "
         f"{1.0 / avg:8.1f} inferences/s"
