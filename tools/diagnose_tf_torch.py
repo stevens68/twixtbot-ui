@@ -22,9 +22,10 @@ CHECKPOINT = "model/torch.pt"
 
 
 def tf_conv_ops(graph, prefix):
+    scope = prefix + "/"
     return [
         op for op in graph.get_operations()
-        if op.type == "Conv2D" and op.name.startswith(prefix)
+        if op.type == "Conv2D" and op.name.startswith(scope)
     ]
 
 
