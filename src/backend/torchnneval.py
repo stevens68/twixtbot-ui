@@ -26,7 +26,7 @@ class TorchNNEvaluater:
             torch.from_numpy(x).unsqueeze(0).float()
             for x in (pegs, links, locs)
         ]
-        with torch.no_grad():
+        with torch.inference_mode():
             pwin, movelogits = self.model(*inputs)
         return pwin.cpu().numpy(), movelogits.cpu().numpy()
 
