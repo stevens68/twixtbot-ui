@@ -23,6 +23,14 @@ from src.backend import torchnneval, twixt
 from src.backend.nnmplayer import Player
 
 
+class _NullWindow:
+    def write_event_value(self, *_args):
+        pass
+
+
+NULL_WINDOW = _NullWindow()
+
+
 def play_game(backend, model, seed, trials, allow_swap, cpuct, level):
     random.seed(seed)
 
@@ -43,7 +51,7 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level):
     game = twixt.Game(allow_scl=False)
 
     while True:
-        response = player.pick_move(game)
+        response = player.pick_move(game, window=NULL_WINDOW)
         moves = response.get("moves", [])
         if not moves:
             raise RuntimeError(
