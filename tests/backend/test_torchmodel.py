@@ -19,7 +19,7 @@ class TestTwixtNet(unittest.TestCase):
             pwin, movelogits = model(pegs, links, locs)
 
         self.assertEqual(tuple(pwin.shape), (2, 1))
-        self.assertEqual(tuple(movelogits.shape), (2, 527))
+        self.assertEqual(tuple(movelogits.shape), (2, 528))
         self.assertTrue(np.isfinite(pwin.numpy()).all())
         self.assertTrue(np.isfinite(movelogits.numpy()).all())
 
@@ -37,7 +37,7 @@ class TestTwixtNet(unittest.TestCase):
             pwin, movelogits = model(*inputs)
 
         self.assertEqual(tuple(pwin.shape), (1, 3))
-        self.assertEqual(tuple(movelogits.shape), (1, 527))
+        self.assertEqual(tuple(movelogits.shape), (1, 528))
 
 
 if __name__ == "__main__":
