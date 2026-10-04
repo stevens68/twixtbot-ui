@@ -49,7 +49,8 @@ class TwixtNet(nn.Module):
         self.policy_bn = nn.BatchNorm2d(2, eps=bn_eps)
         self.policy_conv2 = nn.Conv2d(2, 1, 1, bias=False)
 
-        value_padding = 0 if value_padding.upper() == "VALID" else 2
+        self.value_padding = value_padding.upper()
+        value_padding = 0
         self.value_conv = nn.ModuleList([
             nn.Conv2d(channels, channels, 5, stride=2, padding=value_padding, bias=False)
             for _ in range(value_reductions)
@@ -90,6 +91,21 @@ class TwixtNet(nn.Module):
 
         v = h
         for conv, bn in zip(self.value_conv, self.value_bn):
+            if self.value_padding == "SAME":
+                height, width = v.shape[-2:]
+                out_h = (height + 1) // 2
+                out_w = (width + 1) // 2
+                pad_h = max((out_h - 1) * 2 + 5 - height, 0)
+                pad_w = max((out_w - 1) * 2 + 5 - width, 0)
+                v = F.pad(
+                    v,
+                    (
+                        pad_w // 2,
+                        pad_w - pad_w // 2,
+                        pad_h // 2,
+                        pad_h - pad_h // 2,
+                    ),
+                )
             v = torch.abs(bn(conv(v)))
         v = v.flatten(1)
         v = torch.abs(self.value_bn_fc(self.value_fc(v)))
