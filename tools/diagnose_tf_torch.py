@@ -97,8 +97,9 @@ def main():
                         f"expected two Conv2D ops under {prefix}, found "
                         f"{[op.name for op in ops]}"
                     )
-                tensors[f"{torch_name}.1"] = ops[0].outputs[0]
-                tensors[f"{torch_name}.2"] = ops[1].outputs[0]
+                tensors[torch_name] = ops[0].outputs[0]
+                block_index = prefix[len("block"):]
+                tensors[f"block{block_index}.conv2"] = ops[1].outputs[0]
             elif len(ops) != 1:
                 raise ValueError(
                     f"expected one Conv2D under {prefix}, found "
