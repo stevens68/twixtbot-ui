@@ -55,12 +55,12 @@ def main():
     print(
         "pwin:       "
         f"{'PASS' if pwin_ok else 'FAIL'} "
-        f"max_abs={np.max(np.abs(torch_pwin - ref['pwin'])):.6g}"
+        f"max_abs={np.max(np.abs(torch_pwin - ref_pwin)):.6g}"
     )
     print(
         "movelogits: "
         f"{'PASS' if policy_ok else 'FAIL'} "
-        f"max_abs={np.max(np.abs(torch_logits - ref['movelogits'])):.6g}"
+        f"max_abs={np.max(np.abs(torch_logits - ref_logits)):.6g}"
     )
 
     if not (pwin_ok and policy_ok):
