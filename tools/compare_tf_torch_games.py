@@ -34,6 +34,7 @@ NULL_WINDOW = _NullWindow()
 def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, level, evaluator, opening_move):
     random.seed(seed)
 
+    t0 = time.perf_counter()
     player = Player(
         model=model,
         evaluator=evaluator,
@@ -47,15 +48,21 @@ def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, leve
         level=level,
     )
 
+    player_seconds = time.perf_counter() - t0
+    t1 = time.perf_counter()
     game = twixt.Game(allow_scl=False)
+    setup_seconds = time.perf_counter() - t1
     # The first move is intentionally supplied by the caller. The real bot
     # chooses it randomly via swapmodel.choose_first_move(), so it is not a
     # useful backend-parity test.
     game.play(opening_move)
-    print(f"{game_number:3d} {backend:<11}: {opening_move}", end="", flush=True)
+    print(f"{game_number:3d} {backend:<11}: {opening_move} [init={player_seconds:.3f}s setup={setup_seconds:.3f}s]", end="", flush=True)
 
+    move_times = []
     while True:
+        t_move = time.perf_counter()
         response = player.pick_move(game, window=NULL_WINDOW)
+        move_times.append(time.perf_counter() - t_move)
         moves = response.get("moves", [])
         if not moves:
             raise RuntimeError(
@@ -85,6 +92,11 @@ def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, leve
         "winner": winner,
         "moves": [str(move) for move in game.history],
         "move_count": len(game.history),
+        "player_init_seconds": player_seconds,
+        "game_setup_seconds": setup_seconds,
+        "first_move_seconds": move_times[0] if move_times else 0.0,
+        "max_move_seconds": max(move_times) if move_times else 0.0,
+        "avg_move_seconds": statistics.mean(move_times) if move_times else 0.0,
     }
 
 
@@ -151,6 +163,8 @@ def compare_games(args):
 
         print(
             f"game {i + 1:3d}/{args.games}: "
+            f"TF-init={tf_game["player_init_seconds"]:.3f}s "
+            f"Torch-init={torch_game["player_init_seconds"]:.3f}s "
             f"winner={'same' if same_winner else 'DIFF'} "
             f"moves={'same' if same_moves else 'DIFF'} "
             f"TF={tf_game['move_count']:3d} "
