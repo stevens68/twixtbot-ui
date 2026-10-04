@@ -5,7 +5,7 @@ from torch import nn
 class ResidualBlock(nn.Module):
     def __init__(self, channels=40):
         super().__init__()
-        self.conv1 = nn.Conv2d(channels, channels, 5, padding=2, bias=True)
+        self.conv1 = nn.Conv2d(channels, channels, 5, padding=2, bias=False)
         self.bn1 = nn.BatchNorm2d(channels, eps=1e-3)
         self.conv2 = nn.Conv2d(channels, channels, 5, padding=2, bias=True)
         self.bn2 = nn.BatchNorm2d(channels, eps=1e-3)
@@ -26,9 +26,9 @@ class TwixtNet(nn.Module):
         self.use_recents = use_recents
         self.value_triple = value_triple
 
-        self.location = nn.Conv2d(loc_channels, channels, 1)
-        self.pegs = nn.Conv2d(2, channels, 5, padding=2)
-        self.links = nn.Conv2d(8, channels, 4)
+        self.location = nn.Conv2d(loc_channels, channels, 1, bias=False)
+        self.pegs = nn.Conv2d(2, channels, 5, padding=2, bias=False)
+        self.links = nn.Conv2d(8, channels, 4, bias=False)
 
         self.primary_bn = nn.BatchNorm2d(channels, eps=1e-3)
         self.blocks = nn.ModuleList(
@@ -36,18 +36,18 @@ class TwixtNet(nn.Module):
         )
 
         self.policy_bn = nn.BatchNorm2d(2, eps=1e-3)
-        self.policy_conv1 = nn.Conv2d(channels, 2, 1)
-        self.policy_conv2 = nn.Conv2d(2, 1, 1)
+        self.policy_conv1 = nn.Conv2d(channels, 2, 1, bias=False)
+        self.policy_conv2 = nn.Conv2d(2, 1, 1, bias=False)
 
         self.value_conv = nn.ModuleList([
-            nn.Conv2d(channels, channels, 5, stride=2),
+            nn.Conv2d(channels, channels, 5, stride=2, bias=False),
             nn.Conv2d(channels, channels, 5, stride=2),
         ])
         self.value_bn = nn.ModuleList([
             nn.BatchNorm2d(channels, eps=1e-3),
             nn.BatchNorm2d(channels, eps=1e-3),
         ])
-        self.value_fc = nn.Linear(channels * 3 * 3, value_hidden)
+        self.value_fc = nn.Linear(channels * 3 * 3, value_hidden, bias=False)
         self.value_bn_fc = nn.BatchNorm1d(value_hidden, eps=1e-3)
         self.value_out = nn.Linear(
             value_hidden, 3 if value_triple else 1
@@ -56,7 +56,7 @@ class TwixtNet(nn.Module):
     def forward(self, pegs, links, locs):
         # TensorFlow inputs are NHWC; PyTorch uses NCHW.
         pegs = pegs.permute(0, 3, 1, 2)
-        links = links.permute(0, 3, 1, 2)
+        links = links.permute(0, 3, 1, 2)\n        links = F.pad(links, (1, 2, 1, 2))
         locs = locs.permute(0, 3, 1, 2)
 
         h = (
