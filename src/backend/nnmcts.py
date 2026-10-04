@@ -50,6 +50,15 @@ class NeuralMCTS:
         self.drawing_move = None
         self.report = None
 
+    def reset(self):
+        """Discard MCTS state while keeping the neural-network evaluator."""
+        self.root = None
+        self.history_at_root = None
+        self.proven = False
+        self.score = None
+        self.drawing_move = None
+        self.report = None
+
     def expand_leaf(self, game):
         """Create a brand-new leaf node for the current game state
         and return it."""
