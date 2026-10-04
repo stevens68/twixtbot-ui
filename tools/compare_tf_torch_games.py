@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src import constants as ct
-from src.backend import torchnneval, twixt
+from src.backend import torchnneval, twixt, swapmodel
 from src.backend.nnmplayer import Player
 
 
@@ -102,7 +102,7 @@ def compare_games(args):
         # Use the same randomized opening for both backends, then compare the
         # deterministic greedy network trajectory from move 2 onward.
         random.seed(seed)
-        opening_move = torchnneval.swapmodel.choose_first_move()
+        opening_move = swapmodel.choose_first_move()
         print(f"opening move: {opening_move}", flush=True)
 
         started = time.perf_counter()
