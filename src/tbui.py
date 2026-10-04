@@ -249,24 +249,39 @@ class TwixtbotUI:
         if not path or not self.get_control(ct.K_VISUALIZE_MCTS).get():
             return
 
+        # Visualization must never mutate the live game.
+        # MCTS can finish and execute its selected move while a visualization
+        # event is still waiting in the GUI event queue, so replay the path
+        # on a snapshot.
+        game = self.game.clone()
+
         drawn_moves = set(self.board.known_moves)
+
         for move, visits in path:
-            color = (len(self.game.history) + 1) & 1
+            # best_path may contain the moves leading to the current MCTS root.
+            # Those moves are already present in the cloned game, so don't replay
+            # them. They are still already represented on the real board.
+            if move in game.history:
+                continue
+
+            color = (len(game.history) + 1) & 1
+
             peg = self.board._create_drawn_peg(move, color, False, visits)
             self.vis_path_objects.append(peg)
+
             label = self.board._create_visits_label(move, color, visits)
             self.vis_path_objects.append(label)
+
             drawn_moves.add(move)
+            game.play(move)
 
-            self.game.play(move)
-            for dlink in self.game.DLINKS:
+            for dlink in twixt.Game.DLINKS:
                 other = move + dlink
-                if other in drawn_moves and self.game.safe_get_link(move, other, color):
-                    link = self.board._create_drawn_link(move, other, color, visits)
+                if other in drawn_moves and game.safe_get_link(move, other, color):
+                    link = self.board._create_drawn_link(
+                        move, other, color, visits
+                    )
                     self.vis_path_objects.append(link)
-
-        for _ in range(len(path)):
-            self.game.undo()
 
     def clear_evals(self):
         self.clean_vis_path()
@@ -445,24 +460,28 @@ class TwixtbotUI:
     """
 
     def call_bot(self):
-        # mcts, or first/second move (we are in a thread)
-        response = self.bots[self.game.turn].pick_move(
-            self.game, self.window, self.bot_event
+        # MCTS runs in a worker thread.  Never give it the live GUI game:
+        # the GUI can process queued events while the worker is running.
+        search_game = self.game.clone()
+        player = search_game.turn
+
+        response = self.bots[player].pick_move(
+            search_game, self.window, self.bot_event
         )
+
         if (
-            self.bot_event is None
-            or not self.bot_event.is_set()
-            or self.bot_event.get_context() == ct.ACCEPT_EVENT
+                self.bot_event is None
+                or not self.bot_event.is_set()
+                or self.bot_event.get_context() == ct.ACCEPT_EVENT
         ):
             # bot has not been canceled (but is finished or accepted)
             # so execute move.
-            # execute move must be inside thread!
+            # execute_move must be inside thread!
             move = _stochastic_choice(response)
             self.execute_move(move)
         else:
             # reset history_at_root resets tree and visit counts
-            self.bots[self.game.turn].nm.history_at_root = None
-
+            self.bots[player].nm.history_at_root = None
         return
 
     def launch_call_bot(self):
@@ -572,15 +591,23 @@ class TwixtbotUI:
 
     def handle_thread_event(self, values):
         self.logger.info("Bot response: %s", values)
+
+        # MCTS responses are generated for a specific game position.
+        # The GUI event queue may contain an old response after the bot has
+        # already played its move.  Never render a response for another
+        # position.
+        if "history" in values and values["history"] != self.game.history:
+            return
+
         if values["max"] != 0:
             # mcts case
             self.update_progress(values)
 
         if (
-            self.get_control(ct.K_SHOW_EVALUATION).get()
-            and "moves" in values
-            and "current" in values
-            and len(values["moves"]) > 1
+                self.get_control(ct.K_SHOW_EVALUATION).get()
+                and "moves" in values
+                and "current" in values
+                and len(values["moves"]) > 1
         ):
             # limit to top 3 moves
             values["moves"] = values["moves"][:3]
