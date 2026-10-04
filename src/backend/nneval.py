@@ -1,6 +1,4 @@
 import logging
-from pathlib import Path
-
 import torch
 
 from .. import constants as ct
@@ -14,7 +12,6 @@ class NNEvaluater:
         self.device = torch.device("cpu")
         checkpoint = torch.load(model, map_location=self.device, weights_only=True)
         config = dict(checkpoint["config"])
-        config["channels_last"] = True
         self.model = TwixtNet(**config).to(self.device)
         self.model.load_state_dict(checkpoint["state_dict"])
         self.model = self.model.to(memory_format=torch.channels_last)
