@@ -150,6 +150,27 @@ def main():
             torch.from_numpy(ref["locs"]).float(),
         )
 
+    # Value-head post-convolution diagnostics: compare BN outputs, FC, and
+    # output weights directly. A large final pwin mismatch with matching
+    # convolutions points here.
+    value_post = {}
+    net.value_bn_fc.register_forward_hook(hook("value.bn_fc"))
+    net.value_fc.register_forward_hook(hook("value.fc"))
+    net.value_out.register_forward_hook(hook("value.out"))
+
+    with torch.no_grad():
+        torch_pwin, torch_policy = net(
+            torch.from_numpy(ref["pegs"]).float(),
+            torch.from_numpy(ref["links"]).float(),
+            torch.from_numpy(ref["locs"]).float(),
+        )
+
+    print()
+    print("Value-head module outputs:")
+    for name in ("value.bn_fc", "value.fc", "value.out"):
+        if name in captured:
+            print(f"{name:20} shape={captured[name].shape}")
+
     print()
     print("Final output parity:")
     print(f"{'pwin':20} max_abs={np.max(np.abs(torch_pwin.numpy() - tf_pwin)):.6g}")
