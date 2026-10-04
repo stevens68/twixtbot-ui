@@ -31,24 +31,11 @@ class _NullWindow:
 NULL_WINDOW = _NullWindow()
 
 
-def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, level, evaluator, opening_move):
+def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, level, player, opening_move):
     random.seed(seed)
 
-    t0 = time.perf_counter()
-    player = Player(
-        model=model,
-        evaluator=evaluator,
-        trials=trials,
-        temperature=0.0,
-        rotation=ct.ROT_OFF,
-        smart_root=0,
-        allow_swap=allow_swap,
-        add_noise=0.0,
-        cpuct=cpuct,
-        level=level,
-    )
-
-    player_seconds = time.perf_counter() - t0
+    player.reset()
+    player_seconds = 0.0
     t1 = time.perf_counter()
     game = twixt.Game(allow_scl=False)
     setup_seconds = time.perf_counter() - t1
@@ -56,7 +43,7 @@ def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, leve
     # chooses it randomly via swapmodel.choose_first_move(), so it is not a
     # useful backend-parity test.
     game.play(opening_move)
-    print(f"{game_number:3d} {backend:<11}: {opening_move} [init={player_seconds:.3f}s setup={setup_seconds:.3f}s]", end="", flush=True)
+    print(f"{game_number:3d} {backend:<11}: {opening_move} [reset={player_seconds:.3f}s setup={setup_seconds:.3f}s]", end="", flush=True)
 
     move_times = []
     while True:
@@ -109,6 +96,33 @@ def compare_games(args):
     print("Loading PyTorch model...", flush=True)
     torch_evaluator = torchnneval.create_evaluator("pytorch", model)
 
+    print("Creating TensorFlow player...", flush=True)
+    tf_player = Player(
+        model=model,
+        evaluator=tf_evaluator,
+        trials=args.trials,
+        temperature=0.0,
+        rotation=ct.ROT_OFF,
+        smart_root=0,
+        allow_swap=args.allow_swap,
+        add_noise=0.0,
+        cpuct=args.cpuct,
+        level=args.level,
+    )
+    print("Creating PyTorch player...", flush=True)
+    torch_player = Player(
+        model=model,
+        evaluator=torch_evaluator,
+        trials=args.trials,
+        temperature=0.0,
+        rotation=ct.ROT_OFF,
+        smart_root=0,
+        allow_swap=args.allow_swap,
+        add_noise=0.0,
+        cpuct=args.cpuct,
+        level=args.level,
+    )
+
     for i in range(args.games):
         print(f"\n=== Game {i + 1}/{args.games} ===", flush=True)
         seed = args.seed + i
@@ -126,7 +140,7 @@ def compare_games(args):
             args.allow_swap,
             args.cpuct,
             args.level,
-            tf_evaluator,
+            tf_player,
             opening_move,
         )
         tf_seconds = time.perf_counter() - started
@@ -141,7 +155,7 @@ def compare_games(args):
             args.allow_swap,
             args.cpuct,
             args.level,
-            torch_evaluator,
+            torch_player,
             opening_move,
         )
         torch_seconds = time.perf_counter() - started
