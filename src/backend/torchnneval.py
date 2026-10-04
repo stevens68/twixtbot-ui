@@ -26,11 +26,7 @@ class TorchNNEvaluater:
     def eval_one(self, nip):
         pegs, links, locs = nip.to_input_arrays(self.use_recents)
         inputs = [
-            torch.from_numpy(x)
-            .unsqueeze(0)
-            .permute(0, 3, 1, 2)
-            .contiguous(memory_format=torch.channels_last)
-            .float()
+            torch.from_numpy(x).unsqueeze(0).float()
             for x in (pegs, links, locs)
         ]
         with torch.inference_mode():
