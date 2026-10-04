@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 
@@ -7,7 +8,7 @@ class ResidualBlock(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(channels, channels, 5, padding=2, bias=False)
         self.bn1 = nn.BatchNorm2d(channels, eps=1e-3)
-        self.conv2 = nn.Conv2d(channels, channels, 5, padding=2, bias=True)
+        self.conv2 = nn.Conv2d(channels, channels, 5, padding=2, bias=False)
         self.bn2 = nn.BatchNorm2d(channels, eps=1e-3)
 
     def forward(self, x):
@@ -29,19 +30,19 @@ class TwixtNet(nn.Module):
         self.location = nn.Conv2d(loc_channels, channels, 1, bias=False)
         self.pegs = nn.Conv2d(2, channels, 5, padding=2, bias=False)
         self.links = nn.Conv2d(8, channels, 4, bias=False)
-
         self.primary_bn = nn.BatchNorm2d(channels, eps=1e-3)
+
         self.blocks = nn.ModuleList(
             [ResidualBlock(channels) for _ in range(blocks)]
         )
 
-        self.policy_bn = nn.BatchNorm2d(2, eps=1e-3)
         self.policy_conv1 = nn.Conv2d(channels, 2, 1, bias=False)
+        self.policy_bn = nn.BatchNorm2d(2, eps=1e-3)
         self.policy_conv2 = nn.Conv2d(2, 1, 1, bias=False)
 
         self.value_conv = nn.ModuleList([
             nn.Conv2d(channels, channels, 5, stride=2, bias=False),
-            nn.Conv2d(channels, channels, 5, stride=2),
+            nn.Conv2d(channels, channels, 5, stride=2, bias=False),
         ])
         self.value_bn = nn.ModuleList([
             nn.BatchNorm2d(channels, eps=1e-3),
@@ -50,20 +51,17 @@ class TwixtNet(nn.Module):
         self.value_fc = nn.Linear(channels * 3 * 3, value_hidden, bias=False)
         self.value_bn_fc = nn.BatchNorm1d(value_hidden, eps=1e-3)
         self.value_out = nn.Linear(
-            value_hidden, 3 if value_triple else 1
+            value_hidden, 3 if value_triple else 1, bias=False
         )
 
     def forward(self, pegs, links, locs):
         # TensorFlow inputs are NHWC; PyTorch uses NCHW.
         pegs = pegs.permute(0, 3, 1, 2)
-        links = links.permute(0, 3, 1, 2)\n        links = F.pad(links, (1, 2, 1, 2))
+        links = links.permute(0, 3, 1, 2)
+        links = F.pad(links, (1, 2, 1, 2))
         locs = locs.permute(0, 3, 1, 2)
 
-        h = (
-            self.location(locs)
-            + self.pegs(pegs)
-            + self.links(links)
-        )
+        h = self.location(locs) + self.pegs(pegs) + self.links(links)
         h = torch.abs(self.primary_bn(h))
 
         for block in self.blocks:
