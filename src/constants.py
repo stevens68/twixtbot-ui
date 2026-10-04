@@ -54,7 +54,7 @@ SEPARATOR_FONT = ("Arial", 9, "italic")
 # files and folders
 SETTINGS_FILE_NAME = "config.json"
 SETTINGS_FILE = path.join(path.dirname(__file__), SETTINGS_FILE_NAME)
-MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), "../model/pb"))
+MODEL_FOLDER = path.normpath(path.join(path.dirname(__file__), "../model/torch.pt"))
 SPINNER_IMAGE = str(pathlib.Path(__file__).parent.joinpath(r"../img/wheel.gif"))
 
 # limits
@@ -125,9 +125,6 @@ K_RESIGN_THRESHOLD = ["resign threshold", "RESIGN_THRESHOLD", None, 0.95]
 
 K_LOG_LEVEL = ["Log level", "LOG_LEVEL", None, logging.getLevelName(logging.ERROR)]
 
-# Neural-network backend. Hidden from the GUI; change in config.json and restart.
-K_NN_BACKEND = "NN_BACKEND"
-NN_BACKEND_DEFAULT = "tensorflow"
 
 # keys - non-setting
 K_BOARD = [None, "BOARD"]
