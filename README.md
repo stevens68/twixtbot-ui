@@ -10,9 +10,8 @@ twixtbot-ui comes with all the necessary twixtbot files in subfolder `./src/back
 
 ## Installation
 
-Make sure you have a supported Python version installed (Python 3.11, 3.12, or 3.13).
+Make sure you have a supported Python version installed (Python 3.11, 3.12, 3.13, or 3.14).
 
-> **Note:** Do not use Python 3.14+; It does not support the required tensorflow version.
 >
 > **Note:** FreeSimpleGUI relies on Tkinter. On Linux, install it via your package manager (e.g., `sudo apt install python3-tk`) if necessary.
 
@@ -80,7 +79,7 @@ Drawn games - which are rare in TwixT - are detected automatically. A pop-up ind
 
 ## Evaluation
 
-The network has been taken from [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020 and has been converted to work with twixtbot-ui.  
+The PyTorch network is stored as `./model/torch.pt`. It is based on the network originally trained for [twixtbot](https://github.com/BonyJordan/twixtbot) in Dec 2020 and was converted to PyTorch while preserving the original network architecture and outputs.  
 
 Note that the network was trained with *allow cross-own-links* = true. If the twixtbot-ui setting *allow cross-own-links* is set to false (default), this can lead to wrong evaluations in very rare case.
 
