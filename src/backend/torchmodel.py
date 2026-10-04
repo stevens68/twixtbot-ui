@@ -4,12 +4,12 @@ from torch import nn
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, channels=40):
+    def __init__(self, channels=40, bn_eps=1e-3):
         super().__init__()
         self.conv1 = nn.Conv2d(channels, channels, 5, padding=2, bias=False)
-        self.bn1 = nn.BatchNorm2d(channels, eps=1e-3)
+        self.bn1 = nn.BatchNorm2d(channels, eps=bn_eps)
         self.conv2 = nn.Conv2d(channels, channels, 5, padding=2, bias=False)
-        self.bn2 = nn.BatchNorm2d(channels, eps=1e-3)
+        self.bn2 = nn.BatchNorm2d(channels, eps=bn_eps)
 
     def forward(self, x):
         h = torch.abs(self.bn1(self.conv1(x)))
@@ -20,8 +20,17 @@ class ResidualBlock(nn.Module):
 class TwixtNet(nn.Module):
     """PyTorch equivalent of twixtbot's mkbig.py network."""
 
-    def __init__(self, use_recents=False, channels=40, blocks=12,
-                 value_hidden=80, value_triple=False):
+    def __init__(
+        self,
+        use_recents=False,
+        channels=40,
+        blocks=12,
+        value_hidden=80,
+        value_triple=False,
+        value_reductions=2,
+        value_padding="VALID",
+        bn_eps=1e-3,
+    ):
         super().__init__()
         loc_channels = 3 if use_recents else 2
         self.use_recents = use_recents
@@ -30,26 +39,34 @@ class TwixtNet(nn.Module):
         self.location = nn.Conv2d(loc_channels, channels, 1, bias=False)
         self.pegs = nn.Conv2d(2, channels, 5, padding=2, bias=False)
         self.links = nn.Conv2d(8, channels, 4, bias=False)
-        self.primary_bn = nn.BatchNorm2d(channels, eps=1e-3)
+        self.primary_bn = nn.BatchNorm2d(channels, eps=bn_eps)
 
         self.blocks = nn.ModuleList(
-            [ResidualBlock(channels) for _ in range(blocks)]
+            [ResidualBlock(channels, bn_eps=bn_eps) for _ in range(blocks)]
         )
 
         self.policy_conv1 = nn.Conv2d(channels, 2, 1, bias=False)
-        self.policy_bn = nn.BatchNorm2d(2, eps=1e-3)
+        self.policy_bn = nn.BatchNorm2d(2, eps=bn_eps)
         self.policy_conv2 = nn.Conv2d(2, 1, 1, bias=False)
 
+        value_padding = 0 if value_padding.upper() == "VALID" else 2
         self.value_conv = nn.ModuleList([
-            nn.Conv2d(channels, channels, 5, stride=2, bias=False),
-            nn.Conv2d(channels, channels, 5, stride=2, bias=False),
+            nn.Conv2d(channels, channels, 5, stride=2, padding=value_padding, bias=False)
+            for _ in range(value_reductions)
         ])
         self.value_bn = nn.ModuleList([
-            nn.BatchNorm2d(channels, eps=1e-3),
-            nn.BatchNorm2d(channels, eps=1e-3),
+            nn.BatchNorm2d(channels, eps=bn_eps)
+            for _ in range(value_reductions)
         ])
-        self.value_fc = nn.Linear(channels * 3 * 3, value_hidden, bias=False)
-        self.value_bn_fc = nn.BatchNorm1d(value_hidden, eps=1e-3)
+
+        spatial = 24
+        for _ in range(value_reductions):
+            if value_padding:
+                spatial = (spatial + 1) // 2
+            else:
+                spatial = (spatial - 5) // 2 + 1
+        self.value_fc = nn.Linear(channels * spatial * spatial, value_hidden, bias=False)
+        self.value_bn_fc = nn.BatchNorm1d(value_hidden, eps=bn_eps)
         self.value_out = nn.Linear(
             value_hidden, 3 if value_triple else 1, bias=False
         )
