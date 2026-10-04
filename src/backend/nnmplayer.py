@@ -122,6 +122,11 @@ class Player:
             visualize_mcts=False,
         )
 
+    def reset(self):
+        """Reset per-game search state while keeping the evaluator loaded."""
+        self.report = None
+        self.nm.reset()
+
     def pick_move(self, game, window=None, event=None):
         if self.allow_swap and len(game.history) < 2:
             if len(game.history) == 0:
