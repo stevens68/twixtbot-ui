@@ -91,6 +91,14 @@ def main():
             elif prefix == "movelogits":
                 for i, op in enumerate(ops):
                     tensors[f"policy.conv{i + 1}"] = op.outputs[0]
+            elif prefix.startswith("block"):
+                if len(ops) != 2:
+                    raise ValueError(
+                        f"expected two Conv2D ops under {prefix}, found "
+                        f"{[op.name for op in ops]}"
+                    )
+                tensors[f"{torch_name}.1"] = ops[0].outputs[0]
+                tensors[f"{torch_name}.2"] = ops[1].outputs[0]
             elif len(ops) != 1:
                 raise ValueError(
                     f"expected one Conv2D under {prefix}, found "
