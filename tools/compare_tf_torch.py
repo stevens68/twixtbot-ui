@@ -39,12 +39,17 @@ def main():
 
     torch_pwin = pwin.numpy()
     torch_logits = movelogits.numpy()
+    # The reference is exported from per-position evaluation as (N, 1, ...),
+    # while the batched PyTorch call returns (N, ...). Remove the singleton
+    # position axis to avoid NumPy broadcasting batches against each other.
+    ref_pwin = ref["pwin"][:, 0, :]
+    ref_logits = ref["movelogits"][:, 0, :]
 
     pwin_ok = np.allclose(
-        torch_pwin, ref["pwin"], rtol=args.rtol, atol=args.atol
+        torch_pwin, ref_pwin, rtol=args.rtol, atol=args.atol
     )
     policy_ok = np.allclose(
-        torch_logits, ref["movelogits"], rtol=args.rtol, atol=args.atol
+        torch_logits, ref_logits, rtol=args.rtol, atol=args.atol
     )
 
     print(
