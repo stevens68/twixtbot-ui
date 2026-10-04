@@ -50,21 +50,29 @@ def numbered_names(data, pattern):
     )
 
 
-def bn_scopes(data, prefix):
-    pattern = re.escape(prefix) + r"/BatchNorm(?:_(\d+))?/gamma"
-    names = [
-        name[:-len("/gamma")]
-        for name in data
-        if re.fullmatch(pattern, name)
-    ]
+def bn_scopes(data):
+    """Return BN scopes in TensorFlow variable creation order.
 
-    def suffix(scope):
-        match = re.fullmatch(
-            re.escape(prefix) + r"/BatchNorm(?:_(\d+))?", scope
+    The SavedModel in use does not preserve the Python scopes from mkbig.py
+    for these variables, so matching names such as primary/BatchNorm is not
+    reliable. TensorFlow's global-variable order does preserve layer creation
+    order, which is exactly the order needed for this architecture.
+    """
+    scopes = []
+    seen = set()
+    for name in data:
+        if not name.endswith("/gamma"):
+            continue
+        scope = name[:-len("/gamma")]
+        required = (
+            scope + "/beta",
+            scope + "/moving_mean",
+            scope + "/moving_variance",
         )
-        return 0 if match.group(1) is None else int(match.group(1))
-
-    return sorted(names, key=suffix)
+        if scope not in seen and all(item in data for item in required):
+            seen.add(scope)
+            scopes.append(scope)
+    return scopes
 
 
 def infer_config(data, loc_channels, pwin_shape):
@@ -171,54 +179,52 @@ def main():
 
     net = TwixtNet(**config)
 
-    primary_bn_scopes = bn_scopes(data, "primary")
-    if len(primary_bn_scopes) != 1:
-        raise ValueError(f"expected one primary BatchNorm, found {primary_bn_scopes}")
+    all_bn_scopes = bn_scopes(data)
+    expected_bn_count = 1 + 2 * config["blocks"] + config["value_reductions"] + 1 + 1
+    if len(all_bn_scopes) != expected_bn_count:
+        raise ValueError(
+            f"expected {expected_bn_count} BatchNorm groups, "
+            f"found {len(all_bn_scopes)}: {all_bn_scopes}"
+        )
+
+    pos = 0
+    primary_bn_scope = all_bn_scopes[pos]
+    pos += 1
     conv(net.location, data, "primary_location/Variable")
     conv(net.pegs, data, "primary_pegs/Variable")
     conv(net.links, data, "primary_links/Variable")
-    bn(net.primary_bn, data, primary_bn_scopes[0])
+    bn(net.primary_bn, data, primary_bn_scope)
 
     for i, block in enumerate(net.blocks):
         scope = f"block{i}"
-        block_bn_scopes = bn_scopes(data, scope)
-        if len(block_bn_scopes) != 2:
-            raise ValueError(
-                f"expected two BatchNorms for {scope}, found {block_bn_scopes}"
-            )
         conv(block.conv1, data, f"{scope}/Variable")
-        bn(block.bn1, data, block_bn_scopes[0])
+        bn(block.bn1, data, all_bn_scopes[pos])
+        pos += 1
         conv(block.conv2, data, f"{scope}/Variable_1")
-        bn(block.bn2, data, block_bn_scopes[1])
+        bn(block.bn2, data, all_bn_scopes[pos])
+        pos += 1
 
-    value_bn_names = bn_scopes(data, "pwin")
-    if len(value_bn_names) != len(value_conv_names) + 1:
-        raise ValueError(
-            "unexpected value-head BatchNorm count: "
-            f"{[(n, data[n + '/gamma'].shape) for n in value_bn_names]}"
-        )
-
-    for conv_layer, bn_layer, weight_name, bn_name in zip(
+    for conv_layer, bn_layer, weight_name in zip(
         net.value_conv,
         net.value_bn,
         value_conv_names,
-        value_bn_names[:-1],
     ):
         conv(conv_layer, data, weight_name)
-        bn(bn_layer, data, bn_name)
+        bn(bn_layer, data, all_bn_scopes[pos])
+        pos += 1
 
     linear(net.value_fc, data, value_fc_name)
-    bn(net.value_bn_fc, data, value_bn_names[-1])
+    bn(net.value_bn_fc, data, all_bn_scopes[pos])
+    pos += 1
     linear(net.value_out, data, value_out_name)
 
-    policy_bn_scopes = bn_scopes(data, "movelogits")
-    if len(policy_bn_scopes) != 1:
-        raise ValueError(
-            f"expected one policy BatchNorm, found {policy_bn_scopes}"
-        )
     conv(net.policy_conv1, data, "movelogits/Variable")
-    bn(net.policy_bn, data, policy_bn_scopes[0])
+    bn(net.policy_bn, data, all_bn_scopes[pos])
+    pos += 1
     conv(net.policy_conv2, data, "movelogits/Variable_1")
+
+    if pos != len(all_bn_scopes):
+        raise ValueError(f"unused BatchNorm groups: {all_bn_scopes[pos:]}")
 
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
     torch.save(
