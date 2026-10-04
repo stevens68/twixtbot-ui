@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -72,3 +73,19 @@ class ParallelNNEvaluater:
             )
 
         return tf_pwin, tf_logits
+
+
+def create_evaluator(backend, model):
+    """Create the configured evaluator for a TensorFlow model path."""
+    backend = backend.lower()
+    if backend == "tensorflow":
+        return None
+    torch_model = str(Path(model).parent / "torch.pt")
+    if backend == "pytorch":
+        return TorchNNEvaluater(torch_model)
+    if backend == "parallel":
+        return ParallelNNEvaluater(model, torch_model)
+    raise ValueError(
+        f"Unsupported NN backend: {backend!r}. "
+        "Use tensorflow, pytorch, or parallel."
+    )
