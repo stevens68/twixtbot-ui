@@ -44,7 +44,7 @@ def infer_config(data, loc_channels, pwin_shape):
     blocks = {
         int(match.group(1))
         for name in data
-        if (match := re.fullmatch(r"block(\\d+)/Variable", name))
+        if (match := re.fullmatch(r"block(\d+)/Variable", name))
     }
     if blocks and blocks != set(range(max(blocks) + 1)):
         raise ValueError(f"non-contiguous residual block names: {sorted(blocks)}")
@@ -54,7 +54,7 @@ def infer_config(data, loc_channels, pwin_shape):
     value_hidden = int(value_fc_shape[1])
     value_reductions = len([
         name for name in data
-        if re.fullmatch(r"pwin/Variable(?:_\\d+)?", name)
+        if re.fullmatch(r"pwin/Variable(?:_\d+)?", name)
     ]) - 2
     if value_reductions < 0:
         raise ValueError("could not infer value-head convolution count")
