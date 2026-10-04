@@ -31,10 +31,9 @@ class _NullWindow:
 NULL_WINDOW = _NullWindow()
 
 
-def play_game(backend, model, seed, trials, allow_swap, cpuct, level):
+def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator):
     random.seed(seed)
 
-    evaluator = torchnneval.create_evaluator(backend, model)
     player = Player(
         model=model,
         evaluator=evaluator,
@@ -61,6 +60,9 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level):
 
         game.play(moves[0])
 
+        if len(game.history) % 10 == 0:
+            print(f"           {backend}: {len(game.history)} moves...", flush=True)
+
         if game.result == twixt.DRAW:
             winner = None
             break
@@ -85,7 +87,13 @@ def compare_games(args):
     model = str(Path(args.model))
     results = []
 
+    print("Loading TensorFlow model...", flush=True)
+    tf_evaluator = torchnneval.create_evaluator("tensorflow", model)
+    print("Loading PyTorch model...", flush=True)
+    torch_evaluator = torchnneval.create_evaluator("pytorch", model)
+
     for i in range(args.games):
+        print(f"\n=== Game {i + 1}/{args.games} ===", flush=True)
         seed = args.seed + i
 
         started = time.perf_counter()
@@ -97,6 +105,7 @@ def compare_games(args):
             args.allow_swap,
             args.cpuct,
             args.level,
+            tf_evaluator,
         )
         tf_seconds = time.perf_counter() - started
 
@@ -109,6 +118,7 @@ def compare_games(args):
             args.allow_swap,
             args.cpuct,
             args.level,
+            torch_evaluator,
         )
         torch_seconds = time.perf_counter() - started
 
