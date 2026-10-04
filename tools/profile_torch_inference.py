@@ -235,6 +235,48 @@ def main():
     print(f"sum:               {(input_time + forward_time + output_time) * 1000:8.3f} ms")
 
     print()
+    print("MKLDNN sweep (batch=1):")
+    original_mkldnn = torch.backends.mkldnn.enabled
+    mkldnn_results = []
+    for enabled in (True, False):
+        torch.backends.mkldnn.enabled = enabled
+        inputs = make_inputs(model, 1)
+        avg = benchmark(model, inputs, args.warmup, args.iterations)
+        mkldnn_results.append((enabled, avg))
+        print(
+            f"mkldnn={str(enabled):5s}  "
+            f"{avg * 1000:8.3f} ms/inference  "
+            f"{1.0 / avg:8.1f} inferences/s"
+        )
+    torch.backends.mkldnn.enabled = original_mkldnn
+
+    print()
+    print("Residual block sweep (batch=1):")
+    block_inputs = make_inputs(model, 1)
+    block_pegs = block_inputs[0].permute(0, 3, 1, 2)
+    block_links = torch.nn.functional.pad(
+        block_inputs[1].permute(0, 3, 1, 2), (1, 2, 1, 2)
+    )
+    block_locs = block_inputs[2].permute(0, 3, 1, 2)
+    with torch.inference_mode():
+        block_h = torch.abs(
+            model.primary_bn(
+                model.location(block_locs)
+                + model.pegs(block_pegs)
+                + model.links(block_links)
+            )
+        )
+        for index, block in enumerate(model.blocks):
+            for _ in range(args.warmup):
+                block(block_h)
+            started = time.perf_counter()
+            for _ in range(args.iterations):
+                block(block_h)
+            elapsed = (time.perf_counter() - started) / args.iterations
+            print(f"block={index:2d}  {elapsed * 1000:8.3f} ms")
+
+    print()
+    print()
     print("Thread-count sweep (batch=1):")
     original_threads = torch.get_num_threads()
 
