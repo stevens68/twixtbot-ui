@@ -235,6 +235,19 @@ def main():
     print(f"sum:               {(input_time + forward_time + output_time) * 1000:8.3f} ms")
 
     print()
+    print("torch.compile benchmark (batch=1):")
+    inputs = make_inputs(model, 1)
+    try:
+        compiled = torch.compile(model)
+        avg = benchmark(compiled, inputs, args.warmup, args.iterations)
+        print(
+            f"compiled  {avg * 1000:8.3f} ms/inference  "
+            f"{1.0 / avg:8.1f} inferences/s"
+        )
+    except Exception as exc:
+        print(f"torch.compile failed: {type(exc).__name__}: {exc}")
+
+    print()
     print("MKLDNN sweep (batch=1):")
     original_mkldnn = torch.backends.mkldnn.enabled
     mkldnn_results = []
