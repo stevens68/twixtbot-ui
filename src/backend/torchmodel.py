@@ -107,7 +107,8 @@ class TwixtNet(nn.Module):
                     ),
                 )
             v = torch.abs(bn(conv(v)))
-        v = v.flatten(1)
+        # TensorFlow flattens NHWC in H-W-C order; convert back before the FC.
+        v = v.permute(0, 2, 3, 1).flatten(1)
         v = torch.abs(self.value_bn_fc(self.value_fc(v)))
         value = self.value_out(v)
         if not self.value_triple:
