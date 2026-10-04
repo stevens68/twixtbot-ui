@@ -109,6 +109,11 @@ def main():
             else:
                 tensors[torch_name] = ops[0].outputs[0]
 
+        value_filters = [
+            op.inputs[1] for op in tf_conv_ops(graph, "pwin")
+        ]
+        value_filter_values = sess.run(value_filters)
+
         values = sess.run(tensors, feed_dict={
             graph.get_tensor_by_name("pegx:0"): ref["pegs"],
             graph.get_tensor_by_name("linkx:0"): ref["links"],
@@ -116,6 +121,14 @@ def main():
             graph.get_tensor_by_name("is_training:0"): False,
         })
 
+    print("Value-conv weight parity:")
+    for i, tf_filter in enumerate(value_filter_values):
+        torch_filter = net.value_conv[i].weight.detach().cpu().numpy()
+        tf_oihw = np.transpose(tf_filter, (3, 2, 0, 1))
+        diff = np.max(np.abs(torch_filter - tf_oihw))
+        print(f"value.conv{i} weights max_abs={diff:.6g}")
+
+    print()
     print("Layer convolution parity:")
     for name, torch_value in captured.items():
         tf_value = values[name]
