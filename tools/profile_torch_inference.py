@@ -97,7 +97,7 @@ def main():
         )
 
     print()
-    np_inputs = tuple(x.numpy() for x in make_inputs(model, 1))
+    np_inputs = tuple(x.numpy()[0] for x in make_inputs(model, 1))
     input_time, forward_time, output_time = benchmark_parts(
         model, np_inputs, args.warmup, args.iterations
     )
