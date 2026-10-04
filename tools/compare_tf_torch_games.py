@@ -64,7 +64,7 @@ def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, leve
             )
 
         game.play(moves[0])
-        print(f" {moves[0]:>3}", end="", flush=True)
+        print(f" {str(moves[0]):>3}", end="", flush=True)
 
         if game.result == twixt.DRAW:
             winner = None
