@@ -132,6 +132,10 @@ K_RESIGN_THRESHOLD = ["resign threshold", "RESIGN_THRESHOLD", None, 0.95]
 
 K_LOG_LEVEL = ["Log level", "LOG_LEVEL", None, logging.getLevelName(logging.ERROR)]
 
+# Neural-network backend. Hidden from the GUI; change in config.json and restart.
+K_NN_BACKEND = "NN_BACKEND"
+NN_BACKEND_DEFAULT = "tensorflow"
+
 # keys - non-setting
 K_BOARD = [None, "BOARD"]
 K_EVAL_BAR = ["", "EVAL_BAR", None, 0]
