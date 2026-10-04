@@ -52,7 +52,7 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator,
     # chooses it randomly via swapmodel.choose_first_move(), so it is not a
     # useful backend-parity test.
     game.play(opening_move)
-    print(f"           {backend}: {opening_move}", end="", flush=True)
+    print(f"           {backend:<11}: {opening_move}", end="", flush=True)
 
     while True:
         response = player.pick_move(game, window=NULL_WINDOW)
@@ -64,7 +64,7 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator,
             )
 
         game.play(moves[0])
-        print(f" {moves[0]}", end="", flush=True)
+        print(f" {moves[0]:>3}", end="", flush=True)
 
         if game.result == twixt.DRAW:
             winner = None
