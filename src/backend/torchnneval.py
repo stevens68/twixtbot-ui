@@ -75,12 +75,27 @@ class ParallelNNEvaluater:
         return tf_pwin, tf_logits
 
 
+def _torch_model_path(model):
+    """Resolve the PyTorch checkpoint for the configured TF model."""
+    candidates = [
+        Path(model).parent / "torch.pt",
+        Path(__file__).resolve().parents[2] / "model" / "torch.pt",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    raise FileNotFoundError(
+        "PyTorch model not found. Checked: "
+        + ", ".join(str(candidate) for candidate in candidates)
+    )
+
+
 def create_evaluator(backend, model):
     """Create the configured evaluator for a TensorFlow model path."""
     backend = backend.lower()
     if backend == "tensorflow":
         return None
-    torch_model = str(Path(model).parent / "torch.pt")
+    torch_model = _torch_model_path(model)
     if backend == "pytorch":
         return TorchNNEvaluater(torch_model)
     if backend == "parallel":
