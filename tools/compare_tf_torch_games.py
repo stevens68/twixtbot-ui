@@ -31,7 +31,7 @@ class _NullWindow:
 NULL_WINDOW = _NullWindow()
 
 
-def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator, opening_move):
+def play_game(game_number, backend, model, seed, trials, allow_swap, cpuct, level, evaluator, opening_move):
     random.seed(seed)
 
     player = Player(
@@ -52,7 +52,7 @@ def play_game(backend, model, seed, trials, allow_swap, cpuct, level, evaluator,
     # chooses it randomly via swapmodel.choose_first_move(), so it is not a
     # useful backend-parity test.
     game.play(opening_move)
-    print(f"           {backend:<11}: {opening_move}", end="", flush=True)
+    print(f"{game_number:3d} {backend:<11}: {opening_move}", end="", flush=True)
 
     while True:
         response = player.pick_move(game, window=NULL_WINDOW)
@@ -106,6 +106,7 @@ def compare_games(args):
         opening_move = swapmodel.choose_first_move()
         started = time.perf_counter()
         tf_game = play_game(
+            i + 1,
             "tensorflow",
             model,
             seed,
@@ -120,6 +121,7 @@ def compare_games(args):
 
         started = time.perf_counter()
         torch_game = play_game(
+            i + 1,
             "pytorch",
             model,
             seed,
