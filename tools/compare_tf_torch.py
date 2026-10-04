@@ -3,11 +3,15 @@
 """Compare a converted PyTorch checkpoint against TensorFlow reference outputs."""
 
 import argparse
+import os
+import sys
 
 import numpy as np
 
-from src.backend.torchmodel import TwixtNet
-import torch
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import torch  # noqa: E402
+from src.backend.torchmodel import TwixtNet  # noqa: E402
 
 
 def main():
@@ -19,7 +23,9 @@ def main():
     args = parser.parse_args()
 
     ref = np.load(args.reference)
-    checkpoint = torch.load(args.checkpoint, map_location="cpu")
+    checkpoint = torch.load(
+        args.checkpoint, map_location="cpu", weights_only=True
+    )
     net = TwixtNet(**checkpoint["config"])
     net.load_state_dict(checkpoint["state_dict"])
     net.eval()
