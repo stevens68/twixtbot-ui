@@ -450,17 +450,31 @@ function drawInputs() {
       },
     );
 
-    // Place a compact label at the top-left edge of each channel blade.
+    // Keep the tensor-level label as well as one label per channel blade.
+    // The tensor label sits above the center of its board; blade labels sit
+    // just above the upper-left corner of each individual blade.
+    addLabel(
+      tensor.label,
+      [
+        tensor.x,
+        5.7,
+        tensor.z + ((BOARD_SIZE - 1) * 0.34) / 2,
+      ],
+      22,
+      '#ffffff',
+      70,
+    );
+
     const firstBladeX =
       tensor.x - ((tensor.channels - 1) * (0.26 + 0.28)) / 2;
 
     tensor.bladeLabels.forEach((bladeLabel, channel) => {
       addLabel(
         bladeLabel,
-        [firstBladeX + channel * (0.26 + 0.28), 5, tensor.z - 0.25],
-        14,
+        [firstBladeX + channel * (0.26 + 0.28), 4.55, tensor.z - 0.08],
+        20,
         '#e7edf6',
-        180,
+        115,
       );
     });
   });
