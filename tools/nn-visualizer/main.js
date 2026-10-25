@@ -704,7 +704,79 @@ function drawEffectiveBoard() {
   const holeTransform = new THREE.Object3D();
   let holeIndex = 0;
   for (let row = 0; row < BOARD_SIZE; row += 1) {
-    // Keep coordinate labels fixed to the sample board: A–X across columns,
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      holeTransform.position.set(...pointAt(row, col, boardX + 0.027));
+      holeTransform.rotation.set(0, Math.PI / 2, 0);
+      holeTransform.updateMatrix();
+      holes.setMatrixAt(holeIndex++, holeTransform.matrix);
+    }
+  }
+  holes.instanceMatrix.needsUpdate = true;
+  sceneGroup.add(holes);
+
+  // Encode each link at its (x, y) anchor on the effective board; do not draw
+  // physical link segments. Keep the existing midpoint/floor convention and
+  // apply the perspective transform only when mapping the tuple to the board.
+  const encodedLinks = game.links.map((link) => {
+    const x = Math.floor((link.from.col + link.to.col) / 2);
+    const y = Math.floor((link.from.row + link.to.row) / 2);
+    return {
+      coordinate: transpose ? [y, x] : [x, y],
+      player: effectivePlayer(link.player),
+    };
+  });
+  console.debug('[Effective board] encoded links as (x, y) tuples:', encodedLinks);
+
+  // Draw the dashed diagonal directly on the board face, using thin black
+  // rectangular segments like the finish lines (not a floating Three.js line).
+  // The diagonal itself is symmetric under transposition, so its geometry stays fixed.
+  const diagonalMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  const diagonalStart = new THREE.Vector3(...pointAt(0, 0, finishLineX));
+  const diagonalEnd = new THREE.Vector3(
+    ...pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, finishLineX),
+  );
+  const diagonalVector = new THREE.Vector3().subVectors(diagonalEnd, diagonalStart);
+  const diagonalLength = diagonalVector.length();
+  const dashLength = 0.12;
+  const gapLength = 0.08;
+  const diagonalDirection = diagonalVector.clone().normalize();
+  for (let distance = 0; distance < diagonalLength; distance += dashLength + gapLength) {
+    const segmentLength = Math.min(dashLength, diagonalLength - distance);
+    const center = diagonalStart.clone().addScaledVector(
+      diagonalDirection, distance + segmentLength / 2,
+    );
+    const segment = new THREE.Mesh(
+      new THREE.BoxGeometry(0.008, 0.018, segmentLength),
+      diagonalMaterial,
+    );
+    segment.position.copy(center);
+    segment.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1), diagonalDirection,
+    );
+    sceneGroup.add(segment);
+  }
+
+  const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
+  for (const player of [0, 1]) {
+    const playerPegs = game.pegs.filter((peg) => effectivePlayer(peg.player) === player);
+    if (!playerPegs.length) continue;
+    const material = new THREE.MeshStandardMaterial({
+      color: player === 1 ? 0xe0525d : 0x20252d,
+      roughness: 0.38, metalness: 0.08,
+    });
+    const mesh = new THREE.InstancedMesh(pegGeometry, material, playerPegs.length);
+    const transform = new THREE.Object3D();
+    playerPegs.forEach((peg, index) => {
+      transform.position.set(...pointAt(peg.row, peg.col, boardX - 0.16));
+      transform.rotation.z = Math.PI / 2;
+      transform.updateMatrix();
+      mesh.setMatrixAt(index, transform.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    sceneGroup.add(mesh);
+  }
+
+  // Keep coordinate labels fixed to the sample board: A–X across columns,
   // 1–24 down rows. Do not transpose the visual reference system.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addLabel(
