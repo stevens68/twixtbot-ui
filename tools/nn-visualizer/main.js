@@ -399,10 +399,9 @@ function createSampleGame() {
 }
 
 function encodeGameInputs(game) {
-  // Match src/backend/naf.py exactly:
-  // - WHITE to move: preserve board orientation and channel order.
-  // - BLACK to move: transpose x/y and remap colours + link orientation channels.
-  // game player IDs follow twixt.Game: BLACK=0, WHITE=1.
+  // Canonicalize every position to the network's Black-to-move viewpoint:
+  // transpose x/y on White's turn, and swap the peg/link colour planes.
+  // Game player IDs follow twixt.Game: BLACK=0, WHITE=1.
   const rawPegs = Array.from({ length: 2 }, () =>
     createTensor3(BOARD_SIZE, BOARD_SIZE, 1),
   );
@@ -410,15 +409,12 @@ function encodeGameInputs(game) {
     createTensor3(BOARD_SIZE, BOARD_SIZE, 1),
   );
 
-  // Backend game arrays are indexed [x][y], where x is the letter/column
-  // and y is the number/row. Keep that convention in the raw arrays; the
-  // effective tensor is [row][column] after the perspective mapping below.
+  // Backend game arrays are indexed [x][y] = [column][row].
   for (const peg of game.pegs) {
     rawPegs[peg.player][peg.col][peg.row][0] = 1;
   }
 
-  // Link channel encoding follows twixt.Game.describe_link:
-  // bit 0 = colour, bit 2 = LONGY, bit 1 = DIFFSIGN.
+  // Link channel encoding: bit 0 = colour, bit 2 = LONGY, bit 1 = DIFFSIGN.
   for (const link of game.links) {
     const x1 = link.from.col;
     const y1 = link.from.row;
@@ -433,38 +429,32 @@ function encodeGameInputs(game) {
 
   const pegs = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
   const midLinks = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
-  const blackToMove = game.nextPlayer === 0;
+  const whiteToMove = game.nextPlayer === 1;
 
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
-      if (blackToMove) {
-        // NetInputs.init_from_game_black: opposite colour first, transposed.
-        // game.pegs is indexed [x][y] = [column][row]. naf.py uses .T,
-        // so the encoded [row][column] cell must read raw [row][column].
-        pegs[row][col][0] = rawPegs[1][row][col][0];
-        pegs[row][col][1] = rawPegs[0][row][col][0];
+      // The canonical tensor is [row][column]. On White's turn, transpose
+      // the raw [x][y] axes and exchange the player colour planes.
+      const sourceX = whiteToMove ? row : col;
+      const sourceY = whiteToMove ? col : row;
+      const firstColor = whiteToMove ? 1 : 0;
+      const secondColor = whiteToMove ? 0 : 1;
 
-        for (let color = 0; color < 2; color += 1) {
-          const otherColor = 1 - color;
-          // Match numpy .T in naf.py: swap the raw [x][y] axes.
-          midLinks[row][col][4 + color] = rawLinks[otherColor][row][col][0];
-          midLinks[row][col][6 + color] = rawLinks[2 + otherColor][row][col][0];
-          midLinks[row][col][color] = rawLinks[4 + otherColor][row][col][0];
-          midLinks[row][col][2 + color] = rawLinks[6 + otherColor][row][col][0];
-        }
-      } else {
-        // NetInputs.init_from_game_white: no transpose or colour remapping.
-        pegs[row][col][0] = rawPegs[0][row][col][0];
-        pegs[row][col][1] = rawPegs[1][row][col][0];
-        for (let channel = 0; channel < 8; channel += 1) {
-          midLinks[row][col][channel] = rawLinks[channel][row][col][0];
-        }
+      pegs[row][col][0] = rawPegs[firstColor][sourceX][sourceY][0];
+      pegs[row][col][1] = rawPegs[secondColor][sourceX][sourceY][0];
+
+      for (let channel = 0; channel < 8; channel += 1) {
+        const sourceChannel = whiteToMove
+          ? (channel ^ 1)
+          : channel;
+        midLinks[row][col][channel] =
+          rawLinks[sourceChannel][sourceX][sourceY][0];
       }
     }
   }
 
   // Match NetInputs.to_input_arrays: shift link channels after perspective
-  // remapping. Peg tensors are not shifted.
+  // mapping. Peg tensors are not shifted.
   const links = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
