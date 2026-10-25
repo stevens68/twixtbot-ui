@@ -810,23 +810,22 @@ function drawEffectiveBoard() {
     const cubeTopY = start + (BOARD_SIZE - 1 - row) * spacing + 0.18;
     const cubeTopZ = start + col * spacing;
     const cubeTopX = boardX + 0.035 - 0.18;
-    const directions = [
-      { y: vertical ? (row - 1) : (row - (slope < 0 ? -1 : 1)), z: col },
-      { y: row, z: col + (slope < 0 ? -1 : 1) },
-    ];
-    // Keep one row-axis and one column-axis segment, both on the cube's top.
-    const endpoints = [
-      { y: start + (BOARD_SIZE - 1 - (row - (vertical ? 2 : 1))) * spacing, z: cubeTopZ },
-      { y: cubeTopY, z: start + (col + (vertical ? 1 : 2) * slope) * spacing },
-    ];
-    // Direction signs select the two pegs on the channel's knight-move.
+    // The channel identifies the two orthogonal components of the knight move.
+    // Put both segments on the cube's top face; one follows the row axis and
+    // the other follows the column axis toward the corresponding endpoint.
     const rowDirection = diffSign ? -1 : 1;
     const colDirection = diffSign ? -1 : 1;
     const rowEnd = row + (vertical ? -rowStep : rowDirection);
     const colEnd = col + (vertical ? colDirection : colStep * slope);
     const segments = [
-      { y: start + (BOARD_SIZE - 1 - Math.max(0, Math.min(BOARD_SIZE - 1, rowEnd))) * spacing + 0.18, z: cubeTopZ },
-      { y: cubeTopY, z: start + Math.max(0, Math.min(BOARD_SIZE - 1, colEnd)) * spacing },
+      {
+        y: start + (BOARD_SIZE - 1 - Math.max(0, Math.min(BOARD_SIZE - 1, rowEnd))) * spacing + 0.18,
+        z: cubeTopZ,
+      },
+      {
+        y: cubeTopY,
+        z: start + Math.max(0, Math.min(BOARD_SIZE - 1, colEnd)) * spacing,
+      },
     ];
     for (const endpoint of segments) {
       const geometry = new THREE.BufferGeometry().setFromPoints([
