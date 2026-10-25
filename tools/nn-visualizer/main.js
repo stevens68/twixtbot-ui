@@ -460,10 +460,11 @@ function drawSampleBoard() {
     new THREE.LineBasicMaterial({ color: 0xc1c9c4 }),
   ));
 
-  const holeGeometry = new THREE.SphereGeometry(0.035, 8, 6);
+  // Black recessed-looking holes at every intersection.
+  const holeGeometry = new THREE.SphereGeometry(0.035, 10, 8);
   const holes = new THREE.InstancedMesh(
     holeGeometry,
-    new THREE.MeshStandardMaterial({ color: 0xc0c9c2, roughness: 0.85 }),
+    new THREE.MeshStandardMaterial({ color: 0x080a0d, roughness: 0.95 }),
     BOARD_SIZE * BOARD_SIZE,
   );
   const holeTransform = new THREE.Object3D();
@@ -480,26 +481,36 @@ function drawSampleBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Draw links behind the pegs, using the move sequence rather than random links.
-  const linkPositions = [];
+  // Use short cylinders for links: WebGL line width is often fixed at one pixel.
+  // Keep each player's links in the same color as that player's pegs.
+  const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
+  const linkMaterials = {
+    0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
+    1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
+  };
+  const linkMeshes = {
+    0: new THREE.Group(),
+    1: new THREE.Group(),
+  };
+  const linkTransform = new THREE.Object3D();
+  const up = new THREE.Vector3(0, 1, 0);
   for (const link of game.links) {
-    const a = pointAt(link.from.row, link.from.col, boardX - 0.095);
-    const b = pointAt(link.to.row, link.to.col, boardX - 0.095);
-    linkPositions.push(...a, ...b);
+    const a = new THREE.Vector3(...pointAt(link.from.row, link.from.col, boardX - 0.095));
+    const b = new THREE.Vector3(...pointAt(link.to.row, link.to.col, boardX - 0.095));
+    const direction = new THREE.Vector3().subVectors(b, a);
+    linkTransform.position.copy(a).add(b).multiplyScalar(0.5);
+    linkTransform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
+    linkTransform.scale.set(1, direction.length(), 1);
+    linkTransform.updateMatrix();
+    const linkMesh = new THREE.Mesh(linkGeometry, linkMaterials[link.player]);
+    linkMesh.position.copy(linkTransform.position);
+    linkMesh.quaternion.copy(linkTransform.quaternion);
+    linkMesh.scale.copy(linkTransform.scale);
+    linkMeshes[link.player].add(linkMesh);
   }
-  if (linkPositions.length) {
-    const linkGeometry = new THREE.BufferGeometry();
-    linkGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(linkPositions, 3),
-    );
-    sceneGroup.add(new THREE.LineSegments(
-      linkGeometry,
-      new THREE.LineBasicMaterial({ color: 0x202630, linewidth: 2 }),
-    ));
-  }
+  sceneGroup.add(linkMeshes[0], linkMeshes[1]);
 
-  const pegGeometry = new THREE.CylinderGeometry(0.105, 0.105, 0.28, 16);
+  // Slimmer, slightly longer pegs.
   for (const player of [0, 1]) {
     const playerPegs = game.pegs.filter((peg) => peg.player === player);
     if (!playerPegs.length) continue;
