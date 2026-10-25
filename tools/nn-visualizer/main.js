@@ -772,29 +772,12 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Render each active encoded link as a short hollow cylinder standing
-  // perpendicular to the board. Its inner radius matches the peg radius,
-  // and its height is half the peg height (0.18 vs. 0.36).
-  const linkRingShape = new THREE.Shape();
-  linkRingShape.absarc(0, 0, 0.112, 0, Math.PI * 2, false);
-  const linkRingHole = new THREE.Path();
-  linkRingHole.absarc(0, 0, 0.082, 0, Math.PI * 2, true);
-  linkRingShape.holes.push(linkRingHole);
-  const linkRingGeometry = new THREE.ExtrudeGeometry(linkRingShape, {
-    depth: 0.18,
-    bevelEnabled: false,
-    curveSegments: 24,
-  });
-  // ExtrudeGeometry grows along +Z; rotate it so the cylinder stands out
-  // from the board along +X, with its back face resting on the board surface.
-  linkRingGeometry.rotateY(Math.PI / 2);
+  // Render each active encoded link cell as a cube standing out from the board.
+  // Width/depth match the peg diameter (0.164); height is half the peg height (0.18).
+  const linkGeometry = new THREE.BoxGeometry(0.18, 0.18, 0.164);
   const linkMaterials = [
-    new THREE.MeshStandardMaterial({
-      color: 0x20252d, roughness: 0.55, side: THREE.DoubleSide,
-    }),
-    new THREE.MeshStandardMaterial({
-      color: 0xe0525d, roughness: 0.55, side: THREE.DoubleSide,
-    }),
+    new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
+    new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   ];
   const activeLinks = [];
   for (let row = 0; row < BOARD_SIZE; row += 1) {
@@ -803,8 +786,8 @@ function drawEffectiveBoard() {
         if (Number(data.links[row][col][channel]) !== 1) continue;
 
         // Mark the exact encoded tensor cell; do not reconstruct endpoints.
-        const mesh = new THREE.Mesh(linkRingGeometry, linkMaterials[channel & 1]);
-        mesh.position.set(...pointAt(row, col, boardX + 0.035));
+        const mesh = new THREE.Mesh(linkGeometry, linkMaterials[channel & 1]);
+        mesh.position.set(...pointAt(row, col, boardX + 0.035 + 0.09));
         sceneGroup.add(mesh);
         activeLinks.push({ row, col, channel });
       }
