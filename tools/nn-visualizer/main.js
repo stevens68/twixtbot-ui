@@ -460,7 +460,7 @@ function drawInputs() {
         [firstBladeX + channel * (0.26 + 0.28), 5, tensor.z - 0.25],
         14,
         '#e7edf6',
-        150,
+        180,
       );
     });
   });
