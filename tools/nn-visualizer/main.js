@@ -817,10 +817,14 @@ function logLinkEncodingDiagnostic(game, linkTensor) {
     // In the original encoder, game.links are indexed [x][y], then
     // transposed into [row][col]. Canonical row/col therefore start as y/x.
     const swappedColor = 1 - link.player;
+    // Match NetInputs.init_from_game_black() in upstream naf.py:
+    // raw 0-1 -> canonical 4-5; raw 2-3 -> 6-7;
+    // raw 4-5 -> 0-1; raw 6-7 -> 2-3.
+    // The colour within each pair is swapped.
     const midChannel =
-      (rawChannel & 4) ? 4 + swappedColor :
-      (rawChannel & 2) ? 6 + swappedColor :
-      rawChannel < 2 ? swappedColor : 2 + swappedColor;
+      rawChannel < 2 ? 4 + swappedColor :
+      rawChannel < 4 ? 6 + swappedColor :
+      rawChannel < 6 ? swappedColor : 2 + swappedColor;
 
     // Canonical board coordinates use row=x, col=y when transposed.
     const canonicalA = canonicalPoint(link.from);
@@ -885,7 +889,7 @@ function logLinkEncodingDiagnostic(game, linkTensor) {
   console.table(trace);
   console.log('Actual nonzero tensor cells (channel labels intentionally omitted until verified):');
   console.table(actualCells);
-  console.log('Loaded diagnostic build: link-trace-v2. If this exact group title is absent, hard-reload the visualizer before interpreting the output.');
+  console.log('Loaded diagnostic build: link-trace-v3 (upstream channel mapping). If this exact group title is absent, hard-reload before interpreting the output.');
   console.groupEnd();
 }
 
