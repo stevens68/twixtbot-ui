@@ -185,10 +185,11 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
   const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
   const spacing = options.spacing || 0.34;
   const cellSize = options.cellSize || 0.26;
-  const channelGap = options.channelGap ?? 0.11;
+  const channelGap = options.channelGap ?? 0.2;
   const depthStep = cellSize + channelGap;
   const maxThickness = options.maxThickness || 0.4;
-  const minThickness = options.minThickness || 0.035;
+  // Keep zero-valued cells visible as small, nonzero cubes.
+  const minThickness = options.minThickness ?? 0.09;
 
   const mesh = new THREE.InstancedMesh(
     cubeGeometry,
@@ -397,21 +398,24 @@ function drawInputs() {
     {
       key: 'pegs',
       label: 'Pegs · 24×24×2',
-      x: -14.5,
+      x: -1.8,
+      z: -13,
       channels: 2,
       color: COLORS.input,
     },
     {
       key: 'links',
       label: 'Links · 24×24×8',
-      x: -4.2,
+      x: -1.8,
+      z: -3.5,
       channels: 8,
       color: COLORS.input,
     },
     {
       key: 'locations',
       label: 'Locations · 24×24×2',
-      x: 9.7,
+      x: -1.8,
+      z: 6,
       channels: 2,
       color: COLORS.fixed,
     },
@@ -423,24 +427,28 @@ function drawInputs() {
       BOARD_SIZE,
       BOARD_SIZE,
       tensor.channels,
-      [tensor.x, -4, 0],
+      [
+        tensor.x - ((tensor.channels - 1) * (0.26 + 0.2)) / 2,
+        -4,
+        tensor.z,
+      ],
       tensor.color,
       {
         spacing: 0.34,
         cellSize: 0.26,
         maxThickness: 0.34,
-        minThickness: 0.055,
-        channelGap: 0.11,
+        minThickness: 0.09,
+        channelGap: 0.2,
       },
     );
 
-    addLabel(tensor.label, [tensor.x, 5, 1.3]);
+    addLabel(tensor.label, [tensor.x + ((tensor.channels - 1) * 0.46) / 2, 5, tensor.z + 3.9]);
   });
 
   return {
     title: 'Input tensors',
     description:
-      'Three tensors oriented in the same direction. Each channel is a separate blade stacked along X; signed values extend along X.',
+      'Three parallel tensor boards side by side along Z. Channels are separate blades stacked along X with wider gaps; zero-valued cells remain visible.'
     shape: '24 × 24 × (2 + 8 + 2)',
     range: '0 … 1 (demo board)',
     count: '3 tensors · 6,912 cells',
