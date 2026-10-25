@@ -436,15 +436,18 @@ function encodeGameInputs(game) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
       if (blackToMove) {
         // NetInputs.init_from_game_black: opposite colour first, transposed.
-        pegs[row][col][0] = rawPegs[1][col][row][0];
-        pegs[row][col][1] = rawPegs[0][col][row][0];
+        // game.pegs is indexed [x][y] = [column][row]. naf.py uses .T,
+        // so the encoded [row][column] cell must read raw [row][column].
+        pegs[row][col][0] = rawPegs[1][row][col][0];
+        pegs[row][col][1] = rawPegs[0][row][col][0];
 
         for (let color = 0; color < 2; color += 1) {
           const otherColor = 1 - color;
-          midLinks[row][col][4 + color] = rawLinks[otherColor][col][row][0];
-          midLinks[row][col][6 + color] = rawLinks[2 + otherColor][col][row][0];
-          midLinks[row][col][color] = rawLinks[4 + otherColor][col][row][0];
-          midLinks[row][col][2 + color] = rawLinks[6 + otherColor][col][row][0];
+          // Match numpy .T in naf.py: swap the raw [x][y] axes.
+          midLinks[row][col][4 + color] = rawLinks[otherColor][row][col][0];
+          midLinks[row][col][6 + color] = rawLinks[2 + otherColor][row][col][0];
+          midLinks[row][col][color] = rawLinks[4 + otherColor][row][col][0];
+          midLinks[row][col][2 + color] = rawLinks[6 + otherColor][row][col][0];
         }
       } else {
         // NetInputs.init_from_game_white: no transpose or colour remapping.
@@ -997,11 +1000,11 @@ function buildUpstreamReferenceInputs(game) {
 
   for (let x = 0; x < BOARD_SIZE; x += 1) {
     for (let y = 0; y < BOARD_SIZE; y += 1) {
-      const row = blackToMove ? y : x;
-      const col = blackToMove ? x : y;
+      const row = blackToMove ? x : y;
+      const col = blackToMove ? y : x;
       // naf.py changes perspective on Black's turn and swaps player planes.
-      pegs[row][col][0] = rawPegs[blackToMove ? 1 : 0][x][y][0];
-      pegs[row][col][1] = rawPegs[blackToMove ? 0 : 1][x][y][0];
+      pegs[row][col][0] = rawPegs[blackToMove ? 1 : 0][blackToMove ? row : x][blackToMove ? col : y][0];
+      pegs[row][col][1] = rawPegs[blackToMove ? 0 : 1][blackToMove ? row : x][blackToMove ? col : y][0];
 
       for (let rawChannel = 0; rawChannel < 8; rawChannel += 1) {
         const sourceChannel = blackToMove ? 1 - (rawChannel & 1) : rawChannel & 1;
@@ -1010,7 +1013,8 @@ function buildUpstreamReferenceInputs(game) {
           ? (group === 0 ? 4 : group === 2 ? 6 : group === 4 ? 0 : 2)
           : group;
         const sourceIndex = sourceGroup + sourceChannel;
-        midpointLinks[row][col][rawChannel] = rawLinks[sourceIndex][x][y][0];
+        midpointLinks[row][col][rawChannel] =
+          rawLinks[sourceIndex][blackToMove ? row : x][blackToMove ? col : y][0];
       }
     }
   }
