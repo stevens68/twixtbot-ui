@@ -175,24 +175,28 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
       for (let col = 0; col < cols; col += 1) {
         const value = values[index];
         const isZero = value === 0;
-        // Input tensors are sparse: zero means no peg/link at this cell.
-        // Give zero-valued instances zero scale so empty cells cannot look like
-        // extra links. For signed activation/weight values, keep a small minimum.
+        // Keep empty tensor cells visible as tiny dot-like cubes instead of
+        // full-size blades. Nonzero values retain their signed blade shape.
+        const dotSize = Math.min(cellSize, 0.055);
         const thickness = isZero
-          ? 0
-          : (Math.abs(value) / maxAbs) * maxThickness;
+          ? dotSize
+          : Math.max(0.025, (Math.abs(value) / maxAbs) * maxThickness);
 
         // Signed values extend away from the zero plane along the X axis.
         // Each channel is a separate blade. Stack blades along X, perpendicular
         // to the 24×24 board plane, rather than along the column axis (Z).
-        // Signed value thickness still extends from each blade's X position.
+        // Zero values sit on the channel plane as small cube dots.
         transform.position.set(
           origin[0] + channel * depthStep +
             (isZero ? 0 : value < 0 ? -thickness / 2 : thickness / 2),
           origin[1] + (rows - 1 - row) * spacing,
           origin[2] + col * spacing,
         );
-        transform.scale.set(thickness, cellSize, cellSize);
+        transform.scale.set(
+          thickness,
+          isZero ? dotSize : cellSize,
+          isZero ? dotSize : cellSize,
+        );
         transform.updateMatrix();
 
         mesh.setMatrixAt(index, transform.matrix);
