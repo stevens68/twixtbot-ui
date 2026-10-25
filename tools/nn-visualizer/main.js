@@ -781,7 +781,9 @@ function drawEffectiveBoard() {
         const mesh = new THREE.Mesh(linkGeometry, linkMaterials[displayedPlayer]);
         // The cube's back face touches the board face; the whole cube projects
         // outward, avoiding coplanar overlap with the backing and holes.
-        mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
+        const displayRow = blackToMove ? col : row;
+        const displayCol = blackToMove ? row : col;
+        mesh.position.set(...pointAt(displayRow, displayCol, boardX + 0.035 - 0.18));
         sceneGroup.add(mesh);
         activeLinks.push({ row, col, channel });
       }
@@ -819,7 +821,9 @@ function drawEffectiveBoard() {
     const transform = new THREE.Object3D();
     positions.forEach(({ row, col }, index) => {
       // Tensor indices already include perspective/transposition: do not transform again.
-      transform.position.set(...pointAt(row, col, boardX - 0.16));
+      const displayRow = blackToMove ? col : row;
+      const displayCol = blackToMove ? row : col;
+      transform.position.set(...pointAt(displayRow, displayCol, boardX - 0.16));
       transform.rotation.z = Math.PI / 2;
       transform.updateMatrix();
       mesh.setMatrixAt(index, transform.matrix);
