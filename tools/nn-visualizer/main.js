@@ -791,6 +791,40 @@ function drawEffectiveBoard() {
       }
     }
   }
+  // Add two subtle direction indicators to each link cube. Each segment
+  // starts at the cell midpoint and points toward one of the two connected
+  // peg locations. Draw them on the board face so they remain legible above
+  // the square without obscuring the raised link cube.
+  const indicatorMaterial = new THREE.LineBasicMaterial({
+    color: 0xf5f7fa,
+    transparent: true,
+    opacity: 0.95,
+    depthTest: false,
+  });
+  for (const { row, col, channel } of activeLinks) {
+    const vertical = (channel & 4) !== 0;
+    const diffSign = (channel & 2) !== 0;
+    const rowStep = vertical ? 2 : 1;
+    const colStep = vertical ? 1 : 2;
+    const slope = diffSign ? -1 : 1;
+    const center = pointAt(row, col, boardX - 0.012);
+    for (const sign of [-1, 1]) {
+      const endRow = row + sign * rowStep;
+      const endCol = col + sign * colStep * slope;
+      const endY = start + (BOARD_SIZE - 1 - (row + sign * rowStep)) * spacing;
+      const endZ = start + (col + sign * colStep * slope) * spacing;
+      // Clip each pointer at the square edge; the target peg can be farther
+      // away because link tensors store a shifted midpoint cell.
+      const edgeY = center[1] + (endY - center[1]) * 0.42;
+      const edgeZ = center[2] + (endZ - center[2]) * 0.42;
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(center[0], center[1], center[2]),
+        new THREE.Vector3(center[0], edgeY, edgeZ),
+      ]);
+      sceneGroup.add(new THREE.Line(geometry, indicatorMaterial));
+    }
+  }
+
   console.debug('[Effective board] active encoded link cells:', activeLinks);
 
   // Render pegs from the same encoded tensor used by the input blades.
@@ -832,20 +866,19 @@ function drawEffectiveBoard() {
     sceneGroup.add(mesh);
   }
 
-  // Rotate the familiar Twixt coordinate labels 90 degrees clockwise:
-  // 24–1 run left-to-right across the top; A–X run top-to-bottom on the right.
-  // Labels describe the effective board's displayed tensor coordinates.
+  // Keep the familiar Twixt coordinates fixed, like the finish lines:
+  // A–X run left-to-right across the top; 1–24 run top-to-bottom on the left.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addLabel(
-      String(BOARD_SIZE - col),
+      String.fromCharCode(65 + col),
       [boardX - 0.12, start + (BOARD_SIZE - 1) * spacing + 0.34, start + col * spacing],
       14, '#e0e8e2', 150,
     );
   }
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     addLabel(
-      String.fromCharCode(65 + row),
-      [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start + (BOARD_SIZE - 1) * spacing + 0.34],
+      String(row + 1),
+      [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34],
       14, '#e0e8e2', 150,
     );
   }
