@@ -587,9 +587,17 @@ function drawSampleBoard() {
   };
   const linkTransform = new THREE.Object3D();
   const up = new THREE.Vector3(0, 1, 0);
+  // Match the canonical input-tensor perspective. The 13-move sample has
+  // Black to move, so transpose the physical board's peg/link coordinates too.
+  const transposeBoard = game.nextPlayer === 0;
+  const boardPoint = (peg, x = boardX) => pointAt(
+    transposeBoard ? peg.col : peg.row,
+    transposeBoard ? peg.row : peg.col,
+    x,
+  );
   for (const link of game.links) {
-    const a = new THREE.Vector3(...pointAt(link.from.row, link.from.col, boardX - 0.32));
-    const b = new THREE.Vector3(...pointAt(link.to.row, link.to.col, boardX - 0.32));
+    const a = new THREE.Vector3(...boardPoint(link.from, boardX - 0.32));
+    const b = new THREE.Vector3(...boardPoint(link.to, boardX - 0.32));
     const direction = new THREE.Vector3().subVectors(b, a);
     linkTransform.position.copy(a).add(b).multiplyScalar(0.5);
     linkTransform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
@@ -616,7 +624,7 @@ function drawSampleBoard() {
     const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, playerPegs.length);
     const transform = new THREE.Object3D();
     playerPegs.forEach((peg, index) => {
-      const [x, y, z] = pointAt(peg.row, peg.col, boardX - 0.16);
+      const [x, y, z] = boardPoint(peg, boardX - 0.16);
       transform.position.set(x, y, z);
       transform.rotation.z = Math.PI / 2;
       transform.scale.set(1, 1, 1);
