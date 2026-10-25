@@ -1385,6 +1385,7 @@ document.querySelectorAll('.step-tab').forEach((button) => {
 });
 
 document.querySelector('#demo-button').addEventListener('click', () => {
+  backendSnapshot = null;
   data = createDemoData();
   cachedOutput = null;
   activeStep = 'inputs';
@@ -1395,7 +1396,7 @@ document.querySelector('#demo-button').addEventListener('click', () => {
 
 document.querySelector('#load-python-trace').addEventListener('click', async () => {
   const moves = document.querySelector('#trajectory').value
-    .split(/[\\s,;]+/).map((move) => move.trim()).filter(Boolean);
+    .split(/[\s,;]+/).map((move) => move.trim()).filter(Boolean);
   const button = document.querySelector('#load-python-trace');
   button.disabled = true;
   status.textContent = 'Running src.backend.twixt.Game and src.backend.naf.NetInputs…';
@@ -1442,6 +1443,7 @@ document.querySelector('#json-file').addEventListener('change', async (event) =>
 
   try {
     const parsed = JSON.parse(await file.text());
+    backendSnapshot = null;
     data = validateData(parsed);
     cachedOutput = null;
     activeStep = 'inputs';
