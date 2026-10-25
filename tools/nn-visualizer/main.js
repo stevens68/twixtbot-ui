@@ -396,33 +396,82 @@ function createSampleGame() {
 }
 
 function encodeGameInputs(game) {
-  const rawPegs=Array.from({length:2},()=>createTensor3(BOARD_SIZE,BOARD_SIZE,1));
-  const rawLinks=Array.from({length:8},()=>createTensor3(BOARD_SIZE,BOARD_SIZE,1));
-  for (const p of game.pegs) rawPegs[p.player][p.col][p.row][0]=1;
-  for (const link of game.links) {
-    const x1=link.from.col,y1=link.from.row,x2=link.to.col,y2=link.to.row;
-    const ix=link.player+(((x1+x2)%2!==0)?4:0)+(((y2-y1)*(x2-x1)<0)?2:0);
-    rawLinks[ix][Math.floor((x1+x2)/2)][Math.floor((y1+y2)/2)][0]=1;
+  // Match src/backend/naf.py exactly:
+  // - WHITE to move: preserve board orientation and channel order.
+  // - BLACK to move: transpose x/y and remap colours + link orientation channels.
+  // game player IDs follow twixt.Game: BLACK=0, WHITE=1.
+  const rawPegs = Array.from({ length: 2 }, () =>
+    createTensor3(BOARD_SIZE, BOARD_SIZE, 1),
+  );
+  const rawLinks = Array.from({ length: 8 }, () =>
+    createTensor3(BOARD_SIZE, BOARD_SIZE, 1),
+  );
+
+  for (const peg of game.pegs) {
+    rawPegs[peg.player][peg.row][peg.col][0] = 1;
   }
-  const pegs=createTensor3(BOARD_SIZE,BOARD_SIZE,2), mid=createTensor3(BOARD_SIZE,BOARD_SIZE,8);
-  // Thirteen moves means BLACK is next: channel 0 is WHITE/opponent, 1 BLACK/to-move.
-  for(let r=0;r<BOARD_SIZE;r++) for(let col=0;col<BOARD_SIZE;col++) {
-    pegs[r][col][0]=rawPegs[1][col][r][0]; pegs[r][col][1]=rawPegs[0][col][r][0];
-    for(let color=0;color<2;color++) {
-      const opp=1-color;
-      mid[r][col][4+color]=rawLinks[opp][col][r][0];
-      mid[r][col][6+color]=rawLinks[2+opp][col][r][0];
-      mid[r][col][color]=rawLinks[4+opp][col][r][0];
-      mid[r][col][2+color]=rawLinks[6+opp][col][r][0];
+
+  // Link channel encoding follows twixt.Game.describe_link:
+  // bit 0 = colour, bit 2 = LONGY, bit 1 = DIFFSIGN.
+  for (const link of game.links) {
+    const x1 = link.from.row;
+    const y1 = link.from.col;
+    const x2 = link.to.row;
+    const y2 = link.to.col;
+    const channel =
+      link.player +
+      (((x1 + x2) % 2 !== 0) ? 4 : 0) +
+      (((y2 - y1) * (x2 - x1) < 0) ? 2 : 0);
+    rawLinks[channel][Math.floor((x1 + x2) / 2)][Math.floor((y1 + y2) / 2)][0] = 1;
+  }
+
+  const pegs = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
+  const midLinks = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
+  const blackToMove = game.nextPlayer === 0;
+
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      if (blackToMove) {
+        // NetInputs.init_from_game_black: opposite colour first, transposed.
+        pegs[row][col][0] = rawPegs[1][col][row][0];
+        pegs[row][col][1] = rawPegs[0][col][row][0];
+
+        for (let color = 0; color < 2; color += 1) {
+          const otherColor = 1 - color;
+          midLinks[row][col][4 + color] = rawLinks[otherColor][col][row][0];
+          midLinks[row][col][6 + color] = rawLinks[2 + otherColor][col][row][0];
+          midLinks[row][col][color] = rawLinks[4 + otherColor][col][row][0];
+          midLinks[row][col][2 + color] = rawLinks[6 + otherColor][col][row][0];
+        }
+      } else {
+        // NetInputs.init_from_game_white: no transpose or colour remapping.
+        pegs[row][col][0] = rawPegs[0][row][col][0];
+        pegs[row][col][1] = rawPegs[1][row][col][0];
+        for (let channel = 0; channel < 8; channel += 1) {
+          midLinks[row][col][channel] = rawLinks[channel][row][col][0];
+        }
+      }
     }
   }
-  const links=createTensor3(BOARD_SIZE,BOARD_SIZE,8);
-  for(let r=0;r<BOARD_SIZE;r++) for(let col=0;col<BOARD_SIZE;col++) for(let ch=0;ch<8;ch++) {
-    const vertical=(ch&4)!==0,diff=(ch&2)!==0;
-    const sr=r-((vertical||diff)?1:0), sc=col-((!vertical||diff)?1:0);
-    if(sr>=0&&sc>=0) links[r][col][ch]=mid[sr][sc][ch];
+
+  // Match NetInputs.to_input_arrays: shift link channels after perspective
+  // remapping. Peg tensors are not shifted.
+  const links = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      for (let channel = 0; channel < 8; channel += 1) {
+        const vertical = (channel & 4) !== 0;
+        const diffSign = (channel & 2) !== 0;
+        const sourceRow = row - ((vertical || diffSign) ? 1 : 0);
+        const sourceCol = col - ((!vertical || diffSign) ? 1 : 0);
+        if (sourceRow >= 0 && sourceCol >= 0) {
+          links[row][col][channel] = midLinks[sourceRow][sourceCol][channel];
+        }
+      }
+    }
   }
-  return {pegs,links};
+
+  return { pegs, links };
 }
 
 function drawSampleBoard() {
