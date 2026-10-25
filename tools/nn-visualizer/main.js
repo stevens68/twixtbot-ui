@@ -1,32 +1,717 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
-const N=24,F=48,C={input:0x78c7f4,fixed:0xc9cdd3,weight:0x9b6848,bias:0xf0c64b,out:0x54d68b};
-const viewport=document.querySelector('#viewport'), loading=document.querySelector('#loading'), status=document.querySelector('#status');
-const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0b1018); scene.fog=new THREE.Fog(0x0b1018,75,190);
-const camera=new THREE.PerspectiveCamera(42,1,.1,500); camera.position.set(36,28,48);
-const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio||1,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; viewport.appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.target.set(0,0,0);
-scene.add(new THREE.HemisphereLight(0xcfe3ff,0x253041,2)); const light=new THREE.DirectionalLight(0xffffff,2.4); light.position.set(20,40,30); scene.add(light);
-let step='inputs',group=new THREE.Group(),data=demo(),output=null; scene.add(group);
-const cube=new THREE.BoxGeometry(1,1,1);
-function rng(seed){return ()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};}
-function t3(a,b,c){return Array.from({length:a},()=>Array.from({length:b},()=>Array(c).fill(0)));}
-function t4(a,b,c,d,fn){return Array.from({length:a},()=>Array.from({length:b},()=>Array.from({length:c},()=>Array.from({length:d},fn))));}
-function demo(){const r=rng(2026),pegs=t3(N,N,2),links=t3(N,N,8),locations=t3(N,N,2);for(let y=0;y<N;y++)for(let x=0;x<N;x++){locations[y][x][0]=x===0||x===N-1?1:0;locations[y][x][1]=y===0||y===N-1?1:0;for(let k=0;k<8;k++)links[y][x][k]=r()<.018?(r()<.5?-1:1):0;}[[5,5,0],[8,7,1],[11,9,0],[13,12,1],[17,15,0]].forEach(p=>pegs[p[0]][p[1]][p[2]]=1);return {pegs,links,locations,weights:{pegs:t4(F,1,1,2,()=>((r()-.5)*.4)),links:t4(F,5,5,8,()=>((r()-.5)*.16)),locations:t4(F,1,1,2,()=>((r()-.5)*.3))},bias:Array.from({length:F},()=>((r()-.5)*.15)),demo:true};}
-function label(text,pos,size=30,color='#e7edf6'){const c=document.createElement('canvas'),ctx=c.getContext('2d');ctx.font='600 '+size+'px Arial';c.width=Math.max(128,ctx.measureText(text).width+28);c.height=size+26;ctx.font='600 '+size+'px Arial';ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,c.width/2,c.height/2);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));s.position.set(pos[0],pos[1],pos[2]);s.scale.set(c.width/45,c.height/45,1);group.add(s);}
-function cubes(vals,rows,cols,ch,base,color,opt={}){const max=Math.max(1e-8,...vals.map(Math.abs)),sp=opt.spacing||.34,cell=opt.cell||.26,depth=cell+(opt.gap||.11),mesh=new THREE.InstancedMesh(cube,new THREE.MeshStandardMaterial({color,roughness:.6}),vals.length),d=new THREE.Object3D();let i=0;for(let k=0;k<ch;k++)for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const v=vals[i],th=Math.max(opt.min||.035,Math.abs(v)/max*(opt.thickness||.4));d.position.set(base[0]+(v<0?-th/2:th/2),base[1]+(rows-1-y)*sp,base[2]+x*sp+k*depth);d.scale.set(th,cell,cell);d.updateMatrix();mesh.setMatrixAt(i++,d.matrix);}mesh.instanceMatrix.needsUpdate=true;group.add(mesh);return {count:vals.length,min:Math.min(...vals),max:Math.max(...vals)};}
-function flat(t){const a=[];for(let k=0;k<t[0][0].length;k++)for(let y=0;y<t.length;y++)for(let x=0;x<t[y].length;x++)a.push(Number(t[y][x][k]));return a;}
-function flatKernel(t){const a=[];for(let k=0;k<t[0][0].length;k++)for(let y=0;y<t.length;y++)for(let x=0;x<t[y].length;x++)a.push(Number(t[y][x][k]));return a;}
-function conv(){if(output&&output.source===data)return output.tensor;const o=t3(N,N,F),w=data.weights,b=data.bias||Array(F).fill(0);for(let y=0;y<N;y++)for(let x=0;x<N;x++)for(let f=0;f<F;f++){let s=Number(b[f]||0);for(let ky=0;ky<5;ky++)for(let kx=0;kx<5;kx++){const iy=y+ky-2,ix=x+kx-2;if(iy<0||iy>=N||ix<0||ix>=N)continue;for(let k=0;k<8;k++)s+=Number(data.links[iy][ix][k])*Number(w.links[f][ky][kx][k]);}for(let k=0;k<2;k++){s+=Number(data.pegs[y][x][k])*Number(w.pegs[f][0][0][k]);s+=Number(data.locations[y][x][k])*Number(w.locations[f][0][0][k]);}o[y][x][f]=s;}output={source:data,tensor:o};return o;}
-function filterBlock(f,x,y,z,w,kh,kw,ch,name,showBias=false){const vals=flatKernel(w[f]),max=Math.max(1e-8,...vals.map(Math.abs)),mesh=new THREE.InstancedMesh(cube,new THREE.MeshStandardMaterial({color:C.weight,roughness:.65}),vals.length),d=new THREE.Object3D(),sp=.18,cell=.135,dep=cell+.055;let i=0;for(let k=0;k<ch;k++)for(let r=0;r<kh;r++)for(let c=0;c<kw;c++){const v=vals[i],th=Math.max(.025,Math.abs(v)/max*.17);d.position.set(x+(v<0?-th/2:th/2),y+(kh-1-r)*sp,z+c*sp+k*dep);d.scale.set(th,cell,cell);d.updateMatrix();mesh.setMatrixAt(i++,d.matrix);}group.add(mesh);if(showBias){const b=new THREE.Mesh(cube,new THREE.MeshStandardMaterial({color:C.bias}));b.position.set(x+.42,y+(kh-1)*sp/2,z+kw*sp+ch*dep*.5);b.scale.setScalar(.22);group.add(b);}label(name,[x,y+kh*sp+.2,z+ch*dep*.3],17);}
-function clear(){scene.remove(group);group.traverse(o=>{if(o.isSprite){o.material.map&&o.material.map.dispose();o.material.dispose();}else if(o.isMesh)o.material.dispose();});group=new THREE.Group();scene.add(group);}
-function draw(){clear();let info;if(step==='inputs'){[['pegs','Pegs · 24×24×2',-14.5,2,C.input],['links','Links · 24×24×8',-4.2,8,C.input],['locations','Locations · 24×24×2',9.7,2,C.fixed]].forEach(s=>{cubes(flat(data[s[0]]),N,N,s[3],[s[2],-4,-(s[3]-1)*.2],s[4],{spacing:.34,cell:.26,thickness:.34,gap:.11,min:.055});label(s[1],[s[2],5,1.3]);});info=['Input tensors','Three input tensors side by side; locations are fixed and shown in light gray.','24 × 24 × (2 + 8 + 2)','0 … 1 (demo board)','3 tensors · 6,912 cells'];}
-else if(step==='filters'){for(let f=0;f<F;f++){const col=f%8,row=Math.floor(f/8),x=-18.5+col*4.8,y=-4+row*5.3;filterBlock(f,x,y,-1.5,data.weights.links,5,5,8,'F'+f+' · link',true);filterBlock(f,x+1.65,y,2.7,data.weights.pegs,1,1,2,'peg');filterBlock(f,x+2.75,y,2.7,data.weights.locations,1,1,2,'loc');}info=['48 convolution filters','Eight columns × six rows. Each filter contains link, peg, and location kernels plus a bias cube.','48 filters · 8 × 6 grid','Signed weights and bias','48 filter groups'];}
-else{const vals=flat(conv()),q=cubes(vals,N,N,F,[-4.5,-4,-(F-1)*.105/2],C.out,{spacing:.34,cell:.24,thickness:.42,min:.025,gap:.105});label('Summed convolution output · 24×24×48',[0,5,2],28);info=['Convolution output','Three branch convolutions are summed into one feature tensor. Thickness is scaled for visibility.','24 × 24 × 48',q.min.toFixed(4)+' … '+q.max.toFixed(4),q.count.toLocaleString()+' cells'];}
-document.querySelector('#view-title').textContent=info[0];document.querySelector('#view-description').textContent=info[1];document.querySelector('#tensor-shape').textContent=info[2];document.querySelector('#value-range').textContent=info[3];document.querySelector('#cube-count').textContent=info[4];document.querySelectorAll('.step-tab').forEach(b=>{const on=b.dataset.step===step;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});loading.style.display='none';}
-function validate(d){for(const [k,ch] of [['pegs',2],['links',8],['locations',2]])if(!Array.isArray(d[k])||d[k].length!==N||d[k].some(row=>!Array.isArray(row)||row.length!==N||row.some(cell=>!Array.isArray(cell)||cell.length!==ch||cell.some(v=>!Number.isFinite(Number(v))))) )throw Error(k+' must be a numeric [24][24]['+ch+'] tensor.');if(!d.weights){d.weights=demo().weights;status.textContent='Weights omitted: using generated demo weights.';}else for(const [k,kh,kw,ch] of [['pegs',1,1,2],['links',5,5,8],['locations',1,1,2]])if(!Array.isArray(d.weights[k])||d.weights[k].length!==F||d.weights[k].some(f=>!Array.isArray(f)||f.length!==kh||f.some(row=>!Array.isArray(row)||row.length!==kw||row.some(cell=>!Array.isArray(cell)||cell.length!==ch))))throw Error('weights.'+k+' must have shape [48]['+kh+']['+kw+']['+ch+'].');if(!Array.isArray(d.bias)||d.bias.length!==F||d.bias.some(v=>!Number.isFinite(Number(v))))d.bias=Array(F).fill(0);d.demo=false;return d;}
-document.querySelectorAll('.step-tab').forEach(b=>b.addEventListener('click',()=>{step=b.dataset.step;draw();}));
-document.querySelector('#demo-button').addEventListener('click',()=>{data=demo();output=null;step='inputs';draw();camera.position.set(36,28,48);controls.target.set(0,0,0);controls.update();status.textContent='Demo board and reproducible weights loaded.';});
-document.querySelector('#json-file').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{data=validate(JSON.parse(await file.text()));output=null;step='inputs';channel=0;draw();status.textContent='Board JSON loaded.';}catch(err){status.textContent='Could not load JSON: '+err.message;}finally{e.target.value='';}});
-document.querySelector('#reset-camera').addEventListener('click',()=>{camera.position.set(36,28,48);controls.target.set(0,0,0);controls.update();});window.addEventListener('resize',()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();});
-function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);}const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();draw();animate();
+
+const BOARD_SIZE = 24;
+const FILTER_COUNT = 48;
+
+const COLORS = {
+  input: 0x78c7f4,
+  fixed: 0xc9cdd3,
+  weight: 0x9b6848,
+  bias: 0xf0c64b,
+  output: 0x54d68b,
+};
+
+const viewport = document.querySelector('#viewport');
+const loading = document.querySelector('#loading');
+const status = document.querySelector('#status');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1018);
+scene.fog = new THREE.Fog(0x0b1018, 75, 190);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
+camera.position.set(36, 28, 48);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+viewport.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 0, 0);
+
+scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x253041, 2));
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+keyLight.position.set(20, 40, 30);
+scene.add(keyLight);
+
+let activeStep = 'inputs';
+let sceneGroup = new THREE.Group();
+let data = createDemoData();
+let cachedOutput = null;
+
+scene.add(sceneGroup);
+
+const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+function createRandomGenerator(seed) {
+  return function random() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+}
+
+function createTensor3(dim1, dim2, dim3) {
+  return Array.from({ length: dim1 }, () =>
+    Array.from({ length: dim2 }, () => Array(dim3).fill(0)),
+  );
+}
+
+function createTensor4(dim1, dim2, dim3, dim4, valueFactory) {
+  return Array.from({ length: dim1 }, () =>
+    Array.from({ length: dim2 }, () =>
+      Array.from({ length: dim3 }, () =>
+        Array.from({ length: dim4 }, valueFactory),
+      ),
+    ),
+  );
+}
+
+function createDemoData() {
+  const random = createRandomGenerator(2026);
+  const pegs = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
+  const links = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
+  const locations = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
+
+  // Illustrative fixed-location channels along the board edges.
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      locations[row][col][0] =
+        col === 0 || col === BOARD_SIZE - 1 ? 1 : 0;
+      locations[row][col][1] =
+        row === 0 || row === BOARD_SIZE - 1 ? 1 : 0;
+
+      for (let channel = 0; channel < 8; channel += 1) {
+        links[row][col][channel] =
+          random() < 0.018 ? (random() < 0.5 ? -1 : 1) : 0;
+      }
+    }
+  }
+
+  [
+    [5, 5, 0],
+    [8, 7, 1],
+    [11, 9, 0],
+    [13, 12, 1],
+    [17, 15, 0],
+  ].forEach(([row, col, player]) => {
+    pegs[row][col][player] = 1;
+  });
+
+  const weights = {
+    pegs: createTensor4(
+      FILTER_COUNT,
+      1,
+      1,
+      2,
+      () => (random() - 0.5) * 0.4,
+    ),
+    links: createTensor4(
+      FILTER_COUNT,
+      5,
+      5,
+      8,
+      () => (random() - 0.5) * 0.16,
+    ),
+    locations: createTensor4(
+      FILTER_COUNT,
+      1,
+      1,
+      2,
+      () => (random() - 0.5) * 0.3,
+    ),
+  };
+
+  const bias = Array.from(
+    { length: FILTER_COUNT },
+    () => (random() - 0.5) * 0.15,
+  );
+
+  return { pegs, links, locations, weights, bias, isDemo: true };
+}
+
+/**
+ * Convert a [row][column][channel] tensor into channel-major order.
+ * The cube renderer iterates channels first, then rows and columns.
+ */
+function flattenTensor(tensor) {
+  const values = [];
+
+  for (let channel = 0; channel < tensor[0][0].length; channel += 1) {
+    for (let row = 0; row < tensor.length; row += 1) {
+      for (let col = 0; col < tensor[row].length; col += 1) {
+        values.push(Number(tensor[row][col][channel]));
+      }
+    }
+  }
+
+  return values;
+}
+
+function addLabel(text, position, fontSize = 30, color = '#e7edf6') {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  context.font = '600 ' + fontSize + 'px Arial';
+  canvas.width = Math.max(128, context.measureText(text).width + 28);
+  canvas.height = fontSize + 26;
+
+  context.font = '600 ' + fontSize + 'px Arial';
+  context.fillStyle = color;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+    }),
+  );
+
+  sprite.position.set(position[0], position[1], position[2]);
+  sprite.scale.set(canvas.width / 45, canvas.height / 45, 1);
+  sceneGroup.add(sprite);
+}
+
+function addValueCubes(values, rows, cols, channels, origin, color, options = {}) {
+  const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
+  const spacing = options.spacing || 0.34;
+  const cellSize = options.cellSize || 0.26;
+  const channelGap = options.channelGap ?? 0.11;
+  const depthStep = cellSize + channelGap;
+  const maxThickness = options.maxThickness || 0.4;
+  const minThickness = options.minThickness || 0.035;
+
+  const mesh = new THREE.InstancedMesh(
+    cubeGeometry,
+    new THREE.MeshStandardMaterial({ color, roughness: 0.6 }),
+    values.length,
+  );
+
+  const transform = new THREE.Object3D();
+  let index = 0;
+
+  for (let channel = 0; channel < channels; channel += 1) {
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const value = values[index];
+        const thickness = Math.max(
+          minThickness,
+          (Math.abs(value) / maxAbs) * maxThickness,
+        );
+
+        // Signed values extend away from the zero plane along the X axis.
+        transform.position.set(
+          origin[0] + (value < 0 ? -thickness / 2 : thickness / 2),
+          origin[1] + (rows - 1 - row) * spacing,
+          origin[2] + col * spacing + channel * depthStep,
+        );
+        transform.scale.set(thickness, cellSize, cellSize);
+        transform.updateMatrix();
+
+        mesh.setMatrixAt(index, transform.matrix);
+        index += 1;
+      }
+    }
+  }
+
+  mesh.instanceMatrix.needsUpdate = true;
+  sceneGroup.add(mesh);
+
+  return {
+    count: values.length,
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
+}
+
+function calculateConvolutionOutput() {
+  if (cachedOutput && cachedOutput.source === data) {
+    return cachedOutput.tensor;
+  }
+
+  const output = createTensor3(BOARD_SIZE, BOARD_SIZE, FILTER_COUNT);
+  const weights = data.weights;
+  const bias = data.bias || Array(FILTER_COUNT).fill(0);
+
+  // This is a demo implementation of the sum of the three convolution
+  // branches. Confirm padding and bias placement against the PyTorch model.
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
+        let sum = Number(bias[filter] || 0);
+
+        // 5x5 link convolution with zero padding.
+        for (let kernelRow = 0; kernelRow < 5; kernelRow += 1) {
+          for (let kernelCol = 0; kernelCol < 5; kernelCol += 1) {
+            const inputRow = row + kernelRow - 2;
+            const inputCol = col + kernelCol - 2;
+
+            if (
+              inputRow < 0 ||
+              inputRow >= BOARD_SIZE ||
+              inputCol < 0 ||
+              inputCol >= BOARD_SIZE
+            ) {
+              continue;
+            }
+
+            for (let channel = 0; channel < 8; channel += 1) {
+              sum +=
+                Number(data.links[inputRow][inputCol][channel]) *
+                Number(
+                  weights.links[filter][kernelRow][kernelCol][channel],
+                );
+            }
+          }
+        }
+
+        // 1x1 peg and location branches.
+        for (let channel = 0; channel < 2; channel += 1) {
+          sum +=
+            Number(data.pegs[row][col][channel]) *
+            Number(weights.pegs[filter][0][0][channel]);
+          sum +=
+            Number(data.locations[row][col][channel]) *
+            Number(weights.locations[filter][0][0][channel]);
+        }
+
+        output[row][col][filter] = sum;
+      }
+    }
+  }
+
+  cachedOutput = { source: data, tensor: output };
+  return output;
+}
+
+function drawFilterKernel(
+  filterIndex,
+  originX,
+  originY,
+  originZ,
+  weights,
+  kernelHeight,
+  kernelWidth,
+  channels,
+  label,
+  showBias = false,
+) {
+  const values = flattenTensor(weights[filterIndex]);
+  const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
+  const spacing = 0.18;
+  const cellSize = 0.135;
+  const channelDepth = cellSize + 0.055;
+
+  const mesh = new THREE.InstancedMesh(
+    cubeGeometry,
+    new THREE.MeshStandardMaterial({ color: COLORS.weight, roughness: 0.65 }),
+    values.length,
+  );
+
+  const transform = new THREE.Object3D();
+  let index = 0;
+
+  for (let channel = 0; channel < channels; channel += 1) {
+    for (let row = 0; row < kernelHeight; row += 1) {
+      for (let col = 0; col < kernelWidth; col += 1) {
+        const value = values[index];
+        const thickness = Math.max(
+          0.025,
+          (Math.abs(value) / maxAbs) * 0.17,
+        );
+
+        transform.position.set(
+          originX + (value < 0 ? -thickness / 2 : thickness / 2),
+          originY + (kernelHeight - 1 - row) * spacing,
+          originZ + col * spacing + channel * channelDepth,
+        );
+        transform.scale.set(thickness, cellSize, cellSize);
+        transform.updateMatrix();
+
+        mesh.setMatrixAt(index, transform.matrix);
+        index += 1;
+      }
+    }
+  }
+
+  mesh.instanceMatrix.needsUpdate = true;
+  sceneGroup.add(mesh);
+
+  if (showBias) {
+    const biasCube = new THREE.Mesh(
+      cubeGeometry,
+      new THREE.MeshStandardMaterial({ color: COLORS.bias }),
+    );
+
+    biasCube.position.set(
+      originX + 0.42,
+      originY + ((kernelHeight - 1) * spacing) / 2,
+      originZ + kernelWidth * spacing + channels * channelDepth * 0.5,
+    );
+    biasCube.scale.setScalar(0.22);
+    sceneGroup.add(biasCube);
+  }
+
+  addLabel(
+    label,
+    [
+      originX,
+      originY + kernelHeight * spacing + 0.2,
+      originZ + channels * channelDepth * 0.3,
+    ],
+    17,
+  );
+}
+
+function clearSceneGroup() {
+  scene.remove(sceneGroup);
+
+  sceneGroup.traverse((object) => {
+    if (object.isSprite) {
+      if (object.material.map) object.material.map.dispose();
+      object.material.dispose();
+    } else if (object.isMesh) {
+      object.material.dispose();
+    }
+  });
+
+  sceneGroup = new THREE.Group();
+  scene.add(sceneGroup);
+}
+
+function drawInputs() {
+  const tensors = [
+    {
+      key: 'pegs',
+      label: 'Pegs · 24×24×2',
+      x: -14.5,
+      channels: 2,
+      color: COLORS.input,
+    },
+    {
+      key: 'links',
+      label: 'Links · 24×24×8',
+      x: -4.2,
+      channels: 8,
+      color: COLORS.input,
+    },
+    {
+      key: 'locations',
+      label: 'Locations · 24×24×2',
+      x: 9.7,
+      channels: 2,
+      color: COLORS.fixed,
+    },
+  ];
+
+  tensors.forEach((tensor) => {
+    addValueCubes(
+      flattenTensor(data[tensor.key]),
+      BOARD_SIZE,
+      BOARD_SIZE,
+      tensor.channels,
+      [tensor.x, -4, -((tensor.channels - 1) * 0.2)],
+      tensor.color,
+      {
+        spacing: 0.34,
+        cellSize: 0.26,
+        maxThickness: 0.34,
+        minThickness: 0.055,
+        channelGap: 0.11,
+      },
+    );
+
+    addLabel(tensor.label, [tensor.x, 5, 1.3]);
+  });
+
+  return {
+    title: 'Input tensors',
+    description:
+      'Three input tensors side by side; locations are fixed and shown in light gray.',
+    shape: '24 × 24 × (2 + 8 + 2)',
+    range: '0 … 1 (demo board)',
+    count: '3 tensors · 6,912 cells',
+  };
+}
+
+function drawFilters() {
+  for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
+    const column = filter % 8;
+    const row = Math.floor(filter / 8);
+    const x = -18.5 + column * 4.8;
+    const y = -4 + row * 5.3;
+
+    drawFilterKernel(
+      filter,
+      x,
+      y,
+      -1.5,
+      data.weights.links,
+      5,
+      5,
+      8,
+      'F' + filter + ' · link',
+      true,
+    );
+
+    drawFilterKernel(
+      filter,
+      x + 1.65,
+      y,
+      2.7,
+      data.weights.pegs,
+      1,
+      1,
+      2,
+      'peg',
+    );
+
+    drawFilterKernel(
+      filter,
+      x + 2.75,
+      y,
+      2.7,
+      data.weights.locations,
+      1,
+      1,
+      2,
+      'loc',
+    );
+  }
+
+  return {
+    title: '48 convolution filters',
+    description:
+      'Eight columns × six rows. Each filter contains link, peg, and location kernels plus a bias cube.',
+    shape: '48 filters · 8 × 6 grid',
+    range: 'Signed weights and bias',
+    count: '48 filter groups',
+  };
+}
+
+function drawOutput() {
+  const values = flattenTensor(calculateConvolutionOutput());
+
+  const stats = addValueCubes(
+    values,
+    BOARD_SIZE,
+    BOARD_SIZE,
+    FILTER_COUNT,
+    [-4.5, -4, -((FILTER_COUNT - 1) * 0.105) / 2],
+    COLORS.output,
+    {
+      spacing: 0.34,
+      cellSize: 0.24,
+      maxThickness: 0.42,
+      minThickness: 0.025,
+      channelGap: 0.105,
+    },
+  );
+
+  addLabel('Summed convolution output · 24×24×48', [0, 5, 2], 28);
+
+  return {
+    title: 'Convolution output',
+    description:
+      'Three branch convolutions are summed into one feature tensor. Thickness is scaled for visibility.',
+    shape: '24 × 24 × 48',
+    range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4),
+    count: stats.count.toLocaleString() + ' cells',
+  };
+}
+
+function renderStep() {
+  clearSceneGroup();
+
+  let info;
+
+  if (activeStep === 'inputs') {
+    info = drawInputs();
+  } else if (activeStep === 'filters') {
+    info = drawFilters();
+  } else {
+    info = drawOutput();
+  }
+
+  document.querySelector('#view-title').textContent = info.title;
+  document.querySelector('#view-description').textContent = info.description;
+  document.querySelector('#tensor-shape').textContent = info.shape;
+  document.querySelector('#value-range').textContent = info.range;
+  document.querySelector('#cube-count').textContent = info.count;
+
+  document.querySelectorAll('.step-tab').forEach((button) => {
+    const selected = button.dataset.step === activeStep;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-selected', String(selected));
+  });
+
+  loading.style.display = 'none';
+}
+
+function validateTensor(tensor, channels, name) {
+  const valid =
+    Array.isArray(tensor) &&
+    tensor.length === BOARD_SIZE &&
+    tensor.every(
+      (row) =>
+        Array.isArray(row) &&
+        row.length === BOARD_SIZE &&
+        row.every(
+          (cell) =>
+            Array.isArray(cell) &&
+            cell.length === channels &&
+            cell.every((value) => Number.isFinite(Number(value))),
+        ),
+    );
+
+  if (!valid) {
+    throw new Error(
+      name +
+        ' must be a numeric [' +
+        BOARD_SIZE +
+        '][' +
+        BOARD_SIZE +
+        '][' +
+        channels +
+        '] tensor.',
+    );
+  }
+}
+
+function validateWeights(weights, name, kernelHeight, kernelWidth, channels) {
+  const valid =
+    Array.isArray(weights) &&
+    weights.length === FILTER_COUNT &&
+    weights.every(
+      (filter) =>
+        Array.isArray(filter) &&
+        filter.length === kernelHeight &&
+        filter.every(
+          (row) =>
+            Array.isArray(row) &&
+            row.length === kernelWidth &&
+            row.every(
+              (cell) =>
+                Array.isArray(cell) &&
+                cell.length === channels &&
+                cell.every((value) => Number.isFinite(Number(value))),
+            ),
+        ),
+    );
+
+  if (!valid) {
+    throw new Error(
+      'weights.' +
+        name +
+        ' must have shape [' +
+        FILTER_COUNT +
+        '][' +
+        kernelHeight +
+        '][' +
+        kernelWidth +
+        '][' +
+        channels +
+        '].',
+    );
+  }
+}
+
+function validateData(input) {
+  validateTensor(input.pegs, 2, 'pegs');
+  validateTensor(input.links, 8, 'links');
+  validateTensor(input.locations, 2, 'locations');
+
+  if (!input.weights) {
+    input.weights = createDemoData().weights;
+    status.textContent = 'Weights omitted: using generated demo weights.';
+  } else {
+    validateWeights(input.weights.pegs, 'pegs', 1, 1, 2);
+    validateWeights(input.weights.links, 'links', 5, 5, 8);
+    validateWeights(input.weights.locations, 'locations', 1, 1, 2);
+  }
+
+  if (
+    !Array.isArray(input.bias) ||
+    input.bias.length !== FILTER_COUNT ||
+    input.bias.some((value) => !Number.isFinite(Number(value)))
+  ) {
+    input.bias = Array(FILTER_COUNT).fill(0);
+  }
+
+  input.isDemo = false;
+  return input;
+}
+
+function resetCamera() {
+  camera.position.set(36, 28, 48);
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+function resizeRenderer() {
+  const width = viewport.clientWidth;
+  const height = viewport.clientHeight;
+
+  if (!width || !height) return;
+
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+document.querySelectorAll('.step-tab').forEach((button) => {
+  button.addEventListener('click', () => {
+    activeStep = button.dataset.step;
+    renderStep();
+  });
+});
+
+document.querySelector('#demo-button').addEventListener('click', () => {
+  data = createDemoData();
+  cachedOutput = null;
+  activeStep = 'inputs';
+  renderStep();
+  resetCamera();
+  status.textContent = 'Demo board and reproducible weights loaded.';
+});
+
+document.querySelector('#json-file').addEventListener('change', async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  try {
+    const parsed = JSON.parse(await file.text());
+    data = validateData(parsed);
+    cachedOutput = null;
+    activeStep = 'inputs';
+    renderStep();
+    resetCamera();
+    status.textContent = 'Board JSON loaded.';
+  } catch (error) {
+    status.textContent = 'Could not load JSON: ' + error.message;
+  } finally {
+    event.target.value = '';
+  }
+});
+
+document.querySelector('#reset-camera').addEventListener('click', resetCamera);
+window.addEventListener('resize', resizeRenderer);
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+resizeRenderer();
+renderStep();
+animate();
