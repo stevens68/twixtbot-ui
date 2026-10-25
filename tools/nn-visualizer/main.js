@@ -631,6 +631,8 @@ function drawSampleBoard() {
 }
 
 function drawInputs() {
+  drawSampleBoard();
+
   const tensors = [
     {
       key: 'pegs',
