@@ -793,7 +793,10 @@ function drawEffectiveBoard() {
     const mesh = new THREE.InstancedMesh(pegGeometry, material, playerPegs.length);
     const transform = new THREE.Object3D();
     playerPegs.forEach((peg, index) => {
-      transform.position.set(...pointAt(peg.row, peg.col, boardX - 0.16));
+      // Apply the same perspective transpose as the encoded input tensors.
+      const row = transpose ? peg.col : peg.row;
+      const col = transpose ? peg.row : peg.col;
+      transform.position.set(...pointAt(row, col, boardX - 0.16));
       transform.rotation.z = Math.PI / 2;
       transform.updateMatrix();
       mesh.setMatrixAt(index, transform.matrix);
