@@ -772,16 +772,28 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Render each active encoded link as a thin colored ring around a peg-sized
-  // opening. This makes the link's tensor cell visible without drawing sticks.
-  // Rings lie in the board plane and use the same black/red mapping as links.
-  const linkRingGeometry = new THREE.RingGeometry(0.082, 0.112, 24);
+  // Render each active encoded link as a short hollow cylinder standing
+  // perpendicular to the board. Its inner radius matches the peg radius,
+  // and its height is half the peg height (0.18 vs. 0.36).
+  const linkRingShape = new THREE.Shape();
+  linkRingShape.absarc(0, 0, 0.112, 0, Math.PI * 2, false);
+  const linkRingHole = new THREE.Path();
+  linkRingHole.absarc(0, 0, 0.082, 0, Math.PI * 2, true);
+  linkRingShape.holes.push(linkRingHole);
+  const linkRingGeometry = new THREE.ExtrudeGeometry(linkRingShape, {
+    depth: 0.18,
+    bevelEnabled: false,
+    curveSegments: 24,
+  });
+  // ExtrudeGeometry grows along +Z; rotate it so the cylinder stands out
+  // from the board along +X, with its back face resting on the board surface.
+  linkRingGeometry.rotateY(Math.PI / 2);
   const linkMaterials = [
-    new THREE.MeshBasicMaterial({
-      color: 0x20252d, side: THREE.DoubleSide, depthWrite: false,
+    new THREE.MeshStandardMaterial({
+      color: 0x20252d, roughness: 0.55, side: THREE.DoubleSide,
     }),
-    new THREE.MeshBasicMaterial({
-      color: 0xe0525d, side: THREE.DoubleSide, depthWrite: false,
+    new THREE.MeshStandardMaterial({
+      color: 0xe0525d, roughness: 0.55, side: THREE.DoubleSide,
     }),
   ];
   const activeLinks = [];
@@ -790,11 +802,9 @@ function drawEffectiveBoard() {
       for (let channel = 0; channel < 8; channel += 1) {
         if (Number(data.links[row][col][channel]) !== 1) continue;
 
-        // Each ring marks the exact encoded tensor cell containing this link.
-        // It intentionally does not reconstruct the original link endpoints.
+        // Mark the exact encoded tensor cell; do not reconstruct endpoints.
         const mesh = new THREE.Mesh(linkRingGeometry, linkMaterials[channel & 1]);
-        mesh.position.set(...pointAt(row, col, boardX - 0.075));
-        mesh.rotation.y = Math.PI / 2;
+        mesh.position.set(...pointAt(row, col, boardX + 0.035));
         sceneGroup.add(mesh);
         activeLinks.push({ row, col, channel });
       }
