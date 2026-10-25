@@ -1475,13 +1475,61 @@ async function requestSnapshot(moves) {
  const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);return result;
 }
 async function loadGamePosition(ply) {
- const result=await requestSnapshot(gameMoves.slice(0,ply));backendSnapshot=result;const demo=createDemoData();
- data={pegs:result.tensors.pegs,links:result.tensors.links,locations:result.tensors.locations,weights:demo.weights,bias:demo.bias,isDemo:false};
- gamePly=ply;gameLoaded=true;cachedOutput=null;activeStep='inputs';renderStep();resetCamera();updateGameNavigation();
- status.textContent='Game position '+gamePly+'/'+gameMoves.length+'. Next player: '+result.next_player_name+'. Filters remain demo weights.';
+  // Rebuild the authoritative backend position from the move prefix. This
+  // makes Back an undo and Forward a redo, including captures/links and the
+  // model's perspective-dependent input encoding.
+  const result = await requestSnapshot(gameMoves.slice(0, ply));
+  backendSnapshot = result;
+
+  const demo = createDemoData();
+  data = {
+    pegs: result.tensors.pegs,
+    links: result.tensors.links,
+    locations: result.tensors.locations,
+    weights: demo.weights,
+    bias: demo.bias,
+    isDemo: false,
+  };
+
+  gamePly = ply;
+  gameLoaded = true;
+  cachedOutput = null;
+  // Rebuild whichever visualization is currently selected, not just Inputs.
+  // Keep the camera and selected tab stable while the board/tensors change.
+  renderStep();
+  updateGameNavigation();
+  status.textContent = 'Game position ' + gamePly + '/' + gameMoves.length +
+    '. Next player: ' + result.next_player_name +
+    '. Board and input tensors updated; filters remain demo weights.';
 }
-function updateGameNavigation(){document.querySelector('#game-back').disabled=!gameLoaded||gamePly<=0;document.querySelector('#game-forward').disabled=!gameLoaded||gamePly>=gameMoves.length;document.querySelector('#game-position').textContent=gameLoaded?'Ply '+gamePly+' / '+gameMoves.length:'No game loaded';}
-async function navigateGame(delta){if(!gameLoaded)return;const ply=Math.max(0,Math.min(gameMoves.length,gamePly+delta));if(ply===gamePly)return;document.querySelector('#game-back').disabled=true;document.querySelector('#game-forward').disabled=true;try{await loadGamePosition(ply);}catch(error){status.textContent='Could not step through game: '+error.message;updateGameNavigation();}}
+
+function updateGameNavigation() {
+  document.querySelector('#game-back').disabled = !gameLoaded || gamePly <= 0;
+  document.querySelector('#game-forward').disabled = !gameLoaded || gamePly >= gameMoves.length;
+  document.querySelector('#game-position').textContent = gameLoaded
+    ? 'Ply ' + gamePly + ' / ' + gameMoves.length +
+      (gamePly ? ' · Last: ' + gameMoves[gamePly - 1] : ' · Initial position')
+    : 'No game loaded';
+}
+
+let navigationRequest = 0;
+async function navigateGame(delta) {
+  if (!gameLoaded) return;
+  const ply = Math.max(0, Math.min(gameMoves.length, gamePly + delta));
+  if (ply === gamePly) return;
+
+  const requestId = ++navigationRequest;
+  document.querySelector('#game-back').disabled = true;
+  document.querySelector('#game-forward').disabled = true;
+  try {
+    await loadGamePosition(ply);
+  } catch (error) {
+    status.textContent = 'Could not step through game: ' + error.message;
+  } finally {
+    // Ignore stale responses if the user clicked quickly in succession.
+    if (requestId === navigationRequest) updateGameNavigation();
+  }
+}
 document.querySelector('#game-back').addEventListener('click',()=>navigateGame(-1));
 document.querySelector('#game-forward').addEventListener('click',()=>navigateGame(1));
 document.querySelector('#t1-file').addEventListener('change',async(event)=>{const file=event.target.files&&event.target.files[0];if(!file)return;try{const response=await fetch('/api/t1',{method:'POST',headers:{'Content-Type':'text/plain; charset=utf-8'},body:await file.text()});const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);gameMoves=result.moves;document.querySelector('#trajectory').value=gameMoves.join(' ');await loadGamePosition(gameMoves.length);status.textContent='Loaded '+file.name+'. '+status.textContent;}catch(error){status.textContent='Could not load T1 game: '+error.message;}finally{event.target.value='';}});
