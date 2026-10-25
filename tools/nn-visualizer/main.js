@@ -735,13 +735,15 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Match naf.py's coordinate order: floor the canonical [x][y]
-  // midpoint first, then transpose those coordinates for the effective board.
-  // Do not apply the per-channel tensor shifts to these visual markers.
-  const linkCubeGeometry = new THREE.BoxGeometry(0.24, 0.164, 0.164);
-  const linkCubeMaterials = {
-    0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
-    1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
+  // Link markers are open rectangular frames so a peg can occupy the same
+  // board position without being hidden. Pegs are 0.36 units tall; frames are
+  // 75% of that height and wide enough to surround a peg.
+  const linkFrameGeometry = new THREE.EdgesGeometry(
+    new THREE.BoxGeometry(0.24, 0.27, 0.22),
+  );
+  const linkFrameMaterials = {
+    0: new THREE.LineBasicMaterial({ color: 0x20252d }),
+    1: new THREE.LineBasicMaterial({ color: 0xe0525d }),
   };
   for (const link of game.links) {
     const x1 = link.from.col;
@@ -766,9 +768,9 @@ function drawEffectiveBoard() {
     const col = rawX;
 
     const player = effectivePlayer(link.player);
-    const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
-    cube.position.set(...pointAt(row, col, boardX - 0.16));
-    sceneGroup.add(cube);
+    const frame = new THREE.LineSegments(linkFrameGeometry, linkFrameMaterials[player]);
+    frame.position.set(...pointAt(row, col, boardX - 0.16));
+    sceneGroup.add(frame);
   }
 
     // Draw the dashed diagonal directly on the board face, using thin black
