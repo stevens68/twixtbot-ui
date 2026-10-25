@@ -30,17 +30,6 @@ SAMPLE_MOVES = [
     "N9", "Q10", "K6", "H12", "O11", "F7",
 ]
 
-# The bits are the actual constants used by twixt.Game.
-def direction_name(channel: int) -> str:
-    vertical = bool(channel & twixt.Game.LINK_LONGY)
-    diff = bool(channel & twixt.Game.LINK_DIFFSIGN)
-    # Directions are described in board coordinates: x increases A -> X,
-    # y increases 1 -> 24. The channel bit flags describe the link's slope
-    # and whether its x displacement is long.
-    if vertical:
-        return "SSE" if diff else "NNE"
-    return "ESE" if diff else "ENE"
-
 
 def coord(row: int, col: int) -> str:
     return f"{chr(ord('A') + col)}{row + 1}"
@@ -55,10 +44,9 @@ def print_channels(title: str, array: np.ndarray, channels: range = range(8)) ->
     print(f"\n{title}  shape={array.shape}")
     for ch in channels:
         cells = occupied_cells(array, ch)
-        color = "Black" if ch % 2 == 0 else "White"
         print(
-            f"  ch {ch}: {direction_name(ch):3s} / {color:5s} "
-            f"count={len(cells):2d} cells={', '.join(cells) if cells else '-'}"
+            f"  ch {ch}: count={len(cells):2d} "
+            f"cells={', '.join(cells) if cells else '-'}"
         )
 
 
