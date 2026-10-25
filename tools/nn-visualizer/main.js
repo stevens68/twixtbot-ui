@@ -209,10 +209,14 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
         );
 
         // Signed values extend away from the zero plane along the X axis.
+        // Each channel is a separate blade. Stack blades along X, perpendicular
+        // to the 24×24 board plane, rather than along the column axis (Z).
+        // Signed value thickness still extends from each blade's X position.
         transform.position.set(
-          origin[0] + (value < 0 ? -thickness / 2 : thickness / 2),
+          origin[0] + channel * depthStep +
+            (value < 0 ? -thickness / 2 : thickness / 2),
           origin[1] + (rows - 1 - row) * spacing,
-          origin[2] + col * spacing + channel * depthStep,
+          origin[2] + col * spacing,
         );
         transform.scale.set(thickness, cellSize, cellSize);
         transform.updateMatrix();
@@ -419,7 +423,7 @@ function drawInputs() {
       BOARD_SIZE,
       BOARD_SIZE,
       tensor.channels,
-      [tensor.x, -4, -((tensor.channels - 1) * 0.2)],
+      [tensor.x, -4, 0],
       tensor.color,
       {
         spacing: 0.34,
@@ -436,7 +440,7 @@ function drawInputs() {
   return {
     title: 'Input tensors',
     description:
-      'Three input tensors side by side; locations are fixed and shown in light gray.',
+      'Three tensors oriented in the same direction. Each channel is a separate blade stacked along X; signed values extend along X.',
     shape: '24 × 24 × (2 + 8 + 2)',
     range: '0 … 1 (demo board)',
     count: '3 tensors · 6,912 cells',
