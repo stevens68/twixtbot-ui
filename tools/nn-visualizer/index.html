@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twixtbot · 3D neural-network visualizer</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">T W I X T B O T / MODEL INSPECTOR</p>
+      <h1>3D convolution explorer</h1>
+      <p class="subtitle">Inspect the board tensors, convolution filters, and summed feature maps.</p>
+    </div>
+    <div class="actions">
+      <button id="demo-button" class="primary">Load demo board</button>
+      <label class="file-button">Load JSON<input id="json-file" type="file" accept=".json,application/json"></label>
+    </div>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <div class="step-tabs" role="tablist" aria-label="Processing step">
+        <button class="step-tab active" data-step="inputs" role="tab" aria-selected="true">1 · Inputs</button>
+        <button class="step-tab" data-step="filters" role="tab" aria-selected="false">2 · Filters</button>
+        <button class="step-tab" data-step="output" role="tab" aria-selected="false">3 · Conv output</button>
+      </div>
+      <div class="toolbar-right">
+        <label for="channel-select">Feature / channel</label>
+        <select id="channel-select"><option value="0">0</option></select>
+        <button id="reset-camera" class="quiet">Reset camera</button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div id="viewport" aria-label="Interactive 3D tensor scene">
+        <div id="loading" class="loading">Building the tensor scene…</div>
+      </div>
+      <aside class="inspector">
+        <p class="eyebrow">CURRENT VIEW</p>
+        <h2 id="view-title">Input tensors</h2>
+        <p id="view-description">Three input tensors, positioned side by side.</p>
+        <div class="legend">
+          <div><span class="swatch input"></span>Board inputs (pegs, links)</div>
+          <div><span class="swatch fixed"></span>Fixed input (locations)</div>
+          <div><span class="swatch weights"></span>Filter weights</div>
+          <div><span class="swatch bias"></span>Bias</div>
+          <div><span class="swatch output"></span>Summed feature maps</div>
+        </div>
+        <div class="stat"><span>Tensor shape</span><strong id="tensor-shape">24 × 24 × 2</strong></div>
+        <div class="stat"><span>Value range</span><strong id="value-range">0 … 1</strong></div>
+        <div class="stat"><span>Visible cubes</span><strong id="cube-count">—</strong></div>
+        <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan. Cube thickness along X represents the value: negative values extend toward −X, positive values toward +X.</p>
+        <details>
+          <summary>Input JSON format</summary>
+          <p>Provide <code>pegs</code>, <code>links</code>, and <code>locations</code> as nested arrays in <code>[row][column][channel]</code> order. Optional <code>weights</code> and <code>bias</code> enable real convolution calculations; otherwise demo weights are generated.</p>
+          <pre>{
+  "pegs": [[[0,1], "..."]],
+  "links": [[[0,0,0,0,0,0,0,0], "..."]],
+  "locations": [[[1,0], "..."]]
+}</pre>
+        </details>
+        <p id="status" class="status" role="status">Demo data ready.</p>
+      </aside>
+    </section>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
