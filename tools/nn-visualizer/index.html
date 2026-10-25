@@ -21,7 +21,6 @@
       <p class="subtitle">Inspect the board tensors, convolution filters, and summed feature maps.</p>
     </div>
     <div class="actions">
-      <button id="demo-button" class="primary">Load demo board</button>
       <label class="file-button">Load *.T1 board<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
     </div>
   </header>
@@ -32,8 +31,9 @@
       <textarea id="trajectory" rows="2">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
       <div class="trajectory-actions">
         <label><input id="allow-scl" type="checkbox"> Allow crossing own links</label>
-        <div class="game-navigation"><button id="game-start" disabled title="Go to start" aria-label="Go to start">⏮</button><button id="game-back" disabled title="Previous move" aria-label="Previous move">◀</button><button id="game-forward" disabled title="Next move" aria-label="Next move">▶</button><button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button><span id="game-position">No game loaded</span></div>
+        <div class="game-navigation"><button id="game-start" disabled title="Go to start" aria-label="Go to start">⏮</button><button id="game-back" disabled title="Previous move" aria-label="Previous move">◀</button><button id="game-forward" disabled title="Next move" aria-label="Next move">▶</button><button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button><span id="game-position">No game loaded</span><button id="apply-changes" class="quiet">Apply changes</button></div>
       </div>
+      <div class="trajectory-footer"><button id="demo-button" class="quiet">Load Demo board</button></div>
     </section>
     <section class="toolbar">
       <div class="step-tabs" role="tablist" aria-label="Processing step">

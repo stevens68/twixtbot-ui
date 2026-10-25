@@ -3,6 +3,7 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/exampl
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
+const DEMO_TRAJECTORY = 'L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7';
 
 const COLORS = {
   input: 0x78c7f4,
@@ -1450,17 +1451,15 @@ document.querySelectorAll('.step-tab').forEach((button) => {
   });
 });
 
-document.querySelector('#demo-button').addEventListener('click', () => {
-  backendSnapshot = null;
-  gameMoves = document.querySelector('#trajectory').value.split(/[\\s,]+/).map((move) => move.trim()).filter(Boolean);
-  gamePly = 0; gameLoaded = true; updateGameNavigation();
-  data = createDemoData();
-  cachedOutput = null;
-  activeStep = 'inputs';
-  renderStep();
-  resetCamera();
-  status.textContent = 'Demo board and reproducible weights loaded.';
+document.querySelector('#demo-button').addEventListener('click', async () => {
+  document.querySelector('#trajectory').value = DEMO_TRAJECTORY;
+  await loadTrajectoryFromEditor();
+  if (gameLoaded) {
+    resetCamera();
+    status.textContent = 'Demo board loaded at the initial position. Use Next to step through the demo.';
+  }
 });
+document.querySelector('#apply-changes').addEventListener('click', loadTrajectoryFromEditor);
 
 async function requestSnapshot(moves) {
  const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:document.querySelector('#allow-scl').checked,allow_swap:true})});
