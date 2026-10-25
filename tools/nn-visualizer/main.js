@@ -862,8 +862,9 @@ function drawEffectiveBoard() {
     sceneGroup.add(mesh);
   }
 
-  // Keep coordinate labels fixed to the sample board: A–X across columns,
-  // 1–24 down rows. Do not transpose the visual reference system.
+  // Label tensor coordinates, not the physical board coordinates. For a
+  // black-to-move position, the encoded tensor is transposed, so its row/column
+  // labels intentionally differ from the sample board's physical labels.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addLabel(
       String.fromCharCode(65 + col),
