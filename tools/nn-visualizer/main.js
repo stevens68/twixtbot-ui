@@ -614,16 +614,11 @@ function drawEffectiveBoard() {
   const start = -boardSize / 2;
   const transpose = game.nextPlayer === 0;
   const effectivePlayer = (player) => transpose ? 1 - player : player;
-  const pointAt = (row, col, x = boardX) => {
-    // Match naf.py's matrix transpose: source (row, col) -> (col, row).
-    const effectiveRow = transpose ? col : row;
-    const effectiveCol = transpose ? row : col;
-    return [
-      x,
-      start + (BOARD_SIZE - 1 - effectiveRow) * spacing,
-      start + effectiveCol * spacing,
-    ];
-  };
+  const pointAt = (row, col, x = boardX) => [
+    x,
+    start + (BOARD_SIZE - 1 - row) * spacing,
+    start + col * spacing,
+  ];
 
   const backing = new THREE.Mesh(
     new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
@@ -635,37 +630,10 @@ function drawEffectiveBoard() {
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
-  // A thin 2D line marks the main-diagonal transpose axis directly on the board.
-  if (transpose) {
-    const diagonalGeometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(
-        boardX + 0.026,
-        start + (BOARD_SIZE - 1) * spacing,
-        start,
-      ),
-      new THREE.Vector3(
-        boardX + 0.026,
-        start,
-        start + (BOARD_SIZE - 1) * spacing,
-      ),
-    ]);
-    // Dotted black transpose axis, thinner than the board grid.
-    const diagonal = new THREE.Line(
-      diagonalGeometry,
-      new THREE.LineDashedMaterial({
-        color: 0x080a0d,
-        dashSize: 0.075,
-        gapSize: 0.075,
-        linewidth: 1,
-      }),
-    );
-    diagonal.computeLineDistances();
-    sceneGroup.add(diagonal);
-  }
-
-  // Finish lines are transformed with the board. Transposition swaps the
-  // goal axes, and colour canonicalization swaps the players, so the effective
-  // view retains the canonical red-horizontal / black-vertical appearance.
+  // The input tensor transpose normalizes the backend's [x][y] storage
+  // into [row=y][col=x]; it does not rotate the displayed board coordinates.
+  // Keep the original board axes and labels fixed, and swap player colours
+  // only for the canonical side-to-move perspective.
   const finishLineX = boardX + 0.026;
   const makeFinishLine = (startPoint, endPoint, material, thickness = 0.065) => {
     // Flat, visibly thick strips; unlike WebGL lines, their width is reliable.
@@ -1036,16 +1004,15 @@ function drawInputs() {
       x: -1.8,
       z: -3.5,
       channels: 8,
-      // naf.py remaps the raw link planes and transposes [x][y] to [row=y][col=x].
-      // That transpose also changes the visible direction: raw SSE/NNE become
-      // effective ESE/ENE, while raw ESE/ENE become effective SSE/NNE.
-      // After the Black-to-move color swap, each pair is [White, Black].
-      // Effective tensor channels: 0–1 ESE, 2–3 ENE, 4–5 SSE, 6–7 NNE.
+      // Channel labels describe the actual board-coordinate link orientation
+      // after the backend channel remapping. The [x][y] -> [row=y][col=x]
+      // storage transpose normalizes axes; it does not rotate the board itself.
+      // Verify these labels against the per-link trace before treating them as final.
       bladeLabels: [
-        'ESE · White', 'ESE · Black',
-        'ENE · White', 'ENE · Black',
-        'SSE · White', 'SSE · Black',
-        'NNE · White', 'NNE · Black',
+        'Channel 0 · White', 'Channel 1 · Black',
+        'Channel 2 · White', 'Channel 3 · Black',
+        'Channel 4 · White', 'Channel 5 · Black',
+        'Channel 6 · White', 'Channel 7 · Black',
       ],
       color: COLORS.input,
     },
