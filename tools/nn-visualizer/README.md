@@ -65,3 +65,8 @@ The filter weights are still reproducible demo weights, so **Filters** and
 **Conv output** remain illustrative and are not a real model forward pass yet.
 The **Load demo board** button restores the original standalone demo. The
 server binds to `127.0.0.1` only and is intended for local development.
+
+
+### Loading and replaying a T1 game
+
+Start the visualizer with `python tools/nn-visualizer/server.py`, then use **Load *.T1 board** to choose a T1j `.T1` file. The Python backend parses the file and rebuilds the real Twixt game state and input tensors. Use **Backward** and **Forward** to step through the game; the move counter shows the current ply. **Allow swap** controls whether the pie-rule swap move is accepted, and **Allow crossing own links** configures the backend rules. Convolution filters remain demo weights unless real weights are loaded separately.
