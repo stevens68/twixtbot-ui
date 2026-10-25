@@ -826,25 +826,39 @@ function drawEffectiveBoard() {
     const end = new THREE.Vector3(...endPoint);
     const channelOrientation = encodedChannel & 6;
     const isNneOrEne = channelOrientation === 2 || channelOrientation === 6;
-    const bendMagnitude = isNneOrEne ? 0.34 : 0.24;
-    const bendSign = (channelOrientation === 0 || channelOrientation === 4) ? -1 : 1;
+    const isSseOrEse = channelOrientation === 0 || channelOrientation === 4;
     const dx = end.x - start.x;
     const dz = end.z - start.z;
-    const length = Math.hypot(dx, dz) || 1;
-    // Unit normal to the peg-to-peg line: this mirrors the curve across that
-    // line without changing the bend radius.
-    const normalX = -dz / length;
-    const normalZ = dx / length;
-    const control = new THREE.Vector3(
-      (start.x + end.x) / 2 + normalX * bendMagnitude * bendSign,
-      (start.y + end.y) / 2,
-      (start.z + end.z) / 2 + normalZ * bendMagnitude * bendSign,
-    );
-    // For NNE/ENE, pull the control point toward the shifted tensor cube so
-    // the bend reaches the L-corner more closely.
-    if (isNneOrEne) {
-      control.x += (middle.x - control.x) * 0.28;
-      control.z += (middle.z - control.z) * 0.28;
+    const lengthSquared = dx * dx + dz * dz || 1;
+    let control;
+    if (isSseOrEse) {
+      // Start with the original curve control point at the encoded cube, then
+      // reflect that point across the straight peg-to-peg line.
+      const px = middle.x - start.x;
+      const pz = middle.z - start.z;
+      const projection = (px * dx + pz * dz) / lengthSquared;
+      const projectedX = start.x + projection * dx;
+      const projectedZ = start.z + projection * dz;
+      control = new THREE.Vector3(
+        2 * projectedX - middle.x,
+        middle.y,
+        2 * projectedZ - middle.z,
+      );
+    } else {
+      const bendMagnitude = 0.34;
+      const length = Math.sqrt(lengthSquared);
+      const normalX = -dz / length;
+      const normalZ = dx / length;
+      control = new THREE.Vector3(
+        (start.x + end.x) / 2 + normalX * bendMagnitude,
+        (start.y + end.y) / 2,
+        (start.z + end.z) / 2 + normalZ * bendMagnitude,
+      );
+      // Pull NNE/ENE slightly toward the cube's L-corner.
+      if (isNneOrEne) {
+        control.x += (middle.x - control.x) * 0.28;
+        control.z += (middle.z - control.z) * 0.28;
+      }
     }
     const curve = new THREE.QuadraticBezierCurve3(start, control, end);
     const tube = new THREE.Mesh(
