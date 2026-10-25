@@ -151,7 +151,7 @@ function flattenTensor(tensor) {
   return values;
 }
 
-function addLabel(text, position, fontSize = 30, color = '#e7edf6') {
+function addLabel(text, position, fontSize = 30, color = '#e7edf6', scaleDivisor = 45) {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
 
@@ -177,7 +177,7 @@ function addLabel(text, position, fontSize = 30, color = '#e7edf6') {
   );
 
   sprite.position.set(position[0], position[1], position[2]);
-  sprite.scale.set(canvas.width / 45, canvas.height / 45, 1);
+  sprite.scale.set(canvas.width / scaleDivisor, canvas.height / scaleDivisor, 1);
   sceneGroup.add(sprite);
 }
 
@@ -401,6 +401,7 @@ function drawInputs() {
       x: -1.8,
       z: -13,
       channels: 2,
+      bladeLabels: ['Black', 'White'],
       color: COLORS.input,
     },
     {
@@ -409,6 +410,12 @@ function drawInputs() {
       x: -1.8,
       z: -3.5,
       channels: 8,
+      bladeLabels: [
+        'ENE · Black', 'ENE · White',
+        'ESE · Black', 'ESE · White',
+        'NNE · Black', 'NNE · White',
+        'SSE · Black', 'SSE · White',
+      ],
       color: COLORS.input,
     },
     {
@@ -417,6 +424,7 @@ function drawInputs() {
       x: -1.8,
       z: 6,
       channels: 2,
+      bladeLabels: ['X', 'Y'],
       color: COLORS.fixed,
     },
   ];
@@ -428,7 +436,7 @@ function drawInputs() {
       BOARD_SIZE,
       tensor.channels,
       [
-        tensor.x - ((tensor.channels - 1) * (0.26 + 0.2)) / 2,
+        tensor.x - ((tensor.channels - 1) * (0.26 + 0.28)) / 2,
         -4,
         tensor.z,
       ],
@@ -438,17 +446,29 @@ function drawInputs() {
         cellSize: 0.26,
         maxThickness: 0.34,
         minThickness: 0.09,
-        channelGap: 0.2,
+        channelGap: 0.28,
       },
     );
 
-    addLabel(tensor.label, [tensor.x + ((tensor.channels - 1) * 0.46) / 2, 5, tensor.z + 3.9]);
+    // Place a compact label at the top-left edge of each channel blade.
+    const firstBladeX =
+      tensor.x - ((tensor.channels - 1) * (0.26 + 0.28)) / 2;
+
+    tensor.bladeLabels.forEach((bladeLabel, channel) => {
+      addLabel(
+        bladeLabel,
+        [firstBladeX + channel * (0.26 + 0.28), 5, tensor.z - 0.25],
+        14,
+        '#e7edf6',
+        150,
+      );
+    });
   });
 
   return {
     title: 'Input tensors',
     description:
-      'Three parallel tensor boards side by side along Z. Channels are separate blades stacked along X with wider gaps; zero-valued cells remain visible.',
+      'Three parallel tensor boards side by side along Z. Each blade is labelled at its top-left edge; zero-valued cells remain visible.',
     shape: '24 × 24 × (2 + 8 + 2)',
     range: '0 … 1 (demo board)',
     count: '3 tensors · 6,912 cells',
