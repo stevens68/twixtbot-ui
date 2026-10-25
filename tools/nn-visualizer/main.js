@@ -810,8 +810,14 @@ function drawEffectiveBoard() {
       + (((link.from.col + link.to.col) % 2 !== 0) ? 4 : 0)
       + (((link.to.row - link.from.row) * (link.to.col - link.from.col) < 0) ? 2 : 0);
     const encodedChannel = transpose ? (channel ^ 1) : channel;
-    const rowShift = ((encodedChannel & 4) !== 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
-    const colShift = ((encodedChannel & 4) === 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
+    const channelOrientation = encodedChannel & 6;
+    let rowShift = ((encodedChannel & 4) !== 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
+    let colShift = ((encodedChannel & 4) === 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
+    // ESE and SSE links use the upper-right L-corner of their encoded cube.
+    if (channelOrientation === 4 || channelOrientation === 0) {
+      rowShift = 1;
+      colShift = 1;
+    }
     const midRow = Math.floor((aRow + bRow) / 2) + rowShift;
     const midCol = Math.floor((aCol + bCol) / 2) + colShift;
     const curveX = boardX + 0.035 - 0.18;
