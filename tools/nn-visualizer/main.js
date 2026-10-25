@@ -698,9 +698,10 @@ function drawEffectiveBoard() {
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
-  // Keep the finish lines fixed to the physical board orientation, just as on
-  // the sample board. Only the game state (pegs and encoded link coordinates)
-  // is transformed into White-to-move perspective.
+  // The board grid uses tensor coordinates. For a Black-to-move game those
+  // coordinates are transposed and colours remapped by the encoder; finish
+  // edges and diagonal are transformed too, so the board remains recognizable
+  // as a Twixt board in the encoded perspective.
   const finishLineX = boardX + 0.026;
   const makeFinishLine = (startPoint, endPoint, material, thickness = 0.065) => {
     // Flat, visibly thick strips; unlike WebGL lines, their width is reliable.
@@ -720,28 +721,19 @@ function drawEffectiveBoard() {
   const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => start + col * spacing;
 
-  // Red goals stay on the top and bottom edges (rows 1–2 and 23–24).
+  // Keep the physical Twixt goal edges visible as a reference. The state on
+  // this board is encoded from the current player's perspective.
   for (const boundaryY of [
     (rowY(0) + rowY(1)) / 2,
     (rowY(22) + rowY(23)) / 2,
   ]) {
-    makeFinishLine(
-      [finishLineX, boundaryY, colZ(1)],
-      [finishLineX, boundaryY, colZ(22)],
-      redFinish,
-    );
+    makeFinishLine([finishLineX, boundaryY, colZ(1)], [finishLineX, boundaryY, colZ(22)], redFinish);
   }
-
-  // Black goals stay on the left and right edges (columns A–B and W–X).
   for (const boundaryZ of [
     (colZ(0) + colZ(1)) / 2,
     (colZ(22) + colZ(23)) / 2,
   ]) {
-    makeFinishLine(
-      [finishLineX, rowY(1), boundaryZ],
-      [finishLineX, rowY(22), boundaryZ],
-      blackFinish,
-    );
+    makeFinishLine([finishLineX, rowY(1), boundaryZ], [finishLineX, rowY(22), boundaryZ], blackFinish);
   }
 
   const holeGeometry = new THREE.CircleGeometry(0.035, 12);
@@ -763,44 +755,52 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Read links from the fully encoded input tensor. The encoder/backend has
-  // already applied perspective, colour remapping and channel-dependent shifts.
-  // Place each 1 at its exact [row, col] cell; never reconstruct link midpoints
-  // or transpose/shift these tensor coordinates a second time.
-  const linkMarkerGeometry = new THREE.SphereGeometry(0.075, 10, 8);
-  const channelLabels = [];
+  // Render each active link channel as a short, colored Twixt link on this
+  // same board. Channel bits encode colour (even=black, odd=red), orientation
+  // (bit 2 = long-y, bit 1 = different-sign slope). The link's centre remains
+  // at the exact tensor [row, col] containing 1; we do not undo the encoder's
+  // perspective mapping or channel-dependent cell shift.
+  const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
+  const linkMaterials = [
+    new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.48 }),
+    new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.48 }),
+  ];
+  const up = new THREE.Vector3(0, 1, 0);
+  const linkTransform = new THREE.Object3D();
+  const activeLinks = [];
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
-      const activeChannels = [];
       for (let channel = 0; channel < 8; channel += 1) {
-        if (Number(data.links[row][col][channel]) === 1) {
-          activeChannels.push(channel);
-        }
-      }
-      if (!activeChannels.length) continue;
+        if (Number(data.links[row][col][channel]) !== 1) continue;
 
-      const [x, y, z] = pointAt(row, col, boardX - 0.075);
-      const marker = new THREE.Mesh(
-        linkMarkerGeometry,
-        new THREE.MeshBasicMaterial({ color: 0x1769ff }),
-      );
-      marker.position.set(x, y, z);
-      sceneGroup.add(marker);
-      channelLabels.push({ row, col, channels: activeChannels, x, y, z });
+        // The four orientation groups correspond to the four undirected
+        // Twixt link slopes. Scale the half-vector to half a board-link:
+        // (row, col) deltas are (1,2), (2,1), (2,-1), and (1,-2).
+        const longY = (channel & 4) !== 0;
+        const diffSign = (channel & 2) !== 0;
+        const rowDelta = longY ? 2 : 1;
+        const colMagnitude = longY ? 1 : 2;
+        const colDelta = diffSign ? -colMagnitude : colMagnitude;
+        const center = new THREE.Vector3(...pointAt(row, col, boardX - 0.075));
+        const half = new THREE.Vector3(0, -rowDelta * spacing / 2, colDelta * spacing / 2);
+        const a = center.clone().sub(half);
+        const b = center.clone().add(half);
+        const direction = new THREE.Vector3().subVectors(b, a);
+        linkTransform.position.copy(center);
+        linkTransform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
+        linkTransform.scale.set(1, direction.length(), 1);
+        linkTransform.updateMatrix();
+
+        const mesh = new THREE.Mesh(linkGeometry, linkMaterials[channel & 1]);
+        mesh.position.copy(linkTransform.position);
+        mesh.quaternion.copy(linkTransform.quaternion);
+        mesh.scale.copy(linkTransform.scale);
+        sceneGroup.add(mesh);
+        activeLinks.push({ row, col, channel });
+      }
     }
   }
-
-  // Channel IDs are grouped at a cell when multiple channels contain a 1.
-  for (const cell of channelLabels) {
-    addLabel(
-      cell.channels.join(','),
-      [cell.x - 0.08, cell.y + 0.12, cell.z],
-      12,
-      '#0755d9',
-      180,
-    );
-  }
-  console.debug('[Effective board] encoded tensor cells with value 1:', channelLabels);
+  console.debug('[Effective board] active encoded link cells:', activeLinks);
 
   // Draw the dashed diagonal directly on the board face, using thin black
   // rectangular segments like the finish lines (not a floating Three.js line).
