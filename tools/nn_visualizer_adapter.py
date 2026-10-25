@@ -31,11 +31,20 @@ def _tensor(array: np.ndarray) -> list:
 
 def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True) -> dict[str, Any]:
     game = twixt.Game(allow_scl=allow_scl)
-    for move in moves:
-        normalized = move.strip()
-        if normalized.lower() == twixt.SWAP and not allow_swap:
-            raise ValueError('This game contains a swap move, but Allow swap is unchecked.')
-        game.play(normalized)
+    normalized_moves = [str(move).strip() for move in moves]
+    lowered_moves = [move.lower() for move in normalized_moves]
+    resign_indices = [i for i, move in enumerate(lowered_moves) if move == twixt.RESIGN]
+    if resign_indices and resign_indices != [len(normalized_moves) - 1]:
+        raise ValueError("'resign' is only valid as the final move in a trajectory.")
+    if lowered_moves.count(twixt.SWAP) > 1:
+        raise ValueError("A trajectory can contain at most one swap move.")
+    if twixt.SWAP in lowered_moves and lowered_moves.index(twixt.SWAP) != 1:
+        raise ValueError("'swap' is only valid as the second move in a trajectory.")
+
+    terminal_resign = bool(lowered_moves and lowered_moves[-1] == twixt.RESIGN)
+    playable_moves = normalized_moves[:-1] if terminal_resign else normalized_moves
+    for move in playable_moves:
+        game.play(twixt.SWAP if move.lower() == twixt.SWAP else move)
 
     net = NetInputs(game)
     pegs, links, locations = net.to_input_arrays()
@@ -65,7 +74,8 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
             "net_inputs_class": f"{NetInputs.__module__}.{NetInputs.__name__}",
             "transform": "NetInputs(game) -> NetInputs.to_input_arrays()",
         },
-        "moves": list(moves),
+        "moves": normalized_moves,
+        "result": "resign" if terminal_resign else game.result,
         "next_player": int(game.turn),
         "next_player_name": game.COLOR_NAME[game.turn],
         "board": {"pegs": board_pegs, "links": board_links},
