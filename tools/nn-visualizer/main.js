@@ -447,17 +447,22 @@ function drawSampleBoard() {
 
   // Flat 2D finish lines lie directly on the board face (no cylinders or gaps).
   const finishLineX = boardX + 0.025;
-  const makeFinishLine = (start, end, material) => {
-    const geometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(...start),
-      new THREE.Vector3(...end),
-    ]);
-    const line = new THREE.Line(geometry, material);
-    line.computeLineDistances();
-    sceneGroup.add(line);
+  const makeFinishLine = (start, end, material, thickness = 0.065) => {
+    // Use a flat rectangular strip instead of THREE.Line: WebGL line width is
+    // commonly fixed at one pixel. The strip stays flush with the board face.
+    const dy = Math.abs(end[1] - start[1]);
+    const dz = Math.abs(end[2] - start[2]);
+    const geometry = new THREE.BoxGeometry(0.008, dy || thickness, dz || thickness);
+    const strip = new THREE.Mesh(geometry, material);
+    strip.position.set(
+      (start[0] + end[0]) / 2,
+      (start[1] + end[1]) / 2,
+      (start[2] + end[2]) / 2,
+    );
+    sceneGroup.add(strip);
   };
-  const redFinish = new THREE.LineBasicMaterial({ color: 0xe0525d, linewidth: 1 });
-  const blackFinish = new THREE.LineBasicMaterial({ color: 0x20252d, linewidth: 1 });
+  const redFinish = new THREE.MeshBasicMaterial({ color: 0xe0525d, side: THREE.DoubleSide });
+  const blackFinish = new THREE.MeshBasicMaterial({ color: 0x20252d, side: THREE.DoubleSide });
   const rowY = (row) => boardStartY + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => boardStartZ + col * spacing;
 
@@ -667,15 +672,21 @@ function drawEffectiveBoard() {
   // goal axes, and colour canonicalization swaps the players, so the effective
   // view retains the canonical red-horizontal / black-vertical appearance.
   const finishLineX = boardX + 0.026;
-  const makeFinishLine = (startPoint, endPoint, material) => {
-    const geometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(...startPoint),
-      new THREE.Vector3(...endPoint),
-    ]);
-    sceneGroup.add(new THREE.Line(geometry, material));
+  const makeFinishLine = (startPoint, endPoint, material, thickness = 0.065) => {
+    // Flat, visibly thick strips; unlike WebGL lines, their width is reliable.
+    const dy = Math.abs(endPoint[1] - startPoint[1]);
+    const dz = Math.abs(endPoint[2] - startPoint[2]);
+    const geometry = new THREE.BoxGeometry(0.008, dy || thickness, dz || thickness);
+    const strip = new THREE.Mesh(geometry, material);
+    strip.position.set(
+      (startPoint[0] + endPoint[0]) / 2,
+      (startPoint[1] + endPoint[1]) / 2,
+      (startPoint[2] + endPoint[2]) / 2,
+    );
+    sceneGroup.add(strip);
   };
-  const redFinish = new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.5 });
-  const blackFinish = new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.5 });
+  const redFinish = new THREE.MeshBasicMaterial({ color: 0xe0525d });
+  const blackFinish = new THREE.MeshBasicMaterial({ color: 0x20252d });
   const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => start + col * spacing;
 
@@ -686,7 +697,6 @@ function drawEffectiveBoard() {
     makeFinishLine(
       [finishLineX, boundaryY, colZ(1)],
       [finishLineX, boundaryY, colZ(22)],
-      0.018,
       redFinish,
     );
   }
@@ -697,7 +707,6 @@ function drawEffectiveBoard() {
     makeFinishLine(
       [finishLineX, rowY(1), boundaryZ],
       [finishLineX, rowY(22), boundaryZ],
-      0.018,
       blackFinish,
     );
   }
@@ -768,8 +777,8 @@ function drawEffectiveBoard() {
     addLabel(String(row + 1), [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34], 14, '#e0e8e2', 150);
   }
   addLabel(
-    transpose ? 'Effective Board · transposed + colours canonicalized' : 'Effective Board · unchanged',
-    [boardX - 0.25, 5.25, 0], 17, '#ffffff', 75,
+    'Effective Board',
+    [boardX - 0.25, 5.25, 0], 19, '#ffffff', 90,
   );
 }
 
@@ -784,7 +793,7 @@ function drawInputs() {
       x: -1.8,
       z: -13,
       channels: 2,
-      bladeLabels: ['Black', 'White'],
+      bladeLabels: ['White', 'Black'],
       color: COLORS.input,
     },
     {
@@ -794,10 +803,10 @@ function drawInputs() {
       z: -3.5,
       channels: 8,
       bladeLabels: [
-        'ENE · Black', 'ENE · White',
-        'ESE · Black', 'ESE · White',
-        'NNE · Black', 'NNE · White',
-        'SSE · Black', 'SSE · White',
+        'ENE · White', 'ENE · Black',
+        'ESE · White', 'ESE · Black',
+        'NNE · White', 'NNE · Black',
+        'SSE · White', 'SSE · Black',
       ],
       color: COLORS.input,
     },
