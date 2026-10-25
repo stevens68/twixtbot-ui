@@ -897,10 +897,133 @@ function logLinkEncodingDiagnostic(game, linkTensor) {
   console.groupEnd();
 }
 
+/**
+ * Independent full-tensor check against the upstream naf.py / NetInputs
+ * transformations. It builds the raw [x][y][channel] link planes first,
+ * applies the upstream transpose/color swap, then applies to_input_arrays'
+ * per-channel shifts. This is a parity check of the JS encoder's complete
+ * output, not a comparison against a saved TensorFlow runtime dump.
+ */
+function buildUpstreamReferenceInputs(game) {
+  const rawPegs = Array.from({ length: 2 }, () => createTensor3(BOARD_SIZE, BOARD_SIZE, 1));
+  const rawLinks = Array.from({ length: 8 }, () => createTensor3(BOARD_SIZE, BOARD_SIZE, 1));
+
+  for (const peg of game.pegs) {
+    rawPegs[peg.player][peg.col][peg.row][0] = 1;
+  }
+  for (const link of game.links) {
+    const ax = link.from.col, ay = link.from.row;
+    const bx = link.to.col, by = link.to.row;
+    const channel = link.player
+      + (((ax + bx) % 2 !== 0) ? 4 : 0)
+      + (((by - ay) * (bx - ax) < 0) ? 2 : 0);
+    const x = Math.floor((ax + bx) / 2);
+    const y = Math.floor((ay + by) / 2);
+    rawLinks[channel][x][y][0] = 1;
+  }
+
+  const blackToMove = game.nextPlayer === 0;
+  const pegs = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
+  const midpointLinks = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
+
+  for (let x = 0; x < BOARD_SIZE; x += 1) {
+    for (let y = 0; y < BOARD_SIZE; y += 1) {
+      const row = blackToMove ? y : x;
+      const col = blackToMove ? x : y;
+      // naf.py changes perspective on Black's turn and swaps player planes.
+      pegs[row][col][0] = rawPegs[blackToMove ? 1 : 0][x][y][0];
+      pegs[row][col][1] = rawPegs[blackToMove ? 0 : 1][x][y][0];
+
+      for (let rawChannel = 0; rawChannel < 8; rawChannel += 1) {
+        const sourceChannel = blackToMove ? 1 - (rawChannel & 1) : rawChannel & 1;
+        const group = rawChannel & 6;
+        const sourceGroup = blackToMove
+          ? (group === 0 ? 4 : group === 2 ? 6 : group === 4 ? 0 : 2)
+          : group;
+        const sourceIndex = sourceGroup + sourceChannel;
+        midpointLinks[row][col][rawChannel] = rawLinks[sourceIndex][x][y][0];
+      }
+    }
+  }
+
+  const links = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      for (let channel = 0; channel < 8; channel += 1) {
+        const vertical = (channel & 4) !== 0;
+        const diff = (channel & 2) !== 0;
+        const sourceRow = row - ((vertical || diff) ? 1 : 0);
+        const sourceCol = col - ((!vertical || diff) ? 1 : 0);
+        if (sourceRow >= 0 && sourceCol >= 0) {
+          links[row][col][channel] = midpointLinks[sourceRow][sourceCol][channel];
+        }
+      }
+    }
+  }
+  return { pegs, links };
+}
+
+function compareTensors(label, actual, expected) {
+  let mismatchCount = 0;
+  let actualNonzero = 0;
+  let expectedNonzero = 0;
+  const examples = [];
+
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      for (let channel = 0; channel < actual[row][col].length; channel += 1) {
+        const a = actual[row][col][channel];
+        const e = expected[row][col][channel];
+        if (a !== 0) actualNonzero += 1;
+        if (e !== 0) expectedNonzero += 1;
+        if (a !== e) {
+          mismatchCount += 1;
+          if (examples.length < 12) {
+            examples.push({
+              cell: String.fromCharCode(65 + col) + (row + 1),
+              row, col, channel, actual: a, expected: e,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  console.groupCollapsed(
+    '[Full tensor validation] ' + label + ': ' +
+    (mismatchCount === 0 ? 'PASS' : 'FAIL') +
+    ', mismatches=' + mismatchCount,
+  );
+  console.table([{
+    tensor: label, result: mismatchCount === 0 ? 'PASS' : 'FAIL',
+    mismatches: mismatchCount, actualNonzero, expectedNonzero,
+  }]);
+  if (examples.length) console.table(examples);
+  console.groupEnd();
+  return { label, mismatchCount, actualNonzero, expectedNonzero };
+}
+
+function logFullInputTensorValidation(game, inputs) {
+  const reference = buildUpstreamReferenceInputs(game);
+  const results = [
+    compareTensors('pegs 24×24×2', inputs.pegs, reference.pegs),
+    compareTensors('links 24×24×8', inputs.links, reference.links),
+  ];
+  const totalMismatches = results.reduce((sum, result) => sum + result.mismatchCount, 0);
+  console.log(
+    '[Full tensor validation] ' +
+    (totalMismatches === 0 ? 'PASS' : 'FAIL') +
+    ': ' + totalMismatches + ' total cell mismatches. ' +
+    'Reference reimplements upstream naf.py and NetInputs shifts; it is not yet a saved TF runtime comparison.',
+  );
+}
+
 function drawInputs() {
+  const game = createSampleGame();
   drawSampleBoard();
   drawEffectiveBoard();
-  logLinkEncodingDiagnostic(createSampleGame(), data.links);
+  logLinkEncodingDiagnostic(game, data.links);
+  logFullInputTensorValidation(game, data);
 
   const tensors = [
     {
