@@ -29,10 +29,13 @@ def _tensor(array: np.ndarray) -> list:
     return np.asarray(array).tolist()
 
 
-def snapshot(moves: list[str], allow_scl: bool = False) -> dict[str, Any]:
+def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True) -> dict[str, Any]:
     game = twixt.Game(allow_scl=allow_scl)
     for move in moves:
-        game.play(move.strip())
+        normalized = move.strip()
+        if normalized.lower() == twixt.SWAP and not allow_swap:
+            raise ValueError('This game contains a swap move, but Allow swap is unchecked.')
+        game.play(normalized)
 
     net = NetInputs(game)
     pegs, links, locations = net.to_input_arrays()
@@ -86,8 +89,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--moves", nargs="*", default=DEFAULT_MOVES)
     parser.add_argument("--allow-scl", action="store_true")
+    parser.add_argument("--no-allow-swap", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(snapshot(args.moves, args.allow_scl), indent=2))
+    print(json.dumps(snapshot(args.moves, args.allow_scl, not args.no_allow_swap), indent=2))
 
 
 if __name__ == "__main__":
