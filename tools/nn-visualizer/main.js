@@ -752,8 +752,10 @@ function drawEffectiveBoard() {
     // Floor in the original Game coordinate system before any transpose.
     const rawX = Math.floor((x1 + x2) / 2);
     const rawY = Math.floor((y1 + y2) / 2);
-    const row = transpose ? rawX : rawY;
-    const col = transpose ? rawY : rawX;
+    // Convert canonical [x][y] to the board's row/col arguments.
+    // pointAt() applies the effective-board transpose, so do not transpose here too.
+    const row = rawY;
+    const col = rawX;
 
     const player = effectivePlayer(link.player);
     const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
