@@ -786,66 +786,43 @@ function drawEffectiveBoard() {
         // outward, avoiding coplanar overlap with the backing and holes.
         mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
         sceneGroup.add(mesh);
+
+        // Two short direction pointers on the top of each cube indicate its
+        // corresponding peg directions. Board north is +Y and west is -Z.
+        // Link channel groups: 0/1=SSE, 2/3=NNE, 4/5=ESE, 6/7=ENE.
+        const directionsByGroup = {
+          0: [[0, -1], [-1, 0]], // SSE: NW and S
+          1: [[-1, 0], [0, 1]],  // NNE: W and N
+          2: [[-1, 0], [0, 1]],  // ENE: W and N
+          3: [[-1, 0], [0, 1]],  // ESE: NW and E
+        };
+        const pointerDirections = [
+          [[1, -1], [0, -1]],    // SSE: NW and S
+          [[-1, 0], [0, 1]],     // NNE: W and N
+          [[1, -1], [0, 1]],     // ESE: NW and E
+          [[-1, 0], [0, 1]],     // ENE: W and N
+        ];
+        const dirs = pointerDirections[Math.floor(channel / 2)];
+        const topY = mesh.position.y + 0.082;
+        const pointerLength = 0.14;
+        const points = [];
+        for (const [dy, dz] of dirs) {
+          points.push(
+            mesh.position.x, topY, mesh.position.z,
+            mesh.position.x, topY + dy * pointerLength, mesh.position.z + dz * pointerLength,
+          );
+        }
+        const pointerGeometry = new THREE.BufferGeometry();
+        pointerGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+        const pointerMaterial = new THREE.LineBasicMaterial({
+          color: displayedPlayer === 1 ? 0x20252d : 0xe0525d,
+        });
+        sceneGroup.add(new THREE.LineSegments(pointerGeometry, pointerMaterial));
         activeLinks.push({ row, col, channel });
       }
     }
   }
   console.debug('[Effective board] active encoded link cells:', activeLinks);
-  // Draw each physical link as one independent curve, entirely parallel to
-  // the board surface. The board is the Y/Z plane, so X is constant.
-  const transposeLinksForEncoding = game.nextPlayer === 1;
-  const linkCurveMaterials = [
-    new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.58 }),
-    new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.58 }),
-  ];
-  const linkRadius = 0.018;
-  const curveX = boardX + 0.035 - 0.18;
-
-  for (const link of game.links) {
-    const fromX = link.from.col;
-    const fromY = link.from.row;
-    const toX = link.to.col;
-    const toY = link.to.row;
-    const dx = toX - fromX;
-    const dy = toY - fromY;
-
-    // Map native board coordinates to the effective board's canonical view.
-    const aRow = transposeLinksForEncoding ? fromX : fromY;
-    const aCol = transposeLinksForEncoding ? fromY : fromX;
-    const bRow = transposeLinksForEncoding ? toX : toY;
-    const bCol = transposeLinksForEncoding ? toY : toX;
-
-    const startPoint = new THREE.Vector3(...pointAt(aRow, aCol, curveX));
-    const endPoint = new THREE.Vector3(...pointAt(bRow, bCol, curveX));
-
-    // Use one cubic per link: no joined segments or intermediate stitched
-    // corners. Both control points stay at curveX, within the board's Y/Z plane.
-    const dyBoard = endPoint.y - startPoint.y;
-    const dzBoard = endPoint.z - startPoint.z;
-    const length = Math.hypot(dyBoard, dzBoard) || 1;
-    const side = link.player === 1 ? 1 : -1;
-    const bend = 0.48 * side;
-    const normalY = -dzBoard / length;
-    const normalZ = dyBoard / length;
-    const control1 = new THREE.Vector3(
-      curveX,
-      startPoint.y + dyBoard / 3 + normalY * bend,
-      startPoint.z + dzBoard / 3 + normalZ * bend,
-    );
-    const control2 = new THREE.Vector3(
-      curveX,
-      startPoint.y + (2 * dyBoard) / 3 + normalY * bend,
-      startPoint.z + (2 * dzBoard) / 3 + normalZ * bend,
-    );
-    const curve = new THREE.CubicBezierCurve3(
-      startPoint, control1, control2, endPoint,
-    );
-
-    sceneGroup.add(new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 32, linkRadius, 6, false),
-      linkCurveMaterials[link.player === 1 ? 1 : 0],
-    ));
-  }
 
   // Render pegs from the same encoded tensor used by the input blades.
   // Tensor channel 0 is the opponent (red); channel 1 is the side to move (black).
