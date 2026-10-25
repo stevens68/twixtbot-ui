@@ -598,7 +598,7 @@ function drawSampleBoard() {
   );
 
   // Move list is placed on the far side of the board, away from the tensors.
-  const moveLabels = ['1. L12','2. L8','3. O9','4. L17','5. H16','6. I14','7. J13','8. N9','9. Q10','10. K6','11. H12','12. O11','13. F7'];
+  const moveLabels = game.moves.map((move, index) => (index + 1) + '. ' + move);
   const listX = boardX - 0.95;
   const listZ = boardStartZ - 1.35;
   addLabel('Moves', [listX, 3.95, listZ], 16, '#e7edf6', 90, 'left');
