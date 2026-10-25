@@ -798,21 +798,30 @@ function drawEffectiveBoard() {
         ];
         const dirs = pointerDirections[Math.floor(channel / 2)];
         const pointerLength = 0.14;
-        const points = [];
-        for (const [dy, dz] of dirs) {
-          points.push(
-            mesh.position.x, mesh.position.y, mesh.position.z,
-            mesh.position.x, mesh.position.y + dy * pointerLength, mesh.position.z + dz * pointerLength,
-          );
-        }
-        const pointerGeometry = new THREE.BufferGeometry();
-        pointerGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+        // Use narrow cylinders instead of WebGL lines: LineBasicMaterial linewidth
+        // is effectively fixed to one pixel in most browsers.
+        const pointerRadius = 0.018;
+        const pointerGeometry = new THREE.CylinderGeometry(
+          pointerRadius, pointerRadius, pointerLength, 8,
+        );
         // Flip pointer colors to match the opposite-color convention requested.
-        const pointerMaterial = new THREE.LineBasicMaterial({
+        const pointerMaterial = new THREE.MeshStandardMaterial({
           color: displayedPlayer === 1 ? 0xe0525d : 0x20252d,
-          linewidth: 3,
+          roughness: 0.7,
         });
-        sceneGroup.add(new THREE.LineSegments(pointerGeometry, pointerMaterial));
+        for (const [dy, dz] of dirs) {
+          const direction = new THREE.Vector3(0, dy, dz).normalize();
+          const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
+          pointer.position.set(
+            mesh.position.x,
+            mesh.position.y + dy * pointerLength / 2,
+            mesh.position.z + dz * pointerLength / 2,
+          );
+          pointer.quaternion.setFromUnitVectors(
+            new THREE.Vector3(0, 1, 0), direction,
+          );
+          sceneGroup.add(pointer);
+        }
         activeLinks.push({ row, col, channel });
       }
     }
