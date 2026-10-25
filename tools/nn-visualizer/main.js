@@ -1041,11 +1041,15 @@ function drawInputs() {
       x: -1.8,
       z: -3.5,
       channels: 8,
+      // Channel direction follows the upstream link-index bits after the
+      // Black-to-move perspective remap: 0–1=SSE, 2–3=NNE,
+      // 4–5=ESE, 6–7=ENE. Within each pair, channel 0 is Black
+      // and channel 1 is White for this visualizer's player convention.
       bladeLabels: [
-        'ENE · White', 'ENE · Black',
-        'ESE · White', 'ESE · Black',
-        'NNE · White', 'NNE · Black',
-        'SSE · White', 'SSE · Black',
+        'SSE · Black', 'SSE · White',
+        'NNE · Black', 'NNE · White',
+        'ESE · Black', 'ESE · White',
+        'ENE · Black', 'ENE · White',
       ],
       color: COLORS.input,
     },
