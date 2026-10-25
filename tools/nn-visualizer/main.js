@@ -202,7 +202,12 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
 
   const mesh = new THREE.InstancedMesh(
     cubeGeometry,
-    new THREE.MeshStandardMaterial({ color, roughness: 0.6 }),
+    new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.6,
+      transparent: true,
+      opacity: 0.82,
+    }),
     values.length,
   );
 
@@ -213,7 +218,18 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
     for (let row = 0; row < rows; row += 1) {
       for (let col = 0; col < cols; col += 1) {
         const value = values[index];
-        const thickness = (Math.abs(value) / maxAbs) * maxThickness;
+        const isZero = value === 0;
+        const thickness = isZero
+          ? 0.018
+          : (Math.abs(value) / maxAbs) * maxThickness;
+
+        // Zero cells use a very thin blue sliver so they remain visible without
+        // appearing as black edges. Nonzero signed values scale with magnitude.
+        if (isZero && color === COLORS.input) {
+          mesh.setColorAt(index, new THREE.Color(0x78c7f4));
+        } else if (isZero && color === COLORS.fixed) {
+          mesh.setColorAt(index, new THREE.Color(0xb6d8ed));
+        }
 
         // Signed values extend away from the zero plane along the X axis.
         // Each channel is a separate blade. Stack blades along X, perpendicular
@@ -221,7 +237,7 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
         // Signed value thickness still extends from each blade's X position.
         transform.position.set(
           origin[0] + channel * depthStep +
-            (value === 0 ? 0 : value < 0 ? -thickness / 2 : thickness / 2),
+            (isZero ? 0 : value < 0 ? -thickness / 2 : thickness / 2),
           origin[1] + (rows - 1 - row) * spacing,
           origin[2] + col * spacing,
         );
@@ -487,8 +503,8 @@ function drawInputs() {
     columnNames.forEach((columnName, col) => {
       addLabel(
         columnName,
-        [firstBladeX, 4.45, tensor.z + col * 0.34],
-        14,
+        [firstBladeX, 4.6, tensor.z + col * 0.34],
+        17,
         '#dce7f5',
         145,
         'center',
@@ -498,8 +514,8 @@ function drawInputs() {
     for (let row = 0; row < BOARD_SIZE; row += 1) {
       addLabel(
         String(row + 1),
-        [firstBladeX - 0.15, boardTopY - row * 0.34, tensor.z - 0.72],
-        14,
+        [firstBladeX - 0.12, boardTopY - row * 0.34, tensor.z - 0.48],
+        17,
         '#dce7f5',
         145,
         'center',
