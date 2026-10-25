@@ -401,7 +401,7 @@ function drawInputs() {
       x: -1.8,
       z: -13,
       channels: 2,
-      bladeLabels: ['Black', 'White'],
+      bladeLabels: ['Opponent', 'To move'],
       color: COLORS.input,
     },
     {
@@ -411,10 +411,10 @@ function drawInputs() {
       z: -3.5,
       channels: 8,
       bladeLabels: [
-        'ENE · Black', 'ENE · White',
-        'ESE · Black', 'ESE · White',
-        'NNE · Black', 'NNE · White',
-        'SSE · Black', 'SSE · White',
+        'ENE · Opp', 'ENE · To move',
+        'ESE · Opp', 'ESE · To move',
+        'NNE · Opp', 'NNE · To move',
+        'SSE · Opp', 'SSE · To move',
       ],
       color: COLORS.input,
     },
