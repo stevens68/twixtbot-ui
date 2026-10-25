@@ -791,7 +791,7 @@ function drawEffectiveBoard() {
         const mesh = new THREE.Mesh(linkGeometry, linkMaterials[channel & 1]);
         // The cube's back face touches the board face; the whole cube projects
         // outward, avoiding coplanar overlap with the backing and holes.
-        mesh.position.set(...pointAt(row, col, boardX + 0.035 + 0.18));
+        mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
         sceneGroup.add(mesh);
         activeLinks.push({ row, col, channel });
       }
