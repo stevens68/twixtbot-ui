@@ -235,3 +235,7 @@ python -m unittest discover -s tests
 
 * [agtoever](https://github.com/agtoever):  
 Load tsgf Files, Save Files, Evaluation History, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo, Logging
+
+## Browser-based 3D neural-network visualizer
+
+A standalone Three.js visualizer for the input tensors, convolution filter banks, and summed convolution output is available in [`tools/nn-visualizer`](tools/nn-visualizer/README.md). Run it with `python -m http.server 8000` from that directory, then open `http://localhost:8000`. It currently uses a demo board unless you load JSON data; it does not read `model/torch.pt` directly.
