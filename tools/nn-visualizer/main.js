@@ -1532,7 +1532,7 @@ async function navigateGame(delta) {
 }
 async function loadTrajectoryFromEditor() {
   const moves = document.querySelector('#trajectory').value
-    .split(/[\\s,]+/)
+    .split(/[\s,]+/)
     .map((move) => move.trim())
     .filter(Boolean);
   if (moves.length > 500) {
