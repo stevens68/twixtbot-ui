@@ -861,11 +861,11 @@ function drawEffectiveBoard() {
       }
     }
     if (!positions.length) continue;
-    // The encoder puts the side to move in channel 1. On Black's turn
-    // that is Black; on White's turn that is White. Keep physical colors
-    // correct while the tensor channel order follows the current perspective.
+    // Keep the effective board's physical peg colors aligned with the
+    // displayed link colors while preserving the encoded board orientation.
+    // In this view the peg color mapping is swapped on Black's turn.
     const blackToMove = game.nextPlayer === 0;
-    const isBlack = blackToMove ? channel === 1 : channel === 0;
+    const isBlack = blackToMove ? channel === 0 : channel === 1;
     const material = new THREE.MeshStandardMaterial({
       color: isBlack ? 0x20252d : 0xe0525d,
       roughness: 0.38,
@@ -885,11 +885,11 @@ function drawEffectiveBoard() {
   }
 
   // Rotate the familiar Twixt coordinate labels 90 degrees clockwise:
-  // 1–24 run left-to-right across the top; A–X run top-to-bottom on the right.
+  // 24–1 run left-to-right across the top; A–X run top-to-bottom on the right.
   // Labels describe the effective board's displayed tensor coordinates.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addLabel(
-      String(col + 1),
+      String(BOARD_SIZE - col),
       [boardX - 0.12, start + (BOARD_SIZE - 1) * spacing + 0.34, start + col * spacing],
       14, '#e0e8e2', 150,
     );
