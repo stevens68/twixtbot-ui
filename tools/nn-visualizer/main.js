@@ -423,7 +423,7 @@ function drawSampleBoard() {
   const boardCenterZ = 0;
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
-  const boardX = -2.62;
+  const boardX = -4.5;
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
