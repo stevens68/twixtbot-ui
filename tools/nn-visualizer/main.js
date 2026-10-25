@@ -445,20 +445,54 @@ function drawSampleBoard() {
   backing.position.set(boardX + 0.035, 0, boardCenterZ);
   sceneGroup.add(backing);
 
-  const borderPoints = [
-    pointAt(0, 0, boardX - 0.015),
-    pointAt(0, BOARD_SIZE - 1, boardX - 0.015),
-    pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, boardX - 0.015),
-    pointAt(BOARD_SIZE - 1, 0, boardX - 0.015),
-    pointAt(0, 0, boardX + 0.015),
-  ];
-  const borderGeometry = new THREE.BufferGeometry().setFromPoints(
-    borderPoints.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
-  );
-  sceneGroup.add(new THREE.Line(
-    borderGeometry,
-    new THREE.LineBasicMaterial({ color: 0xc1c9c4 }),
-  ));
+  // Colored finish lines sit between the edge rows/columns and stop short
+  // of one another so the four corner regions remain open.
+  const finishLineX = boardX - 0.075;
+  const makeFinishLine = (start, end, radius, material) => {
+    const a = new THREE.Vector3(...start);
+    const b = new THREE.Vector3(...end);
+    const direction = new THREE.Vector3().subVectors(b, a);
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, direction.length(), 8),
+      material,
+    );
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      direction.clone().normalize(),
+    );
+    sceneGroup.add(mesh);
+  };
+  const redFinish = new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.5 });
+  const blackFinish = new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.5 });
+  const rowY = (row) => boardStartY + (BOARD_SIZE - 1 - row) * spacing;
+  const colZ = (col) => boardStartZ + col * spacing;
+
+  // Red goals: between rows 1–2 and 23–24, from column B through W.
+  for (const boundaryY of [
+    (rowY(0) + rowY(1)) / 2,
+    (rowY(22) + rowY(23)) / 2,
+  ]) {
+    makeFinishLine(
+      [finishLineX, boundaryY, colZ(1)],
+      [finishLineX, boundaryY, colZ(22)],
+      0.018,
+      redFinish,
+    );
+  }
+
+  // Black goals: between columns A–B and W–X, from row 1 through row 23.
+  for (const boundaryZ of [
+    (colZ(0) + colZ(1)) / 2,
+    (colZ(22) + colZ(23)) / 2,
+  ]) {
+    makeFinishLine(
+      [finishLineX, rowY(0), boundaryZ],
+      [finishLineX, rowY(22), boundaryZ],
+      0.018,
+      blackFinish,
+    );
+  }
 
   // Black recessed-looking holes at every intersection.
   const holeGeometry = new THREE.SphereGeometry(0.035, 10, 8);
@@ -495,8 +529,8 @@ function drawSampleBoard() {
   const linkTransform = new THREE.Object3D();
   const up = new THREE.Vector3(0, 1, 0);
   for (const link of game.links) {
-    const a = new THREE.Vector3(...pointAt(link.from.row, link.from.col, boardX - 0.095));
-    const b = new THREE.Vector3(...pointAt(link.to.row, link.to.col, boardX - 0.095));
+    const a = new THREE.Vector3(...pointAt(link.from.row, link.from.col, boardX - 0.32));
+    const b = new THREE.Vector3(...pointAt(link.to.row, link.to.col, boardX - 0.32));
     const direction = new THREE.Vector3().subVectors(b, a);
     linkTransform.position.copy(a).add(b).multiplyScalar(0.5);
     linkTransform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
