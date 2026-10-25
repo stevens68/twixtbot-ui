@@ -773,8 +773,10 @@ function drawEffectiveBoard() {
   sceneGroup.add(holes);
 
   // Render each active encoded link cell as a cube standing out from the board.
-  // Width/depth match the peg diameter (0.164); height is half the peg height (0.18).
-  const linkGeometry = new THREE.BoxGeometry(0.18, 0.18, 0.164);
+  // Extend links clearly out from the board: X is the board-normal axis.
+  // Their visible projection is 0.36, matching the peg height; board-plane
+  // dimensions match the peg diameter.
+  const linkGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
   const linkMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
@@ -787,42 +789,15 @@ function drawEffectiveBoard() {
 
         // Mark the exact encoded tensor cell; do not reconstruct endpoints.
         const mesh = new THREE.Mesh(linkGeometry, linkMaterials[channel & 1]);
-        mesh.position.set(...pointAt(row, col, boardX + 0.035 + 0.09));
+        // The cube's back face touches the board face; the whole cube projects
+        // outward, avoiding coplanar overlap with the backing and holes.
+        mesh.position.set(...pointAt(row, col, boardX + 0.035 + 0.18));
         sceneGroup.add(mesh);
         activeLinks.push({ row, col, channel });
       }
     }
   }
   console.debug('[Effective board] active encoded link cells:', activeLinks);
-
-  // Draw the dashed diagonal directly on the board face, using thin black
-  // rectangular segments like the finish lines (not a floating Three.js line).
-  // The diagonal itself is symmetric under transposition, so its geometry stays fixed.
-  const diagonalMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
-  const diagonalStart = new THREE.Vector3(...pointAt(0, 0, finishLineX));
-  const diagonalEnd = new THREE.Vector3(
-    ...pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, finishLineX),
-  );
-  const diagonalVector = new THREE.Vector3().subVectors(diagonalEnd, diagonalStart);
-  const diagonalLength = diagonalVector.length();
-  const dashLength = 0.12;
-  const gapLength = 0.08;
-  const diagonalDirection = diagonalVector.clone().normalize();
-  for (let distance = 0; distance < diagonalLength; distance += dashLength + gapLength) {
-    const segmentLength = Math.min(dashLength, diagonalLength - distance);
-    const center = diagonalStart.clone().addScaledVector(
-      diagonalDirection, distance + segmentLength / 2,
-    );
-    const segment = new THREE.Mesh(
-      new THREE.BoxGeometry(0.008, 0.018, segmentLength),
-      diagonalMaterial,
-    );
-    segment.position.copy(center);
-    segment.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 0, 1), diagonalDirection,
-    );
-    sceneGroup.add(segment);
-  }
 
   // Render pegs from the same encoded tensor used by the input blades.
   // Tensor channel 0 is the opponent (red); channel 1 is the side to move (black).
