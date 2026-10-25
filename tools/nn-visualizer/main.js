@@ -833,31 +833,33 @@ function drawEffectiveBoard() {
     // a much more pronounced, fluent swing. NNE/ENE keep their milder bend;
     // ESE/SSE use a larger bulge mirrored across the peg-to-peg line.
     const isSseOrEse = channelOrientation === 0 || channelOrientation === 4;
-    const dx = end.x - start.x;
+    // The board lies in the Y/Z plane (X is depth). Curve in that plane,
+    // not along X: an X-only offset looks like a straight link from above.
+    const dy = end.y - start.y;
     const dz = end.z - start.z;
-    const length = Math.hypot(dx, dz) || 1;
-    const normalX = -dz / length;
-    const normalZ = dx / length;
-    const bulge = isSseOrEse ? 0.82 : 0.38;
+    const length = Math.hypot(dy, dz) || 1;
+    const normalY = -dz / length;
+    const normalZ = dy / length;
+    const bulge = isSseOrEse ? 1.15 : 0.42;
     const side = isSseOrEse ? -1 : 1;
     const firstControlA = new THREE.Vector3(
-      start.x + (middle.x - start.x) / 3 + normalX * bulge * side,
-      start.y + (middle.y - start.y) / 3,
+      start.x,
+      start.y + (middle.y - start.y) / 3 + normalY * bulge * side,
       start.z + (middle.z - start.z) / 3 + normalZ * bulge * side,
     );
     const firstControlB = new THREE.Vector3(
-      middle.x - (middle.x - start.x) / 3 + normalX * bulge * side,
-      middle.y - (middle.y - start.y) / 3,
+      middle.x,
+      middle.y - (middle.y - start.y) / 3 + normalY * bulge * side,
       middle.z - (middle.z - start.z) / 3 + normalZ * bulge * side,
     );
     const secondControlA = new THREE.Vector3(
-      middle.x + (end.x - middle.x) / 3 + normalX * bulge * side,
-      middle.y + (end.y - middle.y) / 3,
+      middle.x,
+      middle.y + (end.y - middle.y) / 3 + normalY * bulge * side,
       middle.z + (end.z - middle.z) / 3 + normalZ * bulge * side,
     );
     const secondControlB = new THREE.Vector3(
-      end.x - (end.x - middle.x) / 3 + normalX * bulge * side,
-      end.y - (end.y - middle.y) / 3,
+      end.x,
+      end.y - (end.y - middle.y) / 3 + normalY * bulge * side,
       end.z - (end.z - middle.z) / 3 + normalZ * bulge * side,
     );
     const firstCurve = new THREE.CubicBezierCurve3(
