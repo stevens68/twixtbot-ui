@@ -423,7 +423,7 @@ function drawSampleBoard() {
   const boardCenterZ = 0;
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
-  const boardX = -7.5;
+  const boardX = -8.5;
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
@@ -441,15 +441,15 @@ function drawSampleBoard() {
       side: THREE.DoubleSide,
     }),
   );
-  backing.rotation.y = Math.PI / 2;
-  backing.position.set(boardX - 0.035, 0, boardCenterZ);
+  backing.rotation.y = -Math.PI / 2;
+  backing.position.set(boardX + 0.035, 0, boardCenterZ);
   sceneGroup.add(backing);
 
   const borderPoints = [
-    pointAt(0, 0, boardX + 0.015),
-    pointAt(0, BOARD_SIZE - 1, boardX + 0.015),
-    pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, boardX + 0.015),
-    pointAt(BOARD_SIZE - 1, 0, boardX + 0.015),
+    pointAt(0, 0, boardX - 0.015),
+    pointAt(0, BOARD_SIZE - 1, boardX - 0.015),
+    pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, boardX - 0.015),
+    pointAt(BOARD_SIZE - 1, 0, boardX - 0.015),
     pointAt(0, 0, boardX + 0.015),
   ];
   const borderGeometry = new THREE.BufferGeometry().setFromPoints(
@@ -470,7 +470,7 @@ function drawSampleBoard() {
   let holeIndex = 0;
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
-      const [x, y, z] = pointAt(row, col, boardX + 0.035);
+      const [x, y, z] = pointAt(row, col, boardX - 0.035);
       holeTransform.position.set(x, y, z);
       holeTransform.scale.setScalar(1);
       holeTransform.updateMatrix();
@@ -483,8 +483,8 @@ function drawSampleBoard() {
   // Draw links behind the pegs, using the move sequence rather than random links.
   const linkPositions = [];
   for (const link of game.links) {
-    const a = pointAt(link.from.row, link.from.col, boardX + 0.095);
-    const b = pointAt(link.to.row, link.to.col, boardX + 0.095);
+    const a = pointAt(link.from.row, link.from.col, boardX - 0.095);
+    const b = pointAt(link.to.row, link.to.col, boardX - 0.095);
     linkPositions.push(...a, ...b);
   }
   if (linkPositions.length) {
@@ -511,7 +511,7 @@ function drawSampleBoard() {
     const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, playerPegs.length);
     const transform = new THREE.Object3D();
     playerPegs.forEach((peg, index) => {
-      const [x, y, z] = pointAt(peg.row, peg.col, boardX + 0.16);
+      const [x, y, z] = pointAt(peg.row, peg.col, boardX - 0.16);
       transform.position.set(x, y, z);
       transform.rotation.z = Math.PI / 2;
       transform.scale.set(1, 1, 1);
@@ -526,7 +526,7 @@ function drawSampleBoard() {
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addLabel(
       String.fromCharCode(65 + col),
-      [boardX + 0.12, 4.42, boardStartZ + col * spacing],
+      [boardX - 0.12, 4.42, boardStartZ + col * spacing],
       14,
       '#e0e8e2',
       150,
@@ -535,7 +535,7 @@ function drawSampleBoard() {
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     addLabel(
       String(row + 1),
-      [boardX + 0.12, boardStartY + (BOARD_SIZE - 1 - row) * spacing, boardStartZ - 0.34],
+      [boardX - 0.12, boardStartY + (BOARD_SIZE - 1 - row) * spacing, boardStartZ - 0.34],
       14,
       '#e0e8e2',
       150,
@@ -544,7 +544,7 @@ function drawSampleBoard() {
 
   addLabel(
     'Sample Game',
-    [boardX + 0.25, 5.25, boardCenterZ],
+    [boardX - 0.25, 5.25, boardCenterZ],
     19,
     '#ffffff',
     90,
