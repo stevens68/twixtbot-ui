@@ -423,7 +423,7 @@ function drawSampleBoard() {
   const boardCenterZ = 0;
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
-  const boardX = -4.5;
+  const boardX = -5.5;
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
@@ -441,7 +441,7 @@ function drawSampleBoard() {
       side: THREE.DoubleSide,
     }),
   );
-  backing.rotation.y = Math.PI / 2;
+  backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX - 0.035, 0, boardCenterZ);
   sceneGroup.add(backing);
 
