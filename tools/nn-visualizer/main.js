@@ -818,13 +818,39 @@ function drawEffectiveBoard() {
     const startPoint = pointAt(aRow, aCol, curveX);
     const endPoint = pointAt(bRow, bCol, curveX);
     const throughCube = pointAt(midRow, midCol, curveX);
-    const curve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(...startPoint),
-      new THREE.Vector3(...throughCube),
-      new THREE.Vector3(...endPoint),
+    // Use a two-part curve that actually passes through the encoded cube.
+    // Shape it like a soft L, with the bend direction determined by the link
+    // orientation. NNE/ENE bend toward the cube; ESE/SSE use the mirrored bend.
+    const start = new THREE.Vector3(...startPoint);
+    const middle = new THREE.Vector3(...throughCube);
+    const end = new THREE.Vector3(...endPoint);
+    const dx = bCol - aCol;
+    const dy = bRow - aRow;
+    const channelOrientation = encodedChannel & 6;
+    const flipBend = channelOrientation === 0 || channelOrientation === 4;
+    const bendSign = flipBend ? -1 : 1;
+    const bend = 0.24 * bendSign;
+    const firstControl = new THREE.Vector3(
+      (start.x + middle.x) / 2,
+      (start.y + middle.y) / 2,
+      (start.z + middle.z) / 2,
     );
+    const secondControl = new THREE.Vector3(
+      (middle.x + end.x) / 2,
+      (middle.y + end.y) / 2,
+      (middle.z + end.z) / 2,
+    );
+    // Offset perpendicular to the link in the board plane, mirrored for the
+    // ESE/SSE families so their curves bend the opposite way.
+    firstControl.z += bend * Math.sign(dx || 1);
+    secondControl.z += bend * Math.sign(dx || 1);
+    const firstCurve = new THREE.QuadraticBezierCurve3(start, firstControl, middle);
+    const secondCurve = new THREE.QuadraticBezierCurve3(middle, secondControl, end);
+    const curve = new THREE.CurvePath();
+    curve.add(firstCurve);
+    curve.add(secondCurve);
     const tube = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 24, linkRadius, 5, false),
+      new THREE.TubeGeometry(curve, 32, linkRadius, 5, false),
       linkCurveMaterials[link.player === 1 ? 1 : 0],
     );
     sceneGroup.add(tube);
