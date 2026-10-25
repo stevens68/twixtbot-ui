@@ -15,7 +15,7 @@ Open http://localhost:8000. Three.js and OrbitControls are imported from jsDeliv
 
 ## Views
 
-- **Inputs:** pegs `24×24×2`, links `24×24×8`, and fixed locations `24×24×2`, side by side.
+- **Inputs:** a fixed sample Twixt board is rendered in front of the three input tensors. The board uses the move sequence from the root README's T1J example: `E15`, `swap`, `F17`, `H18`, `P12`. The pegs and link on the board are derived from that sequence; the tensor blades still use generated demo values and are not yet encoded from the same game. The three tensors are pegs `24×24×2`, links `24×24×8`, and fixed locations `24×24×2`.
 - **Filters:** 48 filters in an 8×6 arrangement. Link kernels are `5×5×8`; peg and location kernels are `1×1×2`. Each filter group has a separate yellow bias cube.
 - **Conv output:** the summed `24×24×48` feature tensor. Signed values are represented by cube thickness along X: negative toward −X, positive toward +X.
 
