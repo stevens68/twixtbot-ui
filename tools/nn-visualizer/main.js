@@ -791,10 +791,10 @@ function drawEffectiveBoard() {
         // Board north is +Y; west is -Z. Directions are (row/Y, col/Z).
         // Channel pairs: 0/1=SSE, 2/3=NNE, 4/5=ESE, 6/7=ENE.
         const pointerDirections = [
-          [[1, -1], [0, 1]],    // SSE/SSW: NW and south
-          [[0, 1], [-1, 0]],    // NNE: north and west
+          [[1, -1], [-1, 0]],    // SSE: NW and south
+          [[0, -1], [1, 0]],    // NNE: north and west
           [[1, -1], [0, 1]],    // ESE: NW and east
-          [[0, 1], [-1, 0]],    // ENE: north and west
+          [[0, -1], [1, 0]],    // ENE: north and west
         ];
         const dirs = pointerDirections[Math.floor(channel / 2)];
         const pointerLength = 0.14;
