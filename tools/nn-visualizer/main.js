@@ -649,9 +649,9 @@ function drawEffectiveBoard() {
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
-  // Mirror the Python perspective transform in both the board coordinates
-  // and player ownership. The board grid is symmetric, but the goal edges
-  // and coordinate labels must follow the transformed axes.
+  // Keep the finish lines fixed to the physical board orientation, just as on
+  // the sample board. Only the game state (pegs and encoded link coordinates)
+  // is transformed into White-to-move perspective.
   const finishLineX = boardX + 0.026;
   const makeFinishLine = (startPoint, endPoint, material, thickness = 0.065) => {
     // Flat, visibly thick strips; unlike WebGL lines, their width is reliable.
@@ -671,49 +671,28 @@ function drawEffectiveBoard() {
   const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => start + col * spacing;
 
-  // Transposition swaps the horizontal and vertical goal edges.
-  if (transpose) {
-    for (const boundaryZ of [
-      (colZ(0) + colZ(1)) / 2,
-      (colZ(22) + colZ(23)) / 2,
-    ]) {
-      makeFinishLine(
-        [finishLineX, rowY(1), boundaryZ],
-        [finishLineX, rowY(22), boundaryZ],
-        redFinish,
-      );
-    }
-    for (const boundaryY of [
-      (rowY(0) + rowY(1)) / 2,
-      (rowY(22) + rowY(23)) / 2,
-    ]) {
-      makeFinishLine(
-        [finishLineX, boundaryY, colZ(1)],
-        [finishLineX, boundaryY, colZ(22)],
-        blackFinish,
-      );
-    }
-  } else {
-    for (const boundaryY of [
-      (rowY(0) + rowY(1)) / 2,
-      (rowY(22) + rowY(23)) / 2,
-    ]) {
-      makeFinishLine(
-        [finishLineX, boundaryY, colZ(1)],
-        [finishLineX, boundaryY, colZ(22)],
-        redFinish,
-      );
-    }
-    for (const boundaryZ of [
-      (colZ(0) + colZ(1)) / 2,
-      (colZ(22) + colZ(23)) / 2,
-    ]) {
-      makeFinishLine(
-        [finishLineX, rowY(1), boundaryZ],
-        [finishLineX, rowY(22), boundaryZ],
-        blackFinish,
-      );
-    }
+  // Red goals stay on the top and bottom edges (rows 1–2 and 23–24).
+  for (const boundaryY of [
+    (rowY(0) + rowY(1)) / 2,
+    (rowY(22) + rowY(23)) / 2,
+  ]) {
+    makeFinishLine(
+      [finishLineX, boundaryY, colZ(1)],
+      [finishLineX, boundaryY, colZ(22)],
+      redFinish,
+    );
+  }
+
+  // Black goals stay on the left and right edges (columns A–B and W–X).
+  for (const boundaryZ of [
+    (colZ(0) + colZ(1)) / 2,
+    (colZ(22) + colZ(23)) / 2,
+  ]) {
+    makeFinishLine(
+      [finishLineX, rowY(1), boundaryZ],
+      [finishLineX, rowY(22), boundaryZ],
+      blackFinish,
+    );
   }
 
   const holeGeometry = new THREE.CircleGeometry(0.035, 12);
@@ -725,117 +704,17 @@ function drawEffectiveBoard() {
   const holeTransform = new THREE.Object3D();
   let holeIndex = 0;
   for (let row = 0; row < BOARD_SIZE; row += 1) {
-    for (let col = 0; col < BOARD_SIZE; col += 1) {
-      holeTransform.position.set(...pointAt(row, col, boardX + 0.027));
-      holeTransform.rotation.set(0, Math.PI / 2, 0);
-      holeTransform.updateMatrix();
-      holes.setMatrixAt(holeIndex++, holeTransform.matrix);
-    }
-  }
-  holes.instanceMatrix.needsUpdate = true;
-  sceneGroup.add(holes);
-
-  // Match the square face area to the circular top of a peg:
-  // side^2 = pi * pegRadius^2. The 0.18 depth runs along the board normal.
-  const pegRadius = 0.082;
-  const linkFaceSide = Math.sqrt(Math.PI * pegRadius * pegRadius);
-  const linkCubeDepth = 0.18;
-  const linkCubeGeometry = new THREE.BoxGeometry(
-    linkCubeDepth,
-    linkFaceSide,
-    linkFaceSide,
-  );
-  // Place the cube's board-facing face flush against the board surface.
-  const linkCubeX = boardX + 0.035 - linkCubeDepth / 2;
-  const linkCubeMaterials = {
-    0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
-    1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
-  };
-  for (const link of game.links) {
-    const x1 = link.from.col;
-    const y1 = link.from.row;
-    const x2 = link.to.col;
-    const y2 = link.to.row;
-
-    // Link midpoints are integer-valued on the long axis and half-integer
-    // on the short axis. Floor the short-axis midpoint in canonical space;
-    // when the board is transposed, its displayed coordinate must be the ceil.
-    const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2;
-    const shortAxisIsX = Math.abs(x2 - x1) < Math.abs(y2 - y1);
-    const rawX = shortAxisIsX
-      ? (transpose ? Math.ceil(midX) : Math.floor(midX))
-      : Math.floor(midX);
-    const rawY = !shortAxisIsX
-      ? (transpose ? Math.ceil(midY) : Math.floor(midY))
-      : Math.floor(midY);
-    // pointAt() handles the actual axis transposition for display coordinates.
-    const row = rawY;
-    const col = rawX;
-
-    const player = effectivePlayer(link.player);
-    const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
-    cube.position.set(...pointAt(row, col, linkCubeX));
-    sceneGroup.add(cube);
-  }
-
-    // Draw the dashed diagonal directly on the board face, using thin black
-  // rectangular segments like the finish lines (not a floating Three.js line).
-  const diagonalMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
-  const diagonalStart = new THREE.Vector3(...pointAt(0, 0, finishLineX));
-  const diagonalEnd = new THREE.Vector3(
-    ...pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, finishLineX),
-  );
-  const diagonalVector = new THREE.Vector3().subVectors(diagonalEnd, diagonalStart);
-  const diagonalLength = diagonalVector.length();
-  const dashLength = 0.12;
-  const gapLength = 0.08;
-  const diagonalDirection = diagonalVector.clone().normalize();
-  for (let distance = 0; distance < diagonalLength; distance += dashLength + gapLength) {
-    const segmentLength = Math.min(dashLength, diagonalLength - distance);
-    const center = diagonalStart.clone().addScaledVector(
-      diagonalDirection, distance + segmentLength / 2,
-    );
-    const segment = new THREE.Mesh(
-      new THREE.BoxGeometry(0.008, 0.018, segmentLength),
-      diagonalMaterial,
-    );
-    segment.position.copy(center);
-    segment.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 0, 1), diagonalDirection,
-    );
-    sceneGroup.add(segment);
-  }
-
-  const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
-  for (const player of [0, 1]) {
-    const playerPegs = game.pegs.filter((peg) => effectivePlayer(peg.player) === player);
-    if (!playerPegs.length) continue;
-    const material = new THREE.MeshStandardMaterial({
-      color: player === 1 ? 0xe0525d : 0x20252d,
-      roughness: 0.38, metalness: 0.08,
-    });
-    const mesh = new THREE.InstancedMesh(pegGeometry, material, playerPegs.length);
-    const transform = new THREE.Object3D();
-    playerPegs.forEach((peg, index) => {
-      transform.position.set(...pointAt(peg.row, peg.col, boardX - 0.16));
-      transform.rotation.z = Math.PI / 2;
-      transform.updateMatrix();
-      mesh.setMatrixAt(index, transform.matrix);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    sceneGroup.add(mesh);
-  }
-
+    // Keep coordinate labels fixed to the sample board: A–X across columns,
+  // 1–24 down rows. Do not transpose the visual reference system.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addLabel(
-      transpose ? String(col + 1) : String.fromCharCode(65 + col),
+      String.fromCharCode(65 + col),
       [boardX - 0.12, 4.42, start + col * spacing], 14, '#e0e8e2', 150,
     );
   }
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     addLabel(
-      transpose ? String.fromCharCode(65 + row) : String(row + 1),
+      String(row + 1),
       [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34], 14, '#e0e8e2', 150,
     );
   }
