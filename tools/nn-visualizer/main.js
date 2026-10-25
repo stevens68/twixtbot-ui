@@ -1036,16 +1036,16 @@ function drawInputs() {
       x: -1.8,
       z: -3.5,
       channels: 8,
-      // Exact naf.py black-to-move remap:
-      // new 0–1 <- raw 4–5 (SSE), 2–3 <- raw 6–7 (NNE),
-      // new 4–5 <- raw 0–1 (ESE), 6–7 <- raw 2–3 (ENE).
-      // BLACK=0, WHITE=1 in twixt.py; naf.py swaps colors on Black's turn.
-      // Therefore each remapped pair is [White, Black].
+      // naf.py remaps the raw link planes and transposes [x][y] to [row=y][col=x].
+      // That transpose also changes the visible direction: raw SSE/NNE become
+      // effective ESE/ENE, while raw ESE/ENE become effective SSE/NNE.
+      // After the Black-to-move color swap, each pair is [White, Black].
+      // Effective tensor channels: 0–1 ESE, 2–3 ENE, 4–5 SSE, 6–7 NNE.
       bladeLabels: [
-        'SSE · White', 'SSE · Black',
-        'NNE · White', 'NNE · Black',
         'ESE · White', 'ESE · Black',
         'ENE · White', 'ENE · Black',
+        'SSE · White', 'SSE · Black',
+        'NNE · White', 'NNE · Black',
       ],
       color: COLORS.input,
     },
