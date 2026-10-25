@@ -445,23 +445,16 @@ function drawSampleBoard() {
   backing.position.set(boardX + 0.035, 0, boardCenterZ);
   sceneGroup.add(backing);
 
-  // Colored finish lines sit between the edge rows/columns and stop short
-  // of one another so the four corner regions remain open.
-  const finishLineX = boardX - 0.075;
-  const makeFinishLine = (start, end, radius, material) => {
-    const a = new THREE.Vector3(...start);
-    const b = new THREE.Vector3(...end);
-    const direction = new THREE.Vector3().subVectors(b, a);
-    const mesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(radius, radius, direction.length(), 8),
-      material,
-    );
-    mesh.position.copy(a).add(b).multiplyScalar(0.5);
-    mesh.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      direction.clone().normalize(),
-    );
-    sceneGroup.add(mesh);
+  // Flat 2D finish lines lie directly on the board face (no cylinders or gaps).
+  const finishLineX = boardX + 0.025;
+  const makeFinishLine = (start, end, material) => {
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(...start),
+      new THREE.Vector3(...end),
+    ]);
+    const line = new THREE.Line(geometry, material);
+    line.computeLineDistances();
+    sceneGroup.add(line);
   };
   const redFinish = new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.5 });
   const blackFinish = new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.5 });
@@ -476,7 +469,6 @@ function drawSampleBoard() {
     makeFinishLine(
       [finishLineX, boundaryY, colZ(1)],
       [finishLineX, boundaryY, colZ(22)],
-      0.018,
       redFinish,
     );
   }
@@ -489,24 +481,24 @@ function drawSampleBoard() {
     makeFinishLine(
       [finishLineX, rowY(1), boundaryZ],
       [finishLineX, rowY(22), boundaryZ],
-      0.018,
       blackFinish,
     );
   }
 
-  // Black recessed-looking holes at every intersection.
-  const holeGeometry = new THREE.SphereGeometry(0.035, 10, 8);
+  // Holes are flat dark circles flush with the board face, not raised spheres.
+  const holeGeometry = new THREE.CircleGeometry(0.035, 12);
   const holes = new THREE.InstancedMesh(
     holeGeometry,
-    new THREE.MeshStandardMaterial({ color: 0x080a0d, roughness: 0.95 }),
+    new THREE.MeshBasicMaterial({ color: 0x080a0d, side: THREE.DoubleSide }),
     BOARD_SIZE * BOARD_SIZE,
   );
   const holeTransform = new THREE.Object3D();
   let holeIndex = 0;
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
-      const [x, y, z] = pointAt(row, col, boardX - 0.035);
+      const [x, y, z] = pointAt(row, col, boardX + 0.026);
       holeTransform.position.set(x, y, z);
+      holeTransform.rotation.set(0, Math.PI / 2, 0);
       holeTransform.scale.setScalar(1);
       holeTransform.updateMatrix();
       holes.setMatrixAt(holeIndex++, holeTransform.matrix);
@@ -643,50 +635,36 @@ function drawEffectiveBoard() {
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
-  // Mark the main-diagonal mirror/transpose axis, matching naf.py's .T.
-  // It is visible just above the board surface and only appears when transposed.
+  // A thin 2D line marks the main-diagonal transpose axis directly on the board.
   if (transpose) {
-    const diagonalStart = new THREE.Vector3(
-      boardX - 0.105,
-      start + (BOARD_SIZE - 1) * spacing,
-      start,
-    );
-    const diagonalEnd = new THREE.Vector3(
-      boardX - 0.105,
-      start,
-      start + (BOARD_SIZE - 1) * spacing,
-    );
-    const diagonalDirection = new THREE.Vector3().subVectors(diagonalEnd, diagonalStart);
-    const diagonal = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.009, 0.009, diagonalDirection.length(), 6),
-      new THREE.MeshBasicMaterial({ color: 0xffffff }),
-    );
-    diagonal.position.copy(diagonalStart).add(diagonalEnd).multiplyScalar(0.5);
-    diagonal.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      diagonalDirection.clone().normalize(),
-    );
-    sceneGroup.add(diagonal);
+    const diagonalGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(
+        boardX + 0.026,
+        start + (BOARD_SIZE - 1) * spacing,
+        start,
+      ),
+      new THREE.Vector3(
+        boardX + 0.026,
+        start,
+        start + (BOARD_SIZE - 1) * spacing,
+      ),
+    ]);
+    sceneGroup.add(new THREE.Line(
+      diagonalGeometry,
+      new THREE.LineBasicMaterial({ color: 0xffffff }),
+    ));
   }
 
   // Finish lines are transformed with the board. Transposition swaps the
   // goal axes, and colour canonicalization swaps the players, so the effective
   // view retains the canonical red-horizontal / black-vertical appearance.
-  const finishLineX = boardX - 0.075;
-  const makeFinishLine = (startPoint, endPoint, radius, material) => {
-    const a = new THREE.Vector3(...startPoint);
-    const b = new THREE.Vector3(...endPoint);
-    const direction = new THREE.Vector3().subVectors(b, a);
-    const line = new THREE.Mesh(
-      new THREE.CylinderGeometry(radius, radius, direction.length(), 8),
-      material,
-    );
-    line.position.copy(a).add(b).multiplyScalar(0.5);
-    line.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      direction.clone().normalize(),
-    );
-    sceneGroup.add(line);
+  const finishLineX = boardX + 0.026;
+  const makeFinishLine = (startPoint, endPoint, material) => {
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(...startPoint),
+      new THREE.Vector3(...endPoint),
+    ]);
+    sceneGroup.add(new THREE.Line(geometry, material));
   };
   const redFinish = new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.5 });
   const blackFinish = new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.5 });
@@ -716,17 +694,18 @@ function drawEffectiveBoard() {
     );
   }
 
-  const holeGeometry = new THREE.SphereGeometry(0.035, 10, 8);
+  const holeGeometry = new THREE.CircleGeometry(0.035, 12);
   const holes = new THREE.InstancedMesh(
     holeGeometry,
-    new THREE.MeshStandardMaterial({ color: 0x080a0d, roughness: 0.95 }),
+    new THREE.MeshBasicMaterial({ color: 0x080a0d, side: THREE.DoubleSide }),
     BOARD_SIZE * BOARD_SIZE,
   );
   const holeTransform = new THREE.Object3D();
   let holeIndex = 0;
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
-      holeTransform.position.set(...pointAt(row, col, boardX - 0.035));
+      holeTransform.position.set(...pointAt(row, col, boardX + 0.027));
+      holeTransform.rotation.set(0, Math.PI / 2, 0);
       holeTransform.updateMatrix();
       holes.setMatrixAt(holeIndex++, holeTransform.matrix);
     }
