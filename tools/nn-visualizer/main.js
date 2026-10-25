@@ -721,7 +721,7 @@ function drawInputs() {
     {
       key: 'pegs',
       label: 'Pegs · 24×24×2',
-      x: 5.2,
+      x: -1.8,
       z: -13,
       channels: 2,
       bladeLabels: ['Black', 'White'],
