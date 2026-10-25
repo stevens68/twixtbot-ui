@@ -794,14 +794,14 @@ function drawEffectiveBoard() {
   // Draw each actual game link as a thin curved tube from peg to peg.
   // The curve passes through the corresponding encoded midpoint cube, so the
   // link remains visually connected even though the tensor midpoint is shifted.
-  const blackToMoveForLinks = game.nextPlayer === 0;
+  const transposeLinksForEncoding = game.nextPlayer === 1;
   const linkCurveMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.58 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.58 }),
   ];
   const linkRadius = 0.018;
   for (const link of game.links) {
-    const transpose = blackToMoveForLinks;
+    const transpose = transposeLinksForEncoding;
     const aRow = transpose ? link.from.col : link.from.row;
     const aCol = transpose ? link.from.row : link.from.col;
     const bRow = transpose ? link.to.col : link.to.row;
