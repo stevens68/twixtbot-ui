@@ -22,7 +22,7 @@
     </div>
     <div class="actions">
       <button id="demo-button" class="primary">Load demo board</button>
-      <label class="file-button">Load JSON<input id="json-file" type="file" accept=".json,application/json"></label>
+      <label class="file-button">Load *.T1 board<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
     </div>
   </header>
 
@@ -31,9 +31,9 @@
       <label for="trajectory">Game trajectory (moves separated by spaces or commas)</label>
       <textarea id="trajectory" rows="2">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
       <div class="trajectory-actions">
-        <button id="load-python-trace" class="primary">Build from Python backend</button>
+        <label><input id="allow-swap" type="checkbox" checked> Allow swap</label>
         <label><input id="allow-scl" type="checkbox"> Allow crossing own links</label>
-        <span>Python source of truth · game → NetInputs → input tensors</span>
+        <div class="game-navigation"><button id="game-back" disabled>← Backward</button><span id="game-position">No game loaded</span><button id="game-forward" disabled>Forward →</button></div>
       </div>
     </section>
     <section class="toolbar">
