@@ -807,19 +807,21 @@ function drawEffectiveBoard() {
     const rowStep = vertical ? 2 : 1;
     const colStep = vertical ? 1 : 2;
     const slope = diffSign ? -1 : 1;
-    const cubeTopY = start + (BOARD_SIZE - 1 - row) * spacing + 0.18;
+    // The cube is 0.164 units thick in the board plane, so its top is
+    // only 0.082 above its centre (not 0.18).
+    const cubeTopY = start + (BOARD_SIZE - 1 - row) * spacing + 0.082;
     const cubeTopZ = start + col * spacing;
     const cubeTopX = boardX + 0.035 - 0.18;
-    // The channel identifies the two orthogonal components of the knight move.
-    // Put both segments on the cube's top face; one follows the row axis and
-    // the other follows the column axis toward the corresponding endpoint.
+    // Link channel bit 0 is the encoded player; ESE links for the black
+    // player have the opposite horizontal endpoint direction in this view.
+    const blackESE = !vertical && diffSign && (channel & 1) === 1;
     const rowDirection = diffSign ? -1 : 1;
-    const colDirection = diffSign ? -1 : 1;
+    const colDirection = (diffSign ? -1 : 1) * (blackESE ? -1 : 1);
     const rowEnd = row + (vertical ? -rowStep : rowDirection);
     const colEnd = col + (vertical ? colDirection : colStep * slope);
     const segments = [
       {
-        y: start + (BOARD_SIZE - 1 - Math.max(0, Math.min(BOARD_SIZE - 1, rowEnd))) * spacing + 0.18,
+        y: start + (BOARD_SIZE - 1 - Math.max(0, Math.min(BOARD_SIZE - 1, rowEnd))) * spacing + 0.082,
         z: cubeTopZ,
       },
       {
