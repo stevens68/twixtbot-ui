@@ -1493,8 +1493,9 @@ async function loadGamePosition(ply) {
 }
 
 function updateGameNavigation() {
-  document.querySelector('#game-back').disabled = !gameLoaded || gamePly <= 0;
-  document.querySelector('#game-forward').disabled = !gameLoaded || gamePly >= gameMoves.length;
+  document.querySelector('#game-start').disabled = !gameLoaded || gamePly <= 0;
+  document.querySelector('#game-step').disabled = !gameLoaded || gamePly >= gameMoves.length;
+  document.querySelector('#game-end').disabled = !gameLoaded || gamePly >= gameMoves.length;
   document.querySelector('#game-position').textContent = gameLoaded
     ? 'Ply ' + gamePly + ' / ' + gameMoves.length +
       (gamePly ? ' · Last: ' + gameMoves[gamePly - 1] : ' · Initial position')
@@ -1508,8 +1509,9 @@ async function navigateGame(delta) {
   if (ply === gamePly) return;
 
   const requestId = ++navigationRequest;
-  document.querySelector('#game-back').disabled = true;
-  document.querySelector('#game-forward').disabled = true;
+  document.querySelector('#game-start').disabled = true;
+  document.querySelector('#game-step').disabled = true;
+  document.querySelector('#game-end').disabled = true;
   try {
     await loadGamePosition(ply);
   } catch (error) {
@@ -1550,8 +1552,9 @@ async function loadTrajectoryFromEditor() {
 }
 
 document.querySelector('#load-trajectory').addEventListener('click', loadTrajectoryFromEditor);
-document.querySelector('#game-back').addEventListener('click',()=>navigateGame(-1));
-document.querySelector('#game-forward').addEventListener('click',()=>navigateGame(1));
+document.querySelector('#game-start').addEventListener('click', () => navigateGame(-gamePly));
+document.querySelector('#game-step').addEventListener('click', () => navigateGame(1));
+document.querySelector('#game-end').addEventListener('click', () => navigateGame(gameMoves.length - gamePly));
 document.querySelector('#t1-file').addEventListener('change',async(event)=>{const file=event.target.files&&event.target.files[0];if(!file)return;try{const response=await fetch('/api/t1',{method:'POST',headers:{'Content-Type':'text/plain; charset=utf-8'},body:await file.text()});const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);gameMoves=result.moves;document.querySelector('#trajectory').value=gameMoves.join(' ');await loadGamePosition(gameMoves.length);status.textContent='Loaded '+file.name+'. '+status.textContent;}catch(error){status.textContent='Could not load T1 game: '+error.message;}finally{event.target.value='';}});
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
 window.addEventListener('resize', resizeRenderer);
