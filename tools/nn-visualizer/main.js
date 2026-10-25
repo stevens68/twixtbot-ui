@@ -791,91 +791,99 @@ function drawEffectiveBoard() {
     }
   }
   console.debug('[Effective board] active encoded link cells:', activeLinks);
-  // Draw each actual game link as a thin curved tube from peg to peg.
-  // The curve passes through the corresponding encoded midpoint cube, so the
-  // link remains visually connected even though the tensor midpoint is shifted.
+  // Draw each physical game link as a smooth, two-part swing in the board plane.
+  // Coordinates here are (x=column, y=row). Each link type has a specific
+  // L-shaped trajectory; the curve must pass through that exact corner.
   const transposeLinksForEncoding = game.nextPlayer === 1;
   const linkCurveMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.58 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.58 }),
   ];
   const linkRadius = 0.018;
-  for (const link of game.links) {
-    const transpose = transposeLinksForEncoding;
-    const aRow = transpose ? link.from.col : link.from.row;
-    const aCol = transpose ? link.from.row : link.from.col;
-    const bRow = transpose ? link.to.col : link.to.row;
-    const bCol = transpose ? link.to.row : link.to.col;
-    const channel = link.player
-      + (((link.from.col + link.to.col) % 2 !== 0) ? 4 : 0)
-      + (((link.to.row - link.from.row) * (link.to.col - link.from.col) < 0) ? 2 : 0);
-    const encodedChannel = transpose ? (channel ^ 1) : channel;
-    const channelOrientation = encodedChannel & 6;
-    let rowShift = ((encodedChannel & 4) !== 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
-    let colShift = ((encodedChannel & 4) === 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
-    // ESE and SSE links use the upper-right L-corner of their encoded cube.
-    if (channelOrientation === 4 || channelOrientation === 0) {
-      rowShift = 1;
-      colShift = 1;
-    }
-    const midRow = Math.floor((aRow + bRow) / 2) + rowShift;
-    const midCol = Math.floor((aCol + bCol) / 2) + colShift;
-    const curveX = boardX + 0.035 - 0.18;
-    const startPoint = pointAt(aRow, aCol, curveX);
-    const endPoint = pointAt(bRow, bCol, curveX);
-    const throughCube = pointAt(midRow, midCol, curveX);
-    const start = new THREE.Vector3(...startPoint);
-    const middle = new THREE.Vector3(...throughCube);
-    const end = new THREE.Vector3(...endPoint);
+  const curveX = boardX + 0.035 - 0.18;
 
-    // Build two cubic Bezier segments that meet at the encoded cube. This
-    // guarantees the line passes through peg A -> cube -> peg B while making
-    // a much more pronounced, fluent swing. NNE/ENE keep their milder bend;
-    // ESE/SSE use a larger bulge mirrored across the peg-to-peg line.
-    const isSseOrEse = channelOrientation === 0 || channelOrientation === 4;
-    // The board lies in the Y/Z plane (X is depth). Curve in that plane,
-    // not along X: an X-only offset looks like a straight link from above.
-    const dy = end.y - start.y;
-    const dz = end.z - start.z;
+  // Offset a control point sideways within the visible Y/Z board plane.
+  // pointAt() maps row to Y (inverted) and column to Z.
+  const offsetInBoardPlane = (point, toward, amount, side) => {
+    const dy = toward.y - point.y;
+    const dz = toward.z - point.z;
     const length = Math.hypot(dy, dz) || 1;
-    const normalY = -dz / length;
-    const normalZ = dy / length;
-    const bulge = isSseOrEse ? 1.15 : 0.42;
-    const side = isSseOrEse ? -1 : 1;
-    const firstControlA = new THREE.Vector3(
-      start.x,
-      start.y + (middle.y - start.y) / 3 + normalY * bulge * side,
-      start.z + (middle.z - start.z) / 3 + normalZ * bulge * side,
+    return new THREE.Vector3(
+      point.x,
+      point.y + (-dz / length) * amount * side,
+      point.z + (dy / length) * amount * side,
     );
-    const firstControlB = new THREE.Vector3(
-      middle.x,
-      middle.y - (middle.y - start.y) / 3 + normalY * bulge * side,
-      middle.z - (middle.z - start.z) / 3 + normalZ * bulge * side,
-    );
-    const secondControlA = new THREE.Vector3(
-      middle.x,
-      middle.y + (end.y - middle.y) / 3 + normalY * bulge * side,
-      middle.z + (end.z - middle.z) / 3 + normalZ * bulge * side,
-    );
-    const secondControlB = new THREE.Vector3(
-      end.x,
-      end.y - (end.y - middle.y) / 3 + normalY * bulge * side,
-      end.z - (end.z - middle.z) / 3 + normalZ * bulge * side,
-    );
+  };
+
+  for (const link of game.links) {
+    const fromX = link.from.col;
+    const fromY = link.from.row;
+    const toX = link.to.col;
+    const toY = link.to.row;
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+
+    // Mid-corner definitions are explicit and independent of tensor channel shifts.
+    let midX;
+    let midY;
+    if (Math.abs(dx) === 1 && Math.abs(dy) === 2) {
+      // NNE / SSW: x,y -> x+1,y -> x+1,y-2 (or its reverse).
+      midX = fromX + dx;
+      midY = fromY;
+    } else if (Math.abs(dx) === 2 && Math.abs(dy) === 1 && dx * dy < 0) {
+      // ENE / WSW: x,y -> x+2,y -> x+2,y-1 (or its reverse).
+      midX = toX;
+      midY = fromY;
+    } else {
+      // ESE / WNW and SSE / NNW share the (x+1,y+1) corner
+      // in the forward orientation; use the corner adjacent to both pegs.
+      midX = fromX + Math.sign(dx);
+      midY = fromY + Math.sign(dy);
+    }
+
+    // Convert native board coordinates to the effective board's canonical view.
+    const aRow = transposeLinksForEncoding ? fromX : fromY;
+    const aCol = transposeLinksForEncoding ? fromY : fromX;
+    const bRow = transposeLinksForEncoding ? toX : toY;
+    const bCol = transposeLinksForEncoding ? toY : toX;
+    const mRow = transposeLinksForEncoding ? midX : midY;
+    const mCol = transposeLinksForEncoding ? midY : midX;
+
+    const start = new THREE.Vector3(...pointAt(aRow, aCol, curveX));
+    const middle = new THREE.Vector3(...pointAt(mRow, mCol, curveX));
+    const end = new THREE.Vector3(...pointAt(bRow, bCol, curveX));
+
+    // A moderate lateral swing in the board plane, on both sides of the corner.
+    // Each cubic ends/starts at the exact corner, so the trajectory remains joined.
+    const swing = 0.34;
+    const side = (link.player === 1 ? 1 : -1);
     const firstCurve = new THREE.CubicBezierCurve3(
-      start, firstControlA, firstControlB, middle,
+      start,
+      offsetInBoardPlane(start, middle, swing, side).lerp(
+        new THREE.Vector3().addVectors(start, middle).multiplyScalar(0.33), 0.35,
+      ),
+      offsetInBoardPlane(middle, start, swing, side).lerp(
+        new THREE.Vector3().addVectors(start, middle).multiplyScalar(0.67), 0.35,
+      ),
+      middle,
     );
     const secondCurve = new THREE.CubicBezierCurve3(
-      middle, secondControlA, secondControlB, end,
+      middle,
+      offsetInBoardPlane(middle, end, swing, side).lerp(
+        new THREE.Vector3().addVectors(middle, end).multiplyScalar(0.33), 0.35,
+      ),
+      offsetInBoardPlane(end, middle, swing, side).lerp(
+        new THREE.Vector3().addVectors(middle, end).multiplyScalar(0.67), 0.35,
+      ),
+      end,
     );
     const curve = new THREE.CurvePath();
     curve.add(firstCurve);
     curve.add(secondCurve);
-    const tube = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 32, linkRadius, 5, false),
+    sceneGroup.add(new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 40, linkRadius, 6, false),
       linkCurveMaterials[link.player === 1 ? 1 : 0],
-    );
-    sceneGroup.add(tube);
+    ));
   }
 
   // Render pegs from the same encoded tensor used by the input blades.
