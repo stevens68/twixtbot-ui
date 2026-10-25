@@ -788,7 +788,7 @@ function drawEffectiveBoard() {
  * data.links after canonicalization and the input-cell shift. Comparing both
  * lists makes channel-label, transpose, and one-cell-offset errors visible.
  */
-function logLinkEncodingDiagnostic(game, linkTensor) {
+function logLinkEncodingDiagnostic(game, encoded) {
   const transpose = game.nextPlayer === 0;
   const canonicalPoint = (peg) => ({
     row: transpose ? peg.col : peg.row,
@@ -796,48 +796,96 @@ function logLinkEncodingDiagnostic(game, linkTensor) {
   });
   const canonicalPlayer = (player) => transpose ? 1 - player : player;
   const channelNames = [
-    'ENE · White', 'ENE · Black',
-    'ESE · White', 'ESE · Black',
-    'NNE · White', 'NNE · Black',
-    'SSE · White', 'SSE · Black',
+    'index 0', 'index 1', 'index 2', 'index 3',
+    'index 4', 'index 5', 'index 6', 'index 7',
   ];
-  const boardLinks = game.links.map((link) => {
-    const a = canonicalPoint(link.from);
-    const b = canonicalPoint(link.to);
+
+  // Reproduce the raw-link index calculation and the upstream naf.py
+  // transpose/color swap and to_input_arrays shift independently of the
+  // rendered tensor. This lets the log compare expected cells to actual data.
+  const trace = game.links.map((link, index) => {
+    const x1 = link.from.col;
+    const y1 = link.from.row;
+    const x2 = link.to.col;
+    const y2 = link.to.row;
+    const rawChannel = link.player
+      + (((x1 + x2) % 2 !== 0) ? 4 : 0)
+      + (((y2 - y1) * (x2 - x1) < 0) ? 2 : 0);
+    const rawRow = Math.floor((x1 + x2) / 2);
+    const rawCol = Math.floor((y1 + y2) / 2);
+
+    // In the original encoder, game.links are indexed [x][y], then
+    // transposed into [row][col]. Canonical row/col therefore start as y/x.
+    const swappedColor = 1 - link.player;
+    const midChannel =
+      (rawChannel & 4) ? 4 + swappedColor :
+      (rawChannel & 2) ? 6 + swappedColor :
+      rawChannel < 2 ? swappedColor : 2 + swappedColor;
+
+    // Canonical board coordinates use row=x, col=y when transposed.
+    const canonicalA = canonicalPoint(link.from);
+    const canonicalB = canonicalPoint(link.to);
+    const canonicalRow = Math.floor((canonicalA.row + canonicalB.row) / 2);
+    const canonicalCol = Math.floor((canonicalA.col + canonicalB.col) / 2);
+
+    // to_input_arrays shifts the midpoint cell according to the channel bits.
+    const vertical = (midChannel & 4) !== 0;
+    const diff = (midChannel & 2) !== 0;
+    const expectedRow = canonicalRow + ((vertical || diff) ? 1 : 0);
+    const expectedCol = canonicalCol + ((!vertical || diff) ? 1 : 0);
+    const inBounds = expectedRow >= 0 && expectedRow < BOARD_SIZE &&
+      expectedCol >= 0 && expectedCol < BOARD_SIZE;
+    const actualValue = inBounds ? encoded.links[expectedRow][expectedCol][midChannel] : null;
+
     return {
-      player: canonicalPlayer(link.player) === 1 ? 'White' : 'Black',
-      from: String.fromCharCode(65 + a.col) + (a.row + 1),
-      to: String.fromCharCode(65 + b.col) + (b.row + 1),
-      midpointRow: (a.row + b.row) / 2,
-      midpointCol: (a.col + b.col) / 2,
+      link: index,
+      originalPlayer: link.player === 1 ? 'Black' : 'White',
+      originalFrom: String.fromCharCode(65 + link.from.col) + (link.from.row + 1),
+      originalTo: String.fromCharCode(65 + link.to.col) + (link.to.row + 1),
+      transpose,
+      canonicalPlayer: canonicalPlayer(link.player) === 1 ? 'Black' : 'White',
+      canonicalFrom: String.fromCharCode(65 + canonicalA.col) + (canonicalA.row + 1),
+      canonicalTo: String.fromCharCode(65 + canonicalB.col) + (canonicalB.row + 1),
+      rawChannel,
+      rawMidpoint: '(' + rawRow + ',' + rawCol + ')',
+      expectedChannel: midChannel,
+      expectedChannelName: channelNames[midChannel],
+      expectedCell: inBounds
+        ? String.fromCharCode(65 + expectedCol) + (expectedRow + 1)
+        : 'out of bounds',
+      expectedCellValue: actualValue,
+      foundAtExpectedCell: actualValue === 1,
     };
   });
-  const tensorCells = [];
+
+  const actualCells = [];
   for (let channel = 0; channel < 8; channel += 1) {
     for (let row = 0; row < BOARD_SIZE; row += 1) {
       for (let col = 0; col < BOARD_SIZE; col += 1) {
-        if (linkTensor[row][col][channel] !== 0) {
-          tensorCells.push({
+        if (encoded.links[row][col][channel] !== 0) {
+          actualCells.push({
             channel,
-            label: channelNames[channel],
             cell: String.fromCharCode(65 + col) + (row + 1),
             row,
             col,
-            value: linkTensor[row][col][channel],
+            value: encoded.links[row][col][channel],
           });
         }
       }
     }
   }
+
   console.groupCollapsed(
-    '[Link encoding diagnostic] ' + boardLinks.length +
-    ' effective-board links; ' + tensorCells.length + ' nonzero tensor cells',
+    '[Link encoding trace] transpose=' + transpose +
+    ', nextPlayer=' + game.nextPlayer +
+    ', board links=' + trace.length +
+    ', nonzero tensor cells=' + actualCells.length,
   );
-  console.log('Effective-board links (canonical coordinates):');
-  console.table(boardLinks);
-  console.log('Nonzero link-tensor cells (the actual blade contents):');
-  console.table(tensorCells);
-  console.log('Compare each board link midpoint with tensor cells. The tensor cell may be shifted from the geometric midpoint by the input encoding.');
+  console.log('Per-link trace: original -> canonical -> expected shifted tensor cell');
+  console.table(trace);
+  console.log('Actual nonzero tensor cells (channel labels intentionally omitted until verified):');
+  console.table(actualCells);
+  console.log('Loaded diagnostic build: link-trace-v2. If this exact group title is absent, hard-reload the visualizer before interpreting the output.');
   console.groupEnd();
 }
 
