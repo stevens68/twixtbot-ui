@@ -764,7 +764,7 @@ function drawEffectiveBoard() {
   // Extend links clearly out from the board: X is the board-normal axis.
   // Their visible projection is 0.36, matching the peg height; board-plane
   // dimensions match the peg diameter.
-  const linkGeometry = new THREE.BoxGeometry(0.36, 0.082, 0.164);
+  const linkGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
   const linkMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
