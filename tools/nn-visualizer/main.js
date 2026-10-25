@@ -775,7 +775,9 @@ function drawEffectiveBoard() {
 
         // Mark the exact encoded tensor cell; do not reconstruct endpoints.
         const encodedPlayer = channel & 1;
-        const displayedPlayer = blackToMove ? 1 - encodedPlayer : encodedPlayer;
+        // Inputs are canonicalized to the Black-to-move viewpoint:
+        // channel 0 is the opponent (red), channel 1 is side-to-move (black).
+        const displayedPlayer = 1 - encodedPlayer;
         const mesh = new THREE.Mesh(linkGeometry, linkMaterials[displayedPlayer]);
         // The cube's back face touches the board face; the whole cube projects
         // outward, avoiding coplanar overlap with the backing and holes.
@@ -801,13 +803,10 @@ function drawEffectiveBoard() {
       }
     }
     if (!positions.length) continue;
-    // Keep the effective board's physical peg colors aligned with the
-    // displayed link colors while preserving the encoded board orientation.
-    // In this view the peg color mapping is swapped on Black's turn.
-    const blackToMove = game.nextPlayer === 0;
-    // Swap colours with the encoded player channels; do not transpose tensor
-    // coordinates again because data.pegs is already encoded/transposed.
-    const isBlack = blackToMove ? channel === 1 : channel === 0;
+    // The encoded board always uses the Black-to-move viewpoint:
+    // channel 0 is the opponent (red), channel 1 is side-to-move (black).
+    // Coordinates and colors are already canonicalized in encodeGameInputs().
+    const isBlack = channel === 1;
     const material = new THREE.MeshStandardMaterial({
       color: isBlack ? 0x20252d : 0xe0525d,
       roughness: 0.38,
