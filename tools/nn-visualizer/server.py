@@ -18,7 +18,8 @@ VISUALIZER = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tools.nn_visualizer_adapter import snapshot  # type: ignore
+sys.path.insert(0, str(ROOT / "tools"))
+from nn_visualizer_adapter import snapshot
 
 
 class Handler(SimpleHTTPRequestHandler):
