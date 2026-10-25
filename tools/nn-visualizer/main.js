@@ -481,7 +481,7 @@ function drawSampleBoard() {
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
   // Keep the sample board four times farther from the input tensor layer.
-  const boardX = -44.18;
+  const boardX = -38.384; // 20% closer to the effective board at x = -15.2
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
@@ -647,14 +647,12 @@ function drawSampleBoard() {
     );
   }
 
-  const sampleTurnLabel = game.nextPlayer === 1
-    ? 'Sample game, red to move'
-    : 'Sample game, black to move';
+  const sampleTurnLabel = 'Move ' + game.moves.length + ':';
   addLabel(
     sampleTurnLabel,
     [boardX - 0.25, 5.25, boardCenterZ],
     19,
-    game.nextPlayer === 1 ? '#ff4545' : '#ffffff',
+    '#ffffff',
     90,
   );
 
@@ -664,7 +662,8 @@ function drawSampleBoard() {
   const listZ = boardStartZ - 1.35;
   addLabel('Moves', [listX, 3.95, listZ], 16, '#e7edf6', 90, 'left');
   moveLabels.forEach((label, index) => {
-    addLabel(label, [listX, 3.4 - index * 0.38, listZ], 14, '#e7edf6', 90, 'left');
+    const isRedMove = index % 2 === 0;
+    addLabel(label, [listX, 3.4 - index * 0.38, listZ], 14, isRedMove ? '#ff4545' : '#e7edf6', 90, 'left');
   });
 
   return game;
