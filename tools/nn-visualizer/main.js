@@ -721,19 +721,36 @@ function drawEffectiveBoard() {
   const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => start + col * spacing;
 
-  // Keep the physical Twixt goal edges visible as a reference. The state on
-  // this board is encoded from the current player's perspective.
-  for (const boundaryY of [
-    (rowY(0) + rowY(1)) / 2,
-    (rowY(22) + rowY(23)) / 2,
-  ]) {
-    makeFinishLine([finishLineX, boundaryY, colZ(1)], [finishLineX, boundaryY, colZ(22)], redFinish);
-  }
-  for (const boundaryZ of [
-    (colZ(0) + colZ(1)) / 2,
-    (colZ(22) + colZ(23)) / 2,
-  ]) {
-    makeFinishLine([finishLineX, rowY(1), boundaryZ], [finishLineX, rowY(22), boundaryZ], blackFinish);
+  // Preserve the goal-edge meaning while showing the encoded orientation.
+  // Black-to-move encoding transposes the board, so red's top/bottom goals
+  // become left/right and black's left/right goals become top/bottom.
+  const blackToMove = game.nextPlayer === 0;
+  if (!blackToMove) {
+    for (const boundaryY of [
+      (rowY(0) + rowY(1)) / 2,
+      (rowY(22) + rowY(23)) / 2,
+    ]) {
+      makeFinishLine([finishLineX, boundaryY, colZ(1)], [finishLineX, boundaryY, colZ(22)], redFinish);
+    }
+    for (const boundaryZ of [
+      (colZ(0) + colZ(1)) / 2,
+      (colZ(22) + colZ(23)) / 2,
+    ]) {
+      makeFinishLine([finishLineX, rowY(1), boundaryZ], [finishLineX, rowY(22), boundaryZ], blackFinish);
+    }
+  } else {
+    for (const boundaryZ of [
+      (colZ(0) + colZ(1)) / 2,
+      (colZ(22) + colZ(23)) / 2,
+    ]) {
+      makeFinishLine([finishLineX, rowY(1), boundaryZ], [finishLineX, rowY(22), boundaryZ], redFinish);
+    }
+    for (const boundaryY of [
+      (rowY(0) + rowY(1)) / 2,
+      (rowY(22) + rowY(23)) / 2,
+    ]) {
+      makeFinishLine([finishLineX, boundaryY, colZ(1)], [finishLineX, boundaryY, colZ(22)], blackFinish);
+    }
   }
 
   const holeGeometry = new THREE.CircleGeometry(0.035, 12);
