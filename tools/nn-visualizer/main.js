@@ -791,9 +791,8 @@ function drawEffectiveBoard() {
     }
   }
   console.debug('[Effective board] active encoded link cells:', activeLinks);
-  // Draw each physical game link as a smooth, two-part swing in the board plane.
-  // Coordinates here are (x=column, y=row). Each link type has a specific
-  // L-shaped trajectory; the curve must pass through that exact corner.
+  // Draw each physical link as one independent curve, entirely parallel to
+  // the board surface. The board is the Y/Z plane, so X is constant.
   const transposeLinksForEncoding = game.nextPlayer === 1;
   const linkCurveMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.58 }),
@@ -801,19 +800,6 @@ function drawEffectiveBoard() {
   ];
   const linkRadius = 0.018;
   const curveX = boardX + 0.035 - 0.18;
-
-  // Offset a control point sideways within the visible Y/Z board plane.
-  // pointAt() maps row to Y (inverted) and column to Z.
-  const offsetInBoardPlane = (point, toward, amount, side) => {
-    const dy = toward.y - point.y;
-    const dz = toward.z - point.z;
-    const length = Math.hypot(dy, dz) || 1;
-    return new THREE.Vector3(
-      point.x,
-      point.y + (-dz / length) * amount * side,
-      point.z + (dy / length) * amount * side,
-    );
-  };
 
   for (const link of game.links) {
     const fromX = link.from.col;
@@ -823,65 +809,40 @@ function drawEffectiveBoard() {
     const dx = toX - fromX;
     const dy = toY - fromY;
 
-    // Mid-corner definitions are explicit and independent of tensor channel shifts.
-    let midX;
-    let midY;
-    if (Math.abs(dx) === 1 && Math.abs(dy) === 2) {
-      // NNE / SSW: x,y -> x+1,y -> x+1,y-2 (or its reverse).
-      midX = fromX + dx;
-      midY = fromY;
-    } else if (Math.abs(dx) === 2 && Math.abs(dy) === 1 && dx * dy < 0) {
-      // ENE / WSW: x,y -> x+2,y -> x+2,y-1 (or its reverse).
-      midX = toX;
-      midY = fromY;
-    } else {
-      // ESE / WNW and SSE / NNW share the (x+1,y+1) corner
-      // in the forward orientation; use the corner adjacent to both pegs.
-      midX = fromX + Math.sign(dx);
-      midY = fromY + Math.sign(dy);
-    }
-
-    // Convert native board coordinates to the effective board's canonical view.
+    // Map native board coordinates to the effective board's canonical view.
     const aRow = transposeLinksForEncoding ? fromX : fromY;
     const aCol = transposeLinksForEncoding ? fromY : fromX;
     const bRow = transposeLinksForEncoding ? toX : toY;
     const bCol = transposeLinksForEncoding ? toY : toX;
-    const mRow = transposeLinksForEncoding ? midX : midY;
-    const mCol = transposeLinksForEncoding ? midY : midX;
 
-    const start = new THREE.Vector3(...pointAt(aRow, aCol, curveX));
-    const middle = new THREE.Vector3(...pointAt(mRow, mCol, curveX));
-    const end = new THREE.Vector3(...pointAt(bRow, bCol, curveX));
+    const startPoint = new THREE.Vector3(...pointAt(aRow, aCol, curveX));
+    const endPoint = new THREE.Vector3(...pointAt(bRow, bCol, curveX));
 
-    // A moderate lateral swing in the board plane, on both sides of the corner.
-    // Each cubic ends/starts at the exact corner, so the trajectory remains joined.
-    const swing = 0.34;
-    const side = (link.player === 1 ? 1 : -1);
-    const firstCurve = new THREE.CubicBezierCurve3(
-      start,
-      offsetInBoardPlane(start, middle, swing, side).lerp(
-        new THREE.Vector3().addVectors(start, middle).multiplyScalar(0.33), 0.35,
-      ),
-      offsetInBoardPlane(middle, start, swing, side).lerp(
-        new THREE.Vector3().addVectors(start, middle).multiplyScalar(0.67), 0.35,
-      ),
-      middle,
+    // Use one cubic per link: no joined segments or intermediate stitched
+    // corners. Both control points stay at curveX, within the board's Y/Z plane.
+    const dyBoard = endPoint.y - startPoint.y;
+    const dzBoard = endPoint.z - startPoint.z;
+    const length = Math.hypot(dyBoard, dzBoard) || 1;
+    const side = link.player === 1 ? 1 : -1;
+    const bend = 0.48 * side;
+    const normalY = -dzBoard / length;
+    const normalZ = dyBoard / length;
+    const control1 = new THREE.Vector3(
+      curveX,
+      startPoint.y + dyBoard / 3 + normalY * bend,
+      startPoint.z + dzBoard / 3 + normalZ * bend,
     );
-    const secondCurve = new THREE.CubicBezierCurve3(
-      middle,
-      offsetInBoardPlane(middle, end, swing, side).lerp(
-        new THREE.Vector3().addVectors(middle, end).multiplyScalar(0.33), 0.35,
-      ),
-      offsetInBoardPlane(end, middle, swing, side).lerp(
-        new THREE.Vector3().addVectors(middle, end).multiplyScalar(0.67), 0.35,
-      ),
-      end,
+    const control2 = new THREE.Vector3(
+      curveX,
+      startPoint.y + (2 * dyBoard) / 3 + normalY * bend,
+      startPoint.z + (2 * dzBoard) / 3 + normalZ * bend,
     );
-    const curve = new THREE.CurvePath();
-    curve.add(firstCurve);
-    curve.add(secondCurve);
+    const curve = new THREE.CubicBezierCurve3(
+      startPoint, control1, control2, endPoint,
+    );
+
     sceneGroup.add(new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 40, linkRadius, 6, false),
+      new THREE.TubeGeometry(curve, 32, linkRadius, 6, false),
       linkCurveMaterials[link.player === 1 ? 1 : 0],
     ));
   }
