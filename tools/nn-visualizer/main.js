@@ -553,17 +553,22 @@ function drawSampleBoard() {
 
   // Slimmer, slightly longer pegs.
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
-  for (const player of [0, 1]) {
-    const playerPegs = game.pegs.filter((peg) => peg.player === player);
-    if (!playerPegs.length) continue;
+  for (let player = 0; player < 2; player += 1) {
+    const effectivePegs = game.pegs
+      .filter((peg) => effectivePlayer(peg.player) === player)
+      .map((peg) => ({
+        row: transpose ? peg.col : peg.row,
+        col: transpose ? peg.row : peg.col,
+      }));
+    if (!effectivePegs.length) continue;
     const pegMaterial = new THREE.MeshStandardMaterial({
       color: player === 1 ? 0xe0525d : 0x20252d,
       roughness: 0.38,
       metalness: 0.08,
     });
-    const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, playerPegs.length);
+    const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, effectivePegs.length);
     const transform = new THREE.Object3D();
-    playerPegs.forEach((peg, index) => {
+    effectivePegs.forEach((peg, index) => {
       const [x, y, z] = pointAt(peg.row, peg.col, boardX - 0.16);
       transform.position.set(x, y, z);
       transform.rotation.z = Math.PI / 2;
@@ -630,13 +635,13 @@ function drawEffectiveBoard() {
   const start = -boardSize / 2;
   const transpose = game.nextPlayer === 0;
   const effectivePlayer = (player) => transpose ? 1 - player : player;
-  // Python NetInputs.init_from_game_black() transposes the [x][y] planes.
-  // Game coordinates are stored as {row: y, col: x}; in the effective
-  // black-to-move view they must therefore be plotted at (row'=x, col'=y).
+  // Board and tensor share the same orientation: [0][0] is A1 (top-left).
+  // All perspective transforms and link-channel shifts are applied during
+  // encoding, before this visualization reads the tensors.
   const pointAt = (row, col, x = boardX) => [
     x,
-    start + (BOARD_SIZE - 1 - (transpose ? col : row)) * spacing,
-    start + (transpose ? row : col) * spacing,
+    start + (BOARD_SIZE - 1 - row) * spacing,
+    start + col * spacing,
   ];
 
   const backing = new THREE.Mesh(
@@ -714,18 +719,44 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Encode each link at its (x, y) anchor on the effective board; do not draw
-  // physical link segments. Keep the existing midpoint/floor convention and
-  // apply the perspective transform only when mapping the tuple to the board.
-  const encodedLinks = game.links.map((link) => {
-    const x = Math.floor((link.from.col + link.to.col) / 2);
-    const y = Math.floor((link.from.row + link.to.row) / 2);
-    return {
-      coordinate: transpose ? [y, x] : [x, y],
-      player: effectivePlayer(link.player),
-    };
-  });
-  console.debug('[Effective board] encoded links as (x, y) tuples:', encodedLinks);
+  // Read links from the fully encoded input tensor. The encoder/backend has
+  // already applied perspective, colour remapping and channel-dependent shifts.
+  // Place each 1 at its exact [row, col] cell; never reconstruct link midpoints
+  // or transpose/shift these tensor coordinates a second time.
+  const linkMarkerGeometry = new THREE.SphereGeometry(0.075, 10, 8);
+  const channelLabels = [];
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      const activeChannels = [];
+      for (let channel = 0; channel < 8; channel += 1) {
+        if (Number(data.links[row][col][channel]) === 1) {
+          activeChannels.push(channel);
+        }
+      }
+      if (!activeChannels.length) continue;
+
+      const [x, y, z] = pointAt(row, col, boardX - 0.075);
+      const marker = new THREE.Mesh(
+        linkMarkerGeometry,
+        new THREE.MeshBasicMaterial({ color: 0x1769ff }),
+      );
+      marker.position.set(x, y, z);
+      sceneGroup.add(marker);
+      channelLabels.push({ row, col, channels: activeChannels, x, y, z });
+    }
+  }
+
+  // Channel IDs are grouped at a cell when multiple channels contain a 1.
+  for (const cell of channelLabels) {
+    addLabel(
+      cell.channels.join(','),
+      [cell.x - 0.08, cell.y + 0.12, cell.z],
+      12,
+      '#0755d9',
+      180,
+    );
+  }
+  console.debug('[Effective board] encoded tensor cells with value 1:', channelLabels);
 
   // Draw the dashed diagonal directly on the board face, using thin black
   // rectangular segments like the finish lines (not a floating Three.js line).
