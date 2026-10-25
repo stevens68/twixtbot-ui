@@ -776,7 +776,7 @@ function drawEffectiveBoard() {
   // Extend links clearly out from the board: X is the board-normal axis.
   // Their visible projection is 0.36, matching the peg height; board-plane
   // dimensions match the peg diameter.
-  const linkGeometry = new THREE.BoxGeometry(0.36, 0.082, 0.164);
+  const linkGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
   const linkMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
@@ -1123,14 +1123,14 @@ function drawInputs() {
       // bit 0 is colour (even=Black, odd=White), bit 2 is long-y,
       // and bit 1 is different-sign slope. These describe the tensor channels.
       bladeLabels: [
-        'Ch 0: black ESE/WNW',
-        'Ch 1: white ESE/WNW',
-        'Ch 2: black ENE/WSW',
-        'Ch 3: white ENE/WSW',
-        'Ch 4: black SSE/NNW',
-        'Ch 5: white SSE/NNW',
-        'Ch 6: black NNE/SSW',
-        'Ch 7: white NNE/SSW',
+        'Ch 0: black SSE/NNW',
+        'Ch 1: white SSE/NNW',
+        'Ch 2: black NNE/SSW',
+        'Ch 3: white NNE/SSW',
+        'Ch 4: black ESE/WNW',
+        'Ch 5: white ESE/WNW',
+        'Ch 6: black ENE/WSW',
+        'Ch 7: white ENE/WSW',
       ],
       color: COLORS.input,
     },
