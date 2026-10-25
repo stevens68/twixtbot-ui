@@ -423,7 +423,7 @@ function drawSampleBoard() {
   const boardCenterZ = 0;
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
-  const boardX = -8.5;
+  const boardX = -15.5;
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
@@ -618,7 +618,7 @@ function drawEffectiveBoard() {
   const game = createSampleGame();
   const spacing = 0.34;
   const boardSize = (BOARD_SIZE - 1) * spacing;
-  const boardX = -1.5;
+  const boardX = -8.5;
   const start = -boardSize / 2;
   const transpose = game.nextPlayer === 0;
   const effectivePlayer = (player) => transpose ? 1 - player : player;
