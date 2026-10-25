@@ -772,46 +772,29 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Render each active link channel as a short, colored Twixt link on this
-  // same board. Channel bits encode colour (even=black, odd=red), orientation
-  // (bit 2 = long-y, bit 1 = different-sign slope). The link's centre remains
-  // at the exact tensor [row, col] containing 1; we do not undo the encoder's
-  // perspective mapping or channel-dependent cell shift.
-  const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
+  // Render each active encoded link as a thin colored ring around a peg-sized
+  // opening. This makes the link's tensor cell visible without drawing sticks.
+  // Rings lie in the board plane and use the same black/red mapping as links.
+  const linkRingGeometry = new THREE.RingGeometry(0.082, 0.112, 24);
   const linkMaterials = [
-    new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.48 }),
-    new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.48 }),
+    new THREE.MeshBasicMaterial({
+      color: 0x20252d, side: THREE.DoubleSide, depthWrite: false,
+    }),
+    new THREE.MeshBasicMaterial({
+      color: 0xe0525d, side: THREE.DoubleSide, depthWrite: false,
+    }),
   ];
-  const up = new THREE.Vector3(0, 1, 0);
-  const linkTransform = new THREE.Object3D();
   const activeLinks = [];
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
       for (let channel = 0; channel < 8; channel += 1) {
         if (Number(data.links[row][col][channel]) !== 1) continue;
 
-        // The four orientation groups correspond to the four undirected
-        // Twixt link slopes. Scale the half-vector to half a board-link:
-        // (row, col) deltas are (1,2), (2,1), (2,-1), and (1,-2).
-        const longY = (channel & 4) !== 0;
-        const diffSign = (channel & 2) !== 0;
-        const rowDelta = longY ? 2 : 1;
-        const colMagnitude = longY ? 1 : 2;
-        const colDelta = diffSign ? -colMagnitude : colMagnitude;
-        const center = new THREE.Vector3(...pointAt(row, col, boardX - 0.075));
-        const half = new THREE.Vector3(0, -rowDelta * spacing / 2, colDelta * spacing / 2);
-        const a = center.clone().sub(half);
-        const b = center.clone().add(half);
-        const direction = new THREE.Vector3().subVectors(b, a);
-        linkTransform.position.copy(center);
-        linkTransform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
-        linkTransform.scale.set(1, direction.length(), 1);
-        linkTransform.updateMatrix();
-
-        const mesh = new THREE.Mesh(linkGeometry, linkMaterials[channel & 1]);
-        mesh.position.copy(linkTransform.position);
-        mesh.quaternion.copy(linkTransform.quaternion);
-        mesh.scale.copy(linkTransform.scale);
+        // Each ring marks the exact encoded tensor cell containing this link.
+        // It intentionally does not reconstruct the original link endpoints.
+        const mesh = new THREE.Mesh(linkRingGeometry, linkMaterials[channel & 1]);
+        mesh.position.set(...pointAt(row, col, boardX - 0.075));
+        mesh.rotation.y = Math.PI / 2;
         sceneGroup.add(mesh);
         activeLinks.push({ row, col, channel });
       }
