@@ -20,6 +20,7 @@ if str(ROOT) not in sys.path:
 
 sys.path.insert(0, str(ROOT / "tools"))
 from nn_visualizer_adapter import snapshot
+from src.files import parse_t1_file
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -27,20 +28,29 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(VISUALIZER), **kwargs)
 
     def do_POST(self):
-        if urlparse(self.path).path != "/api/trace":
+        endpoint = urlparse(self.path).path
+        if endpoint not in ("/api/trace", "/api/t1"):
             self.send_error(404)
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
             if length <= 0 or length > 1_000_000:
                 raise ValueError("Request body must be between 1 byte and 1 MB.")
-            payload = json.loads(self.rfile.read(length))
-            moves = payload.get("moves")
-            if not isinstance(moves, list) or not all(isinstance(m, str) for m in moves):
-                raise ValueError("'moves' must be a JSON array of move strings.")
-            if len(moves) > 500:
-                raise ValueError("At most 500 moves are accepted.")
-            result = snapshot(moves, bool(payload.get("allow_scl", False)))
+            raw = self.rfile.read(length)
+            if endpoint == "/api/t1":
+                _, parsed_moves = parse_t1_file(raw.decode("utf-8-sig").splitlines())
+                moves = [str(move) for move in parsed_moves]
+                if len(moves) > 500:
+                    raise ValueError("At most 500 moves are accepted.")
+                result = {"moves": moves}
+            else:
+                payload = json.loads(raw)
+                moves = payload.get("moves")
+                if not isinstance(moves, list) or not all(isinstance(m, str) for m in moves):
+                    raise ValueError("'moves' must be a JSON array of move strings.")
+                if len(moves) > 500:
+                    raise ValueError("At most 500 moves are accepted.")
+                result = snapshot(moves, bool(payload.get("allow_scl", False)), bool(payload.get("allow_swap", True)))
             body = json.dumps(result, separators=(",", ":")).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
