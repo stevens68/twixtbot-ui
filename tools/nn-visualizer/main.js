@@ -721,8 +721,8 @@ function drawInputs() {
     {
       key: 'pegs',
       label: 'Pegs · 24×24×2',
-      x: -1.8,
-      z: -13,
+      x: 2,
+      z: -((BOARD_SIZE - 1) * 0.34) / 2,
       channels: 2,
       bladeLabels: ['Black', 'White'],
       color: COLORS.input,
@@ -730,8 +730,8 @@ function drawInputs() {
     {
       key: 'links',
       label: 'Links · 24×24×8',
-      x: -1.8,
-      z: -3.5,
+      x: 7.5,
+      z: -((BOARD_SIZE - 1) * 0.34) / 2,
       channels: 8,
       bladeLabels: [
         'ENE · Black', 'ENE · White',
@@ -744,8 +744,8 @@ function drawInputs() {
     {
       key: 'locations',
       label: 'Locations · 24×24×2',
-      x: -1.8,
-      z: 6,
+      x: 12.5,
+      z: -((BOARD_SIZE - 1) * 0.34) / 2,
       channels: 2,
       bladeLabels: ['X', 'Y'],
       color: COLORS.fixed,
