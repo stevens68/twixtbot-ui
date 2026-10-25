@@ -623,9 +623,9 @@ function drawEffectiveBoard() {
   const transpose = game.nextPlayer === 0;
   const effectivePlayer = (player) => transpose ? 1 - player : player;
   const pointAt = (row, col, x = boardX) => {
-    // A clockwise 90-degree turn: (row, col) -> (col, BOARD_SIZE - 1 - row).
+    // Match naf.py's matrix transpose: source (row, col) -> (col, row).
     const effectiveRow = transpose ? col : row;
-    const effectiveCol = transpose ? BOARD_SIZE - 1 - row : col;
+    const effectiveCol = transpose ? row : col;
     return [
       x,
       start + (BOARD_SIZE - 1 - effectiveRow) * spacing,
@@ -642,6 +642,53 @@ function drawEffectiveBoard() {
   backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
+
+  // Finish lines are transformed with the board. Transposition swaps the
+  // goal axes, and colour canonicalization swaps the players, so the effective
+  // view retains the canonical red-horizontal / black-vertical appearance.
+  const finishLineX = boardX - 0.075;
+  const makeFinishLine = (startPoint, endPoint, radius, material) => {
+    const a = new THREE.Vector3(...startPoint);
+    const b = new THREE.Vector3(...endPoint);
+    const direction = new THREE.Vector3().subVectors(b, a);
+    const line = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, direction.length(), 8),
+      material,
+    );
+    line.position.copy(a).add(b).multiplyScalar(0.5);
+    line.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      direction.clone().normalize(),
+    );
+    sceneGroup.add(line);
+  };
+  const redFinish = new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.5 });
+  const blackFinish = new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.5 });
+  const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
+  const colZ = (col) => start + col * spacing;
+
+  for (const boundaryY of [
+    (rowY(0) + rowY(1)) / 2,
+    (rowY(22) + rowY(23)) / 2,
+  ]) {
+    makeFinishLine(
+      [finishLineX, boundaryY, colZ(1)],
+      [finishLineX, boundaryY, colZ(22)],
+      0.018,
+      redFinish,
+    );
+  }
+  for (const boundaryZ of [
+    (colZ(0) + colZ(1)) / 2,
+    (colZ(22) + colZ(23)) / 2,
+  ]) {
+    makeFinishLine(
+      [finishLineX, rowY(1), boundaryZ],
+      [finishLineX, rowY(22), boundaryZ],
+      0.018,
+      blackFinish,
+    );
+  }
 
   const holeGeometry = new THREE.SphereGeometry(0.035, 10, 8);
   const holes = new THREE.InstancedMesh(
