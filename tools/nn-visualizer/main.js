@@ -647,11 +647,14 @@ function drawSampleBoard() {
     );
   }
 
+  const sampleTurnLabel = game.nextPlayer === 1
+    ? 'Sample game, red to move'
+    : 'Sample game, black to move';
   addLabel(
-    'Sample Game',
+    sampleTurnLabel,
     [boardX - 0.25, 5.25, boardCenterZ],
     19,
-    '#ffffff',
+    game.nextPlayer === 1 ? '#ff4545' : '#ffffff',
     90,
   );
 
@@ -842,7 +845,7 @@ function drawEffectiveBoard() {
     );
   }
   addLabel(
-    'Effective Board',
+    'Effective board, black to move',
     [boardX - 0.25, 5.25, 0], 19, '#ffffff', 90,
   );
 }
