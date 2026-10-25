@@ -735,9 +735,9 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Link cubes are half the peg dimensions (pegs use a 0.164 diameter
-  // and 0.36 height). Their smaller size lets a peg remain visible at collisions.
-  const linkCubeGeometry = new THREE.BoxGeometry(0.12, 0.18, 0.12);
+  // The board lies in the YZ plane. Make link cubes half a peg's height
+  // along the board normal, with equal square width/length in the board plane.
+  const linkCubeGeometry = new THREE.BoxGeometry(0.18, 0.082, 0.082);
   const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
