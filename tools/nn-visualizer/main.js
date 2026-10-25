@@ -448,7 +448,7 @@ function drawInputs() {
   return {
     title: 'Input tensors',
     description:
-      'Three parallel tensor boards side by side along Z. Channels are separate blades stacked along X with wider gaps; zero-valued cells remain visible.'
+      'Three parallel tensor boards side by side along Z. Channels are separate blades stacked along X with wider gaps; zero-valued cells remain visible.',
     shape: '24 × 24 × (2 + 8 + 2)',
     range: '0 … 1 (demo board)',
     count: '3 tensors · 6,912 cells',
