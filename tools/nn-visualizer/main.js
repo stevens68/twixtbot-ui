@@ -738,7 +738,8 @@ function drawEffectiveBoard() {
   // Show each game.links entry as a cube at its original link-anchor
   // midpoint, not as a diagonal link cylinder. The cube colour is player-relative
   // in the effective position, matching the transformed peg colours.
-  // Match peg diameter and depth so each cube is visibly plugged into the board.\n  const linkCubeGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
+  // Match peg diameter and depth so each cube is visibly plugged into the board.
+  const linkCubeGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
   const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
