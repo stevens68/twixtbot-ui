@@ -791,6 +791,44 @@ function drawEffectiveBoard() {
     }
   }
   console.debug('[Effective board] active encoded link cells:', activeLinks);
+  // Draw each actual game link as a thin curved tube from peg to peg.
+  // The curve passes through the corresponding encoded midpoint cube, so the
+  // link remains visually connected even though the tensor midpoint is shifted.
+  const blackToMoveForLinks = game.nextPlayer === 0;
+  const linkCurveMaterials = [
+    new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.58 }),
+    new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.58 }),
+  ];
+  const linkRadius = 0.018;
+  for (const link of game.links) {
+    const transpose = blackToMoveForLinks;
+    const aRow = transpose ? link.from.col : link.from.row;
+    const aCol = transpose ? link.from.row : link.from.col;
+    const bRow = transpose ? link.to.col : link.to.row;
+    const bCol = transpose ? link.to.row : link.to.col;
+    const channel = link.player
+      + (((link.from.col + link.to.col) % 2 !== 0) ? 4 : 0)
+      + (((link.to.row - link.from.row) * (link.to.col - link.from.col) < 0) ? 2 : 0);
+    const encodedChannel = transpose ? (channel ^ 1) : channel;
+    const rowShift = ((encodedChannel & 4) !== 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
+    const colShift = ((encodedChannel & 4) === 0 || (encodedChannel & 2) !== 0) ? 1 : 0;
+    const midRow = Math.floor((aRow + bRow) / 2) + rowShift;
+    const midCol = Math.floor((aCol + bCol) / 2) + colShift;
+    const curveX = boardX + 0.035 - 0.18;
+    const startPoint = pointAt(aRow, aCol, curveX);
+    const endPoint = pointAt(bRow, bCol, curveX);
+    const throughCube = pointAt(midRow, midCol, curveX);
+    const curve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(...startPoint),
+      new THREE.Vector3(...throughCube),
+      new THREE.Vector3(...endPoint),
+    );
+    const tube = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 24, linkRadius, 5, false),
+      linkCurveMaterials[link.player === 1 ? 1 : 0],
+    );
+    sceneGroup.add(tube);
+  }
 
   // Render pegs from the same encoded tensor used by the input blades.
   // Tensor channel 0 is the opponent (red); channel 1 is the side to move (black).
