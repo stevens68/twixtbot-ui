@@ -786,12 +786,43 @@ function drawEffectiveBoard() {
         // outward, avoiding coplanar overlap with the backing and holes.
         mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
         sceneGroup.add(mesh);
+
+        // Two short direction pointers on the top of each cube indicate its
+        // corresponding peg directions. Board north is +Y and west is -Z.
+        // Link channel groups: 0/1=SSE, 2/3=NNE, 4/5=ESE, 6/7=ENE.
+        const directionsByGroup = {
+          0: [[0, -1], [-1, 0]], // SSE: NW and S
+          1: [[-1, 0], [0, 1]],  // NNE: W and N
+          2: [[-1, 0], [0, 1]],  // ENE: W and N
+          3: [[-1, 0], [0, 1]],  // ESE: NW and E
+        };
+        const pointerDirections = [
+          [[1, -1], [0, -1]],    // SSE: NW and S
+          [[-1, 0], [0, 1]],     // NNE: W and N
+          [[1, -1], [0, 1]],     // ESE: NW and E
+          [[-1, 0], [0, 1]],     // ENE: W and N
+        ];
+        const dirs = pointerDirections[Math.floor(channel / 2)];
+        const topY = mesh.position.y + 0.082;
+        const pointerLength = 0.14;
+        const points = [];
+        for (const [dy, dz] of dirs) {
+          points.push(
+            mesh.position.x, topY, mesh.position.z,
+            mesh.position.x, topY + dy * pointerLength, mesh.position.z + dz * pointerLength,
+          );
+        }
+        const pointerGeometry = new THREE.BufferGeometry();
+        pointerGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+        const pointerMaterial = new THREE.LineBasicMaterial({
+          color: displayedPlayer === 1 ? 0x20252d : 0xe0525d,
+        });
+        sceneGroup.add(new THREE.LineSegments(pointerGeometry, pointerMaterial));
         activeLinks.push({ row, col, channel });
       }
     }
   }
   console.debug('[Effective board] active encoded link cells:', activeLinks);
-  // Link-line rendering intentionally disabled at the user's request.
 
   // Render pegs from the same encoded tensor used by the input blades.
   // Tensor channel 0 is the opponent (red); channel 1 is the side to move (black).
