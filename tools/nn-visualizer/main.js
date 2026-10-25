@@ -735,31 +735,25 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Place each cube on the link's long-axis midpoint and at the higher
-  // row/column on its short axis. Transpose the endpoints first so this is
-  // expressed in the effective board's displayed row/column coordinates.
+  // Match naf.py's coordinate order: floor the canonical [x][y]
+  // midpoint first, then transpose those coordinates for the effective board.
+  // Do not apply the per-channel tensor shifts to these visual markers.
   const linkCubeGeometry = new THREE.BoxGeometry(0.24, 0.164, 0.164);
   const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   };
   for (const link of game.links) {
-    const row1 = transpose ? link.from.col : link.from.row;
-    const col1 = transpose ? link.from.row : link.from.col;
-    const row2 = transpose ? link.to.col : link.to.row;
-    const col2 = transpose ? link.to.row : link.to.col;
+    const x1 = link.from.col;
+    const y1 = link.from.row;
+    const x2 = link.to.col;
+    const y2 = link.to.row;
 
-    let row;
-    let col;
-    if (Math.abs(row2 - row1) > Math.abs(col2 - col1)) {
-      // Row is the long dimension: midpoint on row, higher endpoint on col.
-      row = Math.floor((row1 + row2) / 2);
-      col = Math.max(col1, col2);
-    } else {
-      // Column is the long dimension: midpoint on col, higher endpoint on row.
-      row = Math.max(row1, row2);
-      col = Math.floor((col1 + col2) / 2);
-    }
+    // Floor in the original Game coordinate system before any transpose.
+    const rawX = Math.floor((x1 + x2) / 2);
+    const rawY = Math.floor((y1 + y2) / 2);
+    const row = transpose ? rawX : rawY;
+    const col = transpose ? rawY : rawX;
 
     const player = effectivePlayer(link.player);
     const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
