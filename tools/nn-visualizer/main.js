@@ -433,7 +433,7 @@ function drawSampleBoard() {
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
   // Keep the sample board four times farther from the input tensor layer.
-  const boardX = -56.6;
+  const boardX = -44.18;
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
@@ -738,7 +738,7 @@ function drawEffectiveBoard() {
   // Show each game.links entry as a cube at its original link-anchor
   // midpoint, not as a diagonal link cylinder. The cube colour is player-relative
   // in the effective position, matching the transformed peg colours.
-  const linkCubeGeometry = new THREE.BoxGeometry(0.16, 0.16, 0.16);
+  // Match peg diameter and depth so each cube is visibly plugged into the board.\n  const linkCubeGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
   const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
@@ -756,23 +756,33 @@ function drawEffectiveBoard() {
     sceneGroup.add(cube);
   }
 
-  // Thin dashed A1–X24 diagonal on the effective board face.
-  const diagonalPoints = [
-    new THREE.Vector3(...pointAt(0, 0, boardX - 0.36)),
-    new THREE.Vector3(...pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, boardX - 0.36)),
-  ];
-  const diagonalGeometry = new THREE.BufferGeometry().setFromPoints(diagonalPoints);
-  const diagonal = new THREE.Line(
-    diagonalGeometry,
-    new THREE.LineDashedMaterial({
-      color: 0x111111,
-      dashSize: 0.12,
-      gapSize: 0.08,
-      linewidth: 1,
-    }),
+  // Draw the dashed diagonal directly on the board face, using thin black
+  // rectangular segments like the finish lines (not a floating Three.js line).
+  const diagonalMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  const diagonalStart = new THREE.Vector3(...pointAt(0, 0, finishLineX));
+  const diagonalEnd = new THREE.Vector3(
+    ...pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, finishLineX),
   );
-  diagonal.computeLineDistances();
-  sceneGroup.add(diagonal);
+  const diagonalVector = new THREE.Vector3().subVectors(diagonalEnd, diagonalStart);
+  const diagonalLength = diagonalVector.length();
+  const dashLength = 0.12;
+  const gapLength = 0.08;
+  const diagonalDirection = diagonalVector.clone().normalize();
+  for (let distance = 0; distance < diagonalLength; distance += dashLength + gapLength) {
+    const segmentLength = Math.min(dashLength, diagonalLength - distance);
+    const center = diagonalStart.clone().addScaledVector(
+      diagonalDirection, distance + segmentLength / 2,
+    );
+    const segment = new THREE.Mesh(
+      new THREE.BoxGeometry(0.008, 0.018, segmentLength),
+      diagonalMaterial,
+    );
+    segment.position.copy(center);
+    segment.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1), diagonalDirection,
+    );
+    sceneGroup.add(segment);
+  }
 
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
   for (const player of [0, 1]) {
