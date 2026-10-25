@@ -735,15 +735,12 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Link markers are open rectangular frames so a peg can occupy the same
-  // board position without being hidden. Pegs are 0.36 units tall; frames are
-  // 75% of that height and wide enough to surround a peg.
-  const linkFrameGeometry = new THREE.EdgesGeometry(
-    new THREE.BoxGeometry(0.24, 0.27, 0.22),
-  );
-  const linkFrameMaterials = {
-    0: new THREE.LineBasicMaterial({ color: 0x20252d }),
-    1: new THREE.LineBasicMaterial({ color: 0xe0525d }),
+  // Link cubes are half the peg dimensions (pegs use a 0.164 diameter
+  // and 0.36 height). Their smaller size lets a peg remain visible at collisions.
+  const linkCubeGeometry = new THREE.BoxGeometry(0.12, 0.18, 0.12);
+  const linkCubeMaterials = {
+    0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
+    1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   };
   for (const link of game.links) {
     const x1 = link.from.col;
@@ -768,9 +765,9 @@ function drawEffectiveBoard() {
     const col = rawX;
 
     const player = effectivePlayer(link.player);
-    const frame = new THREE.LineSegments(linkFrameGeometry, linkFrameMaterials[player]);
-    frame.position.set(...pointAt(row, col, boardX - 0.16));
-    sceneGroup.add(frame);
+    const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
+    cube.position.set(...pointAt(row, col, boardX - 0.16));
+    sceneGroup.add(cube);
   }
 
     // Draw the dashed diagonal directly on the board face, using thin black
