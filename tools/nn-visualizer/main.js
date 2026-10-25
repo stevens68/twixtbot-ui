@@ -824,21 +824,51 @@ function drawEffectiveBoard() {
     const startPoint = pointAt(aRow, aCol, curveX);
     const endPoint = pointAt(bRow, bCol, curveX);
     const throughCube = pointAt(midRow, midCol, curveX);
-    // Keep the original single-curve look. NNE/ENE need a slightly stronger
-    // bend toward the encoded cube's L-corner; ESE/SSE keep the same bend
-    // radius but reflect the bend across the straight peg-to-peg line.
     const start = new THREE.Vector3(...startPoint);
     const middle = new THREE.Vector3(...throughCube);
     const end = new THREE.Vector3(...endPoint);
 
-    // A smooth swing that goes exactly through peg A -> encoded cube -> peg B.
-    // Catmull-Rom interpolates the three points, unlike a single quadratic
-    // Bezier whose control point is not itself on the curve.
-    const curve = new THREE.CatmullRomCurve3(
-      [start, middle, end],
-      false,
-      "centripetal",
+    // Build two cubic Bezier segments that meet at the encoded cube. This
+    // guarantees the line passes through peg A -> cube -> peg B while making
+    // a much more pronounced, fluent swing. NNE/ENE keep their milder bend;
+    // ESE/SSE use a larger bulge mirrored across the peg-to-peg line.
+    const isSseOrEse = channelOrientation === 0 || channelOrientation === 4;
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const length = Math.hypot(dx, dz) || 1;
+    const normalX = -dz / length;
+    const normalZ = dx / length;
+    const bulge = isSseOrEse ? 0.82 : 0.38;
+    const side = isSseOrEse ? -1 : 1;
+    const firstControlA = new THREE.Vector3(
+      start.x + (middle.x - start.x) / 3 + normalX * bulge * side,
+      start.y + (middle.y - start.y) / 3,
+      start.z + (middle.z - start.z) / 3 + normalZ * bulge * side,
     );
+    const firstControlB = new THREE.Vector3(
+      middle.x - (middle.x - start.x) / 3 + normalX * bulge * side,
+      middle.y - (middle.y - start.y) / 3,
+      middle.z - (middle.z - start.z) / 3 + normalZ * bulge * side,
+    );
+    const secondControlA = new THREE.Vector3(
+      middle.x + (end.x - middle.x) / 3 + normalX * bulge * side,
+      middle.y + (end.y - middle.y) / 3,
+      middle.z + (end.z - middle.z) / 3 + normalZ * bulge * side,
+    );
+    const secondControlB = new THREE.Vector3(
+      end.x - (end.x - middle.x) / 3 + normalX * bulge * side,
+      end.y - (end.y - middle.y) / 3,
+      end.z - (end.z - middle.z) / 3 + normalZ * bulge * side,
+    );
+    const firstCurve = new THREE.CubicBezierCurve3(
+      start, firstControlA, firstControlB, middle,
+    );
+    const secondCurve = new THREE.CubicBezierCurve3(
+      middle, secondControlA, secondControlB, end,
+    );
+    const curve = new THREE.CurvePath();
+    curve.add(firstCurve);
+    curve.add(secondCurve);
     const tube = new THREE.Mesh(
       new THREE.TubeGeometry(curve, 32, linkRadius, 5, false),
       linkCurveMaterials[link.player === 1 ? 1 : 0],
