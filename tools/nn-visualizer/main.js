@@ -76,13 +76,12 @@ function createDemoData() {
   const links = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
   const locations = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
 
-  // Illustrative fixed-location channels along the board edges.
+  // Coordinate channels match the model's location_inputs(): x varies by
+  // column and y varies by row, both from 0/24 through 23/24.
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
-      locations[row][col][0] =
-        col === 0 || col === BOARD_SIZE - 1 ? 1 : 0;
-      locations[row][col][1] =
-        row === 0 || row === BOARD_SIZE - 1 ? 1 : 0;
+      locations[row][col][0] = col / BOARD_SIZE;
+      locations[row][col][1] = row / BOARD_SIZE;
 
       for (let channel = 0; channel < 8; channel += 1) {
         links[row][col][channel] =
@@ -151,7 +150,14 @@ function flattenTensor(tensor) {
   return values;
 }
 
-function addLabel(text, position, fontSize = 30, color = '#e7edf6', scaleDivisor = 45) {
+function addLabel(
+  text,
+  position,
+  fontSize = 30,
+  color = '#e7edf6',
+  scaleDivisor = 45,
+  alignment = 'center',
+) {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
 
@@ -161,9 +167,13 @@ function addLabel(text, position, fontSize = 30, color = '#e7edf6', scaleDivisor
 
   context.font = '600 ' + fontSize + 'px Arial';
   context.fillStyle = color;
-  context.textAlign = 'center';
+  context.textAlign = alignment;
   context.textBaseline = 'middle';
-  context.fillText(text, canvas.width / 2, canvas.height / 2);
+  context.fillText(
+    text,
+    alignment === 'left' ? 12 : canvas.width / 2,
+    canvas.height / 2,
+  );
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -188,8 +198,7 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
   const channelGap = options.channelGap ?? 0.2;
   const depthStep = cellSize + channelGap;
   const maxThickness = options.maxThickness || 0.4;
-  // Keep zero-valued cells visible as small, nonzero cubes.
-  const minThickness = options.minThickness ?? 0.09;
+  // Zero values must have exactly zero thickness and therefore be invisible.
 
   const mesh = new THREE.InstancedMesh(
     cubeGeometry,
@@ -204,10 +213,7 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
     for (let row = 0; row < rows; row += 1) {
       for (let col = 0; col < cols; col += 1) {
         const value = values[index];
-        const thickness = Math.max(
-          minThickness,
-          (Math.abs(value) / maxAbs) * maxThickness,
-        );
+        const thickness = (Math.abs(value) / maxAbs) * maxThickness;
 
         // Signed values extend away from the zero plane along the X axis.
         // Each channel is a separate blade. Stack blades along X, perpendicular
@@ -215,7 +221,7 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
         // Signed value thickness still extends from each blade's X position.
         transform.position.set(
           origin[0] + channel * depthStep +
-            (value < 0 ? -thickness / 2 : thickness / 2),
+            (value === 0 ? 0 : value < 0 ? -thickness / 2 : thickness / 2),
           origin[1] + (rows - 1 - row) * spacing,
           origin[2] + col * spacing,
         );
@@ -445,21 +451,14 @@ function drawInputs() {
         spacing: 0.34,
         cellSize: 0.26,
         maxThickness: 0.34,
-        minThickness: 0.09,
         channelGap: 0.28,
       },
     );
 
-    // Keep the tensor-level label as well as one label per channel blade.
-    // The tensor label sits above the center of its board; blade labels sit
-    // just above the upper-left corner of each individual blade.
+    // Keep the tensor-level label and the per-blade labels.
     addLabel(
       tensor.label,
-      [
-        tensor.x,
-        5.7,
-        tensor.z + ((BOARD_SIZE - 1) * 0.34) / 2,
-      ],
+      [tensor.x, 7.0, tensor.z + ((BOARD_SIZE - 1) * 0.34) / 2],
       22,
       '#ffffff',
       70,
@@ -467,22 +466,51 @@ function drawInputs() {
 
     const firstBladeX =
       tensor.x - ((tensor.channels - 1) * (0.26 + 0.28)) / 2;
+    const boardTopY = -4 + (BOARD_SIZE - 1) * 0.34;
 
     tensor.bladeLabels.forEach((bladeLabel, channel) => {
       addLabel(
         bladeLabel,
-        [firstBladeX + channel * (0.26 + 0.28), 4.55, tensor.z - 0.08],
+        [firstBladeX + channel * (0.26 + 0.28), 5.65, tensor.z - 0.08],
         20,
         '#e7edf6',
         115,
+        'left',
       );
     });
+
+    // Coordinate headers are shown on the first blade of every tensor.
+    // There are 24 columns, so the correct spreadsheet-style labels are A–X.
+    const columnNames = Array.from({ length: BOARD_SIZE }, (_, index) =>
+      String.fromCharCode(65 + index),
+    );
+    columnNames.forEach((columnName, col) => {
+      addLabel(
+        columnName,
+        [firstBladeX, 4.45, tensor.z + col * 0.34],
+        14,
+        '#dce7f5',
+        145,
+        'center',
+      );
+    });
+
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      addLabel(
+        String(row + 1),
+        [firstBladeX - 0.15, boardTopY - row * 0.34, tensor.z - 0.72],
+        14,
+        '#dce7f5',
+        145,
+        'center',
+      );
+    }
   });
 
   return {
     title: 'Input tensors',
     description:
-      'Three parallel tensor boards side by side along Z. Each blade is labelled at its top-left edge; zero-valued cells remain visible.',
+      'Three parallel tensor boards. Blade labels are left-aligned; the first blade of each tensor has A–X column and 1–24 row headers. Zero-valued cubes have zero thickness.',
     shape: '24 × 24 × (2 + 8 + 2)',
     range: '0 … 1 (demo board)',
     count: '3 tensors · 6,912 cells',
