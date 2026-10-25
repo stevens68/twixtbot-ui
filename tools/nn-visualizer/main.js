@@ -173,17 +173,12 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
       for (let col = 0; col < cols; col += 1) {
         const value = values[index];
         const isZero = value === 0;
+        // Input tensors are sparse: zero means no peg/link at this cell.
+        // Give zero-valued instances zero scale so empty cells cannot look like
+        // extra links. For signed activation/weight values, keep a small minimum.
         const thickness = isZero
-          ? 0.018
+          ? 0
           : (Math.abs(value) / maxAbs) * maxThickness;
-
-        // Zero cells use a very thin blue sliver so they remain visible without
-        // appearing as black edges. Nonzero signed values scale with magnitude.
-        if (isZero && color === COLORS.input) {
-          mesh.setColorAt(index, new THREE.Color(0x78c7f4));
-        } else if (isZero && color === COLORS.fixed) {
-          mesh.setColorAt(index, new THREE.Color(0xb6d8ed));
-        }
 
         // Signed values extend away from the zero plane along the X axis.
         // Each channel is a separate blade. Stack blades along X, perpendicular
@@ -1041,15 +1036,16 @@ function drawInputs() {
       x: -1.8,
       z: -3.5,
       channels: 8,
-      // Channel direction follows the upstream link-index bits after the
-      // Black-to-move perspective remap: 0–1=SSE, 2–3=NNE,
-      // 4–5=ESE, 6–7=ENE. Within each pair, channel 0 is Black
-      // and channel 1 is White for this visualizer's player convention.
+      // Exact naf.py black-to-move remap:
+      // new 0–1 <- raw 4–5 (SSE), 2–3 <- raw 6–7 (NNE),
+      // new 4–5 <- raw 0–1 (ESE), 6–7 <- raw 2–3 (ENE).
+      // BLACK=0, WHITE=1 in twixt.py; naf.py swaps colors on Black's turn.
+      // Therefore each remapped pair is [White, Black].
       bladeLabels: [
-        'SSE · Black', 'SSE · White',
-        'NNE · Black', 'NNE · White',
-        'ESE · Black', 'ESE · White',
-        'ENE · Black', 'ENE · White',
+        'SSE · White', 'SSE · Black',
+        'NNE · White', 'NNE · Black',
+        'ESE · White', 'ESE · Black',
+        'ENE · White', 'ENE · Black',
       ],
       color: COLORS.input,
     },
