@@ -77,7 +77,7 @@ function createTensor4(dim1, dim2, dim3, dim4, valueFactory) {
 
 function createDemoData() {
   const random=createRandomGenerator(2026);
-  const {pegs,links}=encodeGameInputs(createSampleGame());
+  const {pegs,links}=encodeGameInputs({pegs:[],links:[],nextPlayer:1});
   const locations=createTensor3(BOARD_SIZE,BOARD_SIZE,2);
   for(let row=0;row<BOARD_SIZE;row++) for(let col=0;col<BOARD_SIZE;col++) {
     locations[row][col][0]=col/BOARD_SIZE; locations[row][col][1]=row/BOARD_SIZE;
@@ -383,7 +383,7 @@ function createSampleGame() {
       nextPlayer: backendSnapshot.next_player,
     };
   }
-  const moves = ['L12','L8','O9','L17','H16','I14','J13','N9','Q10','K6','H12','O11','F7'];
+  const moves = [];
   const pegs=[]; const links=[]; let turn=1;
   for (const move of moves) {
     const col=move.charCodeAt(0)-65, row=Number(move.slice(1))-1;
@@ -1450,7 +1450,8 @@ document.querySelectorAll('.step-tab').forEach((button) => {
 
 document.querySelector('#demo-button').addEventListener('click', () => {
   backendSnapshot = null;
-  gameMoves = []; gamePly = 0; gameLoaded = false; updateGameNavigation();
+  gameMoves = document.querySelector('#trajectory').value.split(/[\\s,]+/).map((move) => move.trim()).filter(Boolean);
+  gamePly = 0; gameLoaded = true; updateGameNavigation();
   data = createDemoData();
   cachedOutput = null;
   activeStep = 'inputs';
@@ -1460,7 +1461,7 @@ document.querySelector('#demo-button').addEventListener('click', () => {
 });
 
 async function requestSnapshot(moves) {
- const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:document.querySelector('#allow-scl').checked,allow_swap:document.querySelector('#allow-swap').checked})});
+ const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:document.querySelector('#allow-scl').checked,allow_swap:true})});
  const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);return result;
 }
 async function loadGamePosition(ply) {
@@ -1533,27 +1534,25 @@ async function loadTrajectoryFromEditor() {
     return;
   }
 
-  const loadButton = document.querySelector('#load-trajectory');
-  loadButton.disabled = true;
   try {
     // Validate the entire trajectory before changing the active game.
     await requestSnapshot(moves);
     gameMoves = moves;
     gamePly = 0;
     gameLoaded = true;
-    await loadGamePosition(0);
-    // Start at the final position, allowing Back to undo and Forward to redo.
-    await loadGamePosition(gameMoves.length);
+    backendSnapshot = null;
+    data = createDemoData();
+    cachedOutput = null;
+    updateGameNavigation();
+    renderStep();
+    status.textContent = 'Demo trajectory loaded at the empty starting position. Use Next to step through the game.';
   } catch (error) {
     gameLoaded = false;
     updateGameNavigation();
     status.textContent = 'Could not load trajectory: ' + error.message;
-  } finally {
-    loadButton.disabled = false;
   }
 }
 
-document.querySelector('#load-trajectory').addEventListener('click', loadTrajectoryFromEditor);
 document.querySelector('#game-start').addEventListener('click', () => navigateGame(-gamePly));
 document.querySelector('#game-back').addEventListener('click', () => navigateGame(-1));
 document.querySelector('#game-forward').addEventListener('click', () => navigateGame(1));
@@ -1572,6 +1571,5 @@ resizeRenderer();
 renderStep();
 updateGameNavigation();
 animate();
-// The editor already contains a sample trajectory, so initialize the game
-// timeline on startup instead of leaving both navigation buttons disabled.
+// Load the demo trajectory into the timeline without rendering any moves.
 loadTrajectoryFromEditor();
