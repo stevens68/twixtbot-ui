@@ -251,6 +251,7 @@ function addValueCubes(values, rows, cols, channels, origin, color, options = {}
   }
 
   mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   sceneGroup.add(mesh);
 
   return {
