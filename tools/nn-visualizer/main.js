@@ -735,25 +735,44 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
-  const linkMaterials = {
+  // Show each game.links entry as a cube at its original link-anchor
+  // midpoint, not as a diagonal link cylinder. The cube colour is player-relative
+  // in the effective position, matching the transformed peg colours.
+  const linkCubeGeometry = new THREE.BoxGeometry(0.16, 0.16, 0.16);
+  const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   };
-  const linkGroups = { 0: new THREE.Group(), 1: new THREE.Group() };
-  const up = new THREE.Vector3(0, 1, 0);
   for (const link of game.links) {
     const player = effectivePlayer(link.player);
-    const a = new THREE.Vector3(...pointAt(link.from.row, link.from.col, boardX - 0.32));
-    const b = new THREE.Vector3(...pointAt(link.to.row, link.to.col, boardX - 0.32));
-    const direction = new THREE.Vector3().subVectors(b, a);
-    const mesh = new THREE.Mesh(linkGeometry, linkMaterials[player]);
-    mesh.position.copy(a).add(b).multiplyScalar(0.5);
-    mesh.quaternion.setFromUnitVectors(up, direction.clone().normalize());
-    mesh.scale.set(1, direction.length(), 1);
-    linkGroups[player].add(mesh);
+    const x = (link.from.row + link.to.row) / 2;
+    const y = (link.from.col + link.to.col) / 2;
+    const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
+    cube.position.set(
+      boardX - 0.32,
+      start + (BOARD_SIZE - 1 - (transpose ? y : x)) * spacing,
+      start + (transpose ? x : y) * spacing,
+    );
+    sceneGroup.add(cube);
   }
-  sceneGroup.add(linkGroups[0], linkGroups[1]);
+
+  // Thin dashed A1–X24 diagonal on the effective board face.
+  const diagonalPoints = [
+    new THREE.Vector3(...pointAt(0, 0, boardX - 0.36)),
+    new THREE.Vector3(...pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, boardX - 0.36)),
+  ];
+  const diagonalGeometry = new THREE.BufferGeometry().setFromPoints(diagonalPoints);
+  const diagonal = new THREE.Line(
+    diagonalGeometry,
+    new THREE.LineDashedMaterial({
+      color: 0x111111,
+      dashSize: 0.12,
+      gapSize: 0.08,
+      linewidth: 1,
+    }),
+  );
+  diagonal.computeLineDistances();
+  sceneGroup.add(diagonal);
 
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
   for (const player of [0, 1]) {
@@ -1054,15 +1073,18 @@ function drawInputs() {
       x: -1.8,
       z: -3.5,
       channels: 8,
-      // Channel labels describe the actual board-coordinate link orientation
-      // after the backend channel remapping. The [x][y] -> [row=y][col=x]
-      // storage transpose normalizes axes; it does not rotate the board itself.
-      // Verify these labels against the per-link trace before treating them as final.
+      // Channel bits follow the Python Game/NetInputs convention:
+      // bit 0 is colour (even=Black, odd=White), bit 2 is long-y,
+      // and bit 1 is different-sign slope. These describe the tensor channels.
       bladeLabels: [
-        'Channel 0 · White', 'Channel 1 · Black',
-        'Channel 2 · White', 'Channel 3 · Black',
-        'Channel 4 · White', 'Channel 5 · Black',
-        'Channel 6 · White', 'Channel 7 · Black',
+        'Ch 0: black ESE/WNW',
+        'Ch 1: white ESE/WNW',
+        'Ch 2: black ENE/WSW',
+        'Ch 3: white ENE/WSW',
+        'Ch 4: black SSE/NNW',
+        'Ch 5: white SSE/NNW',
+        'Ch 6: black NNE/SSW',
+        'Ch 7: white NNE/SSW',
       ],
       color: COLORS.input,
     },
@@ -1121,31 +1143,30 @@ function drawInputs() {
       );
     });
 
-    // Coordinate headers are shown on the first blade of every tensor.
-    // There are 24 columns, so the correct spreadsheet-style labels are A–X.
-    const columnNames = Array.from({ length: BOARD_SIZE }, (_, index) =>
-      String.fromCharCode(65 + index),
-    );
-    columnNames.forEach((columnName, col) => {
-      addLabel(
-        columnName,
-        [firstBladeX, 4.6, tensor.z + col * 0.34],
-        17,
-        '#dce7f5',
-        145,
-        'center',
-      );
-    });
+    // Tensor coordinates are array indices: both axes are numbered 0–23.
+    // Show the coordinate grid only for the links tensor, as requested.
+    if (tensor.key === 'links') {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        addLabel(
+          String(col),
+          [firstBladeX, 4.6, tensor.z + col * 0.34],
+          17,
+          '#dce7f5',
+          145,
+          'center',
+        );
+      }
 
-    for (let row = 0; row < BOARD_SIZE; row += 1) {
-      addLabel(
-        String(row + 1),
-        [firstBladeX - 0.12, boardTopY - row * 0.34, tensor.z - 0.48],
-        17,
-        '#dce7f5',
-        145,
-        'center',
-      );
+      for (let row = 0; row < BOARD_SIZE; row += 1) {
+        addLabel(
+          String(row),
+          [firstBladeX - 0.12, boardTopY - row * 0.34, tensor.z - 0.48],
+          17,
+          '#dce7f5',
+          145,
+          'center',
+        );
+      }
     }
   });
 
