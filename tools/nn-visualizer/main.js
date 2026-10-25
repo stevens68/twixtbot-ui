@@ -725,36 +725,20 @@ function drawEffectiveBoard() {
   const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => start + col * spacing;
 
-  // Preserve the goal-edge meaning while showing the encoded orientation.
-  // Black-to-move encoding transposes the board, so red's top/bottom goals
-  // become left/right and black's left/right goals become top/bottom.
+  // Keep goal-line colours and positions fixed in the displayed coordinate
+  // system. Only encoded peg/link cells and their player colours are transposed.
   const blackToMove = game.nextPlayer === 0;
-  if (!blackToMove) {
-    for (const boundaryY of [
-      (rowY(0) + rowY(1)) / 2,
-      (rowY(22) + rowY(23)) / 2,
-    ]) {
-      makeFinishLine([finishLineX, boundaryY, colZ(1)], [finishLineX, boundaryY, colZ(22)], redFinish);
-    }
-    for (const boundaryZ of [
-      (colZ(0) + colZ(1)) / 2,
-      (colZ(22) + colZ(23)) / 2,
-    ]) {
-      makeFinishLine([finishLineX, rowY(1), boundaryZ], [finishLineX, rowY(22), boundaryZ], blackFinish);
-    }
-  } else {
-    for (const boundaryZ of [
-      (colZ(0) + colZ(1)) / 2,
-      (colZ(22) + colZ(23)) / 2,
-    ]) {
-      makeFinishLine([finishLineX, rowY(1), boundaryZ], [finishLineX, rowY(22), boundaryZ], redFinish);
-    }
-    for (const boundaryY of [
-      (rowY(0) + rowY(1)) / 2,
-      (rowY(22) + rowY(23)) / 2,
-    ]) {
-      makeFinishLine([finishLineX, boundaryY, colZ(1)], [finishLineX, boundaryY, colZ(22)], blackFinish);
-    }
+  for (const boundaryY of [
+    (rowY(0) + rowY(1)) / 2,
+    (rowY(22) + rowY(23)) / 2,
+  ]) {
+    makeFinishLine([finishLineX, boundaryY, colZ(1)], [finishLineX, boundaryY, colZ(22)], redFinish);
+  }
+  for (const boundaryZ of [
+    (colZ(0) + colZ(1)) / 2,
+    (colZ(22) + colZ(23)) / 2,
+  ]) {
+    makeFinishLine([finishLineX, rowY(1), boundaryZ], [finishLineX, rowY(22), boundaryZ], blackFinish);
   }
 
   const holeGeometry = new THREE.CircleGeometry(0.035, 12);
@@ -780,7 +764,7 @@ function drawEffectiveBoard() {
   // Extend links clearly out from the board: X is the board-normal axis.
   // Their visible projection is 0.36, matching the peg height; board-plane
   // dimensions match the peg diameter.
-  const linkGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
+  const linkGeometry = new THREE.BoxGeometry(0.36, 0.082, 0.164);
   const linkMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
@@ -792,7 +776,9 @@ function drawEffectiveBoard() {
         if (Number(data.links[row][col][channel]) !== 1) continue;
 
         // Mark the exact encoded tensor cell; do not reconstruct endpoints.
-        const mesh = new THREE.Mesh(linkGeometry, linkMaterials[channel & 1]);
+        const encodedPlayer = channel & 1;
+        const displayedPlayer = blackToMove ? 1 - encodedPlayer : encodedPlayer;
+        const mesh = new THREE.Mesh(linkGeometry, linkMaterials[displayedPlayer]);
         // The cube's back face touches the board face; the whole cube projects
         // outward, avoiding coplanar overlap with the backing and holes.
         mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
@@ -805,6 +791,7 @@ function drawEffectiveBoard() {
 
   // Render pegs from the same encoded tensor used by the input blades.
   // Tensor channel 0 is the opponent (red); channel 1 is the side to move (black).
+  // Encoder tensor coordinates already reflect the A1/X24 diagonal transpose.
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
   for (let channel = 0; channel < 2; channel += 1) {
     const positions = [];
@@ -820,7 +807,9 @@ function drawEffectiveBoard() {
     // displayed link colors while preserving the encoded board orientation.
     // In this view the peg color mapping is swapped on Black's turn.
     const blackToMove = game.nextPlayer === 0;
-    const isBlack = blackToMove ? channel === 0 : channel === 1;
+    // Swap colours with the encoded player channels; do not transpose tensor
+    // coordinates again because data.pegs is already encoded/transposed.
+    const isBlack = blackToMove ? channel === 1 : channel === 0;
     const material = new THREE.MeshStandardMaterial({
       color: isBlack ? 0x20252d : 0xe0525d,
       roughness: 0.38,
