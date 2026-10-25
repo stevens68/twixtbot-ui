@@ -749,11 +749,19 @@ function drawEffectiveBoard() {
     const x2 = link.to.col;
     const y2 = link.to.row;
 
-    // Floor in the original Game coordinate system before any transpose.
-    const rawX = Math.floor((x1 + x2) / 2);
-    const rawY = Math.floor((y1 + y2) / 2);
-    // Convert canonical [x][y] to the board's row/col arguments.
-    // pointAt() applies the effective-board transpose, so do not transpose here too.
+    // Link midpoints are integer-valued on the long axis and half-integer
+    // on the short axis. Floor the short-axis midpoint in canonical space;
+    // when the board is transposed, its displayed coordinate must be the ceil.
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    const shortAxisIsX = Math.abs(x2 - x1) < Math.abs(y2 - y1);
+    const rawX = shortAxisIsX
+      ? (transpose ? Math.ceil(midX) : Math.floor(midX))
+      : Math.floor(midX);
+    const rawY = !shortAxisIsX
+      ? (transpose ? Math.ceil(midY) : Math.floor(midY))
+      : Math.floor(midY);
+    // pointAt() handles the actual axis transposition for display coordinates.
     const row = rawY;
     const col = rawX;
 
