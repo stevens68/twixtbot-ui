@@ -735,27 +735,56 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Place each link cube on the rounded integer midpoint cell, like a peg.
-  // Keep the cube's in-plane footprint peg-sized, but make its depth slimmer.
+  // Match naf.py: floor canonical link midpoints before transposition, then
+  // apply the channel-dependent row/column shifts from to_input_arrays().
   const linkCubeGeometry = new THREE.BoxGeometry(0.24, 0.164, 0.164);
   const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   };
   for (const link of game.links) {
+    const x1 = link.from.col;
+    const y1 = link.from.row;
+    const x2 = link.to.col;
+    const y2 = link.to.row;
+
+    // Raw Game channel: color + LONGY + DIFFSIGN.
+    const rawChannel =
+      link.player +
+      ((x1 + x2) % 2 !== 0 ? 4 : 0) +
+      ((y2 - y1) * (x2 - x1) < 0 ? 2 : 0);
+    const rawX = Math.floor((x1 + x2) / 2);
+    const rawY = Math.floor((y1 + y2) / 2);
+
     const player = effectivePlayer(link.player);
-    const x = Math.round((link.from.row + link.to.row) / 2);
-    const y = Math.round((link.from.col + link.to.col) / 2);
+    const longY = (rawChannel & 4) !== 0;
+    const diffSign = (rawChannel & 2) !== 0;
+    // naf.py's black-to-move transform swaps LONGY's channel group.
+    const effectiveChannel =
+      player +
+      (transpose ? (longY ? 0 : 4) : (longY ? 4 : 0)) +
+      (diffSign ? 2 : 0);
+    const effectiveLongY = (effectiveChannel & 4) !== 0;
+    const effectiveDiffSign = (effectiveChannel & 2) !== 0;
+
+    // Transpose only after flooring the canonical coordinates.
+    let row = transpose ? rawX : rawY;
+    let col = transpose ? rawY : rawX;
+
+    // Same shifts as NetInputs.to_input_arrays().
+    if (effectiveLongY || effectiveDiffSign) row += 1;
+    if (!effectiveLongY || effectiveDiffSign) col += 1;
+
     const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
     cube.position.set(
       boardX - 0.16,
-      start + (BOARD_SIZE - 1 - (transpose ? y : x)) * spacing,
-      start + (transpose ? x : y) * spacing,
+      start + (BOARD_SIZE - 1 - row) * spacing,
+      start + col * spacing,
     );
     sceneGroup.add(cube);
   }
 
-  // Draw the dashed diagonal directly on the board face, using thin black
+    // Draw the dashed diagonal directly on the board face, using thin black
   // rectangular segments like the finish lines (not a floating Three.js line).
   const diagonalMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
   const diagonalStart = new THREE.Vector3(...pointAt(0, 0, finishLineX));
