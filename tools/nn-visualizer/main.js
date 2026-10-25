@@ -608,8 +608,113 @@ function drawSampleBoard() {
   return game;
 }
 
+
+/**
+ * Draw the canonical/effective position used to explain the network inputs.
+ * White is always the side to move in this view. If Black is to move in the
+ * sample game, transpose coordinates and swap the displayed player colours.
+ */
+function drawEffectiveBoard() {
+  const game = createSampleGame();
+  const spacing = 0.34;
+  const boardSize = (BOARD_SIZE - 1) * spacing;
+  const boardX = -5.0;
+  const start = -boardSize / 2;
+  const transpose = game.nextPlayer === 0;
+  const effectivePlayer = (player) => transpose ? 1 - player : player;
+  const pointAt = (row, col, x = boardX) => {
+    const effectiveRow = transpose ? col : row;
+    const effectiveCol = transpose ? row : col;
+    return [
+      x,
+      start + (BOARD_SIZE - 1 - effectiveRow) * spacing,
+      start + effectiveCol * spacing,
+    ];
+  };
+
+  const backing = new THREE.Mesh(
+    new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
+    new THREE.MeshStandardMaterial({
+      color: 0xc8cacc, roughness: 0.88, side: THREE.DoubleSide,
+    }),
+  );
+  backing.rotation.y = -Math.PI / 2;
+  backing.position.set(boardX + 0.035, 0, 0);
+  sceneGroup.add(backing);
+
+  const holeGeometry = new THREE.SphereGeometry(0.035, 10, 8);
+  const holes = new THREE.InstancedMesh(
+    holeGeometry,
+    new THREE.MeshStandardMaterial({ color: 0x080a0d, roughness: 0.95 }),
+    BOARD_SIZE * BOARD_SIZE,
+  );
+  const holeTransform = new THREE.Object3D();
+  let holeIndex = 0;
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      holeTransform.position.set(...pointAt(row, col, boardX - 0.035));
+      holeTransform.updateMatrix();
+      holes.setMatrixAt(holeIndex++, holeTransform.matrix);
+    }
+  }
+  holes.instanceMatrix.needsUpdate = true;
+  sceneGroup.add(holes);
+
+  const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
+  const linkMaterials = {
+    0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
+    1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
+  };
+  const linkGroups = { 0: new THREE.Group(), 1: new THREE.Group() };
+  const up = new THREE.Vector3(0, 1, 0);
+  for (const link of game.links) {
+    const player = effectivePlayer(link.player);
+    const a = new THREE.Vector3(...pointAt(link.from.row, link.from.col, boardX - 0.32));
+    const b = new THREE.Vector3(...pointAt(link.to.row, link.to.col, boardX - 0.32));
+    const direction = new THREE.Vector3().subVectors(b, a);
+    const mesh = new THREE.Mesh(linkGeometry, linkMaterials[player]);
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(up, direction.clone().normalize());
+    mesh.scale.set(1, direction.length(), 1);
+    linkGroups[player].add(mesh);
+  }
+  sceneGroup.add(linkGroups[0], linkGroups[1]);
+
+  const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
+  for (const player of [0, 1]) {
+    const playerPegs = game.pegs.filter((peg) => effectivePlayer(peg.player) === player);
+    if (!playerPegs.length) continue;
+    const material = new THREE.MeshStandardMaterial({
+      color: player === 1 ? 0xe0525d : 0x20252d,
+      roughness: 0.38, metalness: 0.08,
+    });
+    const mesh = new THREE.InstancedMesh(pegGeometry, material, playerPegs.length);
+    const transform = new THREE.Object3D();
+    playerPegs.forEach((peg, index) => {
+      transform.position.set(...pointAt(peg.row, peg.col, boardX - 0.16));
+      transform.rotation.z = Math.PI / 2;
+      transform.updateMatrix();
+      mesh.setMatrixAt(index, transform.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    sceneGroup.add(mesh);
+  }
+
+  for (let col = 0; col < BOARD_SIZE; col += 1) {
+    addLabel(String.fromCharCode(65 + col), [boardX - 0.12, 4.42, start + col * spacing], 14, '#e0e8e2', 150);
+  }
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    addLabel(String(row + 1), [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34], 14, '#e0e8e2', 150);
+  }
+  addLabel(
+    transpose ? 'Effective Board · transposed + colours canonicalized' : 'Effective Board · unchanged',
+    [boardX - 0.25, 5.25, 0], 17, '#ffffff', 75,
+  );
+}
+
 function drawInputs() {
   drawSampleBoard();
+  drawEffectiveBoard();
 
   const tensors = [
     {
@@ -618,7 +723,7 @@ function drawInputs() {
       x: -1.8,
       z: -13,
       channels: 2,
-      bladeLabels: ['Opponent', 'To move'],
+      bladeLabels: ['Black', 'White'],
       color: COLORS.input,
     },
     {
@@ -628,10 +733,10 @@ function drawInputs() {
       z: -3.5,
       channels: 8,
       bladeLabels: [
-        'ENE · Opp', 'ENE · To move',
-        'ESE · Opp', 'ESE · To move',
-        'NNE · Opp', 'NNE · To move',
-        'SSE · Opp', 'SSE · To move',
+        'ENE · Black', 'ENE · White',
+        'ESE · Black', 'ESE · White',
+        'NNE · Black', 'NNE · White',
+        'SSE · Black', 'SSE · White',
       ],
       color: COLORS.input,
     },
