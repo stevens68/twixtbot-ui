@@ -40,9 +40,10 @@ scene.add(keyLight);
 
 let activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
+// Must be initialized before createDemoData(), which calls createSampleGame().
+let backendSnapshot = null;
 let data = createDemoData();
 let cachedOutput = null;
-let backendSnapshot = null;
 
 scene.add(sceneGroup);
 
