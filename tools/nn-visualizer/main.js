@@ -511,6 +511,7 @@ function drawSampleBoard() {
   sceneGroup.add(linkMeshes[0], linkMeshes[1]);
 
   // Slimmer, slightly longer pegs.
+  const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
   for (const player of [0, 1]) {
     const playerPegs = game.pegs.filter((peg) => peg.player === player);
     if (!playerPegs.length) continue;
