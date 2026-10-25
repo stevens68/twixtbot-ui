@@ -790,9 +790,13 @@ function drawEffectiveBoard() {
  */
 function logLinkEncodingDiagnostic(game, linkTensor) {
   const transpose = game.nextPlayer === 0;
+  // The upstream Game.links arrays are indexed [x][y]. On Black's
+  // turn naf.py transposes that array, producing [row=y][col=x], which
+  // matches the visualizer's { row, col } board coordinates. Do not swap
+  // row/col again here.
   const canonicalPoint = (peg) => ({
-    row: transpose ? peg.col : peg.row,
-    col: transpose ? peg.row : peg.col,
+    row: peg.row,
+    col: peg.col,
   });
   const canonicalPlayer = (player) => transpose ? 1 - player : player;
   const channelNames = [
@@ -889,7 +893,7 @@ function logLinkEncodingDiagnostic(game, linkTensor) {
   console.table(trace);
   console.log('Actual nonzero tensor cells (channel labels intentionally omitted until verified):');
   console.table(actualCells);
-  console.log('Loaded diagnostic build: link-trace-v3 (upstream channel mapping). If this exact group title is absent, hard-reload before interpreting the output.');
+  console.log('Loaded diagnostic build: link-trace-v4 (upstream channel + coordinate mapping). If this exact group title is absent, hard-reload before interpreting the output.');
   console.groupEnd();
 }
 
