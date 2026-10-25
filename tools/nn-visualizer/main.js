@@ -614,10 +614,13 @@ function drawEffectiveBoard() {
   const start = -boardSize / 2;
   const transpose = game.nextPlayer === 0;
   const effectivePlayer = (player) => transpose ? 1 - player : player;
+  // Python NetInputs.init_from_game_black() transposes the [x][y] planes.
+  // Game coordinates are stored as {row: y, col: x}; in the effective
+  // black-to-move view they must therefore be plotted at (row'=x, col'=y).
   const pointAt = (row, col, x = boardX) => [
     x,
-    start + (BOARD_SIZE - 1 - row) * spacing,
-    start + col * spacing,
+    start + (BOARD_SIZE - 1 - (transpose ? col : row)) * spacing,
+    start + (transpose ? row : col) * spacing,
   ];
 
   const backing = new THREE.Mesh(
@@ -630,10 +633,9 @@ function drawEffectiveBoard() {
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
-  // The input tensor transpose normalizes the backend's [x][y] storage
-  // into [row=y][col=x]; it does not rotate the displayed board coordinates.
-  // Keep the original board axes and labels fixed, and swap player colours
-  // only for the canonical side-to-move perspective.
+  // Mirror the Python perspective transform in both the board coordinates
+  // and player ownership. The board grid is symmetric, but the goal edges
+  // and coordinate labels must follow the transformed axes.
   const finishLineX = boardX + 0.026;
   const makeFinishLine = (startPoint, endPoint, material, thickness = 0.065) => {
     // Flat, visibly thick strips; unlike WebGL lines, their width is reliable.
@@ -653,25 +655,49 @@ function drawEffectiveBoard() {
   const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => start + col * spacing;
 
-  for (const boundaryY of [
-    (rowY(0) + rowY(1)) / 2,
-    (rowY(22) + rowY(23)) / 2,
-  ]) {
-    makeFinishLine(
-      [finishLineX, boundaryY, colZ(1)],
-      [finishLineX, boundaryY, colZ(22)],
-      redFinish,
-    );
-  }
-  for (const boundaryZ of [
-    (colZ(0) + colZ(1)) / 2,
-    (colZ(22) + colZ(23)) / 2,
-  ]) {
-    makeFinishLine(
-      [finishLineX, rowY(1), boundaryZ],
-      [finishLineX, rowY(22), boundaryZ],
-      blackFinish,
-    );
+  // Transposition swaps the horizontal and vertical goal edges.
+  if (transpose) {
+    for (const boundaryZ of [
+      (colZ(0) + colZ(1)) / 2,
+      (colZ(22) + colZ(23)) / 2,
+    ]) {
+      makeFinishLine(
+        [finishLineX, rowY(1), boundaryZ],
+        [finishLineX, rowY(22), boundaryZ],
+        redFinish,
+      );
+    }
+    for (const boundaryY of [
+      (rowY(0) + rowY(1)) / 2,
+      (rowY(22) + rowY(23)) / 2,
+    ]) {
+      makeFinishLine(
+        [finishLineX, boundaryY, colZ(1)],
+        [finishLineX, boundaryY, colZ(22)],
+        blackFinish,
+      );
+    }
+  } else {
+    for (const boundaryY of [
+      (rowY(0) + rowY(1)) / 2,
+      (rowY(22) + rowY(23)) / 2,
+    ]) {
+      makeFinishLine(
+        [finishLineX, boundaryY, colZ(1)],
+        [finishLineX, boundaryY, colZ(22)],
+        redFinish,
+      );
+    }
+    for (const boundaryZ of [
+      (colZ(0) + colZ(1)) / 2,
+      (colZ(22) + colZ(23)) / 2,
+    ]) {
+      makeFinishLine(
+        [finishLineX, rowY(1), boundaryZ],
+        [finishLineX, rowY(22), boundaryZ],
+        blackFinish,
+      );
+    }
   }
 
   const holeGeometry = new THREE.CircleGeometry(0.035, 12);
@@ -734,10 +760,16 @@ function drawEffectiveBoard() {
   }
 
   for (let col = 0; col < BOARD_SIZE; col += 1) {
-    addLabel(String.fromCharCode(65 + col), [boardX - 0.12, 4.42, start + col * spacing], 14, '#e0e8e2', 150);
+    addLabel(
+      transpose ? String(col + 1) : String.fromCharCode(65 + col),
+      [boardX - 0.12, 4.42, start + col * spacing], 14, '#e0e8e2', 150,
+    );
   }
   for (let row = 0; row < BOARD_SIZE; row += 1) {
-    addLabel(String(row + 1), [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34], 14, '#e0e8e2', 150);
+    addLabel(
+      transpose ? String.fromCharCode(65 + row) : String(row + 1),
+      [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34], 14, '#e0e8e2', 150,
+    );
   }
   addLabel(
     'Effective Board',
