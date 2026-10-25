@@ -791,10 +791,9 @@ function drawEffectiveBoard() {
       }
     }
   }
-  // Add two subtle direction indicators to each link cube. Each segment
-  // starts at the cell midpoint and points toward one of the two connected
-  // peg locations. Draw them on the board face so they remain legible above
-  // the square without obscuring the raised link cube.
+  // Each cube gets exactly two indicators, both starting at the centre of
+  // the square's top edge (the midpoint on the board face). Each indicator
+  // runs straight along a row or column toward one of the linked pegs.
   const indicatorMaterial = new THREE.LineBasicMaterial({
     color: 0xf5f7fa,
     transparent: true,
@@ -807,14 +806,18 @@ function drawEffectiveBoard() {
     const rowStep = vertical ? 2 : 1;
     const colStep = vertical ? 1 : 2;
     const slope = diffSign ? -1 : 1;
-    const center = pointAt(row, col, boardX - 0.012);
+    const center = pointAt(row, col, boardX + 0.026);
     for (const sign of [-1, 1]) {
-      const endRow = row + sign * rowStep;
-      const endCol = col + sign * colStep * slope;
-      const endY = start + (BOARD_SIZE - 1 - (row + sign * rowStep)) * spacing;
-      const endZ = start + (col + sign * colStep * slope) * spacing;
-      // Clip each pointer at the square edge; the target peg can be farther
-      // away because link tensors store a shifted midpoint cell.
+      const endRow = row + (vertical ? sign * rowStep : 0);
+      const endCol = col + (vertical ? 0 : sign * colStep * slope);
+      if (
+        endRow < 0 || endRow >= BOARD_SIZE ||
+        endCol < 0 || endCol >= BOARD_SIZE
+      ) continue;
+      const endY = start + (BOARD_SIZE - 1 - endRow) * spacing;
+      const endZ = start + endCol * spacing;
+      // Stop inside the adjacent square, so the pointer stays on the board
+      // and clearly indicates the horizontal or vertical direction.
       const edgeY = center[1] + (endY - center[1]) * 0.42;
       const edgeZ = center[2] + (endZ - center[2]) * 0.42;
       const geometry = new THREE.BufferGeometry().setFromPoints([
