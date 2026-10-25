@@ -423,7 +423,7 @@ function drawSampleBoard() {
   const boardCenterZ = 0;
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
-  const boardX = 2.62;
+  const boardX = -2.62;
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
@@ -434,7 +434,7 @@ function drawSampleBoard() {
   const backing = new THREE.Mesh(
     new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
-      color: 0x777b80,
+      color: 0xc8cacc,
       roughness: 0.88,
       transparent: true,
       opacity: 1,
@@ -495,7 +495,7 @@ function drawSampleBoard() {
     );
     sceneGroup.add(new THREE.LineSegments(
       linkGeometry,
-      new THREE.LineBasicMaterial({ color: 0xe6d8a8, linewidth: 2 }),
+      new THREE.LineBasicMaterial({ color: 0x202630, linewidth: 2 }),
     ));
   }
 
@@ -504,7 +504,7 @@ function drawSampleBoard() {
     const playerPegs = game.pegs.filter((peg) => peg.player === player);
     if (!playerPegs.length) continue;
     const pegMaterial = new THREE.MeshStandardMaterial({
-      color: player === 1 ? 0xf05c68 : 0x202630,
+      color: player === 1 ? 0xe0525d : 0x20252d,
       roughness: 0.38,
       metalness: 0.08,
     });
@@ -549,6 +549,15 @@ function drawSampleBoard() {
     '#ffffff',
     90,
   );
+
+  // Move list is placed on the far side of the board, away from the tensors.
+  const moveLabels = ['1. L12','2. L8','3. O9','4. L17','5. H16','6. I14','7. J13','8. N9','9. Q10','10. K6','11. H12','12. O11','13. F7'];
+  const listX = boardX - 0.95;
+  const listZ = boardStartZ - 1.35;
+  addLabel('Moves', [listX, 3.95, listZ], 16, '#e7edf6', 90, 'left');
+  moveLabels.forEach((label, index) => {
+    addLabel(label, [listX, 3.4 - index * 0.38, listZ], 14, '#e7edf6', 90, 'left');
+  });
 
   return game;
 }
