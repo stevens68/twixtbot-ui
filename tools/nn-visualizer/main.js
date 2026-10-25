@@ -792,9 +792,9 @@ function drawEffectiveBoard() {
       }
     }
   }
-  // Each cube gets exactly two indicators, both starting at the centre of
-  // the square's top edge (the midpoint on the board face). Each indicator
-  // runs straight along a row or column toward one of the linked pegs.
+  // Draw exactly two indicators on each link cube's top face: one along
+  // the row axis and one along the column axis, each pointing toward one
+  // of the two endpoint pegs represented by the link channel.
   const indicatorMaterial = new THREE.LineBasicMaterial({
     color: 0xf5f7fa,
     transparent: true,
@@ -807,23 +807,31 @@ function drawEffectiveBoard() {
     const rowStep = vertical ? 2 : 1;
     const colStep = vertical ? 1 : 2;
     const slope = diffSign ? -1 : 1;
-    const center = pointAt(row, col, boardX + 0.026);
-    for (const sign of [-1, 1]) {
-      const endRow = row + (vertical ? sign * rowStep : 0);
-      const endCol = col + (vertical ? 0 : sign * colStep * slope);
-      if (
-        endRow < 0 || endRow >= BOARD_SIZE ||
-        endCol < 0 || endCol >= BOARD_SIZE
-      ) continue;
-      const endY = start + (BOARD_SIZE - 1 - endRow) * spacing;
-      const endZ = start + endCol * spacing;
-      // Stop inside the adjacent square, so the pointer stays on the board
-      // and clearly indicates the horizontal or vertical direction.
-      const edgeY = center[1] + (endY - center[1]) * 0.42;
-      const edgeZ = center[2] + (endZ - center[2]) * 0.42;
+    const cubeTopY = start + (BOARD_SIZE - 1 - row) * spacing + 0.18;
+    const cubeTopZ = start + col * spacing;
+    const cubeTopX = boardX + 0.035 - 0.18;
+    const directions = [
+      { y: vertical ? (row - 1) : (row - (slope < 0 ? -1 : 1)), z: col },
+      { y: row, z: col + (slope < 0 ? -1 : 1) },
+    ];
+    // Keep one row-axis and one column-axis segment, both on the cube's top.
+    const endpoints = [
+      { y: start + (BOARD_SIZE - 1 - (row - (vertical ? 2 : 1))) * spacing, z: cubeTopZ },
+      { y: cubeTopY, z: start + (col + (vertical ? 1 : 2) * slope) * spacing },
+    ];
+    // Direction signs select the two pegs on the channel's knight-move.
+    const rowDirection = diffSign ? -1 : 1;
+    const colDirection = diffSign ? -1 : 1;
+    const rowEnd = row + (vertical ? -rowStep : rowDirection);
+    const colEnd = col + (vertical ? colDirection : colStep * slope);
+    const segments = [
+      { y: start + (BOARD_SIZE - 1 - Math.max(0, Math.min(BOARD_SIZE - 1, rowEnd))) * spacing + 0.18, z: cubeTopZ },
+      { y: cubeTopY, z: start + Math.max(0, Math.min(BOARD_SIZE - 1, colEnd)) * spacing },
+    ];
+    for (const endpoint of segments) {
       const geometry = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(center[0], center[1], center[2]),
-        new THREE.Vector3(center[0], edgeY, edgeZ),
+        new THREE.Vector3(cubeTopX, cubeTopY, cubeTopZ),
+        new THREE.Vector3(cubeTopX, endpoint.y, endpoint.z),
       ]);
       sceneGroup.add(new THREE.Line(geometry, indicatorMaterial));
     }
