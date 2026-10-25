@@ -776,7 +776,7 @@ function drawEffectiveBoard() {
   // Extend links clearly out from the board: X is the board-normal axis.
   // Their visible projection is 0.36, matching the peg height; board-plane
   // dimensions match the peg diameter.
-  const linkGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
+  const linkGeometry = new THREE.BoxGeometry(0.18, 0.082, 0.082);
   const linkMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
@@ -791,7 +791,7 @@ function drawEffectiveBoard() {
         const mesh = new THREE.Mesh(linkGeometry, linkMaterials[channel & 1]);
         // The cube's back face touches the board face; the whole cube projects
         // outward, avoiding coplanar overlap with the backing and holes.
-        mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
+        mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.09));
         sceneGroup.add(mesh);
         activeLinks.push({ row, col, channel });
       }
