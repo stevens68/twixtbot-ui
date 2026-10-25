@@ -587,14 +587,10 @@ function drawSampleBoard() {
   };
   const linkTransform = new THREE.Object3D();
   const up = new THREE.Vector3(0, 1, 0);
-  // Match the canonical input-tensor perspective. The 13-move sample has
-  // Black to move, so transpose the physical board's peg/link coordinates too.
-  const transposeBoard = game.nextPlayer === 0;
-  const boardPoint = (peg, x = boardX) => pointAt(
-    transposeBoard ? peg.col : peg.row,
-    transposeBoard ? peg.row : peg.col,
-    x,
-  );
+  // The sample board always shows the physical game in its native orientation:
+  // Red goals top/bottom, Black goals left/right, independent of whose turn it is.
+  // Only the effective board below uses naf.py's canonical perspective.
+  const boardPoint = (peg, x = boardX) => pointAt(peg.row, peg.col, x);
   for (const link of game.links) {
     const a = new THREE.Vector3(...boardPoint(link.from, boardX - 0.32));
     const b = new THREE.Vector3(...boardPoint(link.to, boardX - 0.32));
