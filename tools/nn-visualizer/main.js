@@ -487,7 +487,7 @@ function drawSampleBoard() {
     (colZ(22) + colZ(23)) / 2,
   ]) {
     makeFinishLine(
-      [finishLineX, rowY(0), boundaryZ],
+      [finishLineX, rowY(1), boundaryZ],
       [finishLineX, rowY(22), boundaryZ],
       0.018,
       blackFinish,
