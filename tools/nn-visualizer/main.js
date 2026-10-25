@@ -618,8 +618,8 @@ function drawSampleBoard() {
 
 /**
  * Draw the canonical/effective position used to explain the network inputs.
- * White is always the side to move in this view. If Black is to move in the
- * sample game, transpose coordinates and swap the displayed player colours.
+ * Displays the encoded input tensors directly, so the effective board and
+ * input blades use identical coordinates and channel assignments.
  */
 function drawEffectiveBoard() {
   const game = createSampleGame();
@@ -628,11 +628,8 @@ function drawEffectiveBoard() {
   // Keep the effective board twice as far from the input tensor layer.
   const boardX = -15.2;
   const start = -boardSize / 2;
-  const transpose = game.nextPlayer === 0;
-  const effectivePlayer = (player) => transpose ? 1 - player : player;
   // Board and tensor share the same orientation: [0][0] is A1 (top-left).
-  // All perspective transforms and link-channel shifts are applied during
-  // encoding, before this visualization reads the tensors.
+  // Perspective, player remapping and link shifts are applied by the encoder.
   const pointAt = (row, col, x = boardX) => [
     x,
     start + (BOARD_SIZE - 1 - row) * spacing,
@@ -782,20 +779,28 @@ function drawEffectiveBoard() {
     sceneGroup.add(segment);
   }
 
+  // Render pegs from the same encoded tensor used by the input blades.
+  // Tensor channel 0 is the opponent (red); channel 1 is the side to move (black).
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
-  for (const player of [0, 1]) {
-    const playerPegs = game.pegs.filter((peg) => effectivePlayer(peg.player) === player);
-    if (!playerPegs.length) continue;
+  for (let channel = 0; channel < 2; channel += 1) {
+    const positions = [];
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        if (Number(data.pegs[row][col][channel]) === 1) {
+          positions.push({ row, col });
+        }
+      }
+    }
+    if (!positions.length) continue;
     const material = new THREE.MeshStandardMaterial({
-      color: player === 1 ? 0xe0525d : 0x20252d,
-      roughness: 0.38, metalness: 0.08,
+      color: channel === 1 ? 0x20252d : 0xe0525d,
+      roughness: 0.38,
+      metalness: 0.08,
     });
-    const mesh = new THREE.InstancedMesh(pegGeometry, material, playerPegs.length);
+    const mesh = new THREE.InstancedMesh(pegGeometry, material, positions.length);
     const transform = new THREE.Object3D();
-    playerPegs.forEach((peg, index) => {
-      // Apply the same perspective transpose as the encoded input tensors.
-      const row = transpose ? peg.col : peg.row;
-      const col = transpose ? peg.row : peg.col;
+    positions.forEach(({ row, col }, index) => {
+      // Tensor indices already include perspective/transposition: do not transform again.
       transform.position.set(...pointAt(row, col, boardX - 0.16));
       transform.rotation.z = Math.PI / 2;
       transform.updateMatrix();
