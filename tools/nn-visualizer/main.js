@@ -861,8 +861,13 @@ function drawEffectiveBoard() {
       }
     }
     if (!positions.length) continue;
+    // The encoder puts the side to move in channel 1. On Black's turn
+    // that is Black; on White's turn that is White. Keep physical colors
+    // correct while the tensor channel order follows the current perspective.
+    const blackToMove = game.nextPlayer === 0;
+    const isBlack = blackToMove ? channel === 1 : channel === 0;
     const material = new THREE.MeshStandardMaterial({
-      color: channel === 1 ? 0x20252d : 0xe0525d,
+      color: isBlack ? 0x20252d : 0xe0525d,
       roughness: 0.38,
       metalness: 0.08,
     });
@@ -879,19 +884,21 @@ function drawEffectiveBoard() {
     sceneGroup.add(mesh);
   }
 
-  // Label tensor coordinates, not the physical board coordinates. For a
-  // black-to-move position, the encoded tensor is transposed, so its row/column
-  // labels intentionally differ from the sample board's physical labels.
+  // Rotate the familiar Twixt coordinate labels 90 degrees clockwise:
+  // 1–24 run left-to-right across the top; A–X run top-to-bottom on the right.
+  // Labels describe the effective board's displayed tensor coordinates.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addLabel(
-      String.fromCharCode(65 + col),
-      [boardX - 0.12, 4.42, start + col * spacing], 14, '#e0e8e2', 150,
+      String(col + 1),
+      [boardX - 0.12, start + (BOARD_SIZE - 1) * spacing + 0.34, start + col * spacing],
+      14, '#e0e8e2', 150,
     );
   }
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     addLabel(
-      String(row + 1),
-      [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34], 14, '#e0e8e2', 150,
+      String.fromCharCode(65 + row),
+      [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start + (BOARD_SIZE - 1) * spacing + 0.34],
+      14, '#e0e8e2', 150,
     );
   }
   addLabel(
