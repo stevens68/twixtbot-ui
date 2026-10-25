@@ -44,6 +44,9 @@ let sceneGroup = new THREE.Group();
 let backendSnapshot = null;
 let data = createDemoData();
 let cachedOutput = null;
+let gameMoves = [];
+let gamePly = 0;
+let gameLoaded = false;
 
 scene.add(sceneGroup);
 
@@ -1458,6 +1461,7 @@ document.querySelectorAll('.step-tab').forEach((button) => {
 
 document.querySelector('#demo-button').addEventListener('click', () => {
   backendSnapshot = null;
+  gameMoves = []; gamePly = 0; gameLoaded = false; updateGameNavigation();
   data = createDemoData();
   cachedOutput = null;
   activeStep = 'inputs';
@@ -1466,69 +1470,21 @@ document.querySelector('#demo-button').addEventListener('click', () => {
   status.textContent = 'Demo board and reproducible weights loaded.';
 });
 
-document.querySelector('#load-python-trace').addEventListener('click', async () => {
-  const moves = document.querySelector('#trajectory').value
-    .split(/[\s,;]+/).map((move) => move.trim()).filter(Boolean);
-  const button = document.querySelector('#load-python-trace');
-  button.disabled = true;
-  status.textContent = 'Running src.backend.twixt.Game and src.backend.naf.NetInputs…';
-  try {
-    const response = await fetch('/api/trace', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        moves,
-        allow_scl: document.querySelector('#allow-scl').checked,
-      }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || response.statusText);
-    backendSnapshot = result;
-    const demo = createDemoData();
-    data = {
-      pegs: result.tensors.pegs,
-      links: result.tensors.links,
-      locations: result.tensors.locations,
-      weights: demo.weights,
-      bias: demo.bias,
-      isDemo: false,
-    };
-    cachedOutput = null;
-    activeStep = 'inputs';
-    renderStep();
-    resetCamera();
-    status.textContent =
-      'Python backend snapshot loaded. Next player: ' + result.next_player_name +
-      '. Tensors are from ' + result.source.net_inputs_class +
-      '; filters remain reproducible demo weights.';
-  } catch (error) {
-    status.textContent = 'Python trace failed: ' + error.message +
-      '. Start this page with: python tools/nn-visualizer/server.py';
-  } finally {
-    button.disabled = false;
-  }
-});
-
-document.querySelector('#json-file').addEventListener('change', async (event) => {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-
-  try {
-    const parsed = JSON.parse(await file.text());
-    backendSnapshot = null;
-    data = validateData(parsed);
-    cachedOutput = null;
-    activeStep = 'inputs';
-    renderStep();
-    resetCamera();
-    status.textContent = 'Board JSON loaded.';
-  } catch (error) {
-    status.textContent = 'Could not load JSON: ' + error.message;
-  } finally {
-    event.target.value = '';
-  }
-});
-
+async function requestSnapshot(moves) {
+ const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:document.querySelector('#allow-scl').checked,allow_swap:document.querySelector('#allow-swap').checked})});
+ const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);return result;
+}
+async function loadGamePosition(ply) {
+ const result=await requestSnapshot(gameMoves.slice(0,ply));backendSnapshot=result;const demo=createDemoData();
+ data={pegs:result.tensors.pegs,links:result.tensors.links,locations:result.tensors.locations,weights:demo.weights,bias:demo.bias,isDemo:false};
+ gamePly=ply;gameLoaded=true;cachedOutput=null;activeStep='inputs';renderStep();resetCamera();updateGameNavigation();
+ status.textContent='Game position '+gamePly+'/'+gameMoves.length+'. Next player: '+result.next_player_name+'. Filters remain demo weights.';
+}
+function updateGameNavigation(){document.querySelector('#game-back').disabled=!gameLoaded||gamePly<=0;document.querySelector('#game-forward').disabled=!gameLoaded||gamePly>=gameMoves.length;document.querySelector('#game-position').textContent=gameLoaded?'Ply '+gamePly+' / '+gameMoves.length:'No game loaded';}
+async function navigateGame(delta){if(!gameLoaded)return;const ply=Math.max(0,Math.min(gameMoves.length,gamePly+delta));if(ply===gamePly)return;document.querySelector('#game-back').disabled=true;document.querySelector('#game-forward').disabled=true;try{await loadGamePosition(ply);}catch(error){status.textContent='Could not step through game: '+error.message;updateGameNavigation();}}
+document.querySelector('#game-back').addEventListener('click',()=>navigateGame(-1));
+document.querySelector('#game-forward').addEventListener('click',()=>navigateGame(1));
+document.querySelector('#t1-file').addEventListener('change',async(event)=>{const file=event.target.files&&event.target.files[0];if(!file)return;try{const response=await fetch('/api/t1',{method:'POST',headers:{'Content-Type':'text/plain; charset=utf-8'},body:await file.text()});const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);gameMoves=result.moves;document.querySelector('#trajectory').value=gameMoves.join(' ');await loadGamePosition(gameMoves.length);status.textContent='Loaded '+file.name+'. '+status.textContent;}catch(error){status.textContent='Could not load T1 game: '+error.message;}finally{event.target.value='';}});
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
 window.addEventListener('resize', resizeRenderer);
 
