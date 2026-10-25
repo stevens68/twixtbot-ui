@@ -787,35 +787,30 @@ function drawEffectiveBoard() {
         mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
         sceneGroup.add(mesh);
 
-        // Two short direction pointers on the top of each cube indicate its
-        // corresponding peg directions. Board north is +Y and west is -Z.
-        // Link channel groups: 0/1=SSE, 2/3=NNE, 4/5=ESE, 6/7=ENE.
-        const directionsByGroup = {
-          0: [[0, -1], [-1, 0]], // SSE: NW and S
-          1: [[-1, 0], [0, 1]],  // NNE: W and N
-          2: [[-1, 0], [0, 1]],  // ENE: W and N
-          3: [[-1, 0], [0, 1]],  // ESE: NW and E
-        };
+        // Two short pointers start at the cube's center when viewed from above.
+        // Board north is +Y; west is -Z. Directions are (row/Y, col/Z).
+        // Channel pairs: 0/1=SSE, 2/3=NNE, 4/5=ESE, 6/7=ENE.
         const pointerDirections = [
-          [[1, -1], [0, -1]],    // SSE: NW and S
-          [[-1, 0], [0, 1]],     // NNE: W and N
-          [[1, -1], [0, 1]],     // ESE: NW and E
-          [[-1, 0], [0, 1]],     // ENE: W and N
+          [[1, -1], [0, 1]],    // SSE/SSW: NW and south
+          [[0, 1], [-1, 0]],    // NNE: north and west
+          [[1, -1], [0, 1]],    // ESE: NW and east
+          [[0, 1], [-1, 0]],    // ENE: north and west
         ];
         const dirs = pointerDirections[Math.floor(channel / 2)];
-        const topY = mesh.position.y + 0.082;
         const pointerLength = 0.14;
         const points = [];
         for (const [dy, dz] of dirs) {
           points.push(
-            mesh.position.x, topY, mesh.position.z,
-            mesh.position.x, topY + dy * pointerLength, mesh.position.z + dz * pointerLength,
+            mesh.position.x, mesh.position.y, mesh.position.z,
+            mesh.position.x, mesh.position.y + dy * pointerLength, mesh.position.z + dz * pointerLength,
           );
         }
         const pointerGeometry = new THREE.BufferGeometry();
         pointerGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+        // Flip pointer colors to match the opposite-color convention requested.
         const pointerMaterial = new THREE.LineBasicMaterial({
-          color: displayedPlayer === 1 ? 0x20252d : 0xe0525d,
+          color: displayedPlayer === 1 ? 0xe0525d : 0x20252d,
+          linewidth: 3,
         });
         sceneGroup.add(new THREE.LineSegments(pointerGeometry, pointerMaterial));
         activeLinks.push({ row, col, channel });
