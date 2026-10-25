@@ -818,39 +818,51 @@ function drawEffectiveBoard() {
     const startPoint = pointAt(aRow, aCol, curveX);
     const endPoint = pointAt(bRow, bCol, curveX);
     const throughCube = pointAt(midRow, midCol, curveX);
-    // Use a two-part curve that actually passes through the encoded cube.
-    // Shape it like a soft L, with the bend direction determined by the link
-    // orientation. NNE/ENE bend toward the cube; ESE/SSE use the mirrored bend.
+    // Keep the original single-curve look. NNE/ENE need a slightly stronger
+    // bend toward the encoded cube's L-corner; ESE/SSE keep the same bend
+    // radius but reflect the bend across the straight peg-to-peg line.
     const start = new THREE.Vector3(...startPoint);
     const middle = new THREE.Vector3(...throughCube);
     const end = new THREE.Vector3(...endPoint);
-    const dx = bCol - aCol;
-    const dy = bRow - aRow;
     const channelOrientation = encodedChannel & 6;
-    const flipBend = channelOrientation === 0 || channelOrientation === 4;
-    const bendSign = flipBend ? -1 : 1;
-    const bend = 0.24 * bendSign;
-    const firstControl = new THREE.Vector3(
-      (start.x + middle.x) / 2,
-      (start.y + middle.y) / 2,
-      (start.z + middle.z) / 2,
-    );
-    const secondControl = new THREE.Vector3(
-      (middle.x + end.x) / 2,
-      (middle.y + end.y) / 2,
-      (middle.z + end.z) / 2,
-    );
-    // Offset perpendicular to the link in the board plane, mirrored for the
-    // ESE/SSE families so their curves bend the opposite way.
-    firstControl.z += bend * Math.sign(dx || 1);
-    secondControl.z += bend * Math.sign(dx || 1);
-    const firstCurve = new THREE.QuadraticBezierCurve3(start, firstControl, middle);
-    const secondCurve = new THREE.QuadraticBezierCurve3(middle, secondControl, end);
-    const curve = new THREE.CurvePath();
-    curve.add(firstCurve);
-    curve.add(secondCurve);
+    const isNneOrEne = channelOrientation === 2 || channelOrientation === 6;
+    const isSseOrEse = channelOrientation === 0 || channelOrientation === 4;
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const lengthSquared = dx * dx + dz * dz || 1;
+    let control;
+    if (isSseOrEse) {
+      // Start with the original curve control point at the encoded cube, then
+      // reflect that point across the straight peg-to-peg line.
+      const px = middle.x - start.x;
+      const pz = middle.z - start.z;
+      const projection = (px * dx + pz * dz) / lengthSquared;
+      const projectedX = start.x + projection * dx;
+      const projectedZ = start.z + projection * dz;
+      control = new THREE.Vector3(
+        2 * projectedX - middle.x,
+        middle.y,
+        2 * projectedZ - middle.z,
+      );
+    } else {
+      const bendMagnitude = 0.34;
+      const length = Math.sqrt(lengthSquared);
+      const normalX = -dz / length;
+      const normalZ = dx / length;
+      control = new THREE.Vector3(
+        (start.x + end.x) / 2 + normalX * bendMagnitude,
+        (start.y + end.y) / 2,
+        (start.z + end.z) / 2 + normalZ * bendMagnitude,
+      );
+      // Pull NNE/ENE slightly toward the cube's L-corner.
+      if (isNneOrEne) {
+        control.x += (middle.x - control.x) * 0.28;
+        control.z += (middle.z - control.z) * 0.28;
+      }
+    }
+    const curve = new THREE.QuadraticBezierCurve3(start, control, end);
     const tube = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 32, linkRadius, 5, false),
+      new THREE.TubeGeometry(curve, 24, linkRadius, 5, false),
       linkCurveMaterials[link.player === 1 ? 1 : 0],
     );
     sceneGroup.add(tube);
