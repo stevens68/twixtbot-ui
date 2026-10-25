@@ -807,10 +807,10 @@ function drawEffectiveBoard() {
     const rowStep = vertical ? 2 : 1;
     const colStep = vertical ? 1 : 2;
     const slope = diffSign ? -1 : 1;
-    // The cube is 0.164 units thick in the board plane, so its top is
-    // only 0.082 above its centre (not 0.18).
-    const cubeTopY = start + (BOARD_SIZE - 1 - row) * spacing + 0.082;
-    const cubeTopZ = start + col * spacing;
+    // Keep the indicators at the cube's height above the board (0.164),
+    // then shift them half a cube width toward the board interior in plan view.
+    const cubeTopY = start + (BOARD_SIZE - 1 - row) * spacing + 0.082 - 0.082;
+    const cubeTopZ = start + col * spacing + 0.082;
     const cubeTopX = boardX + 0.035 - 0.18;
     // Link channel bit 0 is the encoded player; ESE links for the black
     // player have the opposite horizontal endpoint direction in this view.
