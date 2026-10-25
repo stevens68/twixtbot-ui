@@ -551,24 +551,19 @@ function drawSampleBoard() {
   }
   sceneGroup.add(linkMeshes[0], linkMeshes[1]);
 
-  // Slimmer, slightly longer pegs.
+  // Slimmer, slightly longer pegs, kept in the sample game's native coordinates.
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
-  for (let player = 0; player < 2; player += 1) {
-    const effectivePegs = game.pegs
-      .filter((peg) => effectivePlayer(peg.player) === player)
-      .map((peg) => ({
-        row: transpose ? peg.col : peg.row,
-        col: transpose ? peg.row : peg.col,
-      }));
-    if (!effectivePegs.length) continue;
+  for (const player of [0, 1]) {
+    const playerPegs = game.pegs.filter((peg) => peg.player === player);
+    if (!playerPegs.length) continue;
     const pegMaterial = new THREE.MeshStandardMaterial({
       color: player === 1 ? 0xe0525d : 0x20252d,
       roughness: 0.38,
       metalness: 0.08,
     });
-    const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, effectivePegs.length);
+    const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, playerPegs.length);
     const transform = new THREE.Object3D();
-    effectivePegs.forEach((peg, index) => {
+    playerPegs.forEach((peg, index) => {
       const [x, y, z] = pointAt(peg.row, peg.col, boardX - 0.16);
       transform.position.set(x, y, z);
       transform.rotation.z = Math.PI / 2;
