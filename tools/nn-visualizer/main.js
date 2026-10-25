@@ -416,6 +416,220 @@ function clearSceneGroup() {
   scene.add(sceneGroup);
 }
 
+function createSampleGame() {
+  // Fixed move sequence shown in the root README's T1J example.
+  // Player 1 (WHITE) opens E15; Player 2 swaps to the diagonal mirror O5.
+  const moves = ['e15', 'swap', 'f17', 'H18', 'P12'];
+  const pegs = [];
+  const links = [];
+  let turn = 1; // WHITE starts in twixtbot's source game.
+  let firstMove = null;
+
+  const hasPeg = (row, col) =>
+    pegs.some((peg) => peg.row === row && peg.col === col);
+
+  for (const move of moves) {
+    if (move.toLowerCase() === 'swap') {
+      if (firstMove) {
+        pegs.splice(pegs.findIndex(
+          (peg) => peg.row === firstMove.row && peg.col === firstMove.col,
+        ), 1);
+        pegs.push({
+          row: firstMove.col,
+          col: firstMove.row,
+          player: 0,
+        });
+      }
+      turn = 1;
+      continue;
+    }
+
+    const col = move.toLowerCase().charCodeAt(0) - 97;
+    const row = Number(move.slice(1)) - 1;
+    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) continue;
+
+    const newPeg = { row, col, player: turn };
+    for (const peg of pegs) {
+      if (peg.player !== turn) continue;
+      const dr = Math.abs(peg.row - row);
+      const dc = Math.abs(peg.col - col);
+      if ((dr === 1 && dc === 2) || (dr === 2 && dc === 1)) {
+        links.push({ from: peg, to: newPeg, player: turn });
+      }
+    }
+    pegs.push(newPeg);
+    if (!firstMove) firstMove = { row, col };
+    turn = 1 - turn;
+  }
+
+  return { moves, pegs, links, nextPlayer: turn };
+}
+
+function drawSampleBoard() {
+  const game = createSampleGame();
+  const spacing = 0.34;
+  const boardSize = (BOARD_SIZE - 1) * spacing;
+  const boardCenterZ = 0;
+  const boardStartZ = boardCenterZ - boardSize / 2;
+  const boardStartY = -boardSize / 2;
+  const boardX = 2.62;
+  const pointAt = (row, col, x = boardX) => [
+    x,
+    boardStartY + (BOARD_SIZE - 1 - row) * spacing,
+    boardStartZ + col * spacing,
+  ];
+
+  // A subtle board backing separates the real game from the tensor blades.
+  const backing = new THREE.Mesh(
+    new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
+    new THREE.MeshStandardMaterial({
+      color: 0x24342f,
+      roughness: 0.88,
+      transparent: true,
+      opacity: 0.94,
+      side: THREE.DoubleSide,
+    }),
+  );
+  backing.rotation.y = Math.PI / 2;
+  backing.position.set(boardX - 0.035, 0, boardCenterZ);
+  sceneGroup.add(backing);
+
+  const gridPositions = [];
+  for (let i = 0; i < BOARD_SIZE; i += 1) {
+    const coord = i * spacing - boardSize / 2;
+    // Lines parallel to the row and column axes, on the Y/Z board plane.
+    gridPositions.push(
+      boardX, boardStartY + i * spacing, boardStartZ,
+      boardX, boardStartY + i * spacing, boardStartZ + boardSize,
+      boardX, boardStartY, boardStartZ + i * spacing,
+      boardX, boardStartY + boardSize, boardStartZ + i * spacing,
+    );
+  }
+  const gridGeometry = new THREE.BufferGeometry();
+  gridGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(gridPositions, 3),
+  );
+  const grid = new THREE.LineSegments(
+    gridGeometry,
+    new THREE.LineBasicMaterial({ color: 0x879b91, transparent: true, opacity: 0.68 }),
+  );
+  sceneGroup.add(grid);
+
+  const borderPoints = [
+    pointAt(0, 0, boardX + 0.015),
+    pointAt(0, BOARD_SIZE - 1, boardX + 0.015),
+    pointAt(BOARD_SIZE - 1, BOARD_SIZE - 1, boardX + 0.015),
+    pointAt(BOARD_SIZE - 1, 0, boardX + 0.015),
+    pointAt(0, 0, boardX + 0.015),
+  ];
+  const borderGeometry = new THREE.BufferGeometry().setFromPoints(
+    borderPoints.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
+  );
+  sceneGroup.add(new THREE.Line(
+    borderGeometry,
+    new THREE.LineBasicMaterial({ color: 0xc1c9c4 }),
+  ));
+
+  const holeGeometry = new THREE.SphereGeometry(0.045, 8, 6);
+  const holes = new THREE.InstancedMesh(
+    holeGeometry,
+    new THREE.MeshStandardMaterial({ color: 0xc0c9c2, roughness: 0.85 }),
+    BOARD_SIZE * BOARD_SIZE,
+  );
+  const holeTransform = new THREE.Object3D();
+  let holeIndex = 0;
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      const [x, y, z] = pointAt(row, col, boardX + 0.035);
+      holeTransform.position.set(x, y, z);
+      holeTransform.scale.setScalar(1);
+      holeTransform.updateMatrix();
+      holes.setMatrixAt(holeIndex++, holeTransform.matrix);
+    }
+  }
+  holes.instanceMatrix.needsUpdate = true;
+  sceneGroup.add(holes);
+
+  // Draw links behind the pegs, using the move sequence rather than random links.
+  const linkPositions = [];
+  for (const link of game.links) {
+    const a = pointAt(link.from.row, link.from.col, boardX + 0.095);
+    const b = pointAt(link.to.row, link.to.col, boardX + 0.095);
+    linkPositions.push(...a, ...b);
+  }
+  if (linkPositions.length) {
+    const linkGeometry = new THREE.BufferGeometry();
+    linkGeometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(linkPositions, 3),
+    );
+    sceneGroup.add(new THREE.LineSegments(
+      linkGeometry,
+      new THREE.LineBasicMaterial({ color: 0xe6d8a8, linewidth: 2 }),
+    ));
+  }
+
+  const pegGeometry = new THREE.SphereGeometry(0.125, 16, 12);
+  for (const player of [0, 1]) {
+    const playerPegs = game.pegs.filter((peg) => peg.player === player);
+    if (!playerPegs.length) continue;
+    const pegMaterial = new THREE.MeshStandardMaterial({
+      color: player === 1 ? 0xf05c68 : 0x202630,
+      roughness: 0.38,
+      metalness: 0.08,
+    });
+    const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, playerPegs.length);
+    const transform = new THREE.Object3D();
+    playerPegs.forEach((peg, index) => {
+      const [x, y, z] = pointAt(peg.row, peg.col, boardX + 0.16);
+      transform.position.set(x, y, z);
+      transform.scale.set(1, 1, 1);
+      transform.updateMatrix();
+      pegMesh.setMatrixAt(index, transform.matrix);
+    });
+    pegMesh.instanceMatrix.needsUpdate = true;
+    sceneGroup.add(pegMesh);
+  }
+
+  // Coordinate labels follow the same A–X / 1–24 convention as the tensors.
+  for (let col = 0; col < BOARD_SIZE; col += 1) {
+    addLabel(
+      String.fromCharCode(65 + col),
+      [boardX + 0.12, 4.42, boardStartZ + col * spacing],
+      14,
+      '#e0e8e2',
+      150,
+    );
+  }
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    addLabel(
+      String(row + 1),
+      [boardX + 0.12, boardStartY + (BOARD_SIZE - 1 - row) * spacing, boardStartZ - 0.34],
+      14,
+      '#e0e8e2',
+      150,
+    );
+  }
+
+  addLabel(
+    'Sample game · E15, swap, F17, H18, P12',
+    [boardX + 0.25, 5.25, boardCenterZ],
+    19,
+    '#ffffff',
+    90,
+  );
+  addLabel(
+    'Player 1 · red     Player 2 · dark',
+    [boardX + 0.25, 4.88, boardCenterZ],
+    15,
+    '#dce7df',
+    100,
+  );
+
+  return game;
+}
+
 function drawInputs() {
   const tensors = [
     {
@@ -527,9 +741,9 @@ function drawInputs() {
   return {
     title: 'Input tensors',
     description:
-      'Three parallel tensor boards. Blade labels are left-aligned; the first blade of each tensor has A–X column and 1–24 row headers. Zero-valued cubes have zero thickness.',
+      'A fixed Twixt sample game is shown in front of the three tensor boards. The board uses the README move sequence E15, swap, F17, H18, P12; tensor values remain demo data unless loaded from JSON.',
     shape: '24 × 24 × (2 + 8 + 2)',
-    range: '0 … 1 (demo board)',
+    range: 'Binary demo inputs',
     count: '3 tensors · 6,912 cells',
   };
 }
