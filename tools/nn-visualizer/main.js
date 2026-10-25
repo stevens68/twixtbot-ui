@@ -735,22 +735,20 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // Show each game.links entry as a cube at its original link-anchor
-  // midpoint, not as a diagonal link cylinder. The cube colour is player-relative
-  // in the effective position, matching the transformed peg colours.
-  // Match peg diameter and depth so each cube is visibly plugged into the board.
-  const linkCubeGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
+  // Place each link cube on the rounded integer midpoint cell, like a peg.
+  // Keep the cube's in-plane footprint peg-sized, but make its depth slimmer.
+  const linkCubeGeometry = new THREE.BoxGeometry(0.24, 0.164, 0.164);
   const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   };
   for (const link of game.links) {
     const player = effectivePlayer(link.player);
-    const x = (link.from.row + link.to.row) / 2;
-    const y = (link.from.col + link.to.col) / 2;
+    const x = Math.round((link.from.row + link.to.row) / 2);
+    const y = Math.round((link.from.col + link.to.col) / 2);
     const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
     cube.position.set(
-      boardX - 0.32,
+      boardX - 0.16,
       start + (BOARD_SIZE - 1 - (transpose ? y : x)) * spacing,
       start + (transpose ? x : y) * spacing,
     );
