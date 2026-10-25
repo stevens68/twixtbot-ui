@@ -618,13 +618,14 @@ function drawEffectiveBoard() {
   const game = createSampleGame();
   const spacing = 0.34;
   const boardSize = (BOARD_SIZE - 1) * spacing;
-  const boardX = -5.0;
+  const boardX = -1.5;
   const start = -boardSize / 2;
   const transpose = game.nextPlayer === 0;
   const effectivePlayer = (player) => transpose ? 1 - player : player;
   const pointAt = (row, col, x = boardX) => {
+    // A clockwise 90-degree turn: (row, col) -> (col, BOARD_SIZE - 1 - row).
     const effectiveRow = transpose ? col : row;
-    const effectiveCol = transpose ? row : col;
+    const effectiveCol = transpose ? BOARD_SIZE - 1 - row : col;
     return [
       x,
       start + (BOARD_SIZE - 1 - effectiveRow) * spacing,
@@ -720,7 +721,7 @@ function drawInputs() {
     {
       key: 'pegs',
       label: 'Pegs · 24×24×2',
-      x: -1.8,
+      x: 5.2,
       z: -13,
       channels: 2,
       bladeLabels: ['Black', 'White'],
