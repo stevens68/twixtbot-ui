@@ -792,53 +792,6 @@ function drawEffectiveBoard() {
       }
     }
   }
-  // Draw exactly two indicators on each link cube's top face: one along
-  // the row axis and one along the column axis, each pointing toward one
-  // of the two endpoint pegs represented by the link channel.
-  const indicatorMaterial = new THREE.LineBasicMaterial({
-    color: 0xf5f7fa,
-    transparent: true,
-    opacity: 0.95,
-    depthTest: false,
-  });
-  for (const { row, col, channel } of activeLinks) {
-    const vertical = (channel & 4) !== 0;
-    const diffSign = (channel & 2) !== 0;
-    const rowStep = vertical ? 2 : 1;
-    const colStep = vertical ? 1 : 2;
-    const slope = diffSign ? -1 : 1;
-    // X is perpendicular to the board. The cube extends 0.36 outward
-    // from its centre, so its exposed top face is at boardX + 0.035.
-    // Keep indicators on that face and retain the half-cube-width plan shift.
-    const cubeTopY = start + (BOARD_SIZE - 1 - row) * spacing - 0.082;
-    const cubeTopZ = start + col * spacing + 0.082;
-    const cubeTopX = boardX + 0.035;
-    // Link channel bit 0 is the encoded player; ESE links for the black
-    // player have the opposite horizontal endpoint direction in this view.
-    const blackESE = !vertical && diffSign && (channel & 1) === 1;
-    const rowDirection = diffSign ? -1 : 1;
-    const colDirection = (diffSign ? -1 : 1) * (blackESE ? -1 : 1);
-    const rowEnd = row + (vertical ? -rowStep : rowDirection);
-    const colEnd = col + (vertical ? colDirection : colStep * slope);
-    const segments = [
-      {
-        y: start + (BOARD_SIZE - 1 - Math.max(0, Math.min(BOARD_SIZE - 1, rowEnd))) * spacing + 0.082,
-        z: cubeTopZ,
-      },
-      {
-        y: cubeTopY,
-        z: start + Math.max(0, Math.min(BOARD_SIZE - 1, colEnd)) * spacing,
-      },
-    ];
-    for (const endpoint of segments) {
-      const geometry = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(cubeTopX, cubeTopY, cubeTopZ),
-        new THREE.Vector3(cubeTopX, endpoint.y, endpoint.z),
-      ]);
-      sceneGroup.add(new THREE.Line(geometry, indicatorMaterial));
-    }
-  }
-
   console.debug('[Effective board] active encoded link cells:', activeLinks);
 
   // Render pegs from the same encoded tensor used by the input blades.
