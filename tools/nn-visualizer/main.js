@@ -1530,6 +1530,37 @@ async function navigateGame(delta) {
     if (requestId === navigationRequest) updateGameNavigation();
   }
 }
+async function loadTrajectoryFromEditor() {
+  const moves = document.querySelector('#trajectory').value
+    .split(/[\\s,]+/)
+    .map((move) => move.trim())
+    .filter(Boolean);
+  if (moves.length > 500) {
+    status.textContent = 'At most 500 moves are accepted.';
+    return;
+  }
+
+  const loadButton = document.querySelector('#load-trajectory');
+  loadButton.disabled = true;
+  try {
+    // Validate the entire trajectory before changing the active game.
+    await requestSnapshot(moves);
+    gameMoves = moves;
+    gamePly = 0;
+    gameLoaded = true;
+    await loadGamePosition(0);
+    // Start at the final position, allowing Back to undo and Forward to redo.
+    await loadGamePosition(gameMoves.length);
+  } catch (error) {
+    gameLoaded = false;
+    updateGameNavigation();
+    status.textContent = 'Could not load trajectory: ' + error.message;
+  } finally {
+    loadButton.disabled = false;
+  }
+}
+
+document.querySelector('#load-trajectory').addEventListener('click', loadTrajectoryFromEditor);
 document.querySelector('#game-back').addEventListener('click',()=>navigateGame(-1));
 document.querySelector('#game-forward').addEventListener('click',()=>navigateGame(1));
 document.querySelector('#t1-file').addEventListener('change',async(event)=>{const file=event.target.files&&event.target.files[0];if(!file)return;try{const response=await fetch('/api/t1',{method:'POST',headers:{'Content-Type':'text/plain; charset=utf-8'},body:await file.text()});const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);gameMoves=result.moves;document.querySelector('#trajectory').value=gameMoves.join(' ');await loadGamePosition(gameMoves.length);status.textContent='Loaded '+file.name+'. '+status.textContent;}catch(error){status.textContent='Could not load T1 game: '+error.message;}finally{event.target.value='';}});
@@ -1544,4 +1575,8 @@ function animate() {
 
 resizeRenderer();
 renderStep();
+updateGameNavigation();
 animate();
+// The editor already contains a sample trajectory, so initialize the game
+// timeline on startup instead of leaving both navigation buttons disabled.
+loadTrajectoryFromEditor();
