@@ -71,65 +71,19 @@ function createTensor4(dim1, dim2, dim3, dim4, valueFactory) {
 }
 
 function createDemoData() {
-  const random = createRandomGenerator(2026);
-  const pegs = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
-  const links = createTensor3(BOARD_SIZE, BOARD_SIZE, 8);
-  const locations = createTensor3(BOARD_SIZE, BOARD_SIZE, 2);
-
-  // Coordinate channels match the model's location_inputs(): x varies by
-  // column and y varies by row, both from 0/24 through 23/24.
-  for (let row = 0; row < BOARD_SIZE; row += 1) {
-    for (let col = 0; col < BOARD_SIZE; col += 1) {
-      locations[row][col][0] = col / BOARD_SIZE;
-      locations[row][col][1] = row / BOARD_SIZE;
-
-      for (let channel = 0; channel < 8; channel += 1) {
-        links[row][col][channel] =
-          random() < 0.018 ? (random() < 0.5 ? -1 : 1) : 0;
-      }
-    }
+  const random=createRandomGenerator(2026);
+  const {pegs,links}=encodeGameInputs(createSampleGame());
+  const locations=createTensor3(BOARD_SIZE,BOARD_SIZE,2);
+  for(let row=0;row<BOARD_SIZE;row++) for(let col=0;col<BOARD_SIZE;col++) {
+    locations[row][col][0]=col/BOARD_SIZE; locations[row][col][1]=row/BOARD_SIZE;
   }
-
-  [
-    [5, 5, 0],
-    [8, 7, 1],
-    [11, 9, 0],
-    [13, 12, 1],
-    [17, 15, 0],
-  ].forEach(([row, col, player]) => {
-    pegs[row][col][player] = 1;
-  });
-
-  const weights = {
-    pegs: createTensor4(
-      FILTER_COUNT,
-      1,
-      1,
-      2,
-      () => (random() - 0.5) * 0.4,
-    ),
-    links: createTensor4(
-      FILTER_COUNT,
-      5,
-      5,
-      8,
-      () => (random() - 0.5) * 0.16,
-    ),
-    locations: createTensor4(
-      FILTER_COUNT,
-      1,
-      1,
-      2,
-      () => (random() - 0.5) * 0.3,
-    ),
+  const weights={
+    pegs:createTensor4(FILTER_COUNT,1,1,2,()=> (random()-0.5)*0.4),
+    links:createTensor4(FILTER_COUNT,5,5,8,()=> (random()-0.5)*0.16),
+    locations:createTensor4(FILTER_COUNT,1,1,2,()=> (random()-0.5)*0.3),
   };
-
-  const bias = Array.from(
-    { length: FILTER_COUNT },
-    () => (random() - 0.5) * 0.15,
-  );
-
-  return { pegs, links, locations, weights, bias, isDemo: true };
+  const bias=Array.from({length:FILTER_COUNT},()=> (random()-0.5)*0.15);
+  return {pegs,links,locations,weights,bias,isDemo:true};
 }
 
 /**
@@ -417,52 +371,49 @@ function clearSceneGroup() {
 }
 
 function createSampleGame() {
-  // Fixed move sequence shown in the root README's T1J example.
-  // Player 1 (WHITE) opens E15; Player 2 swaps to the diagonal mirror O5.
-  const moves = ['e15', 'swap', 'f17', 'H18', 'P12'];
-  const pegs = [];
-  const links = [];
-  let turn = 1; // WHITE starts in twixtbot's source game.
-  let firstMove = null;
-
-  const hasPeg = (row, col) =>
-    pegs.some((peg) => peg.row === row && peg.col === col);
-
+  const moves = ['L12','L8','O9','L17','H16','I14','J13','N9','Q10','K6','H12','O11','F7'];
+  const pegs=[]; const links=[]; let turn=1;
   for (const move of moves) {
-    if (move.toLowerCase() === 'swap') {
-      if (firstMove) {
-        pegs.splice(pegs.findIndex(
-          (peg) => peg.row === firstMove.row && peg.col === firstMove.col,
-        ), 1);
-        pegs.push({
-          row: firstMove.col,
-          col: firstMove.row,
-          player: 0,
-        });
-      }
-      turn = 1;
-      continue;
-    }
-
-    const col = move.toLowerCase().charCodeAt(0) - 97;
-    const row = Number(move.slice(1)) - 1;
-    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) continue;
-
-    const newPeg = { row, col, player: turn };
+    const col=move.charCodeAt(0)-65, row=Number(move.slice(1))-1;
+    const next={row,col,player:turn};
     for (const peg of pegs) {
-      if (peg.player !== turn) continue;
-      const dr = Math.abs(peg.row - row);
-      const dc = Math.abs(peg.col - col);
-      if ((dr === 1 && dc === 2) || (dr === 2 && dc === 1)) {
-        links.push({ from: peg, to: newPeg, player: turn });
-      }
+      if (peg.player!==turn) continue;
+      const dr=Math.abs(peg.row-row), dc=Math.abs(peg.col-col);
+      if ((dr===1&&dc===2)||(dr===2&&dc===1)) links.push({from:peg,to:next,player:turn});
     }
-    pegs.push(newPeg);
-    if (!firstMove) firstMove = { row, col };
-    turn = 1 - turn;
+    pegs.push(next); turn=1-turn;
   }
+  return {moves,pegs,links,nextPlayer:turn};
+}
 
-  return { moves, pegs, links, nextPlayer: turn };
+function encodeGameInputs(game) {
+  const rawPegs=Array.from({length:2},()=>createTensor3(BOARD_SIZE,BOARD_SIZE,1));
+  const rawLinks=Array.from({length:8},()=>createTensor3(BOARD_SIZE,BOARD_SIZE,1));
+  for (const p of game.pegs) rawPegs[p.player][p.col][p.row][0]=1;
+  for (const link of game.links) {
+    const x1=link.from.col,y1=link.from.row,x2=link.to.col,y2=link.to.row;
+    const ix=link.player+(((x1+x2)%2!==0)?4:0)+(((y2-y1)*(x2-x1)<0)?2:0);
+    rawLinks[ix][Math.floor((x1+x2)/2)][Math.floor((y1+y2)/2)][0]=1;
+  }
+  const pegs=createTensor3(BOARD_SIZE,BOARD_SIZE,2), mid=createTensor3(BOARD_SIZE,BOARD_SIZE,8);
+  // Thirteen moves means BLACK is next: channel 0 is WHITE/opponent, 1 BLACK/to-move.
+  for(let r=0;r<BOARD_SIZE;r++) for(let col=0;col<BOARD_SIZE;col++) {
+    pegs[r][col][0]=rawPegs[1][col][r][0]; pegs[r][col][1]=rawPegs[0][col][r][0];
+    for(let color=0;color<2;color++) {
+      const opp=1-color;
+      mid[r][col][4+color]=rawLinks[opp][col][r][0];
+      mid[r][col][6+color]=rawLinks[2+opp][col][r][0];
+      mid[r][col][color]=rawLinks[4+opp][col][r][0];
+      mid[r][col][2+color]=rawLinks[6+opp][col][r][0];
+    }
+  }
+  const links=createTensor3(BOARD_SIZE,BOARD_SIZE,8);
+  for(let r=0;r<BOARD_SIZE;r++) for(let col=0;col<BOARD_SIZE;col++) for(let ch=0;ch<8;ch++) {
+    const vertical=(ch&4)!==0,diff=(ch&2)!==0;
+    const sr=r-((vertical||diff)?1:0), sc=col-((!vertical||diff)?1:0);
+    if(sr>=0&&sc>=0) links[r][col][ch]=mid[sr][sc][ch];
+  }
+  return {pegs,links};
 }
 
 function drawSampleBoard() {
@@ -483,38 +434,16 @@ function drawSampleBoard() {
   const backing = new THREE.Mesh(
     new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
-      color: 0x24342f,
+      color: 0x777b80,
       roughness: 0.88,
       transparent: true,
-      opacity: 0.94,
+      opacity: 1,
       side: THREE.DoubleSide,
     }),
   );
   backing.rotation.y = Math.PI / 2;
   backing.position.set(boardX - 0.035, 0, boardCenterZ);
   sceneGroup.add(backing);
-
-  const gridPositions = [];
-  for (let i = 0; i < BOARD_SIZE; i += 1) {
-    const coord = i * spacing - boardSize / 2;
-    // Lines parallel to the row and column axes, on the Y/Z board plane.
-    gridPositions.push(
-      boardX, boardStartY + i * spacing, boardStartZ,
-      boardX, boardStartY + i * spacing, boardStartZ + boardSize,
-      boardX, boardStartY, boardStartZ + i * spacing,
-      boardX, boardStartY + boardSize, boardStartZ + i * spacing,
-    );
-  }
-  const gridGeometry = new THREE.BufferGeometry();
-  gridGeometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(gridPositions, 3),
-  );
-  const grid = new THREE.LineSegments(
-    gridGeometry,
-    new THREE.LineBasicMaterial({ color: 0x879b91, transparent: true, opacity: 0.68 }),
-  );
-  sceneGroup.add(grid);
 
   const borderPoints = [
     pointAt(0, 0, boardX + 0.015),
@@ -531,7 +460,7 @@ function drawSampleBoard() {
     new THREE.LineBasicMaterial({ color: 0xc1c9c4 }),
   ));
 
-  const holeGeometry = new THREE.SphereGeometry(0.045, 8, 6);
+  const holeGeometry = new THREE.SphereGeometry(0.035, 8, 6);
   const holes = new THREE.InstancedMesh(
     holeGeometry,
     new THREE.MeshStandardMaterial({ color: 0xc0c9c2, roughness: 0.85 }),
@@ -570,7 +499,7 @@ function drawSampleBoard() {
     ));
   }
 
-  const pegGeometry = new THREE.SphereGeometry(0.125, 16, 12);
+  const pegGeometry = new THREE.CylinderGeometry(0.105, 0.105, 0.28, 16);
   for (const player of [0, 1]) {
     const playerPegs = game.pegs.filter((peg) => peg.player === player);
     if (!playerPegs.length) continue;
@@ -584,6 +513,7 @@ function drawSampleBoard() {
     playerPegs.forEach((peg, index) => {
       const [x, y, z] = pointAt(peg.row, peg.col, boardX + 0.16);
       transform.position.set(x, y, z);
+      transform.rotation.z = Math.PI / 2;
       transform.scale.set(1, 1, 1);
       transform.updateMatrix();
       pegMesh.setMatrixAt(index, transform.matrix);
@@ -613,18 +543,11 @@ function drawSampleBoard() {
   }
 
   addLabel(
-    'Sample game · E15, swap, F17, H18, P12',
+    'Sample Game',
     [boardX + 0.25, 5.25, boardCenterZ],
     19,
     '#ffffff',
     90,
-  );
-  addLabel(
-    'Player 1 · red     Player 2 · dark',
-    [boardX + 0.25, 4.88, boardCenterZ],
-    15,
-    '#dce7df',
-    100,
   );
 
   return game;
@@ -743,7 +666,7 @@ function drawInputs() {
   return {
     title: 'Input tensors',
     description:
-      'A fixed Twixt sample game is shown in front of the three tensor boards. The board uses the README move sequence E15, swap, F17, H18, P12; tensor values remain demo data unless loaded from JSON.',
+      'The 13-move sample game is encoded into the peg and link tensors. Locations remain fixed coordinate inputs; convolution weights are reproducible demo values.',
     shape: '24 × 24 × (2 + 8 + 2)',
     range: 'Binary demo inputs',
     count: '3 tensors · 6,912 cells',
