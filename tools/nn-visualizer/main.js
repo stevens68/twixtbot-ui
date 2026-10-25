@@ -456,8 +456,8 @@ function drawSampleBoard() {
     line.computeLineDistances();
     sceneGroup.add(line);
   };
-  const redFinish = new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.5 });
-  const blackFinish = new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.5 });
+  const redFinish = new THREE.LineBasicMaterial({ color: 0xe0525d, linewidth: 1 });
+  const blackFinish = new THREE.LineBasicMaterial({ color: 0x20252d, linewidth: 1 });
   const rowY = (row) => boardStartY + (BOARD_SIZE - 1 - row) * spacing;
   const colZ = (col) => boardStartZ + col * spacing;
 
@@ -649,10 +649,18 @@ function drawEffectiveBoard() {
         start + (BOARD_SIZE - 1) * spacing,
       ),
     ]);
-    sceneGroup.add(new THREE.Line(
+    // Dotted black transpose axis, thinner than the board grid.
+    const diagonal = new THREE.Line(
       diagonalGeometry,
-      new THREE.LineBasicMaterial({ color: 0xffffff }),
-    ));
+      new THREE.LineDashedMaterial({
+        color: 0x080a0d,
+        dashSize: 0.075,
+        gapSize: 0.075,
+        linewidth: 1,
+      }),
+    );
+    diagonal.computeLineDistances();
+    sceneGroup.add(diagonal);
   }
 
   // Finish lines are transformed with the board. Transposition swaps the
