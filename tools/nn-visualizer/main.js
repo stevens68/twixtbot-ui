@@ -788,7 +788,7 @@ function drawEffectiveBoard() {
  * data.links after canonicalization and the input-cell shift. Comparing both
  * lists makes channel-label, transpose, and one-cell-offset errors visible.
  */
-function logLinkEncodingDiagnostic(game, encoded) {
+function logLinkEncodingDiagnostic(game, linkTensor) {
   const transpose = game.nextPlayer === 0;
   const canonicalPoint = (peg) => ({
     row: transpose ? peg.col : peg.row,
@@ -835,7 +835,7 @@ function logLinkEncodingDiagnostic(game, encoded) {
     const expectedCol = canonicalCol + ((!vertical || diff) ? 1 : 0);
     const inBounds = expectedRow >= 0 && expectedRow < BOARD_SIZE &&
       expectedCol >= 0 && expectedCol < BOARD_SIZE;
-    const actualValue = inBounds ? encoded.links[expectedRow][expectedCol][midChannel] : null;
+    const actualValue = inBounds ? linkTensor[expectedRow][expectedCol][midChannel] : null;
 
     return {
       link: index,
@@ -862,13 +862,13 @@ function logLinkEncodingDiagnostic(game, encoded) {
   for (let channel = 0; channel < 8; channel += 1) {
     for (let row = 0; row < BOARD_SIZE; row += 1) {
       for (let col = 0; col < BOARD_SIZE; col += 1) {
-        if (encoded.links[row][col][channel] !== 0) {
+        if (linkTensor[row][col][channel] !== 0) {
           actualCells.push({
             channel,
             cell: String.fromCharCode(65 + col) + (row + 1),
             row,
             col,
-            value: encoded.links[row][col][channel],
+            value: linkTensor[row][col][channel],
           });
         }
       }
