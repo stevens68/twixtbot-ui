@@ -782,9 +782,69 @@ function drawEffectiveBoard() {
   );
 }
 
+/**
+ * Print a source-of-truth diagnostic for the link input blades.
+ * The effective board is drawn from game.links; the blades are drawn from
+ * data.links after canonicalization and the input-cell shift. Comparing both
+ * lists makes channel-label, transpose, and one-cell-offset errors visible.
+ */
+function logLinkEncodingDiagnostic(game, linkTensor) {
+  const transpose = game.nextPlayer === 0;
+  const canonicalPoint = (peg) => ({
+    row: transpose ? peg.col : peg.row,
+    col: transpose ? peg.row : peg.col,
+  });
+  const canonicalPlayer = (player) => transpose ? 1 - player : player;
+  const channelNames = [
+    'ENE · White', 'ENE · Black',
+    'ESE · White', 'ESE · Black',
+    'NNE · White', 'NNE · Black',
+    'SSE · White', 'SSE · Black',
+  ];
+  const boardLinks = game.links.map((link) => {
+    const a = canonicalPoint(link.from);
+    const b = canonicalPoint(link.to);
+    return {
+      player: canonicalPlayer(link.player) === 1 ? 'White' : 'Black',
+      from: String.fromCharCode(65 + a.col) + (a.row + 1),
+      to: String.fromCharCode(65 + b.col) + (b.row + 1),
+      midpointRow: (a.row + b.row) / 2,
+      midpointCol: (a.col + b.col) / 2,
+    };
+  });
+  const tensorCells = [];
+  for (let channel = 0; channel < 8; channel += 1) {
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        if (linkTensor[row][col][channel] !== 0) {
+          tensorCells.push({
+            channel,
+            label: channelNames[channel],
+            cell: String.fromCharCode(65 + col) + (row + 1),
+            row,
+            col,
+            value: linkTensor[row][col][channel],
+          });
+        }
+      }
+    }
+  }
+  console.groupCollapsed(
+    '[Link encoding diagnostic] ' + boardLinks.length +
+    ' effective-board links; ' + tensorCells.length + ' nonzero tensor cells',
+  );
+  console.log('Effective-board links (canonical coordinates):');
+  console.table(boardLinks);
+  console.log('Nonzero link-tensor cells (the actual blade contents):');
+  console.table(tensorCells);
+  console.log('Compare each board link midpoint with tensor cells. The tensor cell may be shifted from the geometric midpoint by the input encoding.');
+  console.groupEnd();
+}
+
 function drawInputs() {
   drawSampleBoard();
   drawEffectiveBoard();
+  logLinkEncodingDiagnostic(createSampleGame(), data.links);
 
   const tensors = [
     {
