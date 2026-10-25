@@ -42,6 +42,7 @@ let activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
 let data = createDemoData();
 let cachedOutput = null;
+let backendSnapshot = null;
 
 scene.add(sceneGroup);
 
@@ -366,6 +367,14 @@ function clearSceneGroup() {
 }
 
 function createSampleGame() {
+  if (backendSnapshot) {
+    return {
+      moves: backendSnapshot.moves,
+      pegs: backendSnapshot.board.pegs,
+      links: backendSnapshot.board.links,
+      nextPlayer: backendSnapshot.next_player,
+    };
+  }
   const moves = ['L12','L8','O9','L17','H16','I14','J13','N9','Q10','K6','H12','O11','F7'];
   const pegs=[]; const links=[]; let turn=1;
   for (const move of moves) {
@@ -1017,8 +1026,10 @@ function drawInputs() {
   const game = createSampleGame();
   drawSampleBoard();
   drawEffectiveBoard();
-  logLinkEncodingDiagnostic(game, data.links);
-  logFullInputTensorValidation(game, data);
+  if (!backendSnapshot) {
+    logLinkEncodingDiagnostic(game, data.links);
+    logFullInputTensorValidation(game, data);
+  }
 
   const tensors = [
     {
@@ -1380,6 +1391,49 @@ document.querySelector('#demo-button').addEventListener('click', () => {
   renderStep();
   resetCamera();
   status.textContent = 'Demo board and reproducible weights loaded.';
+});
+
+document.querySelector('#load-python-trace').addEventListener('click', async () => {
+  const moves = document.querySelector('#trajectory').value
+    .split(/[\\s,;]+/).map((move) => move.trim()).filter(Boolean);
+  const button = document.querySelector('#load-python-trace');
+  button.disabled = true;
+  status.textContent = 'Running src.backend.twixt.Game and src.backend.naf.NetInputs…';
+  try {
+    const response = await fetch('/api/trace', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        moves,
+        allow_scl: document.querySelector('#allow-scl').checked,
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || response.statusText);
+    backendSnapshot = result;
+    const demo = createDemoData();
+    data = {
+      pegs: result.tensors.pegs,
+      links: result.tensors.links,
+      locations: result.tensors.locations,
+      weights: demo.weights,
+      bias: demo.bias,
+      isDemo: false,
+    };
+    cachedOutput = null;
+    activeStep = 'inputs';
+    renderStep();
+    resetCamera();
+    status.textContent =
+      'Python backend snapshot loaded. Next player: ' + result.next_player_name +
+      '. Tensors are from ' + result.source.net_inputs_class +
+      '; filters remain reproducible demo weights.';
+  } catch (error) {
+    status.textContent = 'Python trace failed: ' + error.message +
+      '. Start this page with: python tools/nn-visualizer/server.py';
+  } finally {
+    button.disabled = false;
+  }
 });
 
 document.querySelector('#json-file').addEventListener('change', async (event) => {
