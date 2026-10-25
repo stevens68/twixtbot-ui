@@ -735,9 +735,18 @@ function drawEffectiveBoard() {
   holes.instanceMatrix.needsUpdate = true;
   sceneGroup.add(holes);
 
-  // The board lies in the YZ plane. Make link cubes half a peg's height
-  // along the board normal, with equal square width/length in the board plane.
-  const linkCubeGeometry = new THREE.BoxGeometry(0.18, 0.082, 0.082);
+  // Match the square face area to the circular top of a peg:
+  // side^2 = pi * pegRadius^2. The 0.18 depth runs along the board normal.
+  const pegRadius = 0.082;
+  const linkFaceSide = Math.sqrt(Math.PI * pegRadius * pegRadius);
+  const linkCubeDepth = 0.18;
+  const linkCubeGeometry = new THREE.BoxGeometry(
+    linkCubeDepth,
+    linkFaceSide,
+    linkFaceSide,
+  );
+  // Place the cube's board-facing face flush against the board surface.
+  const linkCubeX = boardX + 0.035 - linkCubeDepth / 2;
   const linkCubeMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
@@ -766,7 +775,7 @@ function drawEffectiveBoard() {
 
     const player = effectivePlayer(link.player);
     const cube = new THREE.Mesh(linkCubeGeometry, linkCubeMaterials[player]);
-    cube.position.set(...pointAt(row, col, boardX - 0.16));
+    cube.position.set(...pointAt(row, col, linkCubeX));
     sceneGroup.add(cube);
   }
 
