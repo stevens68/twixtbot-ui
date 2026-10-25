@@ -407,17 +407,20 @@ function encodeGameInputs(game) {
     createTensor3(BOARD_SIZE, BOARD_SIZE, 1),
   );
 
+  // Backend game arrays are indexed [x][y], where x is the letter/column
+  // and y is the number/row. Keep that convention in the raw arrays; the
+  // effective tensor is [row][column] after the perspective mapping below.
   for (const peg of game.pegs) {
-    rawPegs[peg.player][peg.row][peg.col][0] = 1;
+    rawPegs[peg.player][peg.col][peg.row][0] = 1;
   }
 
   // Link channel encoding follows twixt.Game.describe_link:
   // bit 0 = colour, bit 2 = LONGY, bit 1 = DIFFSIGN.
   for (const link of game.links) {
-    const x1 = link.from.row;
-    const y1 = link.from.col;
-    const x2 = link.to.row;
-    const y2 = link.to.col;
+    const x1 = link.from.col;
+    const y1 = link.from.row;
+    const x2 = link.to.col;
+    const y2 = link.to.row;
     const channel =
       link.player +
       (((x1 + x2) % 2 !== 0) ? 4 : 0) +
