@@ -643,6 +643,32 @@ function drawEffectiveBoard() {
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
+  // Mark the main-diagonal mirror/transpose axis, matching naf.py's .T.
+  // It is visible just above the board surface and only appears when transposed.
+  if (transpose) {
+    const diagonalStart = new THREE.Vector3(
+      boardX - 0.105,
+      start + (BOARD_SIZE - 1) * spacing,
+      start,
+    );
+    const diagonalEnd = new THREE.Vector3(
+      boardX - 0.105,
+      start,
+      start + (BOARD_SIZE - 1) * spacing,
+    );
+    const diagonalDirection = new THREE.Vector3().subVectors(diagonalEnd, diagonalStart);
+    const diagonal = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.009, 0.009, diagonalDirection.length(), 6),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    );
+    diagonal.position.copy(diagonalStart).add(diagonalEnd).multiplyScalar(0.5);
+    diagonal.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      diagonalDirection.clone().normalize(),
+    );
+    sceneGroup.add(diagonal);
+  }
+
   // Finish lines are transformed with the board. Transposition swaps the
   // goal axes, and colour canonicalization swaps the players, so the effective
   // view retains the canonical red-horizontal / black-vertical appearance.
