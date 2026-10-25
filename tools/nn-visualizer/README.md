@@ -42,3 +42,26 @@ The values above are schema illustrations only; real tensors must contain all 24
 The convolution implementation uses zero padding for the 5×5 link kernel and sums the link, peg, and location branches plus one bias per output channel. Confirm padding, bias placement, and weight layouts against the PyTorch model before using this for numerical parity checks.
 
 Large tensors use Three.js instanced meshes to reduce draw calls. This is an exploratory visualization, not a substitute for framework-level numerical tests.
+
+
+## Python-backed trajectory mode
+
+From the repository root, activate the project's virtual environment and run:
+
+```powershell
+python tools/nn-visualizer/server.py
+```
+
+Open <http://127.0.0.1:8765>. Enter a space- or comma-separated move sequence
+and click **Build from Python backend**. The local server's `POST /api/trace`
+endpoint replays the moves with `src.backend.twixt.Game`, constructs
+`src.backend.naf.NetInputs`, and returns the backend board, the intermediate
+`NetInputs.naf` array, and the exact `pegs`, `links`, and `locations`
+arrays returned by `NetInputs.to_input_arrays()`. The browser uses those
+arrays for its input tensor view; it does not run a second JavaScript encoder
+in this mode.
+
+The filter weights are still reproducible demo weights, so **Filters** and
+**Conv output** remain illustrative and are not a real model forward pass yet.
+The **Load demo board** button restores the original standalone demo. The
+server binds to `127.0.0.1` only and is intended for local development.
