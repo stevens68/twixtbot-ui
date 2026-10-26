@@ -1,5 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
+import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } from './tensor-utils.js';
+import { createLabelHelpers } from './labels.js';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -53,29 +55,7 @@ let currentPlayerName = "Black";
 scene.add(sceneGroup);
 
 const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-
-function createRandomGenerator(seed) {
-  return function random() {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-}
-
-function createTensor3(dim1, dim2, dim3) {
-  return Array.from({ length: dim1 }, () =>
-    Array.from({ length: dim2 }, () => Array(dim3).fill(0)),
-  );
-}
-
-function createTensor4(dim1, dim2, dim3, dim4, valueFactory) {
-  return Array.from({ length: dim1 }, () =>
-    Array.from({ length: dim2 }, () =>
-      Array.from({ length: dim3 }, () =>
-        Array.from({ length: dim4 }, valueFactory),
-      ),
-    ),
-  );
-}
+const { addLabel, addRichLabel } = createLabelHelpers(THREE, () => sceneGroup);
 
 function createDemoData() {
   const random=createRandomGenerator(2026);
@@ -97,92 +77,6 @@ function createDemoData() {
  * Convert a [row][column][channel] tensor into channel-major order.
  * The cube renderer iterates channels first, then rows and columns.
  */
-function flattenTensor(tensor) {
-  const values = [];
-
-  for (let channel = 0; channel < tensor[0][0].length; channel += 1) {
-    for (let row = 0; row < tensor.length; row += 1) {
-      for (let col = 0; col < tensor[row].length; col += 1) {
-        values.push(Number(tensor[row][col][channel]));
-      }
-    }
-  }
-
-  return values;
-}
-
-function addLabel(
-  text,
-  position,
-  fontSize = 30,
-  color = '#e7edf6',
-  scaleDivisor = 45,
-  alignment = 'center',
-) {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  context.font = '600 ' + fontSize + 'px Arial';
-  canvas.width = Math.max(128, context.measureText(text).width + 28);
-  canvas.height = fontSize + 26;
-
-  context.font = '600 ' + fontSize + 'px Arial';
-  context.fillStyle = color;
-  context.textAlign = alignment;
-  context.textBaseline = 'middle';
-  context.fillText(
-    text,
-    alignment === 'left' ? 12 : canvas.width / 2,
-    canvas.height / 2,
-  );
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-
-  const sprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-    }),
-  );
-
-  const spriteWidth = canvas.width / scaleDivisor;
-  // Anchor left-aligned sprites at their left edge. Sprite.center controls
-  // the texture anchor; shifting the position alone can still look centered.
-  if (alignment === 'left') sprite.center.set(0, 0.5);
-  sprite.position.set(position[0], position[1], position[2]);
-  sprite.scale.set(spriteWidth, canvas.height / scaleDivisor, 1);
-  sceneGroup.add(sprite);
-}
-
-function addRichLabel(parts, position, fontSize = 30, scaleDivisor = 45, alignment = 'left') {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  context.font = '600 ' + fontSize + 'px Arial';
-  const widths = parts.map((part) => context.measureText(part.text).width);
-  canvas.width = Math.max(128, widths.reduce((sum, width) => sum + width, 0) + 28);
-  canvas.height = fontSize + 26;
-  context.font = '600 ' + fontSize + 'px Arial';
-  context.textAlign = 'left';
-  context.textBaseline = 'middle';
-  let x = alignment === 'center' ? (canvas.width - widths.reduce((sum, width) => sum + width, 0)) / 2 : 12;
-  parts.forEach((part, index) => {
-    context.fillStyle = part.color;
-    context.fillText(part.text, x, canvas.height / 2);
-    x += widths[index];
-  });
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: texture, transparent: true, depthTest: false,
-  }));
-  sprite.center.set(alignment === 'center' ? 0.5 : 0, 0.5);
-  sprite.position.set(position[0], position[1], position[2]);
-  sprite.scale.set(canvas.width / scaleDivisor, canvas.height / scaleDivisor, 1);
-  sceneGroup.add(sprite);
-}
-
 function addValueCubes(values, rows, cols, channels, origin, color, options = {}) {
   const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
   const spacing = options.spacing || 0.34;
