@@ -54,7 +54,7 @@
     <aside class="controls-panel" aria-label="Visualizer controls">
       <section class="control-section game-controls">
         <label class="file-button load-file">Load *.T1 board<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
-        <label class="current-game-label" for="trajectory">Current game:</label>
+        <label class="current-game-label" for="trajectory">Current game: <span id="game-position" class="game-position-inline">No game loaded</span></label>
         <div class="trajectory-row">
           <textarea id="trajectory" rows="3">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
           <button id="apply-changes" class="primary apply-button">Apply</button>
@@ -65,7 +65,6 @@
           <button id="game-forward" disabled title="Next move" aria-label="Next move">▶</button>
           <button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button>
         </div>
-        <p id="game-position" class="game-position">No game loaded</p>
         <button id="demo-button" class="quiet full-width">Load Demo board</button>
       </section>
 
