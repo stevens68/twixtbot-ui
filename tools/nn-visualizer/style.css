@@ -38,10 +38,38 @@ h1 { margin: 0; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -.04em; }
 .app-layout { display: grid; grid-template-columns: 265px minmax(0, 1fr) 285px; min-height: calc(100vh - 105px); height: calc(100vh - 105px); }
 .controls-panel, .inspector { min-width: 0; overflow-y: auto; padding: 18px 18px; background: var(--panel); }
 .controls-panel { border-right: 1px solid var(--panel-border); }
+
+/* Keep every control in the left navigation at the compact Reset camera size. */
+.controls-panel button,
+.controls-panel .file-button,
+.controls-panel label,
+.controls-panel .current-game-label,
+.controls-panel .game-position {
+  font-size: 11px;
+}
+.controls-panel .game-navigation button {
+  font-size: 11px;
+  padding: 7px 3px;
+}
+.controls-panel .trajectory-row .apply-button {
+  font-size: 11px;
+  padding: 8px 12px;
+}
+.controls-panel .step-tab {
+  font-size: 11px;
+}
+
 .inspector { border-left: 1px solid var(--panel-border); }
 .panel-heading { padding-bottom: 12px; }
 .panel-heading h2 { margin: 0; font-size: 18px; }
-.control-section { border-top: 1px solid var(--panel-border); padding: 15px 0; }\n.game-controls { display: flex; flex-direction: column; gap: 10px; border-top: 0; padding-top: 0; }\n.current-game-label { color: #c5d1e1; font-size: 11px; font-weight: 700; }\n.trajectory-row { display: flex; align-items: stretch; gap: 8px; }\n.trajectory-row textarea { flex: 1 1 auto; width: 0; min-width: 0; min-height: 76px; }\n.apply-button { flex: 0 0 auto; align-self: stretch; padding: 8px 12px; }\n.game-controls .game-navigation { margin-top: 0; }\n.game-controls .game-position { margin: 0; }
+.control-section { border-top: 1px solid var(--panel-border); padding: 15px 0; }
+.game-controls { display: flex; flex-direction: column; gap: 10px; border-top: 0; padding-top: 0; }
+.current-game-label { color: #c5d1e1; font-size: 11px; font-weight: 700; }
+.trajectory-row { display: flex; align-items: stretch; gap: 8px; }
+.trajectory-row textarea { flex: 1 1 auto; width: 0; min-width: 0; min-height: 76px; }
+.apply-button { flex: 0 0 auto; align-self: stretch; padding: 8px 12px; }
+.game-controls .game-navigation { margin-top: 0; }
+.game-controls .game-position { margin: 0; }
 .control-section h3 { margin: 0 0 12px; font-size: 13px; }
 .control-section > label:not(.file-button), .control-section > label[for] { display: block; margin: 12px 0 6px; color: #c5d1e1; font-size: 11px; font-weight: 700; }
 .control-help { margin: -5px 0 8px; color: #8fa0b7; font-size: 10px; line-height: 1.5; }
