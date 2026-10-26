@@ -48,6 +48,7 @@ let cachedOutput = null;
 let gameMoves = [];
 let gamePly = 0;
 let gameLoaded = false;
+let currentPlayerName = "Black";
 
 scene.add(sceneGroup);
 
@@ -1488,12 +1489,13 @@ document.querySelectorAll('.step-tab').forEach((button) => {
 });
 
 document.querySelector('#demo-button').addEventListener('click', async () => {
-  document.querySelector('#trajectory').value = DEMO_TRAJECTORY;
-  await loadTrajectoryFromEditor();
-  if (gameLoaded) { appliedTrajectory = trajectoryEditor.value.trim(); updateApplyButtonState(); }
+  trajectoryEditor.value = DEMO_TRAJECTORY;
+  await loadTrajectoryFromEditor(true);
   if (gameLoaded) {
+    appliedTrajectory = trajectoryEditor.value.trim();
+    updateApplyButtonState();
     resetCamera();
-    status.textContent = 'Demo board loaded at the initial position. Use Next to step through the demo.';
+    status.textContent = 'Demo game loaded at the end of the trajectory.';
   }
 });
 const trajectoryEditor = document.querySelector('#trajectory');
@@ -1525,6 +1527,7 @@ async function loadGamePosition(ply) {
   // model's perspective-dependent input encoding.
   const result = await requestSnapshot(gameMoves.slice(0, ply));
   backendSnapshot = result;
+  currentPlayerName = result.next_player_name || (result.next_player === 0 ? 'Black' : 'Red');
 
   const demo = createDemoData();
   data = {
@@ -1556,7 +1559,7 @@ function updateGameNavigation() {
   document.querySelector('#game-position').textContent = gameLoaded
     ? 'Move ' + gamePly + '/' + gameMoves.length + ': ' +
       (gamePly ? gameMoves[gamePly - 1] : '—') + '\n' +
-      (result.next_player_name || 'Player') + ' to move'
+      currentPlayerName + ' to move'
     : 'No game loaded';
 }
 
@@ -1580,7 +1583,7 @@ async function navigateGame(delta) {
     if (requestId === navigationRequest) updateGameNavigation();
   }
 }
-async function loadTrajectoryFromEditor() {
+async function loadTrajectoryFromEditor(showEnd = false) {
   const moves = document.querySelector('#trajectory').value
     .split(/[\s,]+/)
     .map((move) => move.trim())
@@ -1601,7 +1604,10 @@ async function loadTrajectoryFromEditor() {
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
-    status.textContent = 'Demo trajectory loaded at the empty starting position. Use Next to step through the game.';
+    if (showEnd) await loadGamePosition(gameMoves.length);
+    status.textContent = showEnd
+      ? 'Demo game loaded at the end of the trajectory.'
+      : 'Trajectory loaded at the starting position.';
   } catch (error) {
     gameLoaded = false;
     updateGameNavigation();
@@ -1636,5 +1642,10 @@ resizeRenderer();
 renderStep();
 updateGameNavigation();
 animate();
-// Load the demo trajectory into the timeline without rendering any moves.
-loadTrajectoryFromEditor();
+// Start with the demo game fully played out at the end of its trajectory.
+loadTrajectoryFromEditor(true).then(() => {
+  if (gameLoaded) {
+    appliedTrajectory = trajectoryEditor.value.trim();
+    updateApplyButtonState();
+  }
+});
