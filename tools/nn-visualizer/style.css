@@ -92,19 +92,12 @@ h1 { margin: 0; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -.04em; }
   padding: 7px 3px;
 }
 .controls-panel .trajectory-row .apply-button {
+  width: 100%;
   font-family: inherit;
   font-size: 13px;
   line-height: normal;
   padding: 9px 11px;
-  border: 1px solid #40516a;
-  border-radius: 8px;
-  background: #202c3d;
-  color: #e2ebf7;
   font-weight: 600;
-}
-.controls-panel .trajectory-row .apply-button:hover:not(:disabled) {
-  background: #29394f;
-  border-color: #5e789c;
 }
 .controls-panel .current-game-label {
   display: block;
@@ -129,10 +122,9 @@ h1 { margin: 0; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -.04em; }
 .control-section { border-top: 1px solid var(--panel-border); padding: 15px 0; }
 .game-controls { display: flex; flex-direction: column; gap: 10px; border-top: 0; padding-top: 0; }
 .current-game-label { color: #c5d1e1; font-size: 11px; font-weight: 700; }
-.trajectory-row { display: flex; align-items: stretch; gap: 8px; }
-.trajectory-row textarea { flex: 1 1 auto; width: 0; min-width: 0; min-height: 76px; }
-.trajectory-row .apply-button { flex: 0 0 auto; align-self: stretch; white-space: nowrap; }
-.apply-button { flex: 0 0 auto; align-self: stretch; }
+.trajectory-row { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.trajectory-row textarea { width: 100%; min-width: 0; min-height: 76px; }
+.trajectory-row .apply-button { width: 100%; white-space: nowrap; }
 .game-controls .game-navigation { margin-top: 0; }
 .control-section h3 { margin: 0 0 12px; font-size: 13px; }
 .control-section > label:not(.file-button), .control-section > label[for] { display: block; margin: 12px 0 6px; color: #c5d1e1; font-size: 11px; font-weight: 700; }
