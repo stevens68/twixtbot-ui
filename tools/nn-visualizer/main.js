@@ -658,15 +658,41 @@ function drawSampleBoard() {
     90,
   );
 
-  // Move list is placed on the far side of the board, away from the tensors.
+  // Place the move list to the right of the board, in columns of 20 moves.
+  // Each new column starts after moves 20, 40, 60, etc.
   const moveLabels = game.moves.map((move, index) => (index + 1) + '. ' + move);
   const listX = boardX - 0.95;
-  const listZ = boardStartZ - 1.35;
-  addLabel('Moves', [listX, 3.95, listZ], 16, '#e7edf6', 90, 'left');
-  moveLabels.forEach((label, index) => {
-    const isRedMove = index % 2 === 0;
-    addLabel(label, [listX, 3.4 - index * 0.38, listZ], 14, isRedMove ? '#ff4545' : '#e7edf6', 90, 'left');
-  });
+  const firstListZ = boardStartZ + boardSize + 1.35;
+  const movesPerColumn = 20;
+  const rowSpacing = 0.38;
+  const columnSpacing = 2.35;
+  const listTopY = 3.4;
+  const columnCount = Math.max(1, Math.ceil(moveLabels.length / movesPerColumn));
+  for (let column = 0; column < columnCount; column += 1) {
+    const columnZ = firstListZ + column * columnSpacing;
+    addLabel(
+      column === 0 ? 'Moves' : 'Moves ' + (column * movesPerColumn + 1) + '–' +
+        Math.min((column + 1) * movesPerColumn, moveLabels.length),
+      [listX, 3.95, columnZ],
+      16,
+      '#e7edf6',
+      90,
+      'left',
+    );
+    const start = column * movesPerColumn;
+    const end = Math.min(start + movesPerColumn, moveLabels.length);
+    for (let index = start; index < end; index += 1) {
+      const isRedMove = index % 2 === 0;
+      addLabel(
+        moveLabels[index],
+        [listX, listTopY - (index - start) * rowSpacing, columnZ],
+        14,
+        isRedMove ? '#ff4545' : '#e7edf6',
+        90,
+        'left',
+      );
+    }
+  }
 
   return game;
 }
@@ -1140,7 +1166,7 @@ function drawInputs() {
       x: -1.8,
       z: -13,
       channels: 2,
-      bladeLabels: ['White', 'Black'],
+      bladeLabels: ['Red', 'Black'],
       color: COLORS.input,
     },
     {
@@ -1153,13 +1179,13 @@ function drawInputs() {
       // bit 0 is colour (even=Black, odd=White), bit 2 is long-y,
       // and bit 1 is different-sign slope. These describe the tensor channels.
       bladeLabels: [
-        'Ch 0: white SSE/NNW',
+        'Ch 0: red SSE/NNW',
         'Ch 1: black SSE/NNW',
-        'Ch 2: white ENE/WSW',
+        'Ch 2: red ENE/WSW',
         'Ch 3: black ENE/WSW',
-        'Ch 4: white ESE/WNW',
-        'Ch 5: black ESE/WNW',
-        'Ch 6: white ENE/WSW',
+        'Ch 4: red ESE',
+        'Ch 5: black ESE',
+        'Ch 6: red ENE/WSW',
         'Ch 7: black ENE/WSW',
       ],
       color: COLORS.input,
