@@ -148,14 +148,38 @@ function addLabel(
   );
 
   const spriteWidth = canvas.width / scaleDivisor;
-  // For left-aligned labels, treat the supplied X coordinate as the left edge
-  // rather than the sprite center so labels in a column share the same start.
-  sprite.position.set(
-    position[0] + (alignment === 'left' ? spriteWidth / 2 : 0),
-    position[1],
-    position[2],
-  );
+  // Anchor left-aligned sprites at their left edge. Sprite.center controls
+  // the texture anchor; shifting the position alone can still look centered.
+  if (alignment === 'left') sprite.center.set(0, 0.5);
+  sprite.position.set(position[0], position[1], position[2]);
   sprite.scale.set(spriteWidth, canvas.height / scaleDivisor, 1);
+  sceneGroup.add(sprite);
+}
+
+function addRichLabel(parts, position, fontSize = 30, scaleDivisor = 45) {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context.font = '600 ' + fontSize + 'px Arial';
+  const widths = parts.map((part) => context.measureText(part.text).width);
+  canvas.width = Math.max(128, widths.reduce((sum, width) => sum + width, 0) + 28);
+  canvas.height = fontSize + 26;
+  context.font = '600 ' + fontSize + 'px Arial';
+  context.textAlign = 'left';
+  context.textBaseline = 'middle';
+  let x = 12;
+  parts.forEach((part, index) => {
+    context.fillStyle = part.color;
+    context.fillText(part.text, x, canvas.height / 2);
+    x += widths[index];
+  });
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture, transparent: true, depthTest: false,
+  }));
+  sprite.center.set(0, 0.5);
+  sprite.position.set(position[0], position[1], position[2]);
+  sprite.scale.set(canvas.width / scaleDivisor, canvas.height / scaleDivisor, 1);
   sceneGroup.add(sprite);
 }
 
@@ -656,18 +680,22 @@ function drawSampleBoard() {
     );
   }
 
-  const sampleTurnLabel = 'Move ' + game.moves.length + ':';
-  addLabel(
-    sampleTurnLabel,
+  const lastMove = game.moves.length ? game.moves[game.moves.length - 1].toUpperCase() : '—';
+  const nextPlayerLabel = game.nextPlayer === 1 ? 'red' : 'black';
+  addRichLabel(
+    [
+      { text: 'Last Move: ' + lastMove + ' - ', color: '#ffffff' },
+      { text: nextPlayerLabel, color: nextPlayerLabel === 'red' ? '#ff4545' : '#e7edf6' },
+      { text: ' to move', color: '#ffffff' },
+    ],
     [boardX - 0.25, 5.25, boardCenterZ],
     19,
-    '#ffffff',
     90,
   );
 
   // Place the move list to the right of the board, in columns of 20 moves.
   // Each new column starts after moves 20, 40, 60, etc.
-  const moveLabels = game.moves.map((move, index) => (index + 1) + '. ' + move);
+  const moveLabels = game.moves.map((move, index) => (index + 1) + '. ' + move.toUpperCase());
   const listX = boardX - 0.95;
   const firstListZ = boardStartZ + boardSize + 1.35;
   const movesPerColumn = 20;
@@ -908,9 +936,16 @@ function drawEffectiveBoard() {
       14, '#e0e8e2', 150,
     );
   }
-  addLabel(
-    'Effective board, black to move',
-    [boardX - 0.25, 5.25, 0], 19, '#ffffff', 90,
+  const nextPlayerLabel = game.nextPlayer === 1 ? 'red' : 'black';
+  addRichLabel(
+    [
+      { text: 'Effective board - ', color: '#ffffff' },
+      { text: nextPlayerLabel, color: nextPlayerLabel === 'red' ? '#ff4545' : '#e7edf6' },
+      { text: ' to move', color: '#ffffff' },
+    ],
+    [boardX - 0.25, 5.25, 0],
+    19,
+    90,
   );
 }
 
@@ -1583,11 +1618,18 @@ function updateGameNavigation() {
   document.querySelector('#game-back').disabled = !gameLoaded || gamePly <= 0;
   document.querySelector('#game-forward').disabled = !gameLoaded || gamePly >= gameMoves.length;
   document.querySelector('#game-end').disabled = !gameLoaded || gamePly >= gameMoves.length;
-  document.querySelector('#game-position').textContent = gameLoaded
-    ? 'Move ' + gamePly + '/' + gameMoves.length + ': ' +
-      (gamePly ? gameMoves[gamePly - 1] : '—') + '\n' +
-      currentPlayerName + ' to move'
-    : 'No game loaded';
+  const positionLabel = document.querySelector('#game-position');
+  if (!gameLoaded) {
+    positionLabel.textContent = 'No game loaded';
+  } else {
+    const player = currentPlayerName.toLowerCase() === 'red' ? 'red' : 'black';
+    positionLabel.innerHTML =
+      'Move ' + gamePly + '/' + gameMoves.length + ': ' +
+      (gamePly ? gameMoves[gamePly - 1].toUpperCase() : '—') + '<br>' +
+      (player === 'red'
+        ? '<span style="color:#ff4545">red</span> to move'
+        : 'black to move');
+  }
 }
 
 let navigationRequest = 0;
