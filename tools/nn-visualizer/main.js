@@ -1554,7 +1554,9 @@ function updateGameNavigation() {
   document.querySelector('#game-forward').disabled = !gameLoaded || gamePly >= gameMoves.length;
   document.querySelector('#game-end').disabled = !gameLoaded || gamePly >= gameMoves.length;
   document.querySelector('#game-position').textContent = gameLoaded
-    ? 'Move ' + gamePly + ' / ' + gameMoves.length
+    ? 'Move ' + gamePly + '/' + gameMoves.length + ': ' +
+      (gamePly ? gameMoves[gamePly - 1] : '—') + '\n' +
+      (result.next_player_name || 'Player') + ' to move'
     : 'No game loaded';
 }
 
