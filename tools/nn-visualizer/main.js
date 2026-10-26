@@ -1623,7 +1623,7 @@ function updateGameNavigation() {
   } else {
     const player = currentPlayerName.toLowerCase() === 'red' ? 'red' : 'black';
     positionLabel.innerHTML =
-      'Move ' + gamePly + '/' + gameMoves.length + ': ' +
+      'Move ' + gamePly + ': ' +
       (gamePly ? gameMoves[gamePly - 1].toUpperCase() : '—') + '<br>' +
       (player === 'red'
         ? '<span style="color:#ff4545">red</span> to move'
