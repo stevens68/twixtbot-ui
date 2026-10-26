@@ -1,5 +1,6 @@
 // Canvas-based labels used by the Three.js scene.
 export function createLabelHelpers(THREE, getSceneGroup) {
+
 function addLabel(
   text,
   position,
