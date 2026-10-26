@@ -1554,8 +1554,7 @@ function updateGameNavigation() {
   document.querySelector('#game-forward').disabled = !gameLoaded || gamePly >= gameMoves.length;
   document.querySelector('#game-end').disabled = !gameLoaded || gamePly >= gameMoves.length;
   document.querySelector('#game-position').textContent = gameLoaded
-    ? 'Ply ' + gamePly + ' / ' + gameMoves.length +
-      (gamePly ? ' · Last: ' + gameMoves[gamePly - 1] : ' · Initial position')
+    ? 'Move ' + gamePly + ' / ' + gameMoves.length
     : 'No game loaded';
 }
 
