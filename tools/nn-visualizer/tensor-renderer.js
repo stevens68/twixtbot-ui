@@ -208,7 +208,7 @@ export function createTensorRenderer({
   
     tensors.forEach((tensor) => {
       addValueCubes(
-        flattenTensor(data[tensor.key]),
+        flattenTensor(getData()[tensor.key]),
         BOARD_SIZE,
         BOARD_SIZE,
         tensor.channels,
