@@ -1490,12 +1490,30 @@ document.querySelectorAll('.step-tab').forEach((button) => {
 document.querySelector('#demo-button').addEventListener('click', async () => {
   document.querySelector('#trajectory').value = DEMO_TRAJECTORY;
   await loadTrajectoryFromEditor();
+  if (gameLoaded) { appliedTrajectory = trajectoryEditor.value.trim(); updateApplyButtonState(); }
   if (gameLoaded) {
     resetCamera();
     status.textContent = 'Demo board loaded at the initial position. Use Next to step through the demo.';
   }
 });
-document.querySelector('#apply-changes').addEventListener('click', loadTrajectoryFromEditor);
+const trajectoryEditor = document.querySelector('#trajectory');
+const applyChangesButton = document.querySelector('#apply-changes');
+let appliedTrajectory = trajectoryEditor.value.trim();
+function updateApplyButtonState() {
+  const changed = trajectoryEditor.value.trim() !== appliedTrajectory;
+  applyChangesButton.disabled = !changed;
+  applyChangesButton.setAttribute('aria-disabled', String(!changed));
+}
+trajectoryEditor.addEventListener('input', updateApplyButtonState);
+updateApplyButtonState();
+applyChangesButton.addEventListener('click', async () => {
+  if (applyChangesButton.disabled) return;
+  await loadTrajectoryFromEditor();
+  if (gameLoaded) {
+    appliedTrajectory = trajectoryEditor.value.trim();
+    updateApplyButtonState();
+  }
+});
 
 async function requestSnapshot(moves) {
  const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:false,allow_swap:true})});
@@ -1594,7 +1612,7 @@ document.querySelector('#game-start').addEventListener('click', () => navigateGa
 document.querySelector('#game-back').addEventListener('click', () => navigateGame(-1));
 document.querySelector('#game-forward').addEventListener('click', () => navigateGame(1));
 document.querySelector('#game-end').addEventListener('click', () => navigateGame(gameMoves.length - gamePly));
-document.querySelector('#t1-file').addEventListener('change',async(event)=>{const file=event.target.files&&event.target.files[0];if(!file)return;try{const response=await fetch('/api/t1',{method:'POST',headers:{'Content-Type':'text/plain; charset=utf-8'},body:await file.text()});const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);gameMoves=result.moves;document.querySelector('#trajectory').value=gameMoves.join(' ');await loadGamePosition(gameMoves.length);status.textContent='Loaded '+file.name+'. '+status.textContent;}catch(error){status.textContent='Could not load T1 game: '+error.message;}finally{event.target.value='';}});
+document.querySelector('#t1-file').addEventListener('change',async(event)=>{const file=event.target.files&&event.target.files[0];if(!file)return;try{const response=await fetch('/api/t1',{method:'POST',headers:{'Content-Type':'text/plain; charset=utf-8'},body:await file.text()});const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);gameMoves=result.moves;document.querySelector('#trajectory').value=gameMoves.join(' ');appliedTrajectory=trajectoryEditor.value.trim();updateApplyButtonState();await loadGamePosition(gameMoves.length);status.textContent='Loaded '+file.name+'. '+status.textContent;}catch(error){status.textContent='Could not load T1 game: '+error.message;}finally{event.target.value='';}});
 document.querySelector('#toggle-explanation').addEventListener('click', () => {
   const layout = document.querySelector('.app-layout');
   const collapsed = layout.classList.toggle('explanation-collapsed');
