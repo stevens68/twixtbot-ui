@@ -156,7 +156,7 @@ function addLabel(
   sceneGroup.add(sprite);
 }
 
-function addRichLabel(parts, position, fontSize = 30, scaleDivisor = 45) {
+function addRichLabel(parts, position, fontSize = 30, scaleDivisor = 45, alignment = 'left') {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   context.font = '600 ' + fontSize + 'px Arial';
@@ -166,7 +166,7 @@ function addRichLabel(parts, position, fontSize = 30, scaleDivisor = 45) {
   context.font = '600 ' + fontSize + 'px Arial';
   context.textAlign = 'left';
   context.textBaseline = 'middle';
-  let x = 12;
+  let x = alignment === 'center' ? (canvas.width - widths.reduce((sum, width) => sum + width, 0)) / 2 : 12;
   parts.forEach((part, index) => {
     context.fillStyle = part.color;
     context.fillText(part.text, x, canvas.height / 2);
@@ -177,7 +177,7 @@ function addRichLabel(parts, position, fontSize = 30, scaleDivisor = 45) {
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: texture, transparent: true, depthTest: false,
   }));
-  sprite.center.set(0, 0.5);
+  sprite.center.set(alignment === 'center' ? 0.5 : 0, 0.5);
   sprite.position.set(position[0], position[1], position[2]);
   sprite.scale.set(canvas.width / scaleDivisor, canvas.height / scaleDivisor, 1);
   sceneGroup.add(sprite);
@@ -688,9 +688,10 @@ function drawSampleBoard() {
       { text: nextPlayerLabel, color: nextPlayerLabel === 'red' ? '#ff4545' : '#e7edf6' },
       { text: ' to move', color: '#ffffff' },
     ],
-    [boardX - 0.25, 5.25, boardCenterZ],
+    [boardX, 5.25, boardCenterZ],
     19,
     90,
+    'center',
   );
 
   // Place the move list to the right of the board, in columns of 20 moves.
@@ -936,16 +937,14 @@ function drawEffectiveBoard() {
       14, '#e0e8e2', 150,
     );
   }
-  const nextPlayerLabel = game.nextPlayer === 1 ? 'red' : 'black';
   addRichLabel(
     [
-      { text: 'Effective board - ', color: '#ffffff' },
-      { text: nextPlayerLabel, color: nextPlayerLabel === 'red' ? '#ff4545' : '#e7edf6' },
-      { text: ' to move', color: '#ffffff' },
+      { text: 'Effective board - black to move', color: '#ffffff' },
     ],
-    [boardX - 0.25, 5.25, 0],
+    [boardX, 5.25, 0],
     19,
     90,
+    'center',
   );
 }
 
