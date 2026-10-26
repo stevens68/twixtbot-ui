@@ -27,6 +27,46 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 button.primary { background: #d9e9ff; border-color: #d9e9ff; color: #132239; font-weight: 750; }
 button.primary:hover { background: #fff; }
 button.quiet { background: transparent; }
+
+/* Unified navigation button styling: like Load *.T1 board, slightly brighter. */
+.controls-panel button,
+.controls-panel .file-button {
+  background: #202c3d;
+  border-color: #40516a;
+  color: #e2ebf7;
+}
+.controls-panel button:hover,
+.controls-panel .file-button:hover {
+  background: #29394f;
+  border-color: #5e789c;
+}
+.controls-panel .game-navigation button {
+  background: #202c3d;
+  border-color: #40516a;
+  color: #e2ebf7;
+}
+.controls-panel button.primary {
+  background: #26364a;
+  border-color: #40516a;
+  color: #e2ebf7;
+  font-weight: 650;
+}
+.controls-panel button.primary:hover:not(:disabled) {
+  background: #30445c;
+}
+.controls-panel button:disabled {
+  background: #111821;
+  border-color: #252f3d;
+  color: #657184;
+  opacity: 1;
+  cursor: not-allowed;
+}
+.controls-panel #apply-changes:disabled {
+  background: #080c12;
+  border-color: #1a222d;
+  color: #4e5968;
+}
+
 .full-width { width: 100%; margin-top: 8px; }
 .topbar { padding: 14px 20px; border-bottom: 1px solid var(--panel-border); background: var(--panel); }
 .brand-line { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 14px; row-gap: 2px; }
