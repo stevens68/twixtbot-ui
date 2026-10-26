@@ -18,65 +18,85 @@
     <div>
       <p class="eyebrow">T W I X T B O T / MODEL INSPECTOR</p>
       <h1>3D convolution explorer</h1>
-      <p class="subtitle">Inspect the board tensors, convolution filters, and summed feature maps.</p>
-    </div>
-    <div class="actions">
-      <label class="file-button">Load *.T1 board<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
+      <p class="subtitle">Inspect board tensors, convolution filters, and feature maps.</p>
     </div>
   </header>
 
-  <main>
-    <section class="trajectory-panel">
-      <label for="trajectory">Game trajectory (moves separated by spaces or commas)</label>
-      <textarea id="trajectory" rows="2">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
-      <div class="trajectory-actions">
-        <label><input id="allow-scl" type="checkbox"> Allow crossing own links</label>
-        <div class="game-navigation"><button id="game-start" disabled title="Go to start" aria-label="Go to start">⏮</button><button id="game-back" disabled title="Previous move" aria-label="Previous move">◀</button><button id="game-forward" disabled title="Next move" aria-label="Next move">▶</button><button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button><span id="game-position">No game loaded</span><button id="apply-changes" class="quiet">Apply changes</button></div>
+  <main class="app-layout">
+    <aside class="controls-panel" aria-label="Visualizer controls">
+      <div class="panel-heading">
+        <p class="eyebrow">CONTROLS</p>
+        <h2>Explore the model</h2>
       </div>
-      <div class="trajectory-footer"><button id="demo-button" class="quiet">Load Demo board</button></div>
-    </section>
-    <section class="toolbar">
-      <div class="step-tabs" role="tablist" aria-label="Processing step">
-        <button class="step-tab active" data-step="inputs" role="tab" aria-selected="true">1 · Inputs</button>
-        <button class="step-tab" data-step="filters" role="tab" aria-selected="false">2 · Filters</button>
-        <button class="step-tab" data-step="output" role="tab" aria-selected="false">3 · Conv output</button>
-      </div>
-      <div class="toolbar-right">
-        <button id="reset-camera" class="quiet">Reset camera</button>
+
+      <section class="control-section">
+        <h3>Game</h3>
+        <label class="file-button load-file">Load *.T1 board<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
+        <label for="trajectory">Game trajectory</label>
+        <p class="control-help">Moves separated by spaces or commas.</p>
+        <textarea id="trajectory" rows="3">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
+        <label class="checkbox-label"><input id="allow-scl" type="checkbox"> Allow crossing own links</label>
+        <div class="game-navigation">
+          <button id="game-start" disabled title="Go to start" aria-label="Go to start">⏮</button>
+          <button id="game-back" disabled title="Previous move" aria-label="Previous move">◀</button>
+          <button id="game-forward" disabled title="Next move" aria-label="Next move">▶</button>
+          <button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button>
+        </div>
+        <p id="game-position" class="game-position">No game loaded</p>
+        <button id="apply-changes" class="primary full-width">Apply trajectory</button>
+        <button id="demo-button" class="quiet full-width">Load Demo board</button>
+      </section>
+
+      <section class="control-section">
+        <h3>Visualization</h3>
+        <p class="control-help">Choose which part of the network to inspect.</p>
+        <div class="step-tabs" role="tablist" aria-label="Processing step">
+          <button class="step-tab active" data-step="inputs" role="tab" aria-selected="true">1 · Inputs</button>
+          <button class="step-tab" data-step="filters" role="tab" aria-selected="false">2 · Filters</button>
+          <button class="step-tab" data-step="output" role="tab" aria-selected="false">3 · Conv output</button>
+        </div>
+        <button id="reset-camera" class="quiet full-width">Reset camera</button>
+      </section>
+      <p id="status" class="status" role="status">Demo data ready.</p>
+    </aside>
+
+    <section class="visual-panel" aria-label="3D visualization">
+      <div id="viewport" aria-label="Interactive 3D tensor scene">
+        <div id="loading" class="loading">Building the tensor scene…</div>
+        <button id="show-explanation" class="show-explanation" aria-label="Open explanation panel" title="Open explanation panel">ⓘ Explanation</button>
       </div>
     </section>
 
-    <section class="workspace">
-      <div id="viewport" aria-label="Interactive 3D tensor scene">
-        <div id="loading" class="loading">Building the tensor scene…</div>
-      </div>
-      <aside class="inspector">
-        <p class="eyebrow">CURRENT VIEW</p>
-        <h2 id="view-title">Input tensors</h2>
-        <p id="view-description">Three input tensors, positioned side by side.</p>
-        <div class="legend">
-          <div><span class="swatch input"></span>Board inputs (pegs, links)</div>
-          <div><span class="swatch fixed"></span>Fixed input (locations)</div>
-          <div><span class="swatch weights"></span>Filter weights</div>
-          <div><span class="swatch bias"></span>Bias</div>
-          <div><span class="swatch output"></span>Summed feature maps</div>
+    <aside class="inspector" id="inspector" aria-label="Explanation panel">
+      <div class="inspector-heading">
+        <div>
+          <p class="eyebrow">EXPLANATION</p>
+          <h2 id="view-title">Input tensors</h2>
         </div>
-        <div class="stat"><span>Tensor shape</span><strong id="tensor-shape">24 × 24 × 2</strong></div>
-        <div class="stat"><span>Value range</span><strong id="value-range">0 … 1</strong></div>
-        <div class="stat"><span>Visible cubes</span><strong id="cube-count">—</strong></div>
-        <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan. Cube thickness along X represents the value: negative values extend toward −X, positive values toward +X.</p>
-        <details>
-          <summary>Input JSON format</summary>
-          <p>Provide <code>pegs</code>, <code>links</code>, and <code>locations</code> as nested arrays in <code>[row][column][channel]</code> order. Optional <code>weights</code> and <code>bias</code> enable real convolution calculations; otherwise demo weights are generated.</p>
-          <pre>{
+        <button id="toggle-explanation" class="icon-button" aria-label="Close explanation panel" title="Close explanation panel">✕</button>
+      </div>
+      <p id="view-description">Three input tensors, positioned side by side.</p>
+      <div class="legend">
+        <div><span class="swatch input"></span>Board inputs (pegs, links)</div>
+        <div><span class="swatch fixed"></span>Fixed input (locations)</div>
+        <div><span class="swatch weights"></span>Filter weights</div>
+        <div><span class="swatch bias"></span>Bias</div>
+        <div><span class="swatch output"></span>Summed feature maps</div>
+      </div>
+      <div class="stat"><span>Tensor shape</span><strong id="tensor-shape">24 × 24 × 2</strong></div>
+      <div class="stat"><span>Value range</span><strong id="value-range">0 … 1</strong></div>
+      <div class="stat"><span>Visible cubes</span><strong id="cube-count">—</strong></div>
+      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan. Cube thickness along X represents the value: negative values extend toward −X, positive values toward +X.</p>
+      <details>
+        <summary>Input JSON format</summary>
+        <p>Provide <code>pegs</code>, <code>links</code>, and <code>locations</code> as nested arrays in <code>[row][column][channel]</code> order. Optional <code>weights</code> and <code>bias</code> enable real convolution calculations; otherwise demo weights are generated.</p>
+        <pre>{
   "pegs": [[[0,1], "..."]],
   "links": [[[0,0,0,0,0,0,0,0], "..."]],
   "locations": [[[1,0], "..."]]
 }</pre>
-        </details>
-        <p id="status" class="status" role="status">Demo data ready.</p>
-      </aside>
-    </section>
+      </details>
+    </aside>
   </main>
   <script type="module" src="./main.js"></script>
 </body>
