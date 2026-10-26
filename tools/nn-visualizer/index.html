@@ -46,26 +46,19 @@
 <body>
   <header class="topbar">
     <div>
-      <p class="eyebrow">T W I X T B O T / MODEL INSPECTOR</p>
-      <h1>3D convolution explorer</h1>
-      <p class="subtitle">Inspect board tensors, convolution filters, and feature maps.</p>
+      <div class="brand-line"><h1>TWIXTBOT MODEL EXPLORER</h1><p class="subtitle">Inspect board tensors, convolution filters, and feature maps.</p></div>
     </div>
   </header>
 
   <main class="app-layout">
     <aside class="controls-panel" aria-label="Visualizer controls">
-      <div class="panel-heading">
-        <p class="eyebrow">CONTROLS</p>
-        <h2>Explore the model</h2>
-      </div>
-
-      <section class="control-section">
-        <h3>Game</h3>
+      <section class="control-section game-controls">
         <label class="file-button load-file">Load *.T1 board<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
-        <label for="trajectory">Game trajectory</label>
-        <p class="control-help">Moves separated by spaces or commas.</p>
-        <textarea id="trajectory" rows="3">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
-        <label class="checkbox-label"><input id="allow-scl" type="checkbox"> Allow crossing own links</label>
+        <label class="current-game-label" for="trajectory">Current game:</label>
+        <div class="trajectory-row">
+          <textarea id="trajectory" rows="3">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
+          <button id="apply-changes" class="primary apply-button">Apply</button>
+        </div>
         <div class="game-navigation">
           <button id="game-start" disabled title="Go to start" aria-label="Go to start">⏮</button>
           <button id="game-back" disabled title="Previous move" aria-label="Previous move">◀</button>
@@ -73,7 +66,6 @@
           <button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button>
         </div>
         <p id="game-position" class="game-position">No game loaded</p>
-        <button id="apply-changes" class="primary full-width">Apply trajectory</button>
         <button id="demo-button" class="quiet full-width">Load Demo board</button>
       </section>
 
@@ -93,7 +85,6 @@
     <section class="visual-panel" aria-label="3D visualization">
       <div id="viewport" aria-label="Interactive 3D tensor scene">
         <div id="loading" class="loading">Building the tensor scene…</div>
-        <button id="show-explanation" class="show-explanation" aria-label="Open explanation panel" title="Open explanation panel">ⓘ Explanation</button>
       </div>
     </section>
 
@@ -103,7 +94,7 @@
           <p class="eyebrow">EXPLANATION</p>
           <h2 id="view-title">Input tensors</h2>
         </div>
-        <button id="toggle-explanation" class="icon-button" aria-label="Close explanation panel" title="Close explanation panel">✕</button>
+        <button id="toggle-explanation" class="collapse-button" aria-label="Collapse explanation panel" title="Collapse explanation panel">Collapse ‹</button>
       </div>
       <p id="view-description">Three input tensors, positioned side by side.</p>
       <div class="legend">
