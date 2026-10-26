@@ -279,11 +279,11 @@ const { logLinkEncodingDiagnostic, logFullInputTensorValidation } =
  */
 
 
-const { addValueCubes, drawFilterKernel, drawInputs, drawFilters, drawOutput } =
+const { drawInputs, drawFilters, drawOutput } =
   createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
     createTensor3, getSceneGroup: () => sceneGroup, getData: () => data,
-    createSampleGame, drawSampleBoard, drawEffectiveBoard,
+    createSampleGame, getBackendSnapshot: () => backendSnapshot, drawSampleBoard, drawEffectiveBoard,
     logLinkEncodingDiagnostic, logFullInputTensorValidation,
     calculateConvolutionOutput, addLabel,
   });
