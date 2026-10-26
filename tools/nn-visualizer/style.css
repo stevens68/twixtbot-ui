@@ -163,7 +163,7 @@ details { border-top: 1px solid var(--panel-border); padding-top: 13px; font-siz
 summary { cursor: pointer; font-weight: 700; }
 details p { line-height: 1.5; }
 pre { white-space: pre-wrap; word-break: break-word; background: #0b1018; padding: 9px; border-radius: 6px; font-size: 9px; color: #9ed7c0; }
-.status { color: #79d8a4; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.status { display: none; color: #79d8a4; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
 .app-layout.explanation-collapsed { grid-template-columns: 265px minmax(0, 1fr) 0; }
 .explanation-collapsed .inspector { display: none; }
 .explanation-collapsed .show-explanation { display: none; }
