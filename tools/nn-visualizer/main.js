@@ -513,8 +513,7 @@ function drawSampleBoard() {
   const boardCenterZ = 0;
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -boardSize / 2;
-  // Keep the sample board four times farther from the input tensor layer.
-  const boardX = -38.384; // 20% closer to the effective board at x = -15.2
+  const boardX = -26.675; // Match the gap from the effective board to the links tensor.
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
@@ -523,7 +522,7 @@ function drawSampleBoard() {
 
   // A subtle board backing separates the real game from the tensor blades.
   const backing = new THREE.Mesh(
-    new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
+    new THREE.BoxGeometry(0.08, boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
       color: 0xc8cacc,
       roughness: 0.88,
@@ -532,7 +531,6 @@ function drawSampleBoard() {
       side: THREE.DoubleSide,
     }),
   );
-  backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX + 0.035, 0, boardCenterZ);
   sceneGroup.add(backing);
 
@@ -749,12 +747,11 @@ function drawEffectiveBoard() {
   ];
 
   const backing = new THREE.Mesh(
-    new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
+    new THREE.BoxGeometry(0.08, boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
       color: 0xc8cacc, roughness: 0.88, side: THREE.DoubleSide,
     }),
   );
-  backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
