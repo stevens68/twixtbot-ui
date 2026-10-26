@@ -147,8 +147,15 @@ function addLabel(
     }),
   );
 
-  sprite.position.set(position[0], position[1], position[2]);
-  sprite.scale.set(canvas.width / scaleDivisor, canvas.height / scaleDivisor, 1);
+  const spriteWidth = canvas.width / scaleDivisor;
+  // For left-aligned labels, treat the supplied X coordinate as the left edge
+  // rather than the sprite center so labels in a column share the same start.
+  sprite.position.set(
+    position[0] + (alignment === 'left' ? spriteWidth / 2 : 0),
+    position[1],
+    position[2],
+  );
+  sprite.scale.set(spriteWidth, canvas.height / scaleDivisor, 1);
   sceneGroup.add(sprite);
 }
 
@@ -670,15 +677,9 @@ function drawSampleBoard() {
   const columnCount = Math.max(1, Math.ceil(moveLabels.length / movesPerColumn));
   for (let column = 0; column < columnCount; column += 1) {
     const columnZ = firstListZ + column * columnSpacing;
-    addLabel(
-      column === 0 ? 'Moves' : 'Moves ' + (column * movesPerColumn + 1) + '–' +
-        Math.min((column + 1) * movesPerColumn, moveLabels.length),
-      [listX, 3.95, columnZ],
-      16,
-      '#e7edf6',
-      90,
-      'left',
-    );
+    if (column === 0) {
+      addLabel('Moves', [listX, 3.95, columnZ], 16, '#e7edf6', 90, 'left');
+    }
     const start = column * movesPerColumn;
     const end = Math.min(start + movesPerColumn, moveLabels.length);
     for (let index = start; index < end; index += 1) {
@@ -1536,7 +1537,7 @@ trajectoryEditor.addEventListener('input', updateApplyButtonState);
 updateApplyButtonState();
 applyChangesButton.addEventListener('click', async () => {
   if (applyChangesButton.disabled) return;
-  await loadTrajectoryFromEditor();
+  await loadTrajectoryFromEditor(true);
   if (gameLoaded) {
     appliedTrajectory = trajectoryEditor.value.trim();
     updateApplyButtonState();
