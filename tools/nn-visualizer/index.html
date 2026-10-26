@@ -53,17 +53,17 @@
   <main class="app-layout">
     <aside class="controls-panel" aria-label="Visualizer controls">
       <section class="control-section game-controls">
-        <label class="file-button load-file">Load *.T1 board<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
+        <label class="file-button load-file">Load board...<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
         <label class="current-game-label" for="trajectory">Current game:</label>
         <div class="trajectory-row">
-          <textarea id="trajectory" rows="3">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
-          <button id="apply-changes" class="primary apply-button">Apply</button>
+          <textarea id="trajectory" rows="10">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
         </div>
         <div class="game-navigation">
           <button id="game-start" disabled title="Go to start" aria-label="Go to start">⏮</button>
           <button id="game-back" disabled title="Previous move" aria-label="Previous move">◀</button>
           <button id="game-forward" disabled title="Next move" aria-label="Next move">▶</button>
           <button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button>
+          <button id="apply-changes" class="primary apply-button">Apply changes</button>
         </div>
         <p id="game-position" class="game-position">No game loaded</p>
         <button id="demo-button" class="quiet full-width">Load Demo board</button>
@@ -71,11 +71,10 @@
 
       <section class="control-section">
         <h3>Visualization</h3>
-        <p class="control-help">Choose which part of the network to inspect.</p>
         <div class="step-tabs" role="tablist" aria-label="Processing step">
-          <button class="step-tab active" data-step="inputs" role="tab" aria-selected="true">1 · Inputs</button>
-          <button class="step-tab" data-step="filters" role="tab" aria-selected="false">2 · Filters</button>
-          <button class="step-tab" data-step="output" role="tab" aria-selected="false">3 · Conv output</button>
+          <button class="step-tab active" data-step="inputs" role="tab" aria-selected="true">board & input tensors</button>
+          <button class="step-tab" data-step="filters" role="tab" aria-selected="false">conv filters & feature maps</button>
+          <button class="step-tab" data-step="output" role="tab" aria-selected="false">residual filters</button>
         </div>
         <button id="reset-camera" class="quiet full-width">Reset camera</button>
       </section>
