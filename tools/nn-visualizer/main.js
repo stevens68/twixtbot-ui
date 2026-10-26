@@ -1595,6 +1595,22 @@ document.querySelector('#game-back').addEventListener('click', () => navigateGam
 document.querySelector('#game-forward').addEventListener('click', () => navigateGame(1));
 document.querySelector('#game-end').addEventListener('click', () => navigateGame(gameMoves.length - gamePly));
 document.querySelector('#t1-file').addEventListener('change',async(event)=>{const file=event.target.files&&event.target.files[0];if(!file)return;try{const response=await fetch('/api/t1',{method:'POST',headers:{'Content-Type':'text/plain; charset=utf-8'},body:await file.text()});const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);gameMoves=result.moves;document.querySelector('#trajectory').value=gameMoves.join(' ');await loadGamePosition(gameMoves.length);status.textContent='Loaded '+file.name+'. '+status.textContent;}catch(error){status.textContent='Could not load T1 game: '+error.message;}finally{event.target.value='';}});
+document.querySelector('#toggle-explanation').addEventListener('click', () => {
+  const layout = document.querySelector('.app-layout');
+  const collapsed = layout.classList.toggle('explanation-collapsed');
+  document.querySelector('#toggle-explanation').setAttribute('aria-label', collapsed ? 'Open explanation panel' : 'Close explanation panel');
+  document.querySelector('#toggle-explanation').title = collapsed ? 'Open explanation panel' : 'Close explanation panel';
+  document.querySelector('#show-explanation').setAttribute('aria-label', 'Open explanation panel');
+  // Resize the renderer after the grid has changed so the canvas matches its panel.
+  requestAnimationFrame(resizeRenderer);
+});
+document.querySelector('#show-explanation').addEventListener('click', () => {
+  document.querySelector('.app-layout').classList.remove('explanation-collapsed');
+  document.querySelector('#toggle-explanation').setAttribute('aria-label', 'Close explanation panel');
+  document.querySelector('#toggle-explanation').title = 'Close explanation panel';
+  requestAnimationFrame(resizeRenderer);
+});
+
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
 window.addEventListener('resize', resizeRenderer);
 
