@@ -1498,7 +1498,7 @@ document.querySelector('#demo-button').addEventListener('click', async () => {
 document.querySelector('#apply-changes').addEventListener('click', loadTrajectoryFromEditor);
 
 async function requestSnapshot(moves) {
- const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:document.querySelector('#allow-scl').checked,allow_swap:true})});
+ const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:false,allow_swap:true})});
  const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);return result;
 }
 async function loadGamePosition(ply) {
@@ -1598,19 +1598,12 @@ document.querySelector('#t1-file').addEventListener('change',async(event)=>{cons
 document.querySelector('#toggle-explanation').addEventListener('click', () => {
   const layout = document.querySelector('.app-layout');
   const collapsed = layout.classList.toggle('explanation-collapsed');
-  document.querySelector('#toggle-explanation').setAttribute('aria-label', collapsed ? 'Open explanation panel' : 'Close explanation panel');
-  document.querySelector('#toggle-explanation').title = collapsed ? 'Open explanation panel' : 'Close explanation panel';
-  document.querySelector('#show-explanation').setAttribute('aria-label', 'Open explanation panel');
+  document.querySelector('#toggle-explanation').textContent = collapsed ? 'Expand ›' : 'Collapse ‹';
+  document.querySelector('#toggle-explanation').setAttribute('aria-label', collapsed ? 'Expand explanation panel' : 'Collapse explanation panel');
+  document.querySelector('#toggle-explanation').title = collapsed ? 'Expand explanation panel' : 'Collapse explanation panel';
   // Resize the renderer after the grid has changed so the canvas matches its panel.
   requestAnimationFrame(resizeRenderer);
 });
-document.querySelector('#show-explanation').addEventListener('click', () => {
-  document.querySelector('.app-layout').classList.remove('explanation-collapsed');
-  document.querySelector('#toggle-explanation').setAttribute('aria-label', 'Close explanation panel');
-  document.querySelector('#toggle-explanation').title = 'Close explanation panel';
-  requestAnimationFrame(resizeRenderer);
-});
-
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
 window.addEventListener('resize', resizeRenderer);
 
