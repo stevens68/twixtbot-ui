@@ -85,7 +85,7 @@ pre { white-space: pre-wrap; word-break: break-word; background: #0b1018; paddin
   .app-layout.explanation-collapsed { grid-template-columns: 235px minmax(0, 1fr) 0; }
   .controls-panel, .inspector { padding: 15px 12px; }
 }
-@media (max-width: 760px) {
+@media (max-width: 620px) {
   .app-layout, .app-layout.explanation-collapsed { display: grid; grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; }
   .controls-panel { border-right: 0; border-bottom: 1px solid var(--panel-border); overflow: visible; }
   .visual-panel { min-height: 520px; }
