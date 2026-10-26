@@ -5,6 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Twixtbot · 3D neural-network visualizer</title>
   <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Critical layout fallback: keep the three panels side by side even if style.css is stale. */
+    html body main.app-layout {
+      display: grid !important;
+      grid-template-columns: 265px minmax(0, 1fr) 285px !important;
+      width: 100% !important;
+      height: calc(100vh - 105px) !important;
+      min-height: 0 !important;
+      align-items: stretch;
+    }
+    html body main.app-layout.explanation-collapsed {
+      grid-template-columns: 265px minmax(0, 1fr) 0 !important;
+    }
+    html body main.app-layout > .controls-panel,
+    html body main.app-layout > .visual-panel,
+    html body main.app-layout > .inspector { min-width: 0; min-height: 0; }
+    html body main.app-layout > .visual-panel { height: 100%; }
+    @media (max-width: 1050px) {
+      html body main.app-layout { grid-template-columns: 235px minmax(0, 1fr) 255px !important; }
+      html body main.app-layout.explanation-collapsed { grid-template-columns: 235px minmax(0, 1fr) 0 !important; }
+    }
+    @media (max-width: 380px) {
+      html body main.app-layout,
+      html body main.app-layout.explanation-collapsed {
+        grid-template-columns: minmax(0, 1fr) !important;
+        height: auto !important;
+      }
+      html body main.app-layout > .visual-panel { min-height: 520px; }
+    }
+  </style>
   <script type="importmap">
     {
       "imports": {
