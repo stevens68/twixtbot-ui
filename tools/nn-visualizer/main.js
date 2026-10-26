@@ -522,7 +522,7 @@ function drawSampleBoard() {
 
   // A subtle board backing separates the real game from the tensor blades.
   const backing = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, boardSize + 0.42, boardSize + 0.42),
+    new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
       color: 0xc8cacc,
       roughness: 0.88,
@@ -531,6 +531,7 @@ function drawSampleBoard() {
       side: THREE.DoubleSide,
     }),
   );
+  backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX + 0.035, 0, boardCenterZ);
   sceneGroup.add(backing);
 
@@ -747,11 +748,12 @@ function drawEffectiveBoard() {
   ];
 
   const backing = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, boardSize + 0.42, boardSize + 0.42),
+    new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
       color: 0xc8cacc, roughness: 0.88, side: THREE.DoubleSide,
     }),
   );
+  backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX + 0.035, 0, 0);
   sceneGroup.add(backing);
 
