@@ -159,9 +159,9 @@ export function createTensorRenderer({
     const game = createSampleGame();
     drawSampleBoard();
     drawEffectiveBoard();
-    if (!backendSnapshot) {
+    if (!getBackendSnapshot()) {
       logLinkEncodingDiagnostic(game, getData().links);
-      logFullInputTensorValidation(game, data);
+      logFullInputTensorValidation(game, getData());
     }
   
     const tensors = [
