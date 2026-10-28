@@ -16,6 +16,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
     boardStartZ + col * spacing,
   ];
+  // Keep peg placement on the same coordinate mapping as links and holes.
+  const boardPoint = (peg, x = boardX) => pointAt(peg.row, peg.col, x);
 
   if (!sampleStaticBuilt) {
   // A subtle board backing separates the real game from the tensor blades.
