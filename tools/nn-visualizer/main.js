@@ -48,9 +48,16 @@ let activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
 const staticSceneGroup = new THREE.Group();
 staticSceneGroup.name = 'persistent-static-board';
+const inputStaticTensorGroup = new THREE.Group();
+inputStaticTensorGroup.name = 'persistent-input-tensor-static';
+const inputDynamicTensorGroup = new THREE.Group();
+inputDynamicTensorGroup.name = 'persistent-input-tensor-dynamic';
+const filterStaticGroup = new THREE.Group();
+filterStaticGroup.name = 'persistent-filter-geometry';
 // Must be initialized before createDemoData(), which calls createSampleGame().
 let backendSnapshot = null;
-let data = createDemoData();
+const demoModel = createDemoData();
+let data = demoModel;
 let cachedOutput = null;
 let gameMoves = [];
 let gamePly = 0;
@@ -58,6 +65,9 @@ let gameLoaded = false;
 let currentPlayerName = "Black";
 
 scene.add(staticSceneGroup);
+scene.add(inputStaticTensorGroup);
+scene.add(inputDynamicTensorGroup);
+scene.add(filterStaticGroup);
 scene.add(sceneGroup);
 
 // Temporary baseline instrumentation for the performance work. This is
@@ -379,6 +389,9 @@ const { drawInputs, drawFilters, drawOutput } =
   createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
     createTensor3, getSceneGroup: () => sceneGroup, getData: () => data,
+    getInputStaticGroup: () => inputStaticTensorGroup,
+    getInputDynamicGroup: () => inputDynamicTensorGroup,
+    getFilterStaticGroup: () => filterStaticGroup,
     createSampleGame, getBackendSnapshot: () => backendSnapshot,
     drawSampleBoard, drawEffectiveBoard,
     logLinkEncodingDiagnostic, logFullInputTensorValidation,
@@ -388,6 +401,9 @@ const { drawInputs, drawFilters, drawOutput } =
 function renderStep() {
   const renderStarted = performance.now();
   staticSceneGroup.visible = activeStep === 'inputs';
+  inputStaticTensorGroup.visible = activeStep === 'inputs';
+  inputDynamicTensorGroup.visible = activeStep === 'inputs';
+  filterStaticGroup.visible = activeStep === 'filters';
   // Reset the label pool before detaching the previous scene; labels are
   // reattached from the pool as the new scene is constructed.
   beginLabelFrame();
@@ -647,8 +663,8 @@ async function loadGamePosition(ply) {
     pegs: result.tensors.pegs,
     links: result.tensors.links,
     locations: result.tensors.locations,
-    weights: demo.weights,
-    bias: demo.bias,
+    weights: demoModel.weights,
+    bias: demoModel.bias,
     isDemo: false,
   };
 
@@ -725,7 +741,7 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gamePly = 0;
     gameLoaded = true;
     backendSnapshot = null;
-    data = createDemoData();
+    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias };
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
