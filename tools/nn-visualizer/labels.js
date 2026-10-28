@@ -92,6 +92,35 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     );
   }
 
+  // Render a whole move-list column as one canvas texture and one sprite.
+  // This preserves the 20-row column layout while avoiding one draw call per move.
+  function addMoveColumnLabel(moves, position, fontSize = 14, scaleDivisor = (fontSize + 8) / 0.38) {
+    const lineHeight = fontSize + 8;
+    const key = JSON.stringify(['move-column', moves, fontSize, scaleDivisor]);
+    const texture = getTexture(key, (context) => {
+      context.font = '600 ' + fontSize + 'px Arial';
+      const textWidth = Math.max(128, ...moves.map((move) => context.measureText(move).width + 24));
+      const width = Math.ceil(textWidth);
+      const height = Math.max(lineHeight + 12, moves.length * lineHeight + 12);
+      context.font = '600 ' + fontSize + 'px Arial';
+      context.textAlign = 'left';
+      context.textBaseline = 'middle';
+      moves.forEach((move, index) => {
+        // Columns start at plies 0, 20, 40... so each column starts on Red's move.
+        context.fillStyle = index % 2 === 0 ? '#ff4545' : '#e7edf6';
+        context.fillText(move, 12, 6 + (index + 0.5) * lineHeight);
+      });
+      return { width, height };
+    });
+
+    acquireSprite(
+      texture,
+      position,
+      [texture.image.width / scaleDivisor, texture.image.height / scaleDivisor],
+      'left',
+    );
+  }
+
   function addRichLabel(parts, position, fontSize = 30, scaleDivisor = 45, alignment = 'left') {
     const key = JSON.stringify(['rich', parts, fontSize, scaleDivisor, alignment]);
     const texture = getTexture(key, (context) => {
@@ -120,5 +149,5 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     );
   }
 
-  return { addLabel, addRichLabel, beginFrame };
+  return { addLabel, addRichLabel, addMoveColumnLabel, beginFrame };
 }
