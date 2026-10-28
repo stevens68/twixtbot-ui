@@ -46,6 +46,8 @@ scene.add(keyLight);
 
 let activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
+const staticSceneGroup = new THREE.Group();
+staticSceneGroup.name = 'persistent-static-board';
 // Must be initialized before createDemoData(), which calls createSampleGame().
 let backendSnapshot = null;
 let data = createDemoData();
@@ -55,6 +57,7 @@ let gamePly = 0;
 let gameLoaded = false;
 let currentPlayerName = "Black";
 
+scene.add(staticSceneGroup);
 scene.add(sceneGroup);
 
 // Temporary baseline instrumentation for the performance work. This is
@@ -127,6 +130,8 @@ function countSceneObjects(root) {
 
 const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const { addLabel, addRichLabel, beginFrame: beginLabelFrame } = createLabelHelpers(THREE, () => sceneGroup);
+const { addLabel: addStaticLabel, addRichLabel: addStaticRichLabel } =
+  createLabelHelpers(THREE, () => staticSceneGroup);
 
 function createDemoData() {
   const random=createRandomGenerator(2026);
@@ -346,6 +351,9 @@ function encodeGameInputs(game) {
 const { drawSampleBoard, drawEffectiveBoard } = createBoardRenderer({
   THREE,
   getSceneGroup: () => sceneGroup,
+  getStaticSceneGroup: () => staticSceneGroup,
+  addStaticLabel,
+  addStaticRichLabel,
   BOARD_SIZE,
   addLabel,
   addRichLabel,
@@ -378,6 +386,7 @@ const { drawInputs, drawFilters, drawOutput } =
 
 function renderStep() {
   const renderStarted = performance.now();
+  staticSceneGroup.visible = activeStep === 'inputs';
   // Reset the label pool before detaching the previous scene; labels are
   // reattached from the pool as the new scene is constructed.
   beginLabelFrame();
