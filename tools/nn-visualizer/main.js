@@ -4,7 +4,7 @@ import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } fr
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261028-fix-sample-board';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261028-incremental-tensors';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -446,6 +446,9 @@ function renderStep() {
     drawMs: Number(drawMs.toFixed(2)),
     totalMs: Number((performance.now() - renderStarted).toFixed(2)),
     ...objects,
+    persistentInputStatic: countSceneObjects(inputStaticTensorGroup),
+    persistentInputDynamic: countSceneObjects(inputDynamicTensorGroup),
+    persistentFilterGeometry: countSceneObjects(filterStaticGroup),
   });
 
   // Read renderer.info after the next normal animation-frame render, not from
