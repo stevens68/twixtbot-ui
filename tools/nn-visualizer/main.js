@@ -213,6 +213,10 @@ function calculateConvolutionOutput() {
 function clearSceneGroup() {
   scene.remove(sceneGroup);
 
+  // Most board geometry is recreated for each position. Dispose each unique
+  // geometry once so renderer.info.memory.geometries does not grow on every
+  // navigation. The shared tensor cube geometry must remain alive.
+  const geometriesToDispose = new Set();
   sceneGroup.traverse((object) => {
     if (object.isSprite) {
       // Label sprites/materials are pooled and reused by labels.js. Disposing
@@ -222,9 +226,19 @@ function clearSceneGroup() {
         object.material.dispose();
       }
     } else if (object.isMesh) {
-      object.material.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (material?.map) material.map.dispose();
+        material?.dispose();
+      }
+
+      if (object.geometry && object.geometry !== cubeGeometry) {
+        geometriesToDispose.add(object.geometry);
+      }
     }
   });
+
+  geometriesToDispose.forEach((geometry) => geometry.dispose());
 
   sceneGroup = new THREE.Group();
   scene.add(sceneGroup);
