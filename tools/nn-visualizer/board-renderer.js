@@ -181,6 +181,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   }
 
   sampleStaticBuilt = true;
+  }
 
   const lastMove = game.moves.length ? game.moves[game.moves.length - 1].toUpperCase() : '—';
   const nextPlayerLabel = game.nextPlayer === 1 ? 'red' : 'black';
