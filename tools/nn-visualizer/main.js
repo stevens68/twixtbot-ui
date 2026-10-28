@@ -78,6 +78,27 @@ const nnPerf = {
 };
 window.nnPerf = nnPerf;
 
+// Cache recent backend snapshots by exact move prefix. This avoids repeated
+// HTTP and JSON work when revisiting positions or rendering a validated endpoint.
+const SNAPSHOT_CACHE_LIMIT = 128;
+const snapshotCache = new Map();
+
+function getCachedSnapshot(key) {
+  if (!snapshotCache.has(key)) return null;
+  const value = snapshotCache.get(key);
+  snapshotCache.delete(key);
+  snapshotCache.set(key, value);
+  return value;
+}
+
+function cacheSnapshot(key, value) {
+  snapshotCache.delete(key);
+  snapshotCache.set(key, value);
+  while (snapshotCache.size > SNAPSHOT_CACHE_LIMIT) {
+    snapshotCache.delete(snapshotCache.keys().next().value);
+  }
+}
+
 function countSceneObjects(root) {
   const counts = { objects: 0, meshes: 0, instancedMeshes: 0, sprites: 0, geometries: 0, materials: 0 };
   const geometries = new Set();
@@ -543,6 +564,13 @@ applyChangesButton.addEventListener('click', async () => {
 });
 
 async function requestSnapshot(moves) {
+  const cacheKey = JSON.stringify({ moves, allow_scl: false, allow_swap: true });
+  const cached = getCachedSnapshot(cacheKey);
+  if (cached) {
+    nnPerf.record('snapshotCacheHit', { moves: moves.length, responseBytes: cached.responseBytes, cacheEntries: snapshotCache.size });
+    return cached.result;
+  }
+
   const started = performance.now();
   const response = await fetch('/api/trace', {
     method: 'POST',
@@ -562,14 +590,16 @@ async function requestSnapshot(moves) {
   }
   const jsonParseMs = performance.now() - parseStarted;
   if (!response.ok) throw new Error(result.error || response.statusText);
+  const responseBytes = Number(response.headers.get('content-length')) || new TextEncoder().encode(responseText).length;
   nnPerf.record('requestSnapshot', {
     moves: moves.length,
     headersMs: Number(headersMs.toFixed(2)),
     bodyMs: Number(bodyMs.toFixed(2)),
     jsonParseMs: Number(jsonParseMs.toFixed(2)),
     totalMs: Number((performance.now() - started).toFixed(2)),
-    responseBytes: Number(response.headers.get('content-length')) || new TextEncoder().encode(responseText).length,
+    responseBytes,
   });
+  cacheSnapshot(cacheKey, { result, responseBytes });
   return result;
 }
 async function loadGamePosition(ply) {
