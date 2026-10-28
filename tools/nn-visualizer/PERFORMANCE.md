@@ -1,6 +1,6 @@
 # NN visualizer performance notes
 
-This document tracks instrumentation, the original baseline, and subsequent optimizations. Rendering optimization is incremental: backend game replay reuses cached move-prefix positions, and canvas label sprites/textures are pooled across scene rebuilds. Geometry and game-dependent tensor objects are still rebuilt.
+This document tracks instrumentation, the original baseline, and subsequent optimizations. Rendering optimization is incremental: backend game replay reuses cached move-prefix positions, canvas label sprites/textures are pooled, and static board backing/holes/finish lines/coordinate labels now persist in a separate scene group. Dynamic pegs, links, move labels, and tensor objects are still rebuilt.
 
 ## What is measured
 
@@ -9,7 +9,7 @@ Open the browser developer tools (F12) and select **Console**. The visualizer re
 - `requestSnapshot`: response-header wait, response-body read, JSON parsing, and move count sent to `/api/trace`. The backend now caches reconstructed game states by move prefix, so navigation can resume from the closest cached position.
 - `renderStep`: scene clearing time, scene construction/draw time, total synchronous render time, object/mesh/InstancedMesh counts, unique geometry/material counts, renderer draw calls, triangles, geometries and textures.
 - `loadGamePosition`: complete time to fetch the snapshot, replace the data, and rebuild the selected view.
-- Label rendering reuses sprite objects and cached canvas textures across renders; this reduces allocation and canvas work but does not yet eliminate scene reconstruction or draw calls.
+- Label rendering reuses sprite objects and cached canvas textures across renders. Static sample/effective board backing planes, holes, finish lines, and coordinate labels are built once and hidden outside the input view rather than rebuilt per move. Dynamic pegs, links, move-list labels, and tensor meshes are still reconstructed; this is not yet full incremental rendering.
 
 The browser console API is available for repeatable runs:
 
