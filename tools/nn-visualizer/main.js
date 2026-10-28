@@ -57,6 +57,53 @@ let currentPlayerName = "Black";
 
 scene.add(sceneGroup);
 
+// Temporary baseline instrumentation for the performance work. This is
+// observational only: it does not alter scene construction or game state.
+const nnPerf = {
+  samples: [],
+  record(label, metrics) {
+    const sample = { at: new Date().toISOString(), label, ...metrics };
+    this.samples.push(sample);
+    console.debug('[NN perf]', sample);
+    return sample;
+  },
+  report() {
+    console.table(this.samples.map(({ at, ...sample }) => sample));
+    return this.samples.slice();
+  },
+  reset() {
+    this.samples = [];
+    console.info('[NN perf] Samples cleared.');
+  },
+};
+window.nnPerf = nnPerf;
+
+function countSceneObjects(root) {
+  const counts = { objects: 0, meshes: 0, instancedMeshes: 0, sprites: 0, geometries: 0, materials: 0 };
+  const geometries = new Set();
+  const materials = new Set();
+  root.traverse((object) => {
+    counts.objects += 1;
+    if (object.isMesh) {
+      counts.meshes += 1;
+      if (object.isInstancedMesh) counts.instancedMeshes += 1;
+      if (object.geometry) geometries.add(object.geometry);
+      for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
+        if (material) materials.add(material);
+      }
+    }
+    if (object.isSprite) {
+      counts.sprites += 1;
+      for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
+        if (material) materials.add(material);
+      }
+    }
+  });
+  counts.geometries = geometries.size;
+  counts.materials = materials.size;
+  return counts;
+}
+
 const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const { addLabel, addRichLabel } = createLabelHelpers(THREE, () => sceneGroup);
 
@@ -291,9 +338,13 @@ const { drawInputs, drawFilters, drawOutput } =
   });
 
 function renderStep() {
+  const renderStarted = performance.now();
+  const clearStarted = renderStarted;
   clearSceneGroup();
+  const clearMs = performance.now() - clearStarted;
 
   let info;
+  const drawStarted = performance.now();
 
   if (activeStep === 'inputs') {
     info = drawInputs();
@@ -302,6 +353,7 @@ function renderStep() {
   } else {
     info = drawOutput();
   }
+  const drawMs = performance.now() - drawStarted;
 
   document.querySelector('#view-title').textContent = info.title;
   document.querySelector('#view-description').textContent = info.description;
@@ -316,6 +368,21 @@ function renderStep() {
   });
 
   loading.style.display = 'none';
+
+  const objects = countSceneObjects(sceneGroup);
+  nnPerf.record('renderStep', {
+    step: activeStep,
+    ply: gameLoaded ? gamePly : null,
+    moves: gameMoves.length,
+    clearMs: Number(clearMs.toFixed(2)),
+    drawMs: Number(drawMs.toFixed(2)),
+    totalMs: Number((performance.now() - renderStarted).toFixed(2)),
+    ...objects,
+    drawCalls: renderer.info.render.calls,
+    triangles: renderer.info.render.triangles,
+    rendererGeometries: renderer.info.memory.geometries,
+    rendererTextures: renderer.info.memory.textures,
+  });
 }
 
 function validateTensor(tensor, channels, name) {
@@ -466,10 +533,28 @@ applyChangesButton.addEventListener('click', async () => {
 });
 
 async function requestSnapshot(moves) {
- const response=await fetch('/api/trace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves,allow_scl:false,allow_swap:true})});
- const result=await response.json();if(!response.ok)throw new Error(result.error||response.statusText);return result;
+  const started = performance.now();
+  const response = await fetch('/api/trace', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ moves, allow_scl: false, allow_swap: true }),
+  });
+  const responseMs = performance.now() - started;
+  const parseStarted = performance.now();
+  const result = await response.json();
+  const parseMs = performance.now() - parseStarted;
+  if (!response.ok) throw new Error(result.error || response.statusText);
+  nnPerf.record('requestSnapshot', {
+    moves: moves.length,
+    responseMs: Number(responseMs.toFixed(2)),
+    parseMs: Number(parseMs.toFixed(2)),
+    totalMs: Number((performance.now() - started).toFixed(2)),
+    responseBytes: Number(response.headers.get('content-length')) || null,
+  });
+  return result;
 }
 async function loadGamePosition(ply) {
+  const loadStarted = performance.now();
   // Rebuild the authoritative backend position from the move prefix. This
   // makes Back an undo and Forward a redo, including captures/links and the
   // model's perspective-dependent input encoding.
@@ -497,6 +582,11 @@ async function loadGamePosition(ply) {
   status.textContent = 'Game position ' + gamePly + '/' + gameMoves.length +
     '. Next player: ' + result.next_player_name +
     '. Board and input tensors updated; filters remain demo weights.';
+  nnPerf.record('loadGamePosition', {
+    ply,
+    moves: gameMoves.length,
+    totalMs: Number((performance.now() - loadStarted).toFixed(2)),
+  });
 }
 
 function updateGameNavigation() {
