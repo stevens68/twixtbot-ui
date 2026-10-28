@@ -1,6 +1,8 @@
 // Board geometry and labels for the Twixt neural-network visualizer.
 // Scene state and board data are supplied by main.js to keep this module isolated.
-export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel, addRichLabel, createSampleGame, getData }) {
+export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup, BOARD_SIZE, addLabel, addRichLabel, addStaticLabel, addStaticRichLabel, createSampleGame, getData }) {
+  let sampleStaticBuilt = false;
+  let effectiveStaticBuilt = false;
   function drawSampleBoard() {
   const game = createSampleGame();
   const spacing = 0.34;
@@ -15,7 +17,9 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
     boardStartZ + col * spacing,
   ];
 
+  if (!sampleStaticBuilt) {
   // A subtle board backing separates the real game from the tensor blades.
+  if (!effectiveStaticBuilt) {
   const backing = new THREE.Mesh(
     new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
@@ -28,7 +32,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
   );
   backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX + 0.035, 0, boardCenterZ);
-  getSceneGroup().add(backing);
+  getStaticSceneGroup().add(backing);
 
   // Flat 2D finish lines lie directly on the board face (no cylinders or gaps).
   const finishLineX = boardX + 0.025;
@@ -44,7 +48,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
       (start[1] + end[1]) / 2,
       (start[2] + end[2]) / 2,
     );
-    getSceneGroup().add(strip);
+    getStaticSceneGroup().add(strip);
   };
   const redFinish = new THREE.MeshBasicMaterial({ color: 0xe0525d, side: THREE.DoubleSide });
   const blackFinish = new THREE.MeshBasicMaterial({ color: 0x20252d, side: THREE.DoubleSide });
@@ -95,7 +99,9 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
     }
   }
   holes.instanceMatrix.needsUpdate = true;
-  getSceneGroup().add(holes);
+  getStaticSceneGroup().add(holes);
+  }
+  }
 
   // Use short cylinders for links: WebGL line width is often fixed at one pixel.
   // Keep each player's links in the same color as that player's pegs.
@@ -128,7 +134,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
     linkMesh.scale.copy(linkTransform.scale);
     linkMeshes[link.player].add(linkMesh);
   }
-  getSceneGroup().add(linkMeshes[0], linkMeshes[1]);
+  getStaticSceneGroup().add(linkMeshes[0], linkMeshes[1]);
 
   // Slimmer, slightly longer pegs, kept in the sample game's native coordinates.
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
@@ -151,12 +157,13 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
       pegMesh.setMatrixAt(index, transform.matrix);
     });
     pegMesh.instanceMatrix.needsUpdate = true;
-    getSceneGroup().add(pegMesh);
+    getStaticSceneGroup().add(pegMesh);
   }
 
+  if (!sampleStaticBuilt) {
   // Coordinate labels follow the same A–X / 1–24 convention as the tensors.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
-    addLabel(
+    addStaticLabel(
       String.fromCharCode(65 + col),
       [boardX - 0.12, 4.42, boardStartZ + col * spacing],
       14,
@@ -165,7 +172,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
     );
   }
   for (let row = 0; row < BOARD_SIZE; row += 1) {
-    addLabel(
+    addStaticLabel(
       String(row + 1),
       [boardX - 0.12, boardStartY + (BOARD_SIZE - 1 - row) * spacing, boardStartZ - 0.34],
       14,
@@ -173,6 +180,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
       150,
     );
   }
+
+  sampleStaticBuilt = true;
 
   const lastMove = game.moves.length ? game.moves[game.moves.length - 1].toUpperCase() : '—';
   const nextPlayerLabel = game.nextPlayer === 1 ? 'red' : 'black';
@@ -244,7 +253,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
   );
   backing.rotation.y = -Math.PI / 2;
   backing.position.set(boardX + 0.035, 0, 0);
-  getSceneGroup().add(backing);
+  getStaticSceneGroup().add(backing);
 
   // The board grid uses tensor coordinates. For a Black-to-move game those
   // coordinates are transposed and colours remapped by the encoder; finish
@@ -262,7 +271,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
       (startPoint[1] + endPoint[1]) / 2,
       (startPoint[2] + endPoint[2]) / 2,
     );
-    getSceneGroup().add(strip);
+    getStaticSceneGroup().add(strip);
   };
   const redFinish = new THREE.MeshBasicMaterial({ color: 0xe0525d });
   const blackFinish = new THREE.MeshBasicMaterial({ color: 0x20252d });
@@ -304,7 +313,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
     }
   }
   holes.instanceMatrix.needsUpdate = true;
-  getSceneGroup().add(holes);
+  getStaticSceneGroup().add(holes);
 
   // Render each active encoded link cell as a cube standing out from the board.
   // Extend links clearly out from the board: X is the board-normal axis.
@@ -409,23 +418,24 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
     getSceneGroup().add(mesh);
   }
 
+  if (!effectiveStaticBuilt) {
   // Keep the familiar Twixt coordinates fixed, like the finish lines:
   // A–X run left-to-right across the top; 1–24 run top-to-bottom on the left.
   for (let col = 0; col < BOARD_SIZE; col += 1) {
-    addLabel(
+    addStaticLabel(
       String.fromCharCode(65 + col),
       [boardX - 0.12, start + (BOARD_SIZE - 1) * spacing + 0.34, start + col * spacing],
       14, '#e0e8e2', 150,
     );
   }
   for (let row = 0; row < BOARD_SIZE; row += 1) {
-    addLabel(
+    addStaticLabel(
       String(row + 1),
       [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34],
       14, '#e0e8e2', 150,
     );
   }
-  addRichLabel(
+  addStaticRichLabel(
     [
       { text: 'Effective board - black to move', color: '#ffffff' },
     ],
@@ -434,6 +444,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, BOARD_SIZE, addLabel
     90,
     'center',
   );
+  effectiveStaticBuilt = true;
+
 }
 
   return { drawSampleBoard, drawEffectiveBoard };
