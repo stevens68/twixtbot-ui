@@ -7,6 +7,7 @@ src.backend.naf. This module only serializes their results for the browser.
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,7 @@ def _tensor(array: np.ndarray) -> list:
 
 
 def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True) -> dict[str, Any]:
+    snapshot_started = time.perf_counter()
     game = twixt.Game(allow_scl=allow_scl)
     normalized_moves = [str(move).strip() for move in moves]
     lowered_moves = [move.lower() for move in normalized_moves]
@@ -43,11 +45,21 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
 
     terminal_resign = bool(lowered_moves and lowered_moves[-1] == twixt.RESIGN)
     playable_moves = normalized_moves[:-1] if terminal_resign else normalized_moves
-    for move in playable_moves:
-        game.play(twixt.SWAP if move.lower() == twixt.SWAP else move)
 
+    replay_started = time.perf_counter()
+    move_times_ms = []
+    for move in playable_moves:
+        move_started = time.perf_counter()
+        game.play(twixt.SWAP if move.lower() == twixt.SWAP else move)
+        move_times_ms.append((time.perf_counter() - move_started) * 1000)
+    replay_ms = (time.perf_counter() - replay_started) * 1000
+
+    net_started = time.perf_counter()
     net = NetInputs(game)
     pegs, links, locations = net.to_input_arrays()
+    net_inputs_ms = (time.perf_counter() - net_started) * 1000
+
+    board_started = time.perf_counter()
     board_pegs = []
     for player in (twixt.Game.BLACK, twixt.Game.WHITE):
         rows, cols = np.nonzero(game.pegs[player])
@@ -67,6 +79,28 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
                 "from": {"row": int(a.y), "col": int(a.x)},
                 "to": {"row": int(b.y), "col": int(b.x)},
             })
+    board_ms = (time.perf_counter() - board_started) * 1000
+
+    tensors_started = time.perf_counter()
+    tensors = {
+        "naf": _tensor(net.naf),
+        "pegs": _tensor(pegs),
+        "links": _tensor(links),
+        "locations": _tensor(locations),
+    }
+    tensor_conversion_ms = (time.perf_counter() - tensors_started) * 1000
+
+    total_ms = (time.perf_counter() - snapshot_started) * 1000
+    slowest_moves = sorted(enumerate(move_times_ms, start=1), key=lambda item: item[1], reverse=True)[:3]
+    slowest_summary = ",".join(f"{index}:{duration:.1f}ms" for index, duration in slowest_moves) or "none"
+    print(
+        "[NN perf adapter] "
+        f"moves={len(moves)} replay_ms={replay_ms:.1f} "
+        f"slowest_move_ms={slowest_summary} net_inputs_ms={net_inputs_ms:.1f} "
+        f"board_extract_ms={board_ms:.1f} tensor_conversion_ms={tensor_conversion_ms:.1f} "
+        f"snapshot_total_ms={total_ms:.1f}",
+        flush=True,
+    )
 
     return {
         "source": {
@@ -79,12 +113,7 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
         "next_player": int(game.turn),
         "next_player_name": game.COLOR_NAME[game.turn],
         "board": {"pegs": board_pegs, "links": board_links},
-        "tensors": {
-            "naf": _tensor(net.naf),
-            "pegs": _tensor(pegs),
-            "links": _tensor(links),
-            "locations": _tensor(locations),
-        },
+        "tensors": tensors,
         "shapes": {
             "naf": list(net.naf.shape),
             "pegs": list(pegs.shape),
