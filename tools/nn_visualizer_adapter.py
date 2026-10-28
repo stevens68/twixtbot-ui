@@ -67,7 +67,12 @@ def _tensor(array: np.ndarray) -> list:
     return np.asarray(array).tolist()
 
 
-def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True) -> dict[str, Any]:
+def snapshot(
+    moves: list[str],
+    allow_scl: bool = False,
+    allow_swap: bool = True,
+    check_draw: bool = True,
+) -> dict[str, Any]:
     snapshot_started = time.perf_counter()
     normalized_moves = [str(move).strip() for move in moves]
     lowered_moves = [move.lower() for move in normalized_moves]
@@ -101,8 +106,10 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
     # after every move repeats increasingly expensive work. Pegs and links only
     # accumulate, so for a trajectory that continues, a position with no
     # possible path cannot become playable again. Check the final position once.
-    if playable_moves and game._is_a_draw():
+    draw_started = time.perf_counter()
+    if check_draw and playable_moves and game._is_a_draw():
         game.result = twixt.DRAW
+    draw_ms = (time.perf_counter() - draw_started) * 1000
 
     net_started = time.perf_counter()
     net = NetInputs(game)
@@ -148,8 +155,9 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
     print(
         "[NN perf adapter] "
         f"moves={len(moves)} cached_prefix={cached_prefix} replay_ms={replay_ms:.1f} "
-        f"slowest_move_ms={slowest_summary} net_inputs_ms={net_inputs_ms:.1f} "
-        f"board_extract_ms={board_ms:.1f} tensor_conversion_ms={tensor_conversion_ms:.1f} "
+        f"slowest_move_ms={slowest_summary} draw_check_ms={draw_ms:.1f} "
+        f"net_inputs_ms={net_inputs_ms:.1f} board_extract_ms={board_ms:.1f} "
+        f"tensor_conversion_ms={tensor_conversion_ms:.1f} "
         f"snapshot_total_ms={total_ms:.1f}",
         flush=True,
     )
@@ -161,7 +169,8 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
             "transform": "NetInputs(game) -> NetInputs.to_input_arrays()",
         },
         "moves": normalized_moves,
-        "result": "resign" if terminal_resign else game.result,
+        "result": "resign" if terminal_resign else (game.result if check_draw else None),
+        "result_checked": bool(check_draw),
         "next_player": int(game.turn),
         "next_player_name": game.COLOR_NAME[game.turn],
         "board": {"pegs": board_pegs, "links": board_links},
