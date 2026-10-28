@@ -634,7 +634,26 @@ async function requestSnapshot(moves) {
   });
   const headersMs = performance.now() - started;
   const bodyStarted = performance.now();
-  const responseText = await response.text();
+  // Measure when the first response bytes become readable separately from
+  // the full body read. This distinguishes delivery latency from body draining.
+  const reader = response.body.getReader();
+  const chunks = [];
+  let responseLength = 0;
+  let firstChunkMs = null;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (firstChunkMs === null) firstChunkMs = performance.now() - bodyStarted;
+    chunks.push(value);
+    responseLength += value.length;
+  }
+  const responseBuffer = new Uint8Array(responseLength);
+  let responseOffset = 0;
+  for (const chunk of chunks) {
+    responseBuffer.set(chunk, responseOffset);
+    responseOffset += chunk.length;
+  }
+  const responseText = new TextDecoder().decode(responseBuffer);
   const bodyMs = performance.now() - bodyStarted;
   const parseStarted = performance.now();
   let result;
@@ -652,6 +671,7 @@ async function requestSnapshot(moves) {
   nnPerf.record('requestSnapshot', {
     moves: moves.length,
     headersMs: Number(headersMs.toFixed(2)),
+    firstChunkMs: firstChunkMs === null ? null : Number(firstChunkMs.toFixed(2)),
     bodyMs: Number(bodyMs.toFixed(2)),
     jsonParseMs: Number(jsonParseMs.toFixed(2)),
     totalMs: Number((performance.now() - started).toFixed(2)),
