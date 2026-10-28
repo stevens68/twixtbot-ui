@@ -105,7 +105,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   }
 
   // Batch physical sample-board links into one InstancedMesh per player.
-  // Place them just in front of the board face so the backing cannot occlude them.
+  // The camera views the board from negative X, so keep links in front of the pegs and board face.
   const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
   const linkMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
@@ -118,8 +118,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     const mesh = new THREE.InstancedMesh(linkGeometry, linkMaterials[player], playerLinks.length);
     const transform = new THREE.Object3D();
     playerLinks.forEach((link, index) => {
-      const a = new THREE.Vector3(...pointAt(link.from, boardX + 0.06));
-      const b = new THREE.Vector3(...pointAt(link.to, boardX + 0.06));
+      const a = new THREE.Vector3(...pointAt(link.from, boardX - 0.36));
+      const b = new THREE.Vector3(...pointAt(link.to, boardX - 0.36));
       const direction = new THREE.Vector3().subVectors(b, a);
       transform.position.copy(a).add(b).multiplyScalar(0.5);
       transform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
