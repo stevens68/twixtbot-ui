@@ -1,6 +1,6 @@
 # NN visualizer performance notes
 
-This document tracks instrumentation, the original baseline, and subsequent optimizations. The rendering strategy is still unchanged; backend game replay now reuses cached move-prefix positions.
+This document tracks instrumentation, the original baseline, and subsequent optimizations. Rendering optimization is incremental: backend game replay reuses cached move-prefix positions, and canvas label sprites/textures are pooled across scene rebuilds. Geometry and game-dependent tensor objects are still rebuilt.
 
 ## What is measured
 
@@ -8,7 +8,7 @@ Open the browser developer tools (F12) and select **Console**. The visualizer re
 
 - `requestSnapshot`: response-header wait, response-body read, JSON parsing, and move count sent to `/api/trace`. The backend now caches reconstructed game states by move prefix, so navigation can resume from the closest cached position.
 - `renderStep`: scene clearing time, scene construction/draw time, total synchronous render time, object/mesh/InstancedMesh counts, unique geometry/material counts, renderer draw calls, triangles, geometries and textures.
-- `loadGamePosition`: complete time to fetch the snapshot, replace the data, and rebuild the selected view.
+- `loadGamePosition`: complete time to fetch the snapshot, replace the data, and rebuild the selected view.\n- Label rendering reuses sprite objects and cached canvas textures across renders; this reduces allocation and canvas work but does not yet eliminate scene reconstruction or draw calls.
 
 The browser console API is available for repeatable runs:
 
@@ -50,4 +50,4 @@ These timings cover synchronous JavaScript scene construction and the request/re
 
 The backend now caches up to 2,048 game states, keyed by the normalized move prefix and `allow_scl` setting. The response omits the raw 24×24×11 NAF intermediate because the browser only consumes the three tensors returned by `to_input_arrays()`. It looks for the longest cached prefix, clones that state, and applies only the remaining moves. Cached states are cloned before use, so later requests cannot mutate the saved state. The cache is process-local and is cleared when the visualizer server restarts. The adapter log includes `cached_prefix`; compare that with the requested move count to see how much replay was skipped.
 
-The browser now keeps a bounded 128-entry LRU cache of exact `/api/trace` responses keyed by the full move prefix and request options. This lets trajectory validation share the end-position snapshot with the initial end render, and makes revisiting cached positions skip the request and JSON parsing entirely. Cache hits are reported as `snapshotCacheHit`. The cache lives in the browser page and evicts the least-recently-used snapshot when full. The browser still clears and rebuilds the selected Three.js scene after each position change, so `renderStep.drawMs` remains the next major optimization target.
+The browser now keeps a bounded 128-entry LRU cache of exact `/api/trace` responses keyed by the full move prefix and request options. This lets trajectory validation share the end-position snapshot with the initial end render, and makes revisiting cached positions skip the request and JSON parsing entirely. Cache hits are reported as `snapshotCacheHit`. The cache lives in the browser page and evicts the least-recently-used snapshot when full. The browser still clears and rebuilds most of the selected Three.js scene after each position change. Label sprites and their canvas textures are now pooled, but input tensors, board objects, and their materials are still reconstructed. Compare `renderStep.drawMs` and `clearMs` before and after this change; it is not expected to reduce the 1,134 draw calls by itself.
