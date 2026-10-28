@@ -126,7 +126,7 @@ function countSceneObjects(root) {
 }
 
 const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-const { addLabel, addRichLabel } = createLabelHelpers(THREE, () => sceneGroup);
+const { addLabel, addRichLabel, beginFrame: beginLabelFrame } = createLabelHelpers(THREE, () => sceneGroup);
 
 function createDemoData() {
   const random=createRandomGenerator(2026);
@@ -215,8 +215,12 @@ function clearSceneGroup() {
 
   sceneGroup.traverse((object) => {
     if (object.isSprite) {
-      if (object.material.map) object.material.map.dispose();
-      object.material.dispose();
+      // Label sprites/materials are pooled and reused by labels.js. Disposing
+      // them here would invalidate the shared textures and defeat the pool.
+      if (!object.userData.pooledLabel) {
+        if (object.material.map) object.material.map.dispose();
+        object.material.dispose();
+      }
     } else if (object.isMesh) {
       object.material.dispose();
     }
@@ -360,6 +364,9 @@ const { drawInputs, drawFilters, drawOutput } =
 
 function renderStep() {
   const renderStarted = performance.now();
+  // Reset the label pool before detaching the previous scene; labels are
+  // reattached from the pool as the new scene is constructed.
+  beginLabelFrame();
   const clearStarted = renderStarted;
   clearSceneGroup();
   const clearMs = performance.now() - clearStarted;
