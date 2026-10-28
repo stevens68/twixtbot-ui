@@ -150,10 +150,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     playerPegs.forEach((peg, index) => {
       const [x, y, z] = boardPoint(peg, boardX + 0.08);
       transform.position.set(x, y, z);
-      // Keep the peg axis vertical in the board's displayed plane. Rotating
-      // around Z points the cylinder out of the board along X, making it
-      // appear almost end-on from the camera.
-      transform.rotation.set(0, 0, 0);
+      transform.rotation.z = Math.PI / 2;
       transform.scale.set(1, 1, 1);
       transform.updateMatrix();
       pegMesh.setMatrixAt(index, transform.matrix);
