@@ -378,10 +378,20 @@ function renderStep() {
     drawMs: Number(drawMs.toFixed(2)),
     totalMs: Number((performance.now() - renderStarted).toFixed(2)),
     ...objects,
-    drawCalls: renderer.info.render.calls,
-    triangles: renderer.info.render.triangles,
-    rendererGeometries: renderer.info.memory.geometries,
-    rendererTextures: renderer.info.memory.textures,
+  });
+
+  // Read renderer.info after the next normal animation-frame render, not from
+  // the previous frame (renderStep itself only constructs the new scene).
+  requestAnimationFrame(() => {
+    nnPerf.record('renderFrameStats', {
+      step: activeStep,
+      ply: gameLoaded ? gamePly : null,
+      moves: gameMoves.length,
+      drawCalls: renderer.info.render.calls,
+      triangles: renderer.info.render.triangles,
+      rendererGeometries: renderer.info.memory.geometries,
+      rendererTextures: renderer.info.memory.textures,
+    });
   });
 }
 
