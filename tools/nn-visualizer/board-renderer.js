@@ -19,7 +19,6 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
 
   if (!sampleStaticBuilt) {
   // A subtle board backing separates the real game from the tensor blades.
-  if (!effectiveStaticBuilt) {
   const backing = new THREE.Mesh(
     new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
@@ -100,7 +99,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   }
   holes.instanceMatrix.needsUpdate = true;
   getStaticSceneGroup().add(holes);
-  }
+
   }
 
   // Use short cylinders for links: WebGL line width is often fixed at one pixel.
@@ -134,7 +133,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     linkMesh.scale.copy(linkTransform.scale);
     linkMeshes[link.player].add(linkMesh);
   }
-  getStaticSceneGroup().add(linkMeshes[0], linkMeshes[1]);
+  getSceneGroup().add(linkMeshes[0], linkMeshes[1]);
 
   // Slimmer, slightly longer pegs, kept in the sample game's native coordinates.
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
@@ -157,7 +156,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
       pegMesh.setMatrixAt(index, transform.matrix);
     });
     pegMesh.instanceMatrix.needsUpdate = true;
-    getStaticSceneGroup().add(pegMesh);
+    getSceneGroup().add(pegMesh);
   }
 
   if (!sampleStaticBuilt) {
@@ -245,6 +244,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     start + col * spacing,
   ];
 
+  if (!effectiveStaticBuilt) {
   const backing = new THREE.Mesh(
     new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
@@ -314,6 +314,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   }
   holes.instanceMatrix.needsUpdate = true;
   getStaticSceneGroup().add(holes);
+
+  }
 
   // Render each active encoded link cell as a cube standing out from the board.
   // Extend links clearly out from the board: X is the board-normal axis.
@@ -443,8 +445,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     19,
     90,
     'center',
-  );
-  effectiveStaticBuilt = true;
+  );  effectiveStaticBuilt = true;
+  }
 
 }
 
