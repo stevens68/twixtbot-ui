@@ -2,7 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.m
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
 import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } from './tensor-utils.js';
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
-import { createBoardRenderer } from './board-renderer.js?v=20261028-sample-link-plane';
+import { createBoardRenderer } from './board-renderer.js?v=20261028-sample-board-front';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
 import { createTensorRenderer } from './tensor-renderer.js?v=20261028-incremental-tensors';
 
