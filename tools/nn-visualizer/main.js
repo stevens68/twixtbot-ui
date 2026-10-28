@@ -640,7 +640,10 @@ async function requestSnapshot(moves) {
   }
   const jsonParseMs = performance.now() - parseStarted;
   if (!response.ok) throw new Error(result.error || response.statusText);
-  const responseBytes = Number(response.headers.get('content-length')) || new TextEncoder().encode(responseText).length;
+  // Fetch exposes the decompressed body text when Content-Encoding is gzip.
+  // Keep decoded and on-wire sizes separate so the perf report stays accurate.
+  const responseBytes = new TextEncoder().encode(responseText).length;
+  const wireResponseBytes = Number(response.headers.get('content-length')) || responseBytes;
   nnPerf.record('requestSnapshot', {
     moves: moves.length,
     headersMs: Number(headersMs.toFixed(2)),
@@ -648,8 +651,10 @@ async function requestSnapshot(moves) {
     jsonParseMs: Number(jsonParseMs.toFixed(2)),
     totalMs: Number((performance.now() - started).toFixed(2)),
     responseBytes,
+    wireResponseBytes,
+    compression: response.headers.get('content-encoding') || 'none',
   });
-  cacheSnapshot(cacheKey, { result, responseBytes });
+  cacheSnapshot(cacheKey, { result, responseBytes, wireResponseBytes });
   return result;
 }
 async function loadGamePosition(ply) {
