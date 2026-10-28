@@ -132,8 +132,10 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
     board_ms = (time.perf_counter() - board_started) * 1000
 
     tensors_started = time.perf_counter()
+    # The browser visualizer consumes the three tensors returned by
+    # to_input_arrays(). The raw NAF plane is an internal intermediate and
+    # duplicating it in every response adds 24x24x11 values the UI never uses.
     tensors = {
-        "naf": _tensor(net.naf),
         "pegs": _tensor(pegs),
         "links": _tensor(links),
         "locations": _tensor(locations),
@@ -165,7 +167,6 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
         "board": {"pegs": board_pegs, "links": board_links},
         "tensors": tensors,
         "shapes": {
-            "naf": list(net.naf.shape),
             "pegs": list(pegs.shape),
             "links": list(links.shape),
             "locations": list(locations.shape),
