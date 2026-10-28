@@ -102,38 +102,32 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
 
   }
 
-  // Use short cylinders for links: WebGL line width is often fixed at one pixel.
-  // Keep each player's links in the same color as that player's pegs.
+  // Batch physical sample-board links into one InstancedMesh per player.
+  // A move changes the transforms, but not the geometry/material for each link.
   const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
   const linkMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     1: new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   };
-  const linkMeshes = {
-    0: new THREE.Group(),
-    1: new THREE.Group(),
-  };
-  const linkTransform = new THREE.Object3D();
   const up = new THREE.Vector3(0, 1, 0);
-  // The sample board always shows the physical game in its native orientation:
-  // Red goals top/bottom, Black goals left/right, independent of whose turn it is.
-  // Only the effective board below uses naf.py's canonical perspective.
-  const boardPoint = (peg, x = boardX) => pointAt(peg.row, peg.col, x);
-  for (const link of game.links) {
-    const a = new THREE.Vector3(...boardPoint(link.from, boardX - 0.32));
-    const b = new THREE.Vector3(...boardPoint(link.to, boardX - 0.32));
-    const direction = new THREE.Vector3().subVectors(b, a);
-    linkTransform.position.copy(a).add(b).multiplyScalar(0.5);
-    linkTransform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
-    linkTransform.scale.set(1, direction.length(), 1);
-    linkTransform.updateMatrix();
-    const linkMesh = new THREE.Mesh(linkGeometry, linkMaterials[link.player]);
-    linkMesh.position.copy(linkTransform.position);
-    linkMesh.quaternion.copy(linkTransform.quaternion);
-    linkMesh.scale.copy(linkTransform.scale);
-    linkMeshes[link.player].add(linkMesh);
+  for (const player of [0, 1]) {
+    const playerLinks = game.links.filter((link) => link.player === player);
+    if (!playerLinks.length) continue;
+    const mesh = new THREE.InstancedMesh(linkGeometry, linkMaterials[player], playerLinks.length);
+    const transform = new THREE.Object3D();
+    playerLinks.forEach((link, index) => {
+      const a = new THREE.Vector3(...pointAt(link.from, boardX - 0.32));
+      const b = new THREE.Vector3(...pointAt(link.to, boardX - 0.32));
+      const direction = new THREE.Vector3().subVectors(b, a);
+      transform.position.copy(a).add(b).multiplyScalar(0.5);
+      transform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
+      transform.scale.set(1, direction.length(), 1);
+      transform.updateMatrix();
+      mesh.setMatrixAt(index, transform.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    getSceneGroup().add(mesh);
   }
-  getSceneGroup().add(linkMeshes[0], linkMeshes[1]);
 
   // Slimmer, slightly longer pegs, kept in the sample game's native coordinates.
   const pegGeometry = new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16);
@@ -316,70 +310,90 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
 
   }
 
-  // Render each active encoded link cell as a cube standing out from the board.
-  // Extend links clearly out from the board: X is the board-normal axis.
-  // Their visible projection is 0.36, matching the peg height; board-plane
-  // dimensions match the peg diameter.
-  const linkGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
-  const linkMaterials = [
+  // Batch effective-board links and their directional pointers. The previous
+  // version created three individual meshes (and a fresh pointer geometry/material)
+  // for every active link cell, making draw calls grow with the move count.
+  const linkCubeGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
+  const linkCubeMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
   ];
+  const pointerLength = 0.14;
+  const pointerRadius = 0.018;
+  const pointerGeometry = new THREE.CylinderGeometry(
+    pointerRadius, pointerRadius, pointerLength, 8,
+  );
+  const pointerMaterials = [
+    new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.7 }),
+    new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.7 }),
+  ];
+  const pointerDirections = [
+    [[1, -1], [-1, 0]], // SSE: NW and south
+    [[0, -1], [1, 0]],  // NNE: north and west
+    [[1, -1], [0, 1]],  // ESE: NW and east
+    [[0, -1], [1, 0]],  // ENE: north and west
+  ];
+  const linkCellsByColor = [[], []];
+  const pointerInstances = new Map();
   const activeLinks = [];
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
       for (let channel = 0; channel < 8; channel += 1) {
         if (Number(getData().links[row][col][channel]) !== 1) continue;
-
-        // Mark the exact encoded tensor cell; do not reconstruct endpoints.
         const encodedPlayer = channel & 1;
-        // Inputs are canonicalized to the Black-to-move viewpoint:
-        // channel 0 is the opponent (red), channel 1 is side-to-move (black).
+        // Input channels are canonicalized to Black-to-move: 0 opponent, 1 self.
         const displayedPlayer = 1 - encodedPlayer;
-        const mesh = new THREE.Mesh(linkGeometry, linkMaterials[displayedPlayer]);
-        // The cube's back face touches the board face; the whole cube projects
-        // outward, avoiding coplanar overlap with the backing and holes.
-        mesh.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
-        getSceneGroup().add(mesh);
-
-        // Two short pointers start at the cube's center when viewed from above.
-        // Board north is +Y; west is -Z. Directions are (row/Y, col/Z).
-        // Channel pairs: 0/1=SSE, 2/3=NNE, 4/5=ESE, 6/7=ENE.
-        const pointerDirections = [
-          [[1, -1], [-1, 0]],    // SSE: NW and south
-          [[0, -1], [1, 0]],    // NNE: north and west
-          [[1, -1], [0, 1]],    // ESE: NW and east
-          [[0, -1], [1, 0]],    // ENE: north and west
-        ];
+        linkCellsByColor[displayedPlayer].push({ row, col });
         const dirs = pointerDirections[Math.floor(channel / 2)];
-        const pointerLength = 0.14;
-        // Use narrow cylinders instead of WebGL lines: LineBasicMaterial linewidth
-        // is effectively fixed to one pixel in most browsers.
-        const pointerRadius = 0.018;
-        const pointerGeometry = new THREE.CylinderGeometry(
-          pointerRadius, pointerRadius, pointerLength, 8,
-        );
-        // Flip pointer colors to match the opposite-color convention requested.
-        const pointerMaterial = new THREE.MeshStandardMaterial({
-          color: displayedPlayer === 1 ? 0xe0525d : 0x20252d,
-          roughness: 0.7,
-        });
         for (const [dy, dz] of dirs) {
-          const direction = new THREE.Vector3(0, dy, dz).normalize();
-          const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
-          pointer.position.set(
-            mesh.position.x,
-            mesh.position.y + dy * pointerLength / 2,
-            mesh.position.z + dz * pointerLength / 2,
-          );
-          pointer.quaternion.setFromUnitVectors(
-            new THREE.Vector3(0, 1, 0), direction,
-          );
-          getSceneGroup().add(pointer);
+          const key = displayedPlayer + ':' + dy + ':' + dz;
+          if (!pointerInstances.has(key)) {
+            pointerInstances.set(key, { player: displayedPlayer, dy, dz, positions: [] });
+          }
+          pointerInstances.get(key).positions.push({ row, col });
         }
         activeLinks.push({ row, col, channel });
       }
     }
+  }
+
+  for (let player = 0; player < 2; player += 1) {
+    const cells = linkCellsByColor[player];
+    if (!cells.length) continue;
+    const mesh = new THREE.InstancedMesh(linkCubeGeometry, linkCubeMaterials[player], cells.length);
+    const transform = new THREE.Object3D();
+    cells.forEach(({ row, col }, index) => {
+      transform.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
+      transform.rotation.set(0, 0, 0);
+      transform.scale.set(1, 1, 1);
+      transform.updateMatrix();
+      mesh.setMatrixAt(index, transform.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    getSceneGroup().add(mesh);
+  }
+
+  const up = new THREE.Vector3(0, 1, 0);
+  for (const { player, dy, dz, positions } of pointerInstances.values()) {
+    if (!positions.length) continue;
+    const mesh = new THREE.InstancedMesh(pointerGeometry, pointerMaterials[player], positions.length);
+    const transform = new THREE.Object3D();
+    const direction = new THREE.Vector3(0, dy, dz).normalize();
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
+    positions.forEach(({ row, col }, index) => {
+      const point = pointAt(row, col, boardX + 0.035 - 0.18);
+      transform.position.set(
+        point[0],
+        point[1] + dy * pointerLength / 2,
+        point[2] + dz * pointerLength / 2,
+      );
+      transform.quaternion.copy(quaternion);
+      transform.scale.set(1, 1, 1);
+      transform.updateMatrix();
+      mesh.setMatrixAt(index, transform.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    getSceneGroup().add(mesh);
   }
   console.debug('[Effective board] active encoded link cells:', activeLinks);
 
