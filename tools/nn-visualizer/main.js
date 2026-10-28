@@ -549,17 +549,26 @@ async function requestSnapshot(moves) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ moves, allow_scl: false, allow_swap: true }),
   });
-  const responseMs = performance.now() - started;
+  const headersMs = performance.now() - started;
+  const bodyStarted = performance.now();
+  const responseText = await response.text();
+  const bodyMs = performance.now() - bodyStarted;
   const parseStarted = performance.now();
-  const result = await response.json();
-  const parseMs = performance.now() - parseStarted;
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch (error) {
+    throw new Error('The visualizer API returned invalid JSON: ' + error.message);
+  }
+  const jsonParseMs = performance.now() - parseStarted;
   if (!response.ok) throw new Error(result.error || response.statusText);
   nnPerf.record('requestSnapshot', {
     moves: moves.length,
-    responseMs: Number(responseMs.toFixed(2)),
-    parseMs: Number(parseMs.toFixed(2)),
+    headersMs: Number(headersMs.toFixed(2)),
+    bodyMs: Number(bodyMs.toFixed(2)),
+    jsonParseMs: Number(jsonParseMs.toFixed(2)),
     totalMs: Number((performance.now() - started).toFixed(2)),
-    responseBytes: Number(response.headers.get('content-length')) || null,
+    responseBytes: Number(response.headers.get('content-length')) || new TextEncoder().encode(responseText).length,
   });
   return result;
 }
