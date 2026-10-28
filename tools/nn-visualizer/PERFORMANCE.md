@@ -6,7 +6,7 @@ This is the **measurement-only** first phase of the performance work. It adds co
 
 Open the browser developer tools (F12) and select **Console**. The visualizer records structured `[NN perf]` samples:
 
-- `requestSnapshot`: request/response time, JSON parsing time, and move count sent to `/api/trace`. The browser currently replays the supplied move prefix on every navigation.
+- `requestSnapshot`: request/response time, JSON parsing time, and move count sent to `/api/trace`. The backend now caches reconstructed game states by move prefix, so navigation can resume from the closest cached position.
 - `renderStep`: scene clearing time, scene construction/draw time, total synchronous render time, object/mesh/InstancedMesh counts, unique geometry/material counts, renderer draw calls, triangles, geometries and textures.
 - `loadGamePosition`: complete time to fetch the snapshot, replace the data, and rebuild the selected view.
 
@@ -48,6 +48,6 @@ These timings cover synchronous JavaScript scene construction and the request/re
 
 ## Current interpretation
 
-The existing implementation clears the whole scene group and reconstructs the selected view after each position change. The snapshot request also replays the full move prefix. The samples distinguish the network/backend round trip from the browser-side scene rebuild so we can prioritize the next step based on evidence.
+The backend now caches up to 2,048 game states, keyed by the normalized move prefix and `allow_scl` setting. It looks for the longest cached prefix, clones that state, and applies only the remaining moves. Cached states are cloned before use, so later requests cannot mutate the saved state. The cache is process-local and is cleared when the visualizer server restarts. The adapter log includes `cached_prefix`; compare that with the requested move count to see how much replay was skipped.
 
-No optimization or expected speed-up is assumed by this baseline. Keep the raw samples so they can be compared with later changes.
+The browser still clears and rebuilds the selected scene after each position change. Measure `requestSnapshot.totalMs` separately from `renderStep.totalMs` to determine how much of the remaining delay is rendering rather than backend replay.
