@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import sys
 import time
+from collections import OrderedDict
+from threading import RLock
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +27,41 @@ DEFAULT_MOVES = [
     "N9", "Q10", "K6", "H12", "O11", "F7",
 ]
 
+# Cache immutable-by-convention snapshots of game state at move-prefix
+# boundaries. A cached Game is never mutated directly: callers receive clone().
+# Bound the cache because each state contains board arrays and reachability sets.
+_POSITION_CACHE_MAX = 2048
+_POSITION_CACHE: OrderedDict[tuple[bool, tuple[str, ...]], twixt.Game] = OrderedDict()
+_POSITION_CACHE_LOCK = RLock()
+
+
+def _position_cache_key(allow_scl: bool, moves: list[str]) -> tuple[bool, tuple[str, ...]]:
+    # Move coordinates are case-insensitive; normalize them so equivalent
+    # trajectories can share cached prefixes.
+    return bool(allow_scl), tuple(str(move).strip().lower() for move in moves)
+
+
+def _remember_position(allow_scl: bool, moves: list[str], game: twixt.Game) -> None:
+    key = _position_cache_key(allow_scl, moves)
+    with _POSITION_CACHE_LOCK:
+        _POSITION_CACHE[key] = game.clone()
+        _POSITION_CACHE.move_to_end(key)
+        while len(_POSITION_CACHE) > _POSITION_CACHE_MAX:
+            _POSITION_CACHE.popitem(last=False)
+
+
+def _cached_position(allow_scl: bool, moves: list[str]) -> tuple[twixt.Game | None, int]:
+    # Prefer the longest matching prefix, allowing a new/extended trajectory
+    # to continue from the closest state already reconstructed.
+    with _POSITION_CACHE_LOCK:
+        for prefix_length in range(len(moves), -1, -1):
+            key = _position_cache_key(allow_scl, moves[:prefix_length])
+            cached = _POSITION_CACHE.get(key)
+            if cached is not None:
+                _POSITION_CACHE.move_to_end(key)
+                return cached.clone(), prefix_length
+    return None, 0
+
 
 def _tensor(array: np.ndarray) -> list:
     return np.asarray(array).tolist()
@@ -32,7 +69,6 @@ def _tensor(array: np.ndarray) -> list:
 
 def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True) -> dict[str, Any]:
     snapshot_started = time.perf_counter()
-    game = twixt.Game(allow_scl=allow_scl)
     normalized_moves = [str(move).strip() for move in moves]
     lowered_moves = [move.lower() for move in normalized_moves]
     resign_indices = [i for i, move in enumerate(lowered_moves) if move == twixt.RESIGN]
@@ -47,11 +83,18 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
     playable_moves = normalized_moves[:-1] if terminal_resign else normalized_moves
 
     replay_started = time.perf_counter()
+    game, cached_prefix = _cached_position(allow_scl, playable_moves)
+    if game is None:
+        game = twixt.Game(allow_scl=allow_scl)
+        _remember_position(allow_scl, [], game)
+
     move_times_ms = []
-    for move in playable_moves:
+    for index in range(cached_prefix, len(playable_moves)):
+        move = playable_moves[index]
         move_started = time.perf_counter()
         game.play(twixt.SWAP if move.lower() == twixt.SWAP else move, check_draw=False)
         move_times_ms.append((time.perf_counter() - move_started) * 1000)
+        _remember_position(allow_scl, playable_moves[:index + 1], game)
     replay_ms = (time.perf_counter() - replay_started) * 1000
 
     # Draw detection performs a recursive path search. During replay, checking
@@ -102,7 +145,7 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
     slowest_summary = ",".join(f"{index}:{duration:.1f}ms" for index, duration in slowest_moves) or "none"
     print(
         "[NN perf adapter] "
-        f"moves={len(moves)} replay_ms={replay_ms:.1f} "
+        f"moves={len(moves)} cached_prefix={cached_prefix} replay_ms={replay_ms:.1f} "
         f"slowest_move_ms={slowest_summary} net_inputs_ms={net_inputs_ms:.1f} "
         f"board_extract_ms={board_ms:.1f} tensor_conversion_ms={tensor_conversion_ms:.1f} "
         f"snapshot_total_ms={total_ms:.1f}",
