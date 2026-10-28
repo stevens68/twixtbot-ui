@@ -105,7 +105,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   }
 
   // Batch physical sample-board links into one InstancedMesh per player.
-  // The Place sample links and pegs on the camera-facing side of the board backing.
+  // Place sample links and pegs on the camera-facing side of the board backing.
   const linkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
   const linkMaterials = {
     0: new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
@@ -118,8 +118,12 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     const mesh = new THREE.InstancedMesh(linkGeometry, linkMaterials[player], playerLinks.length);
     const transform = new THREE.Object3D();
     playerLinks.forEach((link, index) => {
-      const a = new THREE.Vector3(...pointAt(link.from, boardX + 0.08));
-      const b = new THREE.Vector3(...pointAt(link.to, boardX + 0.08));
+      const a = new THREE.Vector3(
+        ...pointAt(link.from.row, link.from.col, boardX + 0.08),
+      );
+      const b = new THREE.Vector3(
+        ...pointAt(link.to.row, link.to.col, boardX + 0.08),
+      );
       const direction = new THREE.Vector3().subVectors(b, a);
       transform.position.copy(a).add(b).multiplyScalar(0.5);
       transform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
@@ -146,7 +150,10 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     playerPegs.forEach((peg, index) => {
       const [x, y, z] = boardPoint(peg, boardX + 0.08);
       transform.position.set(x, y, z);
-      transform.rotation.z = Math.PI / 2;
+      // Keep the peg axis vertical in the board's displayed plane. Rotating
+      // around Z points the cylinder out of the board along X, making it
+      // appear almost end-on from the camera.
+      transform.rotation.set(0, 0, 0);
       transform.scale.set(1, 1, 1);
       transform.updateMatrix();
       pegMesh.setMatrixAt(index, transform.matrix);
