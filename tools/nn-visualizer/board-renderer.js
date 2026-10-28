@@ -1,6 +1,6 @@
 // Board geometry and labels for the Twixt neural-network visualizer.
 // Scene state and board data are supplied by main.js to keep this module isolated.
-export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup, BOARD_SIZE, addLabel, addRichLabel, addStaticLabel, addStaticRichLabel, createSampleGame, getData }) {
+export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup, BOARD_SIZE, addLabel, addRichLabel, addStaticLabel, addStaticRichLabel, addMoveColumnLabel, createSampleGame, getData }) {
   let sampleStaticBuilt = false;
   let effectiveStaticBuilt = false;
   function drawSampleBoard() {
@@ -214,15 +214,13 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     }
     const start = column * movesPerColumn;
     const end = Math.min(start + movesPerColumn, moveLabels.length);
-    for (let index = start; index < end; index += 1) {
-      const isRedMove = index % 2 === 0;
-      addLabel(
-        moveLabels[index],
-        [listX, listTopY - (index - start) * rowSpacing, columnZ],
+    const columnMoves = moveLabels.slice(start, end);
+    if (columnMoves.length) {
+      addMoveColumnLabel(
+        columnMoves,
+        [listX, listTopY - ((columnMoves.length - 1) * rowSpacing) / 2, columnZ],
         14,
-        isRedMove ? '#ff4545' : '#e7edf6',
-        90,
-        'left',
+        (14 + 8) / rowSpacing,
       );
     }
   }
