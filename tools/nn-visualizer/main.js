@@ -617,7 +617,12 @@ async function requestSnapshot(moves) {
   const cacheKey = JSON.stringify({ moves, allow_scl: false, allow_swap: true });
   const cached = getCachedSnapshot(cacheKey);
   if (cached) {
-    nnPerf.record('snapshotCacheHit', { moves: moves.length, responseBytes: cached.responseBytes, cacheEntries: snapshotCache.size });
+    nnPerf.record('snapshotCacheHit', {
+      moves: moves.length,
+      responseBytes: cached.responseBytes,
+      wireResponseBytes: cached.wireResponseBytes,
+      cacheEntries: snapshotCache.size,
+    });
     return cached.result;
   }
 
