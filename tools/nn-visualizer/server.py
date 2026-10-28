@@ -7,6 +7,7 @@ Then open http://127.0.0.1:8765
 """
 from __future__ import annotations
 
+import gzip
 import json
 import sys
 import time
@@ -65,11 +66,30 @@ class Handler(SimpleHTTPRequestHandler):
             parsed_done = time.perf_counter()
 
             body = json.dumps(result, separators=(",", ":")).encode("utf-8")
+            uncompressed_bytes = len(body)
             serialized_done = time.perf_counter()
+
+            # Snapshot responses are JSON and compress well. Fetch transparently
+            # decompresses gzip responses, so the browser-side JSON handling is
+            # unchanged. Keep a Vary header for any intermediary caches.
+            accepts_gzip = "gzip" in self.headers.get("Accept-Encoding", "").lower()
+            if accepts_gzip:
+                compressed_body = gzip.compress(body, compresslevel=5)
+                if len(compressed_body) < len(body):
+                    body = compressed_body
+                    content_encoding = "gzip"
+                else:
+                    content_encoding = None
+            else:
+                content_encoding = None
+
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
+            self.send_header("Vary", "Accept-Encoding")
+            if content_encoding:
+                self.send_header("Content-Encoding", content_encoding)
             self.end_headers()
             self.wfile.write(body)
             written_done = time.perf_counter()
@@ -82,7 +102,9 @@ class Handler(SimpleHTTPRequestHandler):
                 f"snapshot_ms={snapshot_ms:.1f} "
                 f"serialize_ms={(serialized_done - parsed_done) * 1000:.1f} "
                 f"write_ms={(written_done - serialized_done) * 1000:.1f} "
-                f"response_bytes={len(body)} "
+                f"response_bytes={uncompressed_bytes} "
+                f"wire_bytes={len(body)} "
+                f"compression={'gzip' if content_encoding else 'none'} "
                 f"total_ms={(written_done - started) * 1000:.1f}",
                 flush=True,
             )
