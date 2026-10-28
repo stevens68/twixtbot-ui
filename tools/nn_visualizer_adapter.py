@@ -50,9 +50,16 @@ def snapshot(moves: list[str], allow_scl: bool = False, allow_swap: bool = True)
     move_times_ms = []
     for move in playable_moves:
         move_started = time.perf_counter()
-        game.play(twixt.SWAP if move.lower() == twixt.SWAP else move)
+        game.play(twixt.SWAP if move.lower() == twixt.SWAP else move, check_draw=False)
         move_times_ms.append((time.perf_counter() - move_started) * 1000)
     replay_ms = (time.perf_counter() - replay_started) * 1000
+
+    # Draw detection performs a recursive path search. During replay, checking
+    # after every move repeats increasingly expensive work. Pegs and links only
+    # accumulate, so for a trajectory that continues, a position with no
+    # possible path cannot become playable again. Check the final position once.
+    if playable_moves and game._is_a_draw():
+        game.result = twixt.DRAW
 
     net_started = time.perf_counter()
     net = NetInputs(game)
