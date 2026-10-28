@@ -6,7 +6,7 @@ This document tracks instrumentation, the original baseline, and subsequent opti
 
 Open the browser developer tools (F12) and select **Console**. The visualizer records structured `[NN perf]` samples:
 
-- `requestSnapshot`: request/response time, JSON parsing time, and move count sent to `/api/trace`. The backend now caches reconstructed game states by move prefix, so navigation can resume from the closest cached position.
+- `requestSnapshot`: response-header wait, response-body read, JSON parsing, and move count sent to `/api/trace`. The backend now caches reconstructed game states by move prefix, so navigation can resume from the closest cached position.
 - `renderStep`: scene clearing time, scene construction/draw time, total synchronous render time, object/mesh/InstancedMesh counts, unique geometry/material counts, renderer draw calls, triangles, geometries and textures.
 - `loadGamePosition`: complete time to fetch the snapshot, replace the data, and rebuild the selected view.
 
@@ -44,10 +44,10 @@ These timings cover synchronous JavaScript scene construction and the request/re
    - Jump to the start and then to the end.
    - Repeat on **board & input tensors**, **conv filters & feature maps**, and **residual filters** tabs.
 
-5. Record the browser, operating system, selected view, game length, and whether the run was warm-up. Compare median `requestSnapshot.totalMs`, `renderStep.totalMs`, `renderStep.drawMs`, and draw calls. Do not compare a run with DevTools closed to one with CPU profiling enabled.
+5. Record the browser, operating system, selected view, game length, and whether the run was warm-up. Compare median `requestSnapshot.totalMs`, `bodyMs`, `jsonParseMs`, `renderStep.totalMs`, `renderStep.drawMs`, and draw calls. Do not compare a run with DevTools closed to one with CPU profiling enabled.
 
 ## Current interpretation
 
-The backend now caches up to 2,048 game states, keyed by the normalized move prefix and `allow_scl` setting. It looks for the longest cached prefix, clones that state, and applies only the remaining moves. Cached states are cloned before use, so later requests cannot mutate the saved state. The cache is process-local and is cleared when the visualizer server restarts. The adapter log includes `cached_prefix`; compare that with the requested move count to see how much replay was skipped.
+The backend now caches up to 2,048 game states, keyed by the normalized move prefix and `allow_scl` setting. The response omits the raw 24×24×11 NAF intermediate because the browser only consumes the three tensors returned by `to_input_arrays()`. It looks for the longest cached prefix, clones that state, and applies only the remaining moves. Cached states are cloned before use, so later requests cannot mutate the saved state. The cache is process-local and is cleared when the visualizer server restarts. The adapter log includes `cached_prefix`; compare that with the requested move count to see how much replay was skipped.
 
 The browser still clears and rebuilds the selected scene after each position change. Measure `requestSnapshot.totalMs` separately from `renderStep.totalMs` to determine how much of the remaining delay is rendering rather than backend replay.
