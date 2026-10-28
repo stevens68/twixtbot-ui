@@ -1,6 +1,6 @@
-# NN visualizer performance baseline
+# NN visualizer performance notes
 
-This is the **measurement-only** first phase of the performance work. It adds console instrumentation without changing the rendering strategy.
+This document tracks instrumentation, the original baseline, and subsequent optimizations. The rendering strategy is still unchanged; backend game replay now reuses cached move-prefix positions.
 
 ## What is measured
 
