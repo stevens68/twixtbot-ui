@@ -57,10 +57,15 @@ class Handler(SimpleHTTPRequestHandler):
                 if len(moves) > 500:
                     raise ValueError("At most 500 moves are accepted.")
                 snapshot_started = time.perf_counter()
+                # The visualizer needs the authoritative board and input tensors,
+                # not terminal-result detection. Draw detection performs an
+                # expensive recursive path search and is deliberately skipped
+                # for interactive snapshots; the CLI retains the default check.
                 result = snapshot(
                     moves,
                     bool(payload.get("allow_scl", False)),
                     bool(payload.get("allow_swap", True)),
+                    check_draw=False,
                 )
                 snapshot_ms = (time.perf_counter() - snapshot_started) * 1000
             parsed_done = time.perf_counter()
