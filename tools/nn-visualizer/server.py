@@ -26,6 +26,10 @@ from src.files import parse_t1_file
 
 
 class Handler(SimpleHTTPRequestHandler):
+    # Keep local browser fetches on one TCP connection instead of paying a new
+    # connection setup for every step through a long game. Every POST response
+    # below includes Content-Length, as required for persistent HTTP/1.1.
+    protocol_version = "HTTP/1.1"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(VISUALIZER), **kwargs)
 
