@@ -119,8 +119,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     const transform = new THREE.Object3D();
     playerLinks.forEach((link, index) => {
       // Use the same peg-coordinate adapter as the pre-instancing renderer.
-      const a = new THREE.Vector3(...boardPoint(link.from, boardX + 0.08));
-      const b = new THREE.Vector3(...boardPoint(link.to, boardX + 0.08));
+      const a = new THREE.Vector3(...boardPoint(link.from, boardX - 0.32));
+      const b = new THREE.Vector3(...boardPoint(link.to, boardX - 0.32));
       const direction = new THREE.Vector3().subVectors(b, a);
       transform.position.copy(a).add(b).multiplyScalar(0.5);
       transform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
@@ -145,7 +145,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     const pegMesh = new THREE.InstancedMesh(pegGeometry, pegMaterial, playerPegs.length);
     const transform = new THREE.Object3D();
     playerPegs.forEach((peg, index) => {
-      const [x, y, z] = boardPoint(peg, boardX + 0.08);
+      const [x, y, z] = boardPoint(peg, boardX - 0.16);
       transform.position.set(x, y, z);
       transform.rotation.z = Math.PI / 2;
       transform.scale.set(1, 1, 1);
