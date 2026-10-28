@@ -1,8 +1,8 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
 import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } from './tensor-utils.js';
-import { createLabelHelpers } from './labels.js?v=20261028-label-pool';
-import { createBoardRenderer } from './board-renderer.js?v=20261028-static-board';
+import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
+import { createBoardRenderer } from './board-renderer.js?v=20261028-move-columns';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
 import { createTensorRenderer } from './tensor-renderer.js';
 
@@ -129,7 +129,7 @@ function countSceneObjects(root) {
 }
 
 const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-const { addLabel, addRichLabel, beginFrame: beginLabelFrame } = createLabelHelpers(THREE, () => sceneGroup);
+const { addLabel, addRichLabel, addMoveColumnLabel, beginFrame: beginLabelFrame } = createLabelHelpers(THREE, () => sceneGroup);
 const { addLabel: addStaticLabel, addRichLabel: addStaticRichLabel } =
   createLabelHelpers(THREE, () => staticSceneGroup);
 
@@ -354,6 +354,7 @@ const { drawSampleBoard, drawEffectiveBoard } = createBoardRenderer({
   getStaticSceneGroup: () => staticSceneGroup,
   addStaticLabel,
   addStaticRichLabel,
+  addMoveColumnLabel,
   BOARD_SIZE,
   addLabel,
   addRichLabel,
