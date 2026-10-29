@@ -671,7 +671,43 @@ async function playInteractiveMove(coordinate) {
   }
 }
 
-renderer.domElement.addEventListener('click', handleSampleBoardClick);
+// OrbitControls uses pointer drags to rotate/pan the scene. A drag that ends
+// over a board intersection must never be interpreted as a move click.
+let boardPointerDown = null;
+let boardPointerDragged = false;
+const BOARD_DRAG_THRESHOLD_PX = 5;
+
+renderer.domElement.addEventListener('pointerdown', (event) => {
+  if (event.button !== 0) return;
+  boardPointerDown = { x: event.clientX, y: event.clientY };
+  boardPointerDragged = false;
+});
+
+renderer.domElement.addEventListener('pointermove', (event) => {
+  if (!boardPointerDown || boardPointerDragged) return;
+  const dx = event.clientX - boardPointerDown.x;
+  const dy = event.clientY - boardPointerDown.y;
+  if (dx * dx + dy * dy > BOARD_DRAG_THRESHOLD_PX * BOARD_DRAG_THRESHOLD_PX) {
+    boardPointerDragged = true;
+  }
+});
+
+renderer.domElement.addEventListener('pointerup', () => {
+  boardPointerDown = null;
+});
+
+renderer.domElement.addEventListener('pointercancel', () => {
+  boardPointerDown = null;
+  boardPointerDragged = false;
+});
+
+renderer.domElement.addEventListener('click', (event) => {
+  if (boardPointerDragged) {
+    boardPointerDragged = false;
+    return;
+  }
+  handleSampleBoardClick(event);
+});
 
 document.querySelectorAll('.step-tab').forEach((button) => {
   button.addEventListener('click', () => {
