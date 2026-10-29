@@ -231,9 +231,9 @@ export function createTensorRenderer({
   ) {
     // Convolution-filter cubes and every internal gap are 10% smaller
     // than before. Keep these dimensions consistent across peg/link filters.
-    const spacing = inputSpacing * 0.9;
-    const cellSize = inputCellSize * 0.9;
-    const channelDepth = inputSpacing * 0.9;
+    const spacing = inputSpacing * 0.81;
+    const cellSize = inputCellSize * 0.81;
+    const channelDepth = inputSpacing * 0.81;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
       // with channels along X, rows along Y, and columns along Z.
@@ -278,7 +278,7 @@ export function createTensorRenderer({
           new THREE.MeshStandardMaterial({ color: COLORS.bias }),
         );
         // Bias sits beside the channel stack, with twice the normal gap.
-        const doubleGap = 2 * (inputSpacing - inputCellSize) * 0.9;
+        const doubleGap = 2 * (inputSpacing - inputCellSize) * 0.81;
         biasCube.position.set(
           originX,
           originY + ((kernelHeight - 1) * spacing) / 2,
@@ -392,11 +392,11 @@ export function createTensorRenderer({
     const kernelWidth = weights.links[0][0].length;
     const channels = weights.links[0][0][0].length;
     const rows = Math.ceil(filterCount / columns);
-    const filterSpacing = inputSpacing * 0.9;
+    const filterSpacing = inputSpacing * 0.81;
     const filterWidth = kernelWidth * filterSpacing;
     const filterHeight = kernelHeight * filterSpacing;
-    const gapZ = 1.2 * 0.9;
-    const gapY = 1 * 0.9;
+    const gapZ = 1.2 * 0.81;
+    const gapY = 1 * 0.81;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     // Center the link filter's channel stack exactly on the links input's
     // X center (-1.8), using the same reduced channel spacing as the kernels.
