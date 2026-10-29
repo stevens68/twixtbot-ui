@@ -462,7 +462,7 @@ export function createTensorRenderer({
     const locationSlotHeight = pegFilterHeight;
     const locationStartX = startX;
     const locationStartY = rows * (locationSlotHeight + locationGapY) / 2 - locationSlotHeight;
-    const locationStartZ = pegStartZ - 10;
+    const locationStartZ = pegStartZ - 13;
     const locationShowBias = Boolean(locationMetadata?.has_bias);
     for (let filter = 0; filter < locationCount; filter += 1) {
       const column = filter % columns;
