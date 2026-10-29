@@ -233,6 +233,8 @@ export function createTensorRenderer({
     kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true,
   ) {
     if (buildGeometry) {
+      // Weights are stored [row][column][channel], so preserve that layout
+      // when placing the 8 channels along X, rows along Y, and columns along Z.
       const values = flattenTensor(weights[filterIndex]);
       const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
       // Match the input tensor's cell size and spacing for consistent scale.
@@ -249,18 +251,18 @@ export function createTensorRenderer({
       mesh.name = 'filter-' + filterIndex + '-' + label;
       const transform = new THREE.Object3D();
       let index = 0;
-      for (let channel = 0; channel < channels; channel += 1) {
-        for (let row = 0; row < kernelHeight; row += 1) {
-          for (let col = 0; col < kernelWidth; col += 1) {
-            const value = values[index];
+      for (let row = 0; row < kernelHeight; row += 1) {
+        for (let col = 0; col < kernelWidth; col += 1) {
+          for (let channel = 0; channel < channels; channel += 1) {
+            const value = Number(weights[filterIndex][row][col][channel]);
             const magnitude = Math.abs(value) / maxAbs;
             const cubeSize = cellSize * (
               minimumCubeScale + (1 - minimumCubeScale) * magnitude
             );
             transform.position.set(
-              originX + (value < 0 ? -cubeSize / 2 : cubeSize / 2),
+              originX + channel * channelDepth + (value < 0 ? -cubeSize / 2 : cubeSize / 2),
               originY + (kernelHeight - 1 - row) * spacing,
-              originZ + col * spacing + channel * channelDepth,
+              originZ + col * spacing,
             );
             transform.scale.set(cubeSize, cubeSize, cubeSize);
             transform.updateMatrix();
@@ -279,12 +281,12 @@ export function createTensorRenderer({
           cubeGeometry,
           new THREE.MeshStandardMaterial({ color: COLORS.bias }),
         );
-        // Leave twice the normal cell gap after the final channel/kernel cell.
+        // Bias sits beside the channel stack, with twice the normal gap.
         const doubleGap = 2 * (inputSpacing - inputCellSize);
         biasCube.position.set(
-          originX,
+          originX + channels * channelDepth + doubleGap,
           originY + ((kernelHeight - 1) * spacing) / 2,
-          originZ + channels * channelDepth + kernelWidth * spacing + doubleGap,
+          originZ + ((kernelWidth - 1) * spacing) / 2,
         );
         biasCube.scale.setScalar(cellSize);
         biasCube.name = 'filter-' + filterIndex + '-bias';
@@ -366,6 +368,9 @@ export function createTensorRenderer({
       }
     });
 
+    // Keep the representative link filter visible in the input scene.
+    drawFilters();
+
     return {
       title: 'Input tensors',
       description: 'The game is encoded into peg and link tensors. Location coordinates and zero-cell markers persist between positions; only occupied peg/link tensor cells are updated.',
@@ -382,26 +387,21 @@ export function createTensorRenderer({
       clearFilterGeometry();
     }
 
-    for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
-      const column = filter % 8;
-      const row = Math.floor(filter / 8);
-      // Place the 8×5×5 link-kernel bank behind the links input tensor
-      // (towards negative X), keeping the 6×8 arrangement compact.
-      const x = -27 + column * 2.75;
-      const y = -4 + row * 2.15;
-      drawFilterKernel(
-        filter, x, y, -3.5, weights.links, 5, 5, 8,
-        'F' + filter + ' · link', true, rebuild,
-      );
-    }
+    // Render one representative 5×5×8 link filter in the main input scene.
+    // It sits behind the links tensor, towards negative X; the 48-filter bank
+    // can be added later once the second scene is removed.
+    drawFilterKernel(
+      0, -10.5, -4, -3.5, weights.links, 5, 5, 8,
+      'Link filter · 5×5×8', true, rebuild,
+    );
     cachedFilterWeights = weights;
 
     return {
       title: '48 convolution filters',
-      description: 'Eight columns × six rows. Each filter contains link, peg, and location kernels plus a bias cube. Filter geometry is reused while navigating game positions.',
-      shape: '48 filters · 8 × 6 grid',
+      description: 'One representative link convolution kernel with 8 channels × 5 × 5 weights and its bias, shown alongside the input tensor.',
+      shape: '5 × 5 × 8 + bias',
       range: 'Signed weights and bias',
-      count: '48 filter groups',
+      count: '1 link filter',
     };
   }
 
