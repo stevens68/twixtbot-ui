@@ -577,6 +577,102 @@ function resizeRenderer() {
   camera.updateProjectionMatrix();
 }
 
+// The sample board uses this fixed world-space layout in board-renderer.js.
+// Hit-testing deliberately compares projected screen pixels, not 3D distance.
+const SAMPLE_BOARD_SIZE = (BOARD_SIZE - 1) * 0.34;
+const SAMPLE_BOARD_SPACING = 0.34;
+const SAMPLE_BOARD_X = -26.675 - 0.16;
+const SAMPLE_BOARD_START = -SAMPLE_BOARD_SIZE / 2;
+
+function projectSampleIntersection(row, col, rect) {
+  const point = new THREE.Vector3(
+    SAMPLE_BOARD_X,
+    SAMPLE_BOARD_START + (BOARD_SIZE - 1 - row) * SAMPLE_BOARD_SPACING,
+    SAMPLE_BOARD_START + col * SAMPLE_BOARD_SPACING,
+  );
+  point.project(camera);
+  if (point.z < -1 || point.z > 1) return null;
+  return {
+    x: rect.left + (point.x + 1) * rect.width / 2,
+    y: rect.top + (1 - point.y) * rect.height / 2,
+  };
+}
+
+function handleSampleBoardClick(event) {
+  if (activeStep !== 'inputs' || !gameLoaded || interactiveMovePending) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  controls.update();
+  camera.updateMatrixWorld(true);
+
+  let closest = null;
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      const screen = projectSampleIntersection(row, col, rect);
+      if (!screen) continue;
+      const dx = screen.x - event.clientX;
+      const dy = screen.y - event.clientY;
+      const distanceSquared = dx * dx + dy * dy;
+      if (!closest || distanceSquared < closest.distanceSquared) {
+        closest = { row, col, screen, distanceSquared };
+      }
+    }
+  }
+  if (!closest) return;
+
+  // Base the click tolerance on the local projected grid spacing. This keeps
+  // intersections selectable at different zoom levels and camera angles.
+  let nearestGridSpacing = Infinity;
+  for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+    const row = closest.row + dr;
+    const col = closest.col + dc;
+    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) continue;
+    const neighbor = projectSampleIntersection(row, col, rect);
+    if (!neighbor) continue;
+    nearestGridSpacing = Math.min(
+      nearestGridSpacing,
+      Math.hypot(neighbor.x - closest.screen.x, neighbor.y - closest.screen.y),
+    );
+  }
+  const hitRadius = Number.isFinite(nearestGridSpacing)
+    ? Math.max(3, Math.min(18, nearestGridSpacing * 0.45))
+    : 8;
+  if (closest.distanceSquared > hitRadius * hitRadius) return;
+
+  const coordinate = String.fromCharCode(65 + closest.col) + (closest.row + 1);
+  playInteractiveMove(coordinate);
+}
+
+let interactiveMovePending = false;
+
+async function playInteractiveMove(coordinate) {
+  if (!gameLoaded || interactiveMovePending) return;
+  // Clicking after navigating backward branches from that position and drops
+  // the old future, just as editing the trajectory would.
+  const nextMoves = gameMoves.slice(0, gamePly).concat(coordinate);
+  interactiveMovePending = true;
+  try {
+    // Ask the real Python backend to validate the move before mutating UI state.
+    // On rejection, the currently displayed position and trajectory stay intact.
+    await requestSnapshot(nextMoves);
+    gameMoves = nextMoves;
+    trajectoryEditor.value = gameMoves.join(' ');
+    appliedTrajectory = trajectoryEditor.value.trim();
+    updateApplyButtonState();
+    await loadGamePosition(gameMoves.length);
+    status.textContent = 'Played ' + coordinate + '. ' + currentPlayerName.toLowerCase() +
+      ' to move; board and input tensors updated.';
+  } catch (error) {
+    status.textContent = 'Cannot play ' + coordinate + ': ' + error.message;
+  } finally {
+    interactiveMovePending = false;
+    updateGameNavigation();
+  }
+}
+
+renderer.domElement.addEventListener('click', handleSampleBoardClick);
+
 document.querySelectorAll('.step-tab').forEach((button) => {
   button.addEventListener('click', () => {
     activeStep = button.dataset.step;
@@ -590,7 +686,7 @@ document.querySelector('#demo-button').addEventListener('click', async () => {
   if (gameLoaded) {
     appliedTrajectory = trajectoryEditor.value.trim();
     updateApplyButtonState();
-    resetCamera();
+    // Loading a game changes the position, not the user's camera view.
     status.textContent = 'Demo game loaded at the end of the trajectory.';
   }
 });
