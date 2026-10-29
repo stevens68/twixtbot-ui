@@ -169,17 +169,15 @@ export function createTensorRenderer({
         for (let col = 0; col < cols; col += 1) {
           const value = values[index];
           const isZero = value === 0;
-          const dotSize = Math.min(cellSize, 0.055);
-          const thickness = isZero
-            ? dotSize
-            : Math.max(0.025, (Math.abs(value) / maxAbs) * maxThickness);
+          // Keep every marker a cube. Magnitude controls cube volume; the
+          // largest magnitude matches the existing one-hot cell size.
+          const cubeSize = cellSize * (0.9 + 0.1 * Math.abs(value) / maxAbs);
           transform.position.set(
-            origin[0] + channel * depthStep +
-              (isZero ? 0 : value < 0 ? -thickness / 2 : thickness / 2),
+            origin[0] + channel * depthStep,
             origin[1] + (rows - 1 - row) * spacing,
             origin[2] + col * spacing,
           );
-          transform.scale.set(thickness, isZero ? dotSize : cellSize, isZero ? dotSize : cellSize);
+          transform.scale.set(cubeSize, cubeSize, cubeSize);
           transform.updateMatrix();
           mesh.setMatrixAt(index, transform.matrix);
           const signedColor = value < 0
