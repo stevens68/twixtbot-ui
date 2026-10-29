@@ -159,8 +159,8 @@ function createDemoData() {
     locations[row][col][0]=col/BOARD_SIZE; locations[row][col][1]=row/BOARD_SIZE;
   }
   const weights={
-    pegs:createTensor4(FILTER_COUNT,1,1,2,()=> (random()-0.5)*0.4),
-    links:createTensor4(FILTER_COUNT,5,5,8,()=> (random()-0.5)*0.16),
+    pegs:createTensor4(FILTER_COUNT,5,5,2,()=> (random()-0.5)*0.4),
+    links:createTensor4(FILTER_COUNT,4,4,8,()=> (random()-0.5)*0.16),
     locations:createTensor4(FILTER_COUNT,1,1,2,()=> (random()-0.5)*0.3),
   };
   const bias=Array.from({length:FILTER_COUNT},()=> (random()-0.5)*0.15);
@@ -551,8 +551,8 @@ function validateData(input) {
     input.weights = createDemoData().weights;
     status.textContent = 'Weights omitted: using generated demo weights.';
   } else {
-    validateWeights(input.weights.pegs, 'pegs', 1, 1, 2);
-    validateWeights(input.weights.links, 'links', 5, 5, 8);
+    validateWeights(input.weights.pegs, 'pegs', 5, 5, 2);
+    validateWeights(input.weights.links, 'links', 4, 4, 8);
     validateWeights(input.weights.locations, 'locations', 1, 1, 2);
   }
 
@@ -575,12 +575,14 @@ async function loadTrainedLinkWeights() {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || response.statusText);
     if (!result.layers || !result.weights ||
-        !result.layers.links || !result.layers.pegs ||
+        !result.layers.links || !result.layers.pegs || !result.layers.locations ||
         !Array.isArray(result.weights.links) ||
         !Array.isArray(result.weights.pegs) ||
+        !Array.isArray(result.weights.locations) ||
         result.weights.links.length !== result.layers.links.filter_count ||
-        result.weights.pegs.length !== result.layers.pegs.filter_count) {
-      throw new Error('The model-weight endpoint returned an unexpected peg/link weight shape.');
+        result.weights.pegs.length !== result.layers.pegs.filter_count ||
+        result.weights.locations.length !== result.layers.locations.filter_count) {
+      throw new Error('The model-weight endpoint returned an unexpected peg/link/location weight shape.');
     }
 
     for (const [name, layer] of Object.entries(result.layers)) {
@@ -594,16 +596,21 @@ async function loadTrainedLinkWeights() {
 
     demoModel.weights.links = result.weights.links;
     demoModel.weights.pegs = result.weights.pegs;
+    demoModel.weights.locations = result.weights.locations;
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
-    modelWeightStatus = 'Trained peg/link weights and convolution biases loaded from ' + result.layers.links.source +
+    demoModel.locationConvMetadata = result.layers.locations;
+    modelWeightStatus = 'Trained peg/link/location weights and convolution biases loaded from ' + result.layers.links.source +
       ' (pegs: ' + result.layers.pegs.filter_count + ' filters, bias=' +
       (result.layers.pegs.has_bias ? 'loaded' : 'none') + '; links: ' +
       result.layers.links.filter_count + ' filters, bias=' +
-      (result.layers.links.has_bias ? 'loaded' : 'none') + ').';
+      (result.layers.links.has_bias ? 'loaded' : 'none') + '; locations: ' +
+      result.layers.locations.filter_count + ' filters, bias=' +
+      (result.layers.locations.has_bias ? 'loaded' : 'none') + ').';
     console.info('[NN visualizer] ' + modelWeightStatus, {
       pegs: result.layers.pegs,
       links: result.layers.links,
+      locations: result.layers.locations,
     });
   } catch (error) {
     modelWeightStatus = 'Using generated demo weights; trained weights and biases could not be loaded: ' + error.message;
