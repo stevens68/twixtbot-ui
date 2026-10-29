@@ -866,7 +866,6 @@ async function loadGamePosition(ply) {
   backendSnapshot = result;
   currentPlayerName = result.next_player === 1 ? 'Red' : 'Black';
 
-  const demo = createDemoData();
   data = {
     pegs: result.tensors.pegs,
     links: result.tensors.links,
