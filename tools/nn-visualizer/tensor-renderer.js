@@ -235,7 +235,7 @@ export function createTensorRenderer({
     const channelDepth = inputSpacing;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
-      // when placing the 8 channels along X, rows along Y, and columns along Z.
+      // with channels along X, rows along Y, and columns along Z.
       const values = flattenTensor(weights[filterIndex]);
       const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
       const mesh = new THREE.InstancedMesh(
@@ -289,7 +289,7 @@ export function createTensorRenderer({
       }
     }
 
-    // A simple numeric filter label, centered above the 5×5 face.
+    // A simple numeric filter label, centered above the kernel face.
     addLabel(
       String(filterIndex + 1),
       [
@@ -383,21 +383,25 @@ export function createTensorRenderer({
       clearFilterGeometry();
     }
 
-    // Show all 48 link kernels as an 8-column × 6-row bank. The columns
-    // run along Z (behind the input tensors from the initial viewer position),
-    // not along X. Keep each kernel's channel/depth orientation unchanged.
+    // Use the exact dimensions of the trained links convolution. The bank
+    // stays 8 columns wide along Z and grows downward along Y as needed.
     const columns = 8;
-    const rows = 6;
-    const filterWidth = 5 * inputSpacing;
-    const filterHeight = 5 * inputSpacing;
+    const filterCount = weights.links.length;
+    const kernelHeight = weights.links[0].length;
+    const kernelWidth = weights.links[0][0].length;
+    const channels = weights.links[0][0][0].length;
+    const rows = Math.ceil(filterCount / columns);
+    const filterWidth = kernelWidth * inputSpacing;
+    const filterHeight = kernelHeight * inputSpacing;
     const gapZ = 1.2;
     const gapY = 1;
-    const bankWidth = columns * filterWidth + (columns - 1) * gapZ;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     const startX = 20 - 8 * inputSpacing - 7.0;
     const startY = bankHeight / 2 - filterHeight;
-    const startZ = -3.5 + 5 * inputSpacing + 2.0;
-    for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
+    const startZ = -3.5 + kernelWidth * inputSpacing + 2.0;
+    const metadata = getData().linkConvMetadata;
+    const showBias = metadata ? Boolean(metadata.has_bias) : true;
+    for (let filter = 0; filter < filterCount; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
       drawFilterKernel(
@@ -406,20 +410,20 @@ export function createTensorRenderer({
         startY - row * (filterHeight + gapY),
         startZ + column * (filterWidth + gapZ),
         weights.links,
-        5, 5, 8,
+        kernelHeight, kernelWidth, channels,
         String(filter + 1),
-        true,
+        showBias,
         rebuild,
       );
     }
     cachedFilterWeights = weights;
 
     return {
-      title: '48 convolution filters',
-      description: 'All 48 link convolution kernels, each with 8 channels × 5 × 5 weights and its bias, arranged in 8 columns and 6 rows.',
-      shape: '5 × 5 × 8 + bias',
-      range: 'Signed weights and bias',
-      count: '48 link filters',
+      title: filterCount + ' trained convolution filters',
+      description: 'Trained link convolution kernels from the loaded PyTorch checkpoint, arranged in 8 columns. Kernel dimensions and bias display follow the actual layer.',
+      shape: kernelHeight + ' × ' + kernelWidth + ' × ' + channels + (showBias ? ' + bias' : ' (no bias)'),
+      range: 'Trained signed weights' + (showBias ? ' and bias' : ''),
+      count: filterCount + ' trained link filters',
     };
   }
 

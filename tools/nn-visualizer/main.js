@@ -4,7 +4,7 @@ import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } fr
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js?v=20261029-filter-bank-axis';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261029-trained-link-weights-v2';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -65,6 +65,7 @@ filterStaticGroup.name = 'persistent-filter-geometry';
 let backendSnapshot = null;
 const demoModel = createDemoData();
 let data = demoModel;
+let modelWeightStatus = 'Using generated demo weights.';
 let cachedOutput = null;
 let gameMoves = [];
 let gamePly = 0;
@@ -567,6 +568,29 @@ function validateData(input) {
   return input;
 }
 
+
+async function loadTrainedLinkWeights() {
+  try {
+    const response = await fetch('/api/weights', { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || response.statusText);
+    if (!result.layer || !Array.isArray(result.weights) ||
+        result.weights.length !== result.layer.filter_count) {
+      throw new Error('The model-weight endpoint returned an unexpected shape.');
+    }
+    demoModel.weights.links = result.weights;
+    demoModel.linkConvMetadata = result.layer;
+    modelWeightStatus = 'Trained link weights loaded from ' + result.layer.source +
+      ' (' + result.layer.filter_count + ' filters, ' +
+      result.layer.kernel_height + '×' + result.layer.kernel_width + '×' +
+      result.layer.channels + ').';
+    console.info('[NN visualizer] ' + modelWeightStatus, result.layer);
+  } catch (error) {
+    modelWeightStatus = 'Using generated demo link weights; trained weights could not be loaded: ' + error.message;
+    console.warn('[NN visualizer] ' + modelWeightStatus);
+  }
+}
+
 function updateCameraCoordinates() {
   const readout = document.querySelector('#camera-coordinates');
   if (!readout) return;
@@ -842,7 +866,6 @@ async function loadGamePosition(ply) {
   backendSnapshot = result;
   currentPlayerName = result.next_player === 1 ? 'Red' : 'Black';
 
-  const demo = createDemoData();
   data = {
     pegs: result.tensors.pegs,
     links: result.tensors.links,
@@ -850,6 +873,7 @@ async function loadGamePosition(ply) {
     weights: demoModel.weights,
     bias: demoModel.bias,
     isDemo: false,
+    linkConvMetadata: demoModel.linkConvMetadata,
   };
 
   gamePly = ply;
@@ -861,7 +885,7 @@ async function loadGamePosition(ply) {
   updateGameNavigation();
   status.textContent = 'Game position ' + gamePly + '/' + gameMoves.length +
     '. Next player: ' + result.next_player_name +
-    '. Board and input tensors updated; filters remain demo weights.';
+    '. Board and input tensors updated. ' + modelWeightStatus;
   nnPerf.record('loadGamePosition', {
     ply,
     moves: gameMoves.length,
@@ -925,14 +949,14 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gamePly = 0;
     gameLoaded = true;
     backendSnapshot = null;
-    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias };
+    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata };
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
     if (showEnd) await loadGamePosition(gameMoves.length);
     status.textContent = showEnd
-      ? 'Demo game loaded at the end of the trajectory.'
-      : 'Trajectory loaded at the starting position.';
+      ? 'Demo game loaded at the end of the trajectory. ' + modelWeightStatus
+      : 'Trajectory loaded at the starting position. ' + modelWeightStatus;
   } catch (error) {
     gameLoaded = false;
     updateGameNavigation();
@@ -963,15 +987,19 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-resizeRenderer();
-updateCameraCoordinates();
-renderStep();
-updateGameNavigation();
-animate();
-// Start with the demo game fully played out at the end of its trajectory.
-loadTrajectoryFromEditor(true).then(() => {
+async function initializeVisualizer() {
+  // Load the trained link convolution weights before the first scene render.
+  await loadTrainedLinkWeights();
+  resizeRenderer();
+  updateCameraCoordinates();
+  renderStep();
+  updateGameNavigation();
+  animate();
+  // Start with the demo game fully played out at the end of its trajectory.
+  await loadTrajectoryFromEditor(true);
   if (gameLoaded) {
     appliedTrajectory = trajectoryEditor.value.trim();
     updateApplyButtonState();
   }
-});
+}
+initializeVisualizer();

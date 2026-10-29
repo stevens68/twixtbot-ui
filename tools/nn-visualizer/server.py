@@ -11,6 +11,8 @@ import gzip
 import json
 import sys
 import time
+
+import torch
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -23,6 +25,7 @@ if str(ROOT) not in sys.path:
 sys.path.insert(0, str(ROOT / "tools"))
 from nn_visualizer_adapter import snapshot
 from src.files import parse_t1_file
+from src.constants import MODEL_FOLDER
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -32,6 +35,52 @@ class Handler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(VISUALIZER), **kwargs)
+
+    def do_GET(self):
+        endpoint = urlparse(self.path).path
+        if endpoint != "/api/weights":
+            return super().do_GET()
+        try:
+            checkpoint = torch.load(MODEL_FOLDER, map_location="cpu", weights_only=True)
+            state_dict = checkpoint["state_dict"]
+            if "links.weight" not in state_dict:
+                raise KeyError("Model checkpoint does not contain links.weight.")
+            # PyTorch stores Conv2d weights as [out_channels, in_channels, height, width].
+            # Return [filter][row][column][channel], which is the browser renderer's layout.
+            link_weights = (
+                state_dict["links.weight"]
+                .detach()
+                .cpu()
+                .permute(0, 2, 3, 1)
+                .tolist()
+            )
+            layer = {
+                "name": "links",
+                "weight_key": "links.weight",
+                "filter_count": len(link_weights),
+                "kernel_height": len(link_weights[0]),
+                "kernel_width": len(link_weights[0][0]),
+                "channels": len(link_weights[0][0][0]),
+                "has_bias": "links.bias" in state_dict,
+                "source": str(Path(MODEL_FOLDER).relative_to(ROOT)),
+            }
+            if layer["has_bias"]:
+                layer["bias"] = state_dict["links.bias"].detach().cpu().tolist()
+            body = json.dumps({"layer": layer, "weights": link_weights}, separators=(",", ":")).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+        except Exception as exc:
+            body = json.dumps({"error": f"Could not load trained model weights from {MODEL_FOLDER}: {exc}"}).encode("utf-8")
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
 
     def do_POST(self):
         endpoint = urlparse(self.path).path
