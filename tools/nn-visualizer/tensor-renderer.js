@@ -400,7 +400,7 @@ export function createTensorRenderer({
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     // Center the link filter's channel stack exactly on the links input's
     // X center (-1.8), using the same reduced channel spacing as the kernels.
-    const startX = inputTensorSpecs[1].x - ((channels - 1) * filterSpacing) / 2;
+    const startX = 12 + inputTensorSpecs[1].x - ((channels - 1) * filterSpacing) / 2;
     const startY = bankHeight / 2 - filterHeight;
     const startZ = -12 + kernelWidth * inputSpacing;
     const metadata = getData().linkConvMetadata;
