@@ -36,6 +36,9 @@ viewport.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+// A larger damping factor dissipates OrbitControls inertia more quickly after
+// the pointer is released, while keeping rotation smooth during the drag.
+controls.dampingFactor = 0.16;
 controls.target.set(0, 0, 0);
 
 scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x253041, 2));
