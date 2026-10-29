@@ -116,10 +116,7 @@ export function createTensorRenderer({
         for (let col = 0; col < BOARD_SIZE; col += 1) {
           const value = Number(tensor[row][col][channel]);
           const isZero = value === 0;
-          const magnitude = Math.abs(value) / maxAbs;
-          const cubeSize = inputCellSize * (
-            minimumCubeScale + (1 - minimumCubeScale) * magnitude
-          );
+          const cubeSize = inputCellSize * 0.9;
           cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, isZero, value);
           mesh.setMatrixAt(index, transform.matrix);
           mesh.setColorAt(index, locationHeatMapColor(value));
@@ -143,7 +140,7 @@ export function createTensorRenderer({
         for (let col = 0; col < BOARD_SIZE; col += 1) {
           const value = Number(tensor[row][col][channel]);
           if (value === 0) continue;
-          const cubeSize = inputCellSize;
+          const cubeSize = inputCellSize * 0.9;
           cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, false, value);
           mesh.setMatrixAt(index++, transform.matrix);
         }
@@ -193,8 +190,8 @@ export function createTensorRenderer({
           const isZero = value === 0;
           // Keep every marker a cube. Magnitude controls cube volume; the
           // largest magnitude matches the existing one-hot cell size.
-          const magnitude = Math.abs(value) / maxAbs;
-          const cubeSize = cellSize * (minimumCubeScale + (1 - minimumCubeScale) * magnitude);
+          // Feature values retain their heat-map colors, but use a uniform size.
+          const cubeSize = cellSize * 0.9;
           transform.position.set(
             origin[0] + channel * depthStep,
             origin[1] + (rows - 1 - row) * spacing,
@@ -255,10 +252,8 @@ export function createTensorRenderer({
         for (let col = 0; col < kernelWidth; col += 1) {
           for (let channel = 0; channel < channels; channel += 1) {
             const value = Number(weights[filterIndex][row][col][channel]);
-            const magnitude = Math.abs(value) / maxAbs;
-            const cubeSize = cellSize * (
-              minimumCubeScale + (1 - minimumCubeScale) * magnitude
-            );
+            // All learned-weight markers use the same size as a one-hot 1.
+            const cubeSize = cellSize * 0.9;
             transform.position.set(
               originX + channel * channelDepth + (value < 0 ? -cubeSize / 2 : cubeSize / 2),
               originY + (kernelHeight - 1 - row) * spacing,
@@ -288,7 +283,7 @@ export function createTensorRenderer({
           originY + ((kernelHeight - 1) * spacing) / 2,
           originZ + ((kernelWidth - 1) * spacing) / 2,
         );
-        biasCube.scale.setScalar(cellSize);
+        biasCube.scale.setScalar(cellSize * 0.9);
         biasCube.name = 'filter-' + filterIndex + '-bias';
         filterStaticGroup.add(biasCube);
       }
@@ -391,7 +386,7 @@ export function createTensorRenderer({
     // It sits behind the links tensor, towards negative X; the 48-filter bank
     // can be added later once the second scene is removed.
     drawFilterKernel(
-      0, -10.5, -4, -3.5, weights.links, 5, 5, 8,
+      0, 1.5, -4, -3.5, weights.links, 5, 5, 8,
       'Link filter · 5×5×8', true, rebuild,
     );
     cachedFilterWeights = weights;
