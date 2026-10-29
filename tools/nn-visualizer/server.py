@@ -43,30 +43,32 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             checkpoint = torch.load(MODEL_FOLDER, map_location="cpu", weights_only=True)
             state_dict = checkpoint["state_dict"]
-            if "links.weight" not in state_dict:
-                raise KeyError("Model checkpoint does not contain links.weight.")
-            # PyTorch stores Conv2d weights as [out_channels, in_channels, height, width].
-            # Return [filter][row][column][channel], which is the browser renderer's layout.
-            link_weights = (
-                state_dict["links.weight"]
-                .detach()
-                .cpu()
-                .permute(0, 2, 3, 1)
-                .tolist()
-            )
-            layer = {
-                "name": "links",
-                "weight_key": "links.weight",
-                "filter_count": len(link_weights),
-                "kernel_height": len(link_weights[0]),
-                "kernel_width": len(link_weights[0][0]),
-                "channels": len(link_weights[0][0][0]),
-                "has_bias": "links.bias" in state_dict,
-                "source": str(Path(MODEL_FOLDER).relative_to(ROOT)),
-            }
-            if layer["has_bias"]:
-                layer["bias"] = state_dict["links.bias"].detach().cpu().tolist()
-            body = json.dumps({"layer": layer, "weights": link_weights}, separators=(",", ":")).encode("utf-8")
+            def read_conv_layer(name):
+                weight_key = name + ".weight"
+                if weight_key not in state_dict:
+                    raise KeyError(f"Model checkpoint does not contain {weight_key}.")
+                # PyTorch Conv2d: [out_channels, in_channels, height, width].
+                weights = state_dict[weight_key].detach().cpu().permute(0, 2, 3, 1).tolist()
+                layer = {
+                    "name": name,
+                    "weight_key": weight_key,
+                    "filter_count": len(weights),
+                    "kernel_height": len(weights[0]),
+                    "kernel_width": len(weights[0][0]),
+                    "channels": len(weights[0][0][0]),
+                    "has_bias": name + ".bias" in state_dict,
+                    "source": str(Path(MODEL_FOLDER).relative_to(ROOT)),
+                }
+                if layer["has_bias"]:
+                    layer["bias"] = state_dict[name + ".bias"].detach().cpu().tolist()
+                return layer, weights
+
+            links_layer, link_weights = read_conv_layer("links")
+            pegs_layer, peg_weights = read_conv_layer("pegs")
+            body = json.dumps({
+                "layers": {"links": links_layer, "pegs": pegs_layer},
+                "weights": {"links": link_weights, "pegs": peg_weights},
+            }, separators=(",", ":")).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
