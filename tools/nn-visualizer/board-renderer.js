@@ -322,7 +322,9 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   // Batch effective-board links and their directional pointers. The previous
   // version created three individual meshes (and a fresh pointer geometry/material)
   // for every active link cell, making draw calls grow with the move count.
-  const linkCubeGeometry = new THREE.BoxGeometry(0.36, 0.164, 0.164);
+  // The X axis is perpendicular to the board. Keep the link cube fully
+  // on the visible face; the old 0.36 depth reached through the backing plane.
+  const linkCubeGeometry = new THREE.BoxGeometry(0.22, 0.164, 0.164);
   const linkCubeMaterials = [
     new THREE.MeshStandardMaterial({ color: 0x20252d, roughness: 0.55 }),
     new THREE.MeshStandardMaterial({ color: 0xe0525d, roughness: 0.55 }),
