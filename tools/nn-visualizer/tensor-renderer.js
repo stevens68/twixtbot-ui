@@ -235,12 +235,15 @@ export function createTensorRenderer({
     if (buildGeometry) {
       const values = flattenTensor(weights[filterIndex]);
       const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
-      const spacing = 0.18;
-      const cellSize = 0.135;
-      const channelDepth = cellSize + 0.055;
+      // Match the input tensor's cell size and spacing for consistent scale.
+      const spacing = inputSpacing;
+      const cellSize = inputCellSize;
+      const channelDepth = inputSpacing;
       const mesh = new THREE.InstancedMesh(
         cubeGeometry,
-        new THREE.MeshStandardMaterial({ color: COLORS.weight, roughness: 0.65 }),
+        new THREE.MeshStandardMaterial({
+          color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.9,
+        }),
         values.length,
       );
       mesh.name = 'filter-' + filterIndex + '-' + label;
@@ -250,9 +253,6 @@ export function createTensorRenderer({
         for (let row = 0; row < kernelHeight; row += 1) {
           for (let col = 0; col < kernelWidth; col += 1) {
             const value = values[index];
-            // Use the same magnitude sizing and zero-centred heat map as the
-            // feature tensors. The symmetric range keeps zero at the spectrum's
-            // midpoint even when this particular kernel contains one sign only.
             const magnitude = Math.abs(value) / maxAbs;
             const cubeSize = cellSize * (
               minimumCubeScale + (1 - minimumCubeScale) * magnitude
@@ -271,25 +271,34 @@ export function createTensorRenderer({
         }
       }
       mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       filterStaticGroup.add(mesh);
 
       if (showBias) {
         const biasCube = new THREE.Mesh(
-          cubeGeometry, new THREE.MeshStandardMaterial({ color: COLORS.bias }),
+          cubeGeometry,
+          new THREE.MeshStandardMaterial({ color: COLORS.bias }),
         );
+        // Leave twice the normal cell gap after the final channel/kernel cell.
+        const doubleGap = 2 * (inputSpacing - inputCellSize);
         biasCube.position.set(
-          originX + 0.42,
+          originX,
           originY + ((kernelHeight - 1) * spacing) / 2,
-          originZ + kernelWidth * spacing + channels * channelDepth * 0.5,
+          originZ + channels * channelDepth + kernelWidth * spacing + doubleGap,
         );
-        biasCube.scale.setScalar(0.22);
+        biasCube.scale.setScalar(cellSize);
+        biasCube.name = 'filter-' + filterIndex + '-bias';
         filterStaticGroup.add(biasCube);
       }
     }
 
     addLabel(
       label,
-      [originX, originY + kernelHeight * 0.18 + 0.2, originZ + channels * (0.135 + 0.055) * 0.3],
+      [
+        originX,
+        originY + kernelHeight * 0.18 + 0.2,
+        originZ + channels * channelDepth * 0.18,
+      ],
       17,
     );
   }
@@ -376,11 +385,14 @@ export function createTensorRenderer({
     for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
       const column = filter % 8;
       const row = Math.floor(filter / 8);
-      const x = -18.5 + column * 4.8;
-      const y = -4 + row * 5.3;
-      drawFilterKernel(filter, x, y, -1.5, weights.links, 5, 5, 8, 'F' + filter + ' · link', true, rebuild);
-      drawFilterKernel(filter, x + 1.65, y, 2.7, weights.pegs, 1, 1, 2, 'peg', false, rebuild);
-      drawFilterKernel(filter, x + 2.75, y, 2.7, weights.locations, 1, 1, 2, 'loc', false, rebuild);
+      // Place the 8×5×5 link-kernel bank behind the links input tensor
+      // (towards negative X), keeping the 6×8 arrangement compact.
+      const x = -27 + column * 2.75;
+      const y = -4 + row * 2.15;
+      drawFilterKernel(
+        filter, x, y, -3.5, weights.links, 5, 5, 8,
+        'F' + filter + ' · link', true, rebuild,
+      );
     }
     cachedFilterWeights = weights;
 
