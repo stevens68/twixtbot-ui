@@ -410,7 +410,7 @@ function renderStep() {
   staticSceneGroup.visible = activeStep === 'inputs';
   inputStaticTensorGroup.visible = activeStep === 'inputs';
   inputDynamicTensorGroup.visible = activeStep === 'inputs';
-  filterStaticGroup.visible = activeStep === 'filters';
+  filterStaticGroup.visible = activeStep === 'inputs' || activeStep === 'filters';
   // Reset the label pool before detaching the previous scene; labels are
   // reattached from the pool as the new scene is constructed.
   beginLabelFrame();
