@@ -229,10 +229,11 @@ export function createTensorRenderer({
     filterIndex, originX, originY, originZ, weights,
     kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true,
   ) {
-    // Match the input tensor's cell size and spacing for consistent scale.
-    const spacing = inputSpacing;
-    const cellSize = inputCellSize;
-    const channelDepth = inputSpacing;
+    // Convolution-filter cubes and every internal gap are 10% smaller
+    // than before. Keep these dimensions consistent across peg/link filters.
+    const spacing = inputSpacing * 0.81;
+    const cellSize = inputCellSize * 0.81;
+    const channelDepth = inputSpacing * 0.81;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
       // with channels along X, rows along Y, and columns along Z.
@@ -252,7 +253,7 @@ export function createTensorRenderer({
         for (let col = 0; col < kernelWidth; col += 1) {
           for (let channel = 0; channel < channels; channel += 1) {
             const value = Number(weights[filterIndex][row][col][channel]);
-            // All learned-weight markers use the same size as a one-hot 1.
+            // Reduce the cube side by a further 10%, along with the gaps.
             const cubeSize = cellSize * 0.9;
             transform.position.set(
               originX + channel * channelDepth,
@@ -277,7 +278,7 @@ export function createTensorRenderer({
           new THREE.MeshStandardMaterial({ color: COLORS.bias }),
         );
         // Bias sits beside the channel stack, with twice the normal gap.
-        const doubleGap = 2 * (inputSpacing - inputCellSize);
+        const doubleGap = 2 * (inputSpacing - inputCellSize) * 0.81;
         biasCube.position.set(
           originX,
           originY + ((kernelHeight - 1) * spacing) / 2,
@@ -391,12 +392,15 @@ export function createTensorRenderer({
     const kernelWidth = weights.links[0][0].length;
     const channels = weights.links[0][0][0].length;
     const rows = Math.ceil(filterCount / columns);
-    const filterWidth = kernelWidth * inputSpacing;
-    const filterHeight = kernelHeight * inputSpacing;
-    const gapZ = 1.2;
-    const gapY = 1;
+    const filterSpacing = inputSpacing * 0.81;
+    const filterWidth = kernelWidth * filterSpacing;
+    const filterHeight = kernelHeight * filterSpacing;
+    const gapZ = 1.2 * 0.81;
+    const gapY = 1 * 0.81;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
-    const startX = 13 - 8 * inputSpacing;
+    // Center the link filter's channel stack exactly on the links input's
+    // X center (-1.8), using the same reduced channel spacing as the kernels.
+    const startX = inputTensorSpecs[1].x - ((channels - 1) * filterSpacing) / 2;
     const startY = bankHeight / 2 - filterHeight;
     const startZ = -12 + kernelWidth * inputSpacing;
     const metadata = getData().linkConvMetadata;
@@ -410,11 +414,11 @@ export function createTensorRenderer({
     const pegHeight = pegWeights[0].length;
     const pegWidth = pegWeights[0][0].length;
     const pegChannels = pegWeights[0][0][0].length;
-    const pegStartX = startX - (channels * inputSpacing) - gapZ + 5;
+    const pegStartX = startX - (channels * filterSpacing) - gapZ;
     // Align the peg bank's 8×6 slots with the link bank; only each kernel's
     // own 1×1×2 geometry is smaller, not the spacing between filter slots.
     const pegStartY = startY;
-    const pegStartZ = startZ - 35 ;
+    const pegStartZ = startZ - 35;
     const pegShowBias = pegMetadata ? Boolean(pegMetadata.has_bias) : true;
     for (let filter = 0; filter < pegCount; filter += 1) {
       const column = filter % columns;
