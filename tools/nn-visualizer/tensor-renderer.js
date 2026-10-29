@@ -115,15 +115,6 @@ export function createTensorRenderer({
     const mesh = inputMeshes.get(spec.key);
     const origin = inputOrigin(spec);
     const transform = new THREE.Object3D();
-    let maxAbs = 1e-8;
-    for (let row = 0; row < BOARD_SIZE; row += 1) {
-      for (let col = 0; col < BOARD_SIZE; col += 1) {
-        for (let channel = 0; channel < spec.channels; channel += 1) {
-          maxAbs = Math.max(maxAbs, Math.abs(Number(tensor[row][col][channel])));
-        }
-      }
-    }
-
     let index = 0;
     for (let channel = 0; channel < spec.channels; channel += 1) {
       for (let row = 0; row < BOARD_SIZE; row += 1) {
