@@ -244,7 +244,13 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   const backing = new THREE.Mesh(
     new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
     new THREE.MeshStandardMaterial({
-      color: 0xc8cacc, roughness: 0.88, side: THREE.DoubleSide,
+      // Match the sample-board backing exactly so both boards use the same
+      // depth/transparency behavior. Opacity remains 1 (visually solid).
+      color: 0xc8cacc,
+      roughness: 0.88,
+      transparent: true,
+      opacity: 1,
+      side: THREE.DoubleSide,
     }),
   );
   backing.rotation.y = -Math.PI / 2;
