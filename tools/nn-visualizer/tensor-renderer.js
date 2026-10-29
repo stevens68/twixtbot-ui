@@ -401,6 +401,39 @@ export function createTensorRenderer({
     const startZ = -3.5 + kernelWidth * inputSpacing + 2.0 -7.5;
     const metadata = getData().linkConvMetadata;
     const showBias = metadata ? Boolean(metadata.has_bias) : true;
+
+    // Peg kernels use the same 8-column × 6-row grid and Y/Z spacing,
+    // positioned immediately to the left of the link-kernel bank along X.
+    const pegWeights = weights.pegs;
+    const pegMetadata = getData().pegConvMetadata;
+    const pegCount = pegWeights.length;
+    const pegHeight = pegWeights[0].length;
+    const pegWidth = pegWeights[0][0].length;
+    const pegChannels = pegWeights[0][0][0].length;
+    const pegRows = Math.ceil(pegCount / columns);
+    const pegFilterWidth = pegWidth * inputSpacing;
+    const pegFilterHeight = pegHeight * inputSpacing;
+    const pegBankHeight = pegRows * pegFilterHeight + (pegRows - 1) * gapY;
+    const pegStartX = startX - (channels * inputSpacing) - gapZ;
+    const pegStartY = pegBankHeight / 2 - pegFilterHeight;
+    const pegStartZ = startZ;
+    const pegShowBias = pegMetadata ? Boolean(pegMetadata.has_bias) : true;
+    for (let filter = 0; filter < pegCount; filter += 1) {
+      const column = filter % columns;
+      const row = Math.floor(filter / columns);
+      drawFilterKernel(
+        filter,
+        pegStartX,
+        pegStartY - row * (pegFilterHeight + gapY),
+        pegStartZ + column * (pegFilterWidth + gapZ),
+        pegWeights,
+        pegHeight, pegWidth, pegChannels,
+        String(filter + 1),
+        pegShowBias,
+        rebuild,
+      );
+    }
+
     for (let filter = 0; filter < filterCount; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
@@ -420,10 +453,10 @@ export function createTensorRenderer({
 
     return {
       title: filterCount + ' trained convolution filters',
-      description: 'Trained link convolution kernels from the loaded PyTorch checkpoint, arranged in 8 columns. Kernel dimensions and bias display follow the actual layer.',
+      description: 'Trained peg and link convolution kernels from the PyTorch checkpoint. Both banks use 8 columns and 1-based filter labels; the peg bank sits to the left of the link bank.',
       shape: kernelHeight + ' × ' + kernelWidth + ' × ' + channels + (showBias ? ' + bias' : ' (no bias)'),
       range: 'Trained signed weights' + (showBias ? ' and bias' : ''),
-      count: filterCount + ' trained link filters',
+      count: pegCount + ' peg filters + ' + filterCount + ' link filters',
     };
   }
 
