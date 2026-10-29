@@ -232,15 +232,15 @@ export function createTensorRenderer({
     filterIndex, originX, originY, originZ, weights,
     kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true,
   ) {
+    // Match the input tensor's cell size and spacing for consistent scale.
+    const spacing = inputSpacing;
+    const cellSize = inputCellSize;
+    const channelDepth = inputSpacing;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
       // when placing the 8 channels along X, rows along Y, and columns along Z.
       const values = flattenTensor(weights[filterIndex]);
       const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
-      // Match the input tensor's cell size and spacing for consistent scale.
-      const spacing = inputSpacing;
-      const cellSize = inputCellSize;
-      const channelDepth = inputSpacing;
       const mesh = new THREE.InstancedMesh(
         cubeGeometry,
         new THREE.MeshStandardMaterial({
