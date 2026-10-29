@@ -414,7 +414,8 @@ export function createTensorRenderer({
     const startY = bankHeight / 2 - filterHeight;
     const startZ = -8 + kernelWidth * inputSpacing;
     const metadata = getData().linkConvMetadata;
-    const showBias = metadata ? Boolean(metadata.has_bias) : true;
+    // Missing checkpoint metadata must not invent bias cubes.
+    const showBias = Boolean(metadata?.has_bias);
 
     // Peg kernels use the same 8-column × 6-row grid and Y/Z spacing,
     // positioned immediately to the left of the link-kernel bank along X.
@@ -427,11 +428,11 @@ export function createTensorRenderer({
     const pegGapY = gapY / 6.0
     const pegGapZ = gapZ / 6.0
     const pegStartX = startX ;
-    // Align the peg bank's 8×6 slots with the link bank; only each kernel's
-    // own 1×1×2 geometry is smaller, not the spacing between filter slots.
+    // Align the peg bank's 8×6 slots with the link bank; each peg kernel is
+    // 5×5×2, and its spacing between filter slots remains independently tuned.
     const pegStartY = startY;
     const pegStartZ = startZ - 10;
-    const pegShowBias = pegMetadata ? Boolean(pegMetadata.has_bias) : true;
+    const pegShowBias = Boolean(pegMetadata?.has_bias);
     for (let filter = 0; filter < pegCount; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
