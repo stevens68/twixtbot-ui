@@ -383,28 +383,28 @@ export function createTensorRenderer({
       clearFilterGeometry();
     }
 
-    // Show all 48 link kernels as an 8-column × 6-row bank. Keep generous
-    // spacing between kernels; the bank sits on the far side of the links
-    // input tensor, with a gap comparable to the effective-board/input gap.
+    // Show all 48 link kernels as an 8-column × 6-row bank. The columns
+    // run along Z (behind the input tensors from the initial viewer position),
+    // not along X. Keep each kernel's channel/depth orientation unchanged.
     const columns = 8;
     const rows = 6;
-    const filterWidth = 8 * inputSpacing;
+    const filterWidth = 5 * inputSpacing;
     const filterHeight = 5 * inputSpacing;
-    const gapX = 1.4;
+    const gapZ = 1.4;
     const gapY = 1.25;
-    const bankWidth = columns * filterWidth + (columns - 1) * gapX;
+    const bankWidth = columns * filterWidth + (columns - 1) * gapZ;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     const startX = -1.8 - 8 * inputSpacing - 7.0;
     const startY = bankHeight / 2 - filterHeight;
-    const startZ = -3.5;
+    const startZ = -3.5 + 5 * inputSpacing + 2.0;
     for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
       drawFilterKernel(
         filter,
-        startX - column * (filterWidth + gapX),
+        startX,
         startY - row * (filterHeight + gapY),
-        startZ,
+        startZ + column * (filterWidth + gapZ),
         weights.links,
         5, 5, 8,
         String(filter + 1),
