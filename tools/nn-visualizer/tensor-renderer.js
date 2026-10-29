@@ -398,7 +398,7 @@ export function createTensorRenderer({
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     const startX = 13 - 8 * inputSpacing;
     const startY = bankHeight / 2 - filterHeight;
-    const startZ = 5+ kernelWidth * inputSpacing;
+    const startZ = -12 + kernelWidth * inputSpacing;
     const metadata = getData().linkConvMetadata;
     const showBias = metadata ? Boolean(metadata.has_bias) : true;
 
