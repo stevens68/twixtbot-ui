@@ -405,8 +405,8 @@ export function createTensorRenderer({
     const filterSpacing = inputSpacing * 0.5832;
     const filterWidth = kernelWidth * filterSpacing;
     const filterHeight = kernelHeight * filterSpacing;
-    const gapZ = 1.2 * 0.5832;
-    const gapY = 1 * 0.5832;
+    const gapZ = 0.3;
+    const gapY = 0.3;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     // Center the link filter's channel stack exactly on the links input's
     // X center (-1.8), using the same reduced channel spacing as the kernels.
@@ -425,8 +425,8 @@ export function createTensorRenderer({
     const pegHeight = pegWeights[0].length;
     const pegWidth = pegWeights[0][0].length;
     const pegChannels = pegWeights[0][0][0].length;
-    const pegGapY = gapY / 6.0
-    const pegGapZ = gapZ / 6.0
+    const pegGapY = gapY *1.4;
+    const pegGapZ = gapZ * 1.4;
     const pegStartX = startX ;
     // Align the peg bank's 8×6 slots with the link bank; each peg kernel is
     // 5×5×2, and its spacing between filter slots remains independently tuned.
