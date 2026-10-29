@@ -383,21 +383,43 @@ export function createTensorRenderer({
       clearFilterGeometry();
     }
 
-    // Render one representative 5×5×8 link filter in the main input scene.
-    // It sits behind the links tensor, towards negative X; the 48-filter bank
-    // can be added later once the second scene is removed.
-    drawFilterKernel(
-      0, 1.5, -4, -3.5, weights.links, 5, 5, 8,
-      'Link filter · 5×5×8', true, rebuild,
-    );
+    // Show all 48 link kernels as an 8-column × 6-row bank. Keep generous
+    // spacing between kernels; the bank sits on the far side of the links
+    // input tensor, with a gap comparable to the effective-board/input gap.
+    const columns = 8;
+    const rows = 6;
+    const filterWidth = 8 * inputSpacing;
+    const filterHeight = 5 * inputSpacing;
+    const gapX = 1.4;
+    const gapY = 1.25;
+    const bankWidth = columns * filterWidth + (columns - 1) * gapX;
+    const bankHeight = rows * filterHeight + (rows - 1) * gapY;
+    const startX = -1.8 - 8 * inputSpacing - 7.0;
+    const startY = bankHeight / 2 - filterHeight;
+    const startZ = -3.5;
+    for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
+      const column = filter % columns;
+      const row = Math.floor(filter / columns);
+      drawFilterKernel(
+        filter,
+        startX - column * (filterWidth + gapX),
+        startY - row * (filterHeight + gapY),
+        startZ,
+        weights.links,
+        5, 5, 8,
+        String(filter + 1),
+        true,
+        rebuild,
+      );
+    }
     cachedFilterWeights = weights;
 
     return {
       title: '48 convolution filters',
-      description: 'One representative link convolution kernel with 8 channels × 5 × 5 weights and its bias, shown alongside the input tensor.',
+      description: 'All 48 link convolution kernels, each with 8 channels × 5 × 5 weights and its bias, arranged in 8 columns and 6 rows.',
       shape: '5 × 5 × 8 + bias',
       range: 'Signed weights and bias',
-      count: '1 link filter',
+      count: '48 link filters',
     };
   }
 
