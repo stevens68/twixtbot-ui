@@ -27,7 +27,11 @@ scene.background = new THREE.Color(0x0b1018);
 scene.fog = new THREE.Fog(0x0b1018, 75, 190);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
-camera.position.set(36, 28, 48);
+// Start framed on the effective board, from its visible side. Keep this preset
+// shared with Reset camera so the initial and reset views are consistent.
+const INITIAL_CAMERA_POSITION = new THREE.Vector3(-27.5, 4.5, 6.5);
+const INITIAL_CAMERA_TARGET = new THREE.Vector3(-15.2, 0.5, 0);
+camera.position.copy(INITIAL_CAMERA_POSITION);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -39,7 +43,7 @@ controls.enableDamping = true;
 // A larger damping factor dissipates OrbitControls inertia more quickly after
 // the pointer is released, while keeping rotation smooth during the drag.
 controls.dampingFactor = 0.16;
-controls.target.set(0, 0, 0);
+controls.target.copy(INITIAL_CAMERA_TARGET);
 
 scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x253041, 2));
 
@@ -564,8 +568,8 @@ function validateData(input) {
 }
 
 function resetCamera() {
-  camera.position.set(36, 28, 48);
-  controls.target.set(0, 0, 0);
+  camera.position.copy(INITIAL_CAMERA_POSITION);
+  controls.target.copy(INITIAL_CAMERA_TARGET);
   controls.update();
 }
 
