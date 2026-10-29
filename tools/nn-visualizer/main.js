@@ -574,26 +574,39 @@ async function loadTrainedLinkWeights() {
     const response = await fetch('/api/weights', { cache: 'no-store' });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || response.statusText);
-    if (!result.layer || !Array.isArray(result.weights) ||
-        result.weights.length !== result.layer.filter_count) {
-      throw new Error('The model-weight endpoint returned an unexpected shape.');
+    if (!result.layers || !result.weights ||
+        !result.layers.links || !result.layers.pegs ||
+        !Array.isArray(result.weights.links) ||
+        !Array.isArray(result.weights.pegs) ||
+        result.weights.links.length !== result.layers.links.filter_count ||
+        result.weights.pegs.length !== result.layers.pegs.filter_count) {
+      throw new Error('The model-weight endpoint returned an unexpected peg/link weight shape.');
     }
-    if (!result.layers || !result.weights || !result.layers.links || !result.layers.pegs) {
-      throw new Error('The model-weight endpoint did not return both peg and link convolution layers.');
+
+    for (const [name, layer] of Object.entries(result.layers)) {
+      if (layer.has_bias &&
+          (!Array.isArray(layer.bias) ||
+           layer.bias.length !== layer.filter_count ||
+           layer.bias.some((value) => !Number.isFinite(Number(value))))) {
+        throw new Error('The model-weight endpoint returned invalid bias values for ' + name + '.');
+      }
     }
+
     demoModel.weights.links = result.weights.links;
     demoModel.weights.pegs = result.weights.pegs;
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
-    modelWeightStatus = 'Trained peg and link weights loaded from ' + result.layers.links.source +
-      ' (pegs: ' + result.layers.pegs.filter_count + ' filters, ' +
-      result.layers.pegs.kernel_height + '×' + result.layers.pegs.kernel_width + '×' +
-      result.layers.pegs.channels + '; links: ' + result.layers.links.filter_count + ' filters, ' +
-      result.layers.links.kernel_height + '×' + result.layers.links.kernel_width + '×' +
-      result.layers.links.channels + ').';
-    console.info('[NN visualizer] ' + modelWeightStatus, result.layer);
+    modelWeightStatus = 'Trained peg/link weights and convolution biases loaded from ' + result.layers.links.source +
+      ' (pegs: ' + result.layers.pegs.filter_count + ' filters, bias=' +
+      (result.layers.pegs.has_bias ? 'loaded' : 'none') + '; links: ' +
+      result.layers.links.filter_count + ' filters, bias=' +
+      (result.layers.links.has_bias ? 'loaded' : 'none') + ').';
+    console.info('[NN visualizer] ' + modelWeightStatus, {
+      pegs: result.layers.pegs,
+      links: result.layers.links,
+    });
   } catch (error) {
-    modelWeightStatus = 'Using generated demo link weights; trained weights could not be loaded: ' + error.message;
+    modelWeightStatus = 'Using generated demo weights; trained weights and biases could not be loaded: ' + error.message;
     console.warn('[NN visualizer] ' + modelWeightStatus);
   }
 }
