@@ -49,10 +49,10 @@ export function createTensorRenderer({
     ];
   }
 
-  function cellTransform(transform, origin, row, col, channel, thickness, cellSize, zero = false, value = 0) {
+  function cellTransform(transform, origin, row, col, channel, thickness, cellSize, zero = false, value = 0, offsetBySign = true) {
     transform.position.set(
       origin[0] + channel * inputDepthStep +
-        (zero ? 0 : value < 0 ? -thickness / 2 : thickness / 2),
+        (zero || !offsetBySign ? 0 : value < 0 ? -thickness / 2 : thickness / 2),
       origin[1] + (BOARD_SIZE - 1 - row) * inputSpacing,
       origin[2] + col * inputSpacing,
     );
@@ -117,7 +117,7 @@ export function createTensorRenderer({
           const value = Number(tensor[row][col][channel]);
           const isZero = value === 0;
           const cubeSize = inputCellSize * 0.9;
-          cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, isZero, value);
+          cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, isZero, value, false);
           mesh.setMatrixAt(index, transform.matrix);
           mesh.setColorAt(index, locationHeatMapColor(value));
           index += 1;
@@ -255,7 +255,7 @@ export function createTensorRenderer({
             // All learned-weight markers use the same size as a one-hot 1.
             const cubeSize = cellSize * 0.9;
             transform.position.set(
-              originX + channel * channelDepth + (value < 0 ? -cubeSize / 2 : cubeSize / 2),
+              originX + channel * channelDepth,
               originY + (kernelHeight - 1 - row) * spacing,
               originZ + col * spacing,
             );
@@ -279,9 +279,9 @@ export function createTensorRenderer({
         // Bias sits beside the channel stack, with twice the normal gap.
         const doubleGap = 2 * (inputSpacing - inputCellSize);
         biasCube.position.set(
-          originX + channels * channelDepth + doubleGap,
+          originX,
           originY + ((kernelHeight - 1) * spacing) / 2,
-          originZ + ((kernelWidth - 1) * spacing) / 2,
+          originZ + kernelWidth * spacing + doubleGap,
         );
         biasCube.scale.setScalar(cellSize * 0.9);
         biasCube.name = 'filter-' + filterIndex + '-bias';
@@ -289,12 +289,13 @@ export function createTensorRenderer({
       }
     }
 
+    // A simple numeric filter label, centered above the 5×5 face.
     addLabel(
-      label,
+      String(filterIndex + 1),
       [
-        originX,
-        originY + kernelHeight * 0.18 + 0.2,
-        originZ + channels * channelDepth * 0.18,
+        originX + ((channels - 1) * channelDepth) / 2,
+        originY + kernelHeight * spacing + 0.12,
+        originZ + ((kernelWidth - 1) * spacing) / 2,
       ],
       17,
     );
