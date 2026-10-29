@@ -16,6 +16,17 @@ export function createTensorRenderer({
   ];
   const inputSpacing = 0.34;
   const inputCellSize = 0.26;
+  // Keep zero-valued cells visible, but make them much smaller than active cells.
+  const minimumCubeScale = 0.08;
+
+  function heatMapColor(value, minValue, maxValue) {
+    const range = maxValue - minValue;
+    const normalized = range > 1e-8
+      ? Math.max(0, Math.min(1, (value - minValue) / range))
+      : 0.5;
+    // Blue → cyan → green → yellow → red across the full value range.
+    return new THREE.Color().setHSL((2 / 3) * (1 - normalized), 1, 0.5);
+  }
   const inputChannelGap = 0.28;
   const inputDepthStep = inputCellSize + inputChannelGap;
   const inputOriginY = -4;
@@ -59,7 +70,7 @@ export function createTensorRenderer({
     mesh.name = spec.key + '-persistent-zero-cells';
     const origin = inputOrigin(spec);
     const transform = new THREE.Object3D();
-    const zeroCubeSize = inputCellSize * 0.9;
+    const zeroCubeSize = inputCellSize * minimumCubeScale;
     let index = 0;
     for (let channel = 0; channel < spec.channels; channel += 1) {
       for (let row = 0; row < BOARD_SIZE; row += 1) {
@@ -79,7 +90,7 @@ export function createTensorRenderer({
     const tensor = getData().locations;
     const capacity = BOARD_SIZE * BOARD_SIZE * spec.channels;
     const mesh = new THREE.InstancedMesh(
-      cubeGeometry, makeInputMaterial(COLORS.fixed), capacity,
+      cubeGeometry, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.9 }), capacity,
     );
     mesh.name = 'locations-persistent-values';
     const origin = inputOrigin(spec);
@@ -98,16 +109,20 @@ export function createTensorRenderer({
         for (let col = 0; col < BOARD_SIZE; col += 1) {
           const value = Number(tensor[row][col][channel]);
           const isZero = value === 0;
-          const cubeSize = isZero
-            ? inputCellSize * 0.9
-            : inputCellSize * (0.9 + 0.1 * Math.abs(value) / maxAbs);
+          const magnitude = Math.abs(value) / maxAbs;
+          const cubeSize = inputCellSize * (
+            minimumCubeScale + (1 - minimumCubeScale) * magnitude
+          );
           cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, isZero, value);
-          mesh.setMatrixAt(index++, transform.matrix);
+          mesh.setMatrixAt(index, transform.matrix);
+          mesh.setColorAt(index, heatMapColor(value, 0, maxAbs));
+          index += 1;
         }
       }
     }
     mesh.count = index;
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     inputStaticGroup.add(mesh);
   }
 
@@ -172,7 +187,7 @@ export function createTensorRenderer({
           // Keep every marker a cube. Magnitude controls cube volume; the
           // largest magnitude matches the existing one-hot cell size.
           const magnitude = Math.abs(value) / maxAbs;
-          const cubeSize = isZero ? cellSize * 0.9 : cellSize * (0.1 + 0.9 * magnitude);
+          const cubeSize = cellSize * (minimumCubeScale + (1 - minimumCubeScale) * magnitude);
           transform.position.set(
             origin[0] + channel * depthStep,
             origin[1] + (rows - 1 - row) * spacing,
@@ -181,12 +196,7 @@ export function createTensorRenderer({
           transform.scale.set(cubeSize, cubeSize, cubeSize);
           transform.updateMatrix();
           mesh.setMatrixAt(index, transform.matrix);
-          const signedColor = value < 0
-            ? new THREE.Color(0x4da3ff)
-            : value > 0
-              ? new THREE.Color(0xff785a)
-              : new THREE.Color(color);
-          mesh.setColorAt(index, signedColor);
+          mesh.setColorAt(index, heatMapColor(value, -maxAbs, maxAbs));
           index += 1;
         }
       }
@@ -379,7 +389,7 @@ export function createTensorRenderer({
     addLabel('Summed convolution output · 24×24×48', [0, 5, 2], 28);
     return {
       title: 'Convolution output',
-      description: 'Three branch convolutions are summed into one feature tensor. Every marker is a cube: volume encodes absolute magnitude (maximum matches an input one-hot cube), blue indicates negative values, and orange-red indicates positive values.',
+      description: 'Three branch convolutions are summed into one feature tensor. Cube volume encodes absolute magnitude; a full-spectrum heat map runs from blue through cyan, green and yellow to red, with negative and positive values on opposite sides of the spectrum.',
       shape: '24 × 24 × 48',
       range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4),
       count: stats.count.toLocaleString() + ' cells',
