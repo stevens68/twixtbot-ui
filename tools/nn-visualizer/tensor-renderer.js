@@ -243,15 +243,23 @@ export function createTensorRenderer({
         for (let row = 0; row < kernelHeight; row += 1) {
           for (let col = 0; col < kernelWidth; col += 1) {
             const value = values[index];
-            const thickness = Math.max(0.025, (Math.abs(value) / maxAbs) * 0.17);
+            // Use the same magnitude sizing and zero-centred heat map as the
+            // feature tensors. The symmetric range keeps zero at the spectrum's
+            // midpoint even when this particular kernel contains one sign only.
+            const magnitude = Math.abs(value) / maxAbs;
+            const cubeSize = cellSize * (
+              minimumCubeScale + (1 - minimumCubeScale) * magnitude
+            );
             transform.position.set(
-              originX + (value < 0 ? -thickness / 2 : thickness / 2),
+              originX + (value < 0 ? -cubeSize / 2 : cubeSize / 2),
               originY + (kernelHeight - 1 - row) * spacing,
               originZ + col * spacing + channel * channelDepth,
             );
-            transform.scale.set(thickness, cellSize, cellSize);
+            transform.scale.set(cubeSize, cubeSize, cubeSize);
             transform.updateMatrix();
-            mesh.setMatrixAt(index++, transform.matrix);
+            mesh.setMatrixAt(index, transform.matrix);
+            mesh.setColorAt(index, heatMapColor(value, -maxAbs, maxAbs));
+            index += 1;
           }
         }
       }
