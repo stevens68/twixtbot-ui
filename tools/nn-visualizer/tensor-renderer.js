@@ -59,12 +59,12 @@ export function createTensorRenderer({
     mesh.name = spec.key + '-persistent-zero-cells';
     const origin = inputOrigin(spec);
     const transform = new THREE.Object3D();
-    const dotSize = 0.055;
+    const zeroCubeSize = inputCellSize * 0.9;
     let index = 0;
     for (let channel = 0; channel < spec.channels; channel += 1) {
       for (let row = 0; row < BOARD_SIZE; row += 1) {
         for (let col = 0; col < BOARD_SIZE; col += 1) {
-          cellTransform(transform, origin, row, col, channel, dotSize, dotSize, true);
+          cellTransform(transform, origin, row, col, channel, zeroCubeSize, zeroCubeSize, true);
           mesh.setMatrixAt(index++, transform.matrix);
         }
       }
@@ -98,10 +98,10 @@ export function createTensorRenderer({
         for (let col = 0; col < BOARD_SIZE; col += 1) {
           const value = Number(tensor[row][col][channel]);
           const isZero = value === 0;
-          const thickness = isZero
-            ? 0.055
-            : Math.max(0.025, Math.abs(value) / maxAbs * 0.34);
-          cellTransform(transform, origin, row, col, channel, thickness, isZero ? 0.055 : inputCellSize, isZero, value);
+          const cubeSize = isZero
+            ? inputCellSize * 0.9
+            : inputCellSize * (0.9 + 0.1 * Math.abs(value) / maxAbs);
+          cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, isZero, value);
           mesh.setMatrixAt(index++, transform.matrix);
         }
       }
@@ -130,8 +130,8 @@ export function createTensorRenderer({
         for (let col = 0; col < BOARD_SIZE; col += 1) {
           const value = Number(tensor[row][col][channel]);
           if (value === 0) continue;
-          const thickness = Math.max(0.025, Math.abs(value) / maxAbs * 0.34);
-          cellTransform(transform, origin, row, col, channel, thickness, inputCellSize, false, value);
+          const cubeSize = inputCellSize;
+          cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, false, value);
           mesh.setMatrixAt(index++, transform.matrix);
         }
       }
@@ -167,7 +167,7 @@ export function createTensorRenderer({
     const mesh = new THREE.InstancedMesh(
       cubeGeometry,
       new THREE.MeshStandardMaterial({
-        color, roughness: 0.6, transparent: true, opacity: 0.82,
+        color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.9,
       }),
       values.length,
     );
@@ -190,11 +190,19 @@ export function createTensorRenderer({
           );
           transform.scale.set(thickness, isZero ? dotSize : cellSize, isZero ? dotSize : cellSize);
           transform.updateMatrix();
-          mesh.setMatrixAt(index++, transform.matrix);
+          mesh.setMatrixAt(index, transform.matrix);
+          const signedColor = value < 0
+            ? new THREE.Color(0x4da3ff)
+            : value > 0
+              ? new THREE.Color(0xff785a)
+              : new THREE.Color(color);
+          mesh.setColorAt(index, signedColor);
+          index += 1;
         }
       }
     }
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     getSceneGroup().add(mesh);
     return {
       count: values.length,
