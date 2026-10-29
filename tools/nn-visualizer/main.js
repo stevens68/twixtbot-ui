@@ -581,7 +581,7 @@ function resizeRenderer() {
 // Hit-testing deliberately compares projected screen pixels, not 3D distance.
 const SAMPLE_BOARD_SIZE = (BOARD_SIZE - 1) * 0.34;
 const SAMPLE_BOARD_SPACING = 0.34;
-const SAMPLE_BOARD_X = -26.675 - 0.16;
+const SAMPLE_BOARD_X = -26.675 + 0.026;
 const SAMPLE_BOARD_START = -SAMPLE_BOARD_SIZE / 2;
 
 function projectSampleIntersection(row, col, rect) {
@@ -785,7 +785,7 @@ async function loadGamePosition(ply) {
   // model's perspective-dependent input encoding.
   const result = await requestSnapshot(gameMoves.slice(0, ply));
   backendSnapshot = result;
-  currentPlayerName = result.next_player_name || (result.next_player === 0 ? 'Black' : 'Red');
+  currentPlayerName = result.next_player === 1 ? 'Red' : 'Black';
 
   const demo = createDemoData();
   data = {
