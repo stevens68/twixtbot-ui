@@ -412,7 +412,7 @@ export function createTensorRenderer({
     // X center (-1.8), using the same reduced channel spacing as the kernels.
     const startX = 12 + inputTensorSpecs[1].x - ((channels - 1) * filterSpacing) / 2;
     const startY = bankHeight / 2 - filterHeight;
-    const startZ = -8 + kernelWidth * inputSpacing;
+    const startZ = -5 + kernelWidth * inputSpacing;
     const metadata = getData().linkConvMetadata;
     // Missing checkpoint metadata must not invent bias cubes.
     const showBias = Boolean(metadata?.has_bias);
@@ -430,7 +430,7 @@ export function createTensorRenderer({
     const pegFilterHeight = pegHeight * filterSpacing;
     const pegStartX = startX;
     const pegStartY = rows * (pegFilterHeight + pegGapY) / 2 - pegFilterHeight;
-    const pegStartZ = startZ - 10;
+    const pegStartZ = startZ - 12;
     const pegShowBias = Boolean(pegMetadata?.has_bias);
     for (let filter = 0; filter < pegCount; filter += 1) {
       const column = filter % columns;
@@ -456,13 +456,13 @@ export function createTensorRenderer({
     const locationHeight = locationWeights[0].length;
     const locationWidth = locationWeights[0][0].length;
     const locationChannels = locationWeights[0][0][0].length;
-    const locationGapY = gapY * 1.4;
-    const locationGapZ = gapZ * 1.4;
+    const locationGapY = gapY * 0.1;
+    const locationGapZ = gapZ * 0.1;
     const locationSlotWidth = pegFilterWidth;
     const locationSlotHeight = pegFilterHeight;
     const locationStartX = startX;
     const locationStartY = rows * (locationSlotHeight + locationGapY) / 2 - locationSlotHeight;
-    const locationStartZ = pegStartZ - 13;
+    const locationStartZ = startZ + 10;
     const locationShowBias = Boolean(locationMetadata?.has_bias);
     for (let filter = 0; filter < locationCount; filter += 1) {
       const column = filter % columns;
