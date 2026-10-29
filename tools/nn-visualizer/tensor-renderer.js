@@ -27,6 +27,13 @@ export function createTensorRenderer({
     // Blue → cyan → green → yellow → red across the full value range.
     return new THREE.Color().setHSL((2 / 3) * (1 - normalized), 1, 0.5);
   }
+
+  function locationHeatMapColor(value) {
+    // Coordinates are nonnegative: start at green for 0, then progress
+    // through yellow to red as the coordinate approaches 1.
+    const normalized = Math.max(0, Math.min(1, Number(value)));
+    return new THREE.Color().setHSL((1 / 3) * (1 - normalized), 1, 0.5);
+  }
   const inputChannelGap = 0.28;
   const inputDepthStep = inputCellSize + inputChannelGap;
   const inputOriginY = -4;
@@ -115,7 +122,7 @@ export function createTensorRenderer({
           );
           cellTransform(transform, origin, row, col, channel, cubeSize, cubeSize, isZero, value);
           mesh.setMatrixAt(index, transform.matrix);
-          mesh.setColorAt(index, heatMapColor(value, 0, maxAbs));
+          mesh.setColorAt(index, locationHeatMapColor(value));
           index += 1;
         }
       }
