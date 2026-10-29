@@ -410,12 +410,10 @@ export function createTensorRenderer({
     const pegHeight = pegWeights[0].length;
     const pegWidth = pegWeights[0][0].length;
     const pegChannels = pegWeights[0][0][0].length;
-    const pegRows = Math.ceil(pegCount / columns);
-    const pegFilterWidth = pegWidth * inputSpacing;
-    const pegFilterHeight = pegHeight * inputSpacing;
-    const pegBankHeight = pegRows * pegFilterHeight + (pegRows - 1) * gapY;
     const pegStartX = startX - (channels * inputSpacing) - gapZ;
-    const pegStartY = pegBankHeight / 2 - pegFilterHeight;
+    // Align the peg bank's 8×6 slots with the link bank; only each kernel's
+    // own 1×1×2 geometry is smaller, not the spacing between filter slots.
+    const pegStartY = startY;
     const pegStartZ = startZ;
     const pegShowBias = pegMetadata ? Boolean(pegMetadata.has_bias) : true;
     for (let filter = 0; filter < pegCount; filter += 1) {
@@ -424,8 +422,8 @@ export function createTensorRenderer({
       drawFilterKernel(
         filter,
         pegStartX,
-        pegStartY - row * (pegFilterHeight + gapY),
-        pegStartZ + column * (pegFilterWidth + gapZ),
+        pegStartY - row * (filterHeight + gapY),
+        pegStartZ + column * (filterWidth + gapZ),
         pegWeights,
         pegHeight, pegWidth, pegChannels,
         String(filter + 1),
