@@ -14,7 +14,7 @@ export function createTensorRenderer({
     { key: 'pegs', x: -1.8, z: -13, channels: 2 },
     { key: 'links', x: -1.8, z: -3.5, channels: 8 },
   ];
-  const inputSpacing = 0.25;
+  const inputSpacing = 0.33;
   const inputCellSize = 0.22;
   // Keep zero-valued cells visible, but make them much smaller than active cells.
   const minimumCubeScale = 0.08;
@@ -398,7 +398,7 @@ export function createTensorRenderer({
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     const startX = 20 - 8 * inputSpacing - 7.0;
     const startY = bankHeight / 2 - filterHeight;
-    const startZ = -3.5 + kernelWidth * inputSpacing + 2.0;
+    const startZ = -3.5 + kernelWidth * inputSpacing + 2.0 -7.5;
     const metadata = getData().linkConvMetadata;
     const showBias = metadata ? Boolean(metadata.has_bias) : true;
     for (let filter = 0; filter < filterCount; filter += 1) {
