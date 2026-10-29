@@ -417,20 +417,19 @@ export function createTensorRenderer({
     // Missing checkpoint metadata must not invent bias cubes.
     const showBias = Boolean(metadata?.has_bias);
 
-    // Peg kernels use the same 8-column × 6-row grid and Y/Z spacing,
-    // positioned immediately to the left of the link-kernel bank along X.
+    // Peg filters use their own 5×5×2 geometry in an 8-column × 6-row bank.
     const pegWeights = weights.pegs;
     const pegMetadata = getData().pegConvMetadata;
     const pegCount = pegWeights.length;
     const pegHeight = pegWeights[0].length;
     const pegWidth = pegWeights[0][0].length;
     const pegChannels = pegWeights[0][0][0].length;
-    const pegGapY = gapY *1.4;
+    const pegGapY = gapY * 1.4;
     const pegGapZ = gapZ * 1.4;
-    const pegStartX = startX ;
-    // Align the peg bank's 8×6 slots with the link bank; each peg kernel is
-    // 5×5×2, and its spacing between filter slots remains independently tuned.
-    const pegStartY = startY;
+    const pegFilterWidth = pegWidth * filterSpacing;
+    const pegFilterHeight = pegHeight * filterSpacing;
+    const pegStartX = startX;
+    const pegStartY = rows * (pegFilterHeight + pegGapY) / 2 - pegFilterHeight;
     const pegStartZ = startZ - 10;
     const pegShowBias = Boolean(pegMetadata?.has_bias);
     for (let filter = 0; filter < pegCount; filter += 1) {
@@ -439,14 +438,46 @@ export function createTensorRenderer({
       drawFilterKernel(
         filter,
         pegStartX,
-        pegStartY - row * (filterHeight + pegGapY),
-        pegStartZ + column * (filterWidth + pegGapZ),
+        pegStartY - row * (pegFilterHeight + pegGapY),
+        pegStartZ + column * (pegFilterWidth + pegGapZ),
         pegWeights,
         pegHeight, pegWidth, pegChannels,
         String(filter + 1),
         pegShowBias,
         rebuild,
         pegMetadata?.bias || null,
+      );
+    }
+
+    // Location filters are 1×1×2 and have no bias in the trained model.
+    const locationWeights = weights.locations;
+    const locationMetadata = getData().locationConvMetadata;
+    const locationCount = locationWeights.length;
+    const locationHeight = locationWeights[0].length;
+    const locationWidth = locationWeights[0][0].length;
+    const locationChannels = locationWeights[0][0][0].length;
+    const locationGapY = gapY * 1.4;
+    const locationGapZ = gapZ * 1.4;
+    const locationSlotWidth = pegFilterWidth;
+    const locationSlotHeight = pegFilterHeight;
+    const locationStartX = startX;
+    const locationStartY = rows * (locationSlotHeight + locationGapY) / 2 - locationSlotHeight;
+    const locationStartZ = pegStartZ - 10;
+    const locationShowBias = Boolean(locationMetadata?.has_bias);
+    for (let filter = 0; filter < locationCount; filter += 1) {
+      const column = filter % columns;
+      const row = Math.floor(filter / columns);
+      drawFilterKernel(
+        filter,
+        locationStartX,
+        locationStartY - row * (locationSlotHeight + locationGapY),
+        locationStartZ + column * (locationSlotWidth + locationGapZ),
+        locationWeights,
+        locationHeight, locationWidth, locationChannels,
+        String(filter + 1),
+        locationShowBias,
+        rebuild,
+        locationMetadata?.bias || null,
       );
     }
 
@@ -469,11 +500,13 @@ export function createTensorRenderer({
     cachedFilterWeights = weights;
 
     return {
-      title: filterCount + ' trained convolution filters',
-      description: 'Trained peg and link convolution kernels from the PyTorch checkpoint. Both banks use 8 columns and 1-based filter labels; the peg bank sits to the left of the link bank.',
-      shape: kernelHeight + ' × ' + kernelWidth + ' × ' + channels + (showBias ? ' + bias' : ' (no bias)'),
-      range: 'Trained signed weights' + (showBias ? ' and bias' : ''),
-      count: pegCount + ' peg filters + ' + filterCount + ' link filters',
+      title: 'Trained convolution filters',
+      description: 'Trained location, peg, and link convolution kernels from the PyTorch checkpoint. Each bank uses 8 columns and 1-based filter labels; the location bank is 1×1×2, the peg bank 5×5×2, and the link bank 4×4×8.',
+      shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
+        '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
+        '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
+      range: 'Trained signed weights; all three convolutions have no bias in this checkpoint.',
+      count: locationCount + ' location filters + ' + pegCount + ' peg filters + ' + filterCount + ' link filters',
     };
   }
 
