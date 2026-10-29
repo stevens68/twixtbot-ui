@@ -366,7 +366,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     const mesh = new THREE.InstancedMesh(linkCubeGeometry, linkCubeMaterials[player], cells.length);
     const transform = new THREE.Object3D();
     cells.forEach(({ row, col }, index) => {
-      transform.position.set(...pointAt(row, col, boardX + 0.035 + 0.18));
+      transform.position.set(...pointAt(row, col, boardX + 0.035 - 0.18));
       transform.rotation.set(0, 0, 0);
       transform.scale.set(1, 1, 1);
       transform.updateMatrix();
@@ -384,7 +384,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     const direction = new THREE.Vector3(0, dy, dz).normalize();
     const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
     positions.forEach(({ row, col }, index) => {
-      const point = pointAt(row, col, boardX + 0.035 + 0.18);
+      const point = pointAt(row, col, boardX + 0.035 - 0.18);
       transform.position.set(
         point[0],
         point[1] + dy * pointerLength / 2,
@@ -427,7 +427,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     const transform = new THREE.Object3D();
     positions.forEach(({ row, col }, index) => {
       // Render the encoded tensor cell directly; the renderer does not transpose.
-      transform.position.set(...pointAt(row, col, boardX + 0.20));
+      transform.position.set(...pointAt(row, col, boardX - 0.16));
       transform.rotation.z = Math.PI / 2;
       transform.updateMatrix();
       mesh.setMatrixAt(index, transform.matrix);
