@@ -2,7 +2,7 @@
 
 A local browser-based Three.js tool for inspecting Twixt game positions, model input tensors, convolution filters, and feature-map values. It is part of `twixtbot-ui`; the Python backend is the source of truth for game rules and input encoding.
 
-The current visualizer covers the board and input tensors plus an illustrative first-convolution view. It does **not** run a complete PyTorch model forward pass: filter weights are generated demo weights, so the filter and output views are explanatory rather than numerical-parity results.
+The visualizer loads the trained `links` convolution weights from `model/torch.pt` when it starts. It does **not** run a complete PyTorch model forward pass: the feature/output view remains illustrative and is not a numerical-parity result.
 
 ## Run locally
 
@@ -31,7 +31,7 @@ Game positions are reconstructed by the Python backend. The browser does not ind
 
 - **Board & input tensors:** sample and effective boards alongside the `pegs`, `links`, and `locations` tensors.
 - **Input tensor shapes:** pegs `24 × 24 × 2`, links `24 × 24 × 8`, and locations `24 × 24 × 2`. Tensor coordinates use `[row][column][channel]` order.
-- **Convolution filters:** 48 filters arranged in an 8 × 6 bank. Link kernels are `5 × 5 × 8`; peg and location kernels are `1 × 1 × 2`. Biases are shown separately.
+- **Convolution filters:** the trained `links.weight` tensor is loaded from `model/torch.pt` through `/api/weights`. The bank uses the checkpoint's actual filter count and kernel dimensions, arranged in up to 8 columns. A bias is shown only if the loaded layer has one.
 - **Feature values:** signed values are represented by cube thickness along X; negative values extend toward −X and positive values toward +X.
 
 The browser uses the exact three arrays returned by `NetInputs.to_input_arrays()` for backend-loaded positions. It does not return or send the intermediate `NetInputs.naf` array because the visualizer does not consume it.
@@ -66,6 +66,7 @@ The local server exposes two POST endpoints used by the page:
 
 - `/api/trace`: accepts a JSON object with a `moves` array and optional `allow_scl` / `allow_swap` settings. It returns the reconstructed board, next player, tensor arrays, tensor shapes, and source metadata. Interactive trace requests skip recursive draw detection to keep navigation responsive.
 - `/api/t1`: accepts the text contents of a `.T1` file and returns the parsed move sequence.
+- `GET /api/weights`: reads `model/torch.pt` and returns the trained `links.weight` values in browser-friendly `[filter][row][column][channel]` order, plus layer-shape metadata.
 
 The adapter can also be invoked from the repository root to inspect a trajectory:
 
@@ -88,5 +89,5 @@ The tests check that the serialized peg, link, and location tensors match the ba
 ## Scope and limitations
 
 - The input tensors for loaded games come from the Python backend.
-- The filter weights are demo weights; filter and feature-map views are not a real model inference.
+- The displayed link convolution weights are loaded from the trained PyTorch checkpoint. The other branch weights and feature-map/output calculations are still demo data; the visualizer does not yet run full model inference.
 - The visualizer is for exploration and debugging. Use framework-level tests to establish numerical parity with the PyTorch model.
