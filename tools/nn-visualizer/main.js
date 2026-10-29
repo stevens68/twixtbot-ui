@@ -567,10 +567,22 @@ function validateData(input) {
   return input;
 }
 
+function updateCameraCoordinates() {
+  const readout = document.querySelector('#camera-coordinates');
+  if (!readout) return;
+  const fmt = (v) => v.toFixed(2);
+  readout.textContent =
+    'Camera  x ' + fmt(camera.position.x) + '  y ' + fmt(camera.position.y) + '  z ' + fmt(camera.position.z) +
+    '\\nTarget  x ' + fmt(controls.target.x) + '  y ' + fmt(controls.target.y) + '  z ' + fmt(controls.target.z);
+}
+
+controls.addEventListener('change', updateCameraCoordinates);
+
 function resetCamera() {
   camera.position.copy(INITIAL_CAMERA_POSITION);
   controls.target.copy(INITIAL_CAMERA_TARGET);
   controls.update();
+  updateCameraCoordinates();
 }
 
 function resizeRenderer() {
@@ -952,6 +964,7 @@ function animate() {
 }
 
 resizeRenderer();
+updateCameraCoordinates();
 renderStep();
 updateGameNavigation();
 animate();
