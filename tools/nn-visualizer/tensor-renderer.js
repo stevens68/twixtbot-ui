@@ -235,7 +235,7 @@ export function createTensorRenderer({
     const channelDepth = inputSpacing;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
-      // when placing the 8 channels along X, rows along Y, and columns along Z.
+      // with channels along X, rows along Y, and columns along Z.
       const values = flattenTensor(weights[filterIndex]);
       const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
       const mesh = new THREE.InstancedMesh(
@@ -289,7 +289,7 @@ export function createTensorRenderer({
       }
     }
 
-    // A simple numeric filter label, centered above the 5×5 face.
+    // A simple numeric filter label, centered above the kernel face.
     addLabel(
       String(filterIndex + 1),
       [
@@ -419,7 +419,7 @@ export function createTensorRenderer({
     cachedFilterWeights = weights;
 
     return {
-      title: '48 convolution filters',
+      title: filterCount + ' trained convolution filters',
       description: 'Trained link convolution kernels from the loaded PyTorch checkpoint, arranged in 8 columns. Kernel dimensions and bias display follow the actual layer.',
       shape: kernelHeight + ' × ' + kernelWidth + ' × ' + channels + (showBias ? ' + bias' : ' (no bias)'),
       range: 'Trained signed weights' + (showBias ? ' and bias' : ''),
