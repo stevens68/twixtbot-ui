@@ -29,8 +29,8 @@ scene.fog = new THREE.Fog(0x0b1018, 75, 190);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
 // Start framed on the effective board, from its visible side. Keep this preset
 // shared with Reset camera so the initial and reset views are consistent.
-const INITIAL_CAMERA_POSITION = new THREE.Vector3(-41, 8.4, 12.6);
-const INITIAL_CAMERA_TARGET = new THREE.Vector3(-15.2, 0.5, 0);
+const INITIAL_CAMERA_POSITION = new THREE.Vector3(-42.97, 5.95, -13.66);
+const INITIAL_CAMERA_TARGET = new THREE.Vector3(-17.12, -0.89, 2.70);
 camera.position.copy(INITIAL_CAMERA_POSITION);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
