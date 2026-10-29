@@ -171,7 +171,8 @@ export function createTensorRenderer({
           const isZero = value === 0;
           // Keep every marker a cube. Magnitude controls cube volume; the
           // largest magnitude matches the existing one-hot cell size.
-          const cubeSize = cellSize * (0.9 + 0.1 * Math.abs(value) / maxAbs);
+          const magnitude = Math.abs(value) / maxAbs;
+          const cubeSize = isZero ? cellSize * 0.9 : cellSize * (0.1 + 0.9 * magnitude);
           transform.position.set(
             origin[0] + channel * depthStep,
             origin[1] + (rows - 1 - row) * spacing,
@@ -373,12 +374,12 @@ export function createTensorRenderer({
       values, BOARD_SIZE, BOARD_SIZE, FILTER_COUNT,
       [-4.5, -4, -((FILTER_COUNT - 1) * 0.105) / 2],
       COLORS.output,
-      { spacing: 0.34, cellSize: 0.24, maxThickness: 0.42, minThickness: 0.025, channelGap: 0.105 },
+      { spacing: 0.34, cellSize: 0.26, channelGap: 0.105 },
     );
     addLabel('Summed convolution output · 24×24×48', [0, 5, 2], 28);
     return {
       title: 'Convolution output',
-      description: 'Three branch convolutions are summed into one feature tensor. Thickness is scaled for visibility.',
+      description: 'Three branch convolutions are summed into one feature tensor. Every marker is a cube: volume encodes absolute magnitude (maximum matches an input one-hot cube), blue indicates negative values, and orange-red indicates positive values.',
       shape: '24 × 24 × 48',
       range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4),
       count: stats.count.toLocaleString() + ' cells',
