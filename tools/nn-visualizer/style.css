@@ -183,3 +183,13 @@ pre { white-space: pre-wrap; word-break: break-word; background: #0b1018; paddin
   .step-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .step-tab { text-align: center; padding: 9px 4px; }
 }
+
+.camera-coordinates {
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px solid var(--panel-border);
+  color: #9eacbf;
+  font: 10px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
