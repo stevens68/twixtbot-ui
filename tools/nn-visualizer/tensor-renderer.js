@@ -229,11 +229,11 @@ export function createTensorRenderer({
     filterIndex, originX, originY, originZ, weights,
     kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true,
   ) {
-    // Convolution-filter cubes and every internal gap are 10% smaller
-    // than before. Keep these dimensions consistent across peg/link filters.
-    const spacing = inputSpacing * 0.729;
-    const cellSize = inputCellSize * 0.729;
-    const channelDepth = inputSpacing * 0.729;
+    // Reduce convolution-filter dimensions and internal gaps by a further 20%.
+    // Keep these dimensions consistent across peg/link filters.
+    const spacing = inputSpacing * 0.5832;
+    const cellSize = inputCellSize * 0.5832;
+    const channelDepth = inputSpacing * 0.5832;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
       // with channels along X, rows along Y, and columns along Z.
@@ -253,8 +253,8 @@ export function createTensorRenderer({
         for (let col = 0; col < kernelWidth; col += 1) {
           for (let channel = 0; channel < channels; channel += 1) {
             const value = Number(weights[filterIndex][row][col][channel]);
-            // Reduce the cube side by a further 10%, along with the gaps.
-            const cubeSize = cellSize * 0.9;
+            // Reduce each filter cube's side by a further 20%.
+            const cubeSize = cellSize * 0.72;
             transform.position.set(
               originX + channel * channelDepth,
               originY + (kernelHeight - 1 - row) * spacing,
@@ -278,13 +278,13 @@ export function createTensorRenderer({
           new THREE.MeshStandardMaterial({ color: COLORS.bias }),
         );
         // Bias sits beside the channel stack, with twice the normal gap.
-        const doubleGap = 2 * (inputSpacing - inputCellSize) * 0.729;
+        const doubleGap = 2 * (inputSpacing - inputCellSize) * 0.5832;
         biasCube.position.set(
           originX,
           originY + ((kernelHeight - 1) * spacing) / 2,
           originZ + kernelWidth * spacing + doubleGap,
         );
-        biasCube.scale.setScalar(cellSize * 0.9);
+        biasCube.scale.setScalar(cellSize * 0.72);
         biasCube.name = 'filter-' + filterIndex + '-bias';
         filterStaticGroup.add(biasCube);
       }
@@ -295,7 +295,7 @@ export function createTensorRenderer({
       String(filterIndex + 1),
       [
         originX + ((channels - 1) * channelDepth) / 2,
-        originY + kernelHeight * spacing + 0.12,
+        originY + kernelHeight * spacing + 0.096,
         originZ + ((kernelWidth - 1) * spacing) / 2,
       ],
       17,
@@ -392,11 +392,11 @@ export function createTensorRenderer({
     const kernelWidth = weights.links[0][0].length;
     const channels = weights.links[0][0][0].length;
     const rows = Math.ceil(filterCount / columns);
-    const filterSpacing = inputSpacing * 0.729;
+    const filterSpacing = inputSpacing * 0.5832;
     const filterWidth = kernelWidth * filterSpacing;
     const filterHeight = kernelHeight * filterSpacing;
-    const gapZ = 1.2 * 0.729;
-    const gapY = 1 * 0.729;
+    const gapZ = 1.2 * 0.5832;
+    const gapY = 1 * 0.5832;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     // Center the link filter's channel stack exactly on the links input's
     // X center (-1.8), using the same reduced channel spacing as the kernels.
