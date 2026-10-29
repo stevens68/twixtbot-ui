@@ -65,9 +65,18 @@ class Handler(SimpleHTTPRequestHandler):
 
             links_layer, link_weights = read_conv_layer("links")
             pegs_layer, peg_weights = read_conv_layer("pegs")
+            locations_layer, locations_weights = read_conv_layer("location")
             body = json.dumps({
-                "layers": {"links": links_layer, "pegs": pegs_layer},
-                "weights": {"links": link_weights, "pegs": peg_weights},
+                "layers": {
+                    "links": links_layer,
+                    "pegs": pegs_layer,
+                    "locations": locations_layer,
+                },
+                "weights": {
+                    "links": link_weights,
+                    "pegs": peg_weights,
+                    "locations": locations_weights,
+                },
             }, separators=(",", ":")).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
