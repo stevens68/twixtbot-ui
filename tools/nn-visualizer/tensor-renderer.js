@@ -227,7 +227,7 @@ export function createTensorRenderer({
 
   function drawFilterKernel(
     filterIndex, originX, originY, originZ, weights,
-    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true,
+    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null,
   ) {
     // Reduce convolution-filter dimensions and internal gaps by a further 20%.
     // Keep these dimensions consistent across peg/link filters.
@@ -273,9 +273,17 @@ export function createTensorRenderer({
       filterStaticGroup.add(mesh);
 
       if (showBias) {
+        const biasValue = Number(biasValues?.[filterIndex] ?? 0);
+        const biasMaxAbs = Math.max(
+          1e-8,
+          ...(biasValues || []).map((value) => Math.abs(Number(value) || 0)),
+        );
+        const biasMagnitudeScale = 0.25 + 0.75 * Math.abs(biasValue) / biasMaxAbs;
         const biasCube = new THREE.Mesh(
           cubeGeometry,
-          new THREE.MeshStandardMaterial({ color: COLORS.bias }),
+          new THREE.MeshStandardMaterial({
+            color: heatMapColor(biasValue, -biasMaxAbs, biasMaxAbs),
+          }),
         );
         // Bias sits beside the channel stack, with twice the normal gap.
         const doubleGap = 2 * (inputSpacing - inputCellSize) * 0.5832;
@@ -284,8 +292,10 @@ export function createTensorRenderer({
           originY + ((kernelHeight - 1) * spacing) / 2,
           originZ + kernelWidth * spacing + doubleGap,
         );
-        biasCube.scale.setScalar(cellSize * 0.72);
+        // Color shows sign; side length also reflects absolute magnitude.
+        biasCube.scale.setScalar(cellSize * 0.72 * biasMagnitudeScale);
         biasCube.name = 'filter-' + filterIndex + '-bias';
+        biasCube.userData.biasValue = biasValue;
         filterStaticGroup.add(biasCube);
       }
     }
@@ -435,6 +445,7 @@ export function createTensorRenderer({
         String(filter + 1),
         pegShowBias,
         rebuild,
+        pegMetadata?.bias || null,
       );
     }
 
@@ -451,6 +462,7 @@ export function createTensorRenderer({
         String(filter + 1),
         showBias,
         rebuild,
+        metadata?.bias || null,
       );
     }
     cachedFilterWeights = weights;
