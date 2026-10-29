@@ -578,12 +578,19 @@ async function loadTrainedLinkWeights() {
         result.weights.length !== result.layer.filter_count) {
       throw new Error('The model-weight endpoint returned an unexpected shape.');
     }
-    demoModel.weights.links = result.weights;
-    demoModel.linkConvMetadata = result.layer;
-    modelWeightStatus = 'Trained link weights loaded from ' + result.layer.source +
-      ' (' + result.layer.filter_count + ' filters, ' +
-      result.layer.kernel_height + '×' + result.layer.kernel_width + '×' +
-      result.layer.channels + ').';
+    if (!result.layers || !result.weights || !result.layers.links || !result.layers.pegs) {
+      throw new Error('The model-weight endpoint did not return both peg and link convolution layers.');
+    }
+    demoModel.weights.links = result.weights.links;
+    demoModel.weights.pegs = result.weights.pegs;
+    demoModel.linkConvMetadata = result.layers.links;
+    demoModel.pegConvMetadata = result.layers.pegs;
+    modelWeightStatus = 'Trained peg and link weights loaded from ' + result.layers.links.source +
+      ' (pegs: ' + result.layers.pegs.filter_count + ' filters, ' +
+      result.layers.pegs.kernel_height + '×' + result.layers.pegs.kernel_width + '×' +
+      result.layers.pegs.channels + '; links: ' + result.layers.links.filter_count + ' filters, ' +
+      result.layers.links.kernel_height + '×' + result.layers.links.kernel_width + '×' +
+      result.layers.links.channels + ').';
     console.info('[NN visualizer] ' + modelWeightStatus, result.layer);
   } catch (error) {
     modelWeightStatus = 'Using generated demo link weights; trained weights could not be loaded: ' + error.message;
@@ -874,6 +881,7 @@ async function loadGamePosition(ply) {
     bias: demoModel.bias,
     isDemo: false,
     linkConvMetadata: demoModel.linkConvMetadata,
+    pegConvMetadata: demoModel.pegConvMetadata,
   };
 
   gamePly = ply;
@@ -949,7 +957,7 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gamePly = 0;
     gameLoaded = true;
     backendSnapshot = null;
-    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata };
+    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata };
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
