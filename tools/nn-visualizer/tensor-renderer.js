@@ -229,7 +229,6 @@ export function createTensorRenderer({
       });
     }
     residualFilterGroup = null;
-    }
   }
 
   function drawFilterKernel(
