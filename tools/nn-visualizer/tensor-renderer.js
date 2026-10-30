@@ -500,6 +500,11 @@ export function createTensorRenderer({
         metadata?.bias || null,
       );
     }
+    // First residual block: both 5×5 convolutions consume and produce
+    // 48 feature channels. Keep the exact peg-filter cube dimensions,
+    // 8-column × 6-row arrangement, labels, and signed-weight heat map.
+    drawResidualBlock0Filters(weights.residualBlock0);
+
     cachedFilterWeights = weights;
 
     return {
@@ -511,6 +516,48 @@ export function createTensorRenderer({
       range: 'Trained signed weights; all three convolutions have no bias in this checkpoint.',
       count: locationCount + ' location filters + ' + pegCount + ' peg filters + ' + filterCount + ' link filters',
     };
+  }
+
+  function drawResidualBlock0Filters(residualWeights) {
+    if (!residualWeights?.conv1 || !residualWeights?.conv2) {
+      throw new Error('First residual block convolution weights are unavailable.');
+    }
+    const channels = FILTER_COUNT;
+    const kernelHeight = 5;
+    const kernelWidth = 5;
+    const columns = 8;
+    const rows = Math.ceil(FILTER_COUNT / columns);
+    const filterWidth = kernelWidth * filterSpacing;
+    const filterHeight = kernelHeight * filterSpacing;
+    const gapY = 0.3 * 1.4;
+    const gapZ = 0.3 * 1.4;
+    const startX = 34 - ((channels - 1) * filterSpacing) / 2;
+    const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
+    const bankStartZ = [14, 28];
+    for (const [index, name] of ['conv1', 'conv2'].entries()) {
+      const bank = residualWeights[name];
+      for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
+        const column = filter % columns;
+        const row = Math.floor(filter / columns);
+        drawFilterKernel(
+          filter,
+          startX,
+          startY - row * (filterHeight + gapY),
+          bankStartZ[index] + column * (filterWidth + gapZ),
+          bank,
+          kernelHeight, kernelWidth, channels,
+          String(filter + 1),
+          false,
+          true,
+          null,
+        );
+      }
+      addLabel(
+        'Residual block 1 · ' + name + ' · 48 × 5×5×48 filters',
+        [34, startY + filterHeight + 0.8, bankStartZ[index] + 3.5 * (filterWidth + gapZ)],
+        22,
+      );
+    }
   }
 
   function drawOutput() {
