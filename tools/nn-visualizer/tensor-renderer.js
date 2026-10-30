@@ -623,7 +623,6 @@ export function createTensorRenderer({
         residualHitTargets.push(hitTarget);
       }
     }
-    edgeGeometry.dispose();
     filterStaticGroup.add(residualPlaceholderGroup);
   }
 
