@@ -398,7 +398,7 @@ export function createTensorRenderer({
       description: 'Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, and the post-BN + abs first-layer feature tensor are shown together.',
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
       range: 'Feature range ' + featureInfo.range,
-      count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed weights) · ' + featureInfo.count + ' feature values',
+      count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + featureInfo.count + ' feature values',
     };
   }
 
