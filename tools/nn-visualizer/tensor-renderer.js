@@ -375,15 +375,17 @@ export function createTensorRenderer({
       }
     });
 
-    // Keep the representative link filter visible in the input scene.
-    drawFilters();
+    // Show all trained first-layer filters and their summed feature tensor
+    // alongside the game encoding, rather than switching between separate tabs.
+    const filterInfo = drawFilters();
+    const featureInfo = drawOutput();
 
     return {
-      title: 'Input tensors',
-      description: 'The game is encoded into peg and link tensors. Location coordinates and zero-cell markers persist between positions; only occupied peg/link tensor cells are updated.',
-      shape: '24 × 24 × (2 + 8 + 2)',
-      range: 'Binary game inputs and fixed coordinates',
-      count: '3 tensors · 6,912 cells',
+      title: 'First-layer network view',
+      description: 'Sample/effective boards, the three input tensors, trained peg/link/location convolution filters, and the summed 24×24×48 feature tensor are shown together. The feature tensor is the raw branch sum before batch normalization and the absolute-value activation.',
+      shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
+      range: 'Feature range ' + featureInfo.range,
+      count: '3 input tensors · ' + filterInfo.count + ' · ' + featureInfo.count + ' feature values',
     };
   }
 
@@ -514,14 +516,14 @@ export function createTensorRenderer({
     const values = flattenTensor(calculateConvolutionOutput());
     const stats = addValueCubes(
       values, BOARD_SIZE, BOARD_SIZE, FILTER_COUNT,
-      [-4.5, -4, -((FILTER_COUNT - 1) * 0.105) / 2],
+      [14, -4, -((FILTER_COUNT - 1) * 0.105) / 2],
       COLORS.output,
       { spacing: 0.34, cellSize: 0.26, channelGap: 0.105 },
     );
-    addLabel('Summed convolution output · 24×24×48', [0, 5, 2], 28);
+    addLabel('First-layer feature tensor · 24×24×48', [22.6, 5, 2], 28);
     return {
       title: 'Convolution output',
-      description: 'Three branch convolutions are summed into one feature tensor. Cube volume encodes absolute magnitude; a full-spectrum heat map runs from blue through cyan, green and yellow to red, with negative and positive values on opposite sides of the spectrum.',
+      description: 'The 48 channels are the sum of the trained peg, link, and location convolutions before batch normalization and the absolute-value activation. Color encodes the signed value.',
       shape: '24 × 24 × 48',
       range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4),
       count: stats.count.toLocaleString() + ' cells',
