@@ -4,7 +4,7 @@ import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } fr
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js?v=20261030-primary-bn-abs';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261030-residual0-filters';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -162,6 +162,10 @@ function createDemoData() {
     pegs:createTensor4(FILTER_COUNT,5,5,2,()=> (random()-0.5)*0.4),
     links:createTensor4(FILTER_COUNT,4,4,8,()=> (random()-0.5)*0.16),
     locations:createTensor4(FILTER_COUNT,1,1,2,()=> (random()-0.5)*0.3),
+    residualBlock0: {
+      conv1: createTensor4(FILTER_COUNT,5,5,FILTER_COUNT,()=> (random()-0.5)*0.08),
+      conv2: createTensor4(FILTER_COUNT,5,5,FILTER_COUNT,()=> (random()-0.5)*0.08),
+    },
   };
   const bias=Array.from({length:FILTER_COUNT},()=> (random()-0.5)*0.15);
   // Identity BN keeps the generated fallback numerically usable, but it is
@@ -606,6 +610,23 @@ async function loadTrainedLinkWeights() {
     demoModel.weights.links = result.weights.links;
     demoModel.weights.pegs = result.weights.pegs;
     demoModel.weights.locations = result.weights.locations;
+    const residualBlock0 = result.residual_block_0;
+    if (!residualBlock0 || residualBlock0.config?.channels !== FILTER_COUNT) {
+      throw new Error('The model-weight endpoint did not return a 48-channel first residual block.');
+    }
+    for (const name of ['conv1', 'conv2']) {
+      const layer = residualBlock0.layers?.[name];
+      const filters = residualBlock0.weights?.[name];
+      if (!layer || layer.filter_count !== FILTER_COUNT || layer.kernel_height !== 5 ||
+          layer.kernel_width !== 5 || layer.channels !== FILTER_COUNT ||
+          !Array.isArray(filters) || filters.length !== FILTER_COUNT ||
+          filters.some(filter => filter.length !== 5 || filter.some(row => row.length !== 5 ||
+            row.some(cell => cell.length !== FILTER_COUNT || cell.some(value => !Number.isFinite(Number(value))))))) {
+        throw new Error('The model-weight endpoint returned an invalid first residual ' + name + ' filter bank.');
+      }
+    }
+    demoModel.weights.residualBlock0 = residualBlock0.weights;
+    demoModel.residualBlock0Metadata = residualBlock0.layers;
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
