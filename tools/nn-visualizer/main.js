@@ -29,8 +29,8 @@ scene.fog = new THREE.Fog(0x0b1018, 75, 190);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
 // Start framed on the effective board, from its visible side. Keep this preset
 // shared with Reset camera so the initial and reset views are consistent.
-const INITIAL_CAMERA_POSITION = new THREE.Vector3(-42.97, 5.95, -13.66);
-const INITIAL_CAMERA_TARGET = new THREE.Vector3(-17.12, -0.89, 2.70);
+const INITIAL_CAMERA_POSITION = new THREE.Vector3(-60, 17, -24);
+const INITIAL_CAMERA_TARGET = new THREE.Vector3(1, -1, 0);
 camera.position.copy(INITIAL_CAMERA_POSITION);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -51,7 +51,7 @@ const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
 keyLight.position.set(20, 40, 30);
 scene.add(keyLight);
 
-let activeStep = 'inputs';
+const activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
 const staticSceneGroup = new THREE.Group();
 staticSceneGroup.name = 'persistent-static-board';
@@ -178,60 +178,54 @@ function calculateConvolutionOutput() {
   }
 
   const output = createTensor3(BOARD_SIZE, BOARD_SIZE, FILTER_COUNT);
-  const weights = data.weights;
-  const bias = data.bias || Array(FILTER_COUNT).fill(0);
+  const branches = [
+    { name: 'pegs', input: data.pegs, weights: data.weights.pegs, metadata: data.pegConvMetadata },
+    { name: 'links', input: data.links, weights: data.weights.links, metadata: data.linkConvMetadata },
+    { name: 'locations', input: data.locations, weights: data.weights.locations, metadata: data.locationConvMetadata },
+  ];
 
-  // This is a demo implementation of the sum of the three convolution
-  // branches. Confirm padding and bias placement against the PyTorch model.
-  for (let row = 0; row < BOARD_SIZE; row += 1) {
-    for (let col = 0; col < BOARD_SIZE; col += 1) {
-      for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
-        let sum = Number(bias[filter] || 0);
+  // The checkpoint uses TensorFlow-style SAME padding. For even-sized kernels,
+  // the extra padding cell belongs on the bottom/right (before = floor(total/2)).
+  for (const branch of branches) {
+    const kernelHeight = branch.weights[0].length;
+    const kernelWidth = branch.weights[0][0].length;
+    const channels = branch.weights[0][0][0].length;
+    const padTop = Math.floor((kernelHeight - 1) / 2);
+    const padLeft = Math.floor((kernelWidth - 1) / 2);
 
-        // 5x5 link convolution with zero padding.
-        for (let kernelRow = 0; kernelRow < 5; kernelRow += 1) {
-          for (let kernelCol = 0; kernelCol < 5; kernelCol += 1) {
-            const inputRow = row + kernelRow - 2;
-            const inputCol = col + kernelCol - 2;
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
+          let sum = branch.metadata?.has_bias
+            ? Number(branch.metadata.bias[filter] || 0)
+            : 0;
 
-            if (
-              inputRow < 0 ||
-              inputRow >= BOARD_SIZE ||
-              inputCol < 0 ||
-              inputCol >= BOARD_SIZE
-            ) {
-              continue;
-            }
+          for (let kernelRow = 0; kernelRow < kernelHeight; kernelRow += 1) {
+            const inputRow = row + kernelRow - padTop;
+            if (inputRow < 0 || inputRow >= BOARD_SIZE) continue;
 
-            for (let channel = 0; channel < 8; channel += 1) {
-              sum +=
-                Number(data.links[inputRow][inputCol][channel]) *
-                Number(
-                  weights.links[filter][kernelRow][kernelCol][channel],
-                );
+            for (let kernelCol = 0; kernelCol < kernelWidth; kernelCol += 1) {
+              const inputCol = col + kernelCol - padLeft;
+              if (inputCol < 0 || inputCol >= BOARD_SIZE) continue;
+
+              for (let channel = 0; channel < channels; channel += 1) {
+                sum += Number(branch.input[inputRow][inputCol][channel]) *
+                  Number(branch.weights[filter][kernelRow][kernelCol][channel]);
+              }
             }
           }
-        }
 
-        // 1x1 peg and location branches.
-        for (let channel = 0; channel < 2; channel += 1) {
-          sum +=
-            Number(data.pegs[row][col][channel]) *
-            Number(weights.pegs[filter][0][0][channel]);
-          sum +=
-            Number(data.locations[row][col][channel]) *
-            Number(weights.locations[filter][0][0][channel]);
+          output[row][col][filter] += sum;
         }
-
-        output[row][col][filter] = sum;
       }
     }
   }
 
+  // This is the summed first-layer convolution output before the model's
+  // batch-normalization and absolute-value activation.
   cachedOutput = { source: data, tensor: output };
   return output;
 }
-
 
 function clearSceneGroup() {
   scene.remove(sceneGroup);
@@ -408,10 +402,10 @@ const { drawInputs, drawFilters, drawOutput } =
 
 function renderStep() {
   const renderStarted = performance.now();
-  staticSceneGroup.visible = activeStep === 'inputs';
-  inputStaticTensorGroup.visible = activeStep === 'inputs';
-  inputDynamicTensorGroup.visible = activeStep === 'inputs';
-  filterStaticGroup.visible = activeStep === 'inputs' || activeStep === 'filters';
+  staticSceneGroup.visible = true;
+  inputStaticTensorGroup.visible = true;
+  inputDynamicTensorGroup.visible = true;
+  filterStaticGroup.visible = true;
   // Reset the label pool before detaching the previous scene; labels are
   // reattached from the pool as the new scene is constructed.
   beginLabelFrame();
@@ -419,16 +413,8 @@ function renderStep() {
   clearSceneGroup();
   const clearMs = performance.now() - clearStarted;
 
-  let info;
   const drawStarted = performance.now();
-
-  if (activeStep === 'inputs') {
-    info = drawInputs();
-  } else if (activeStep === 'filters') {
-    info = drawFilters();
-  } else {
-    info = drawOutput();
-  }
+  const info = drawInputs();
   const drawMs = performance.now() - drawStarted;
 
   document.querySelector('#view-title').textContent = info.title;
@@ -437,11 +423,6 @@ function renderStep() {
   document.querySelector('#value-range').textContent = info.range;
   document.querySelector('#cube-count').textContent = info.count;
 
-  document.querySelectorAll('.step-tab').forEach((button) => {
-    const selected = button.dataset.step === activeStep;
-    button.classList.toggle('active', selected);
-    button.setAttribute('aria-selected', String(selected));
-  });
 
   loading.style.display = 'none';
 
@@ -779,12 +760,6 @@ renderer.domElement.addEventListener('click', (event) => {
   handleSampleBoardClick(event);
 });
 
-document.querySelectorAll('.step-tab').forEach((button) => {
-  button.addEventListener('click', () => {
-    activeStep = button.dataset.step;
-    renderStep();
-  });
-});
 
 document.querySelector('#demo-button').addEventListener('click', async () => {
   trajectoryEditor.value = DEMO_TRAJECTORY;
@@ -1016,7 +991,7 @@ function animate() {
 }
 
 async function initializeVisualizer() {
-  // Load the trained link convolution weights before the first scene render.
+  // Load the trained peg, link, and location convolution weights before rendering.
   await loadTrainedLinkWeights();
   resizeRenderer();
   updateCameraCoordinates();
