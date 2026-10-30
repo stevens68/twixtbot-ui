@@ -27,8 +27,8 @@ scene.background = new THREE.Color(0x0b1018);
 scene.fog = new THREE.Fog(0x0b1018, 75, 190);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
-// Start framed on the effective board, from its visible side. Keep this preset
-// shared with Reset camera so the initial and reset views are consistent.
+// Frame the boards, inputs, filter banks, and feature tensor together. Keep
+// this preset shared with Reset camera so both views show the complete scene.
 const INITIAL_CAMERA_POSITION = new THREE.Vector3(-60, 17, -24);
 const INITIAL_CAMERA_TARGET = new THREE.Vector3(1, -1, 0);
 camera.position.copy(INITIAL_CAMERA_POSITION);
@@ -952,7 +952,7 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gamePly = 0;
     gameLoaded = true;
     backendSnapshot = null;
-    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata };
+    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata };
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
