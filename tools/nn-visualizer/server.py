@@ -15,7 +15,7 @@ import time
 import torch
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[2]
 VISUALIZER = Path(__file__).resolve().parent
@@ -28,6 +28,61 @@ from src.files import parse_t1_file
 from src.constants import MODEL_FOLDER
 
 
+_CHECKPOINT_CACHE = {"mtime_ns": None, "value": None}
+
+
+def load_checkpoint():
+    """Load the model once per checkpoint file version for on-demand block requests."""
+    modified = Path(MODEL_FOLDER).stat().st_mtime_ns
+    if _CHECKPOINT_CACHE["value"] is None or _CHECKPOINT_CACHE["mtime_ns"] != modified:
+        _CHECKPOINT_CACHE["value"] = torch.load(
+            MODEL_FOLDER, map_location="cpu", weights_only=True
+        )
+        _CHECKPOINT_CACHE["mtime_ns"] = modified
+    return _CHECKPOINT_CACHE["value"]
+
+
+def residual_block_payload(checkpoint, block_index):
+    state_dict = checkpoint["state_dict"]
+    config = checkpoint.get("config", {})
+    block_count = int(config.get("blocks", 0))
+    if block_index < 0 or block_index >= block_count:
+        raise ValueError(
+            f"Residual block index must be between 0 and {block_count - 1}."
+        )
+
+    layers = {}
+    weights = {}
+    for name in ("conv1", "conv2"):
+        weight_key = f"blocks.{block_index}.{name}.weight"
+        if weight_key not in state_dict:
+            raise KeyError(f"Model checkpoint does not contain {weight_key}.")
+        bank = (
+            state_dict[weight_key]
+            .detach()
+            .cpu()
+            .permute(0, 2, 3, 1)
+            .tolist()
+        )
+        weights[name] = bank
+        layers[name] = {
+            "name": f"blocks.{block_index}.{name}",
+            "weight_key": weight_key,
+            "filter_count": len(bank),
+            "kernel_height": len(bank[0]),
+            "kernel_width": len(bank[0][0]),
+            "channels": len(bank[0][0][0]),
+            "has_bias": f"blocks.{block_index}.{name}.bias" in state_dict,
+            "source": str(Path(MODEL_FOLDER).relative_to(ROOT)),
+        }
+    return {
+        "index": block_index,
+        "config": {"channels": int(config.get("channels", 0))},
+        "layers": layers,
+        "weights": weights,
+    }
+
+
 class Handler(SimpleHTTPRequestHandler):
     # Keep local browser fetches on one TCP connection instead of paying a new
     # connection setup for every step through a long game. Every POST response
@@ -37,11 +92,35 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(VISUALIZER), **kwargs)
 
     def do_GET(self):
-        endpoint = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        endpoint = parsed.path
+        if endpoint == "/api/residual-block":
+            try:
+                values = parse_qs(parsed.query).get("index", [])
+                if len(values) != 1:
+                    raise ValueError("Exactly one residual block index is required.")
+                block_index = int(values[0])
+                payload = residual_block_payload(load_checkpoint(), block_index)
+                body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as exc:
+                body = json.dumps({"error": str(exc)}).encode("utf-8")
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(body)
+            return
         if endpoint != "/api/weights":
             return super().do_GET()
         try:
-            checkpoint = torch.load(MODEL_FOLDER, map_location="cpu", weights_only=True)
+            checkpoint = load_checkpoint()
             state_dict = checkpoint["state_dict"]
             def read_conv_layer(name):
                 weight_key = name + ".weight"
@@ -106,7 +185,9 @@ class Handler(SimpleHTTPRequestHandler):
                     "locations": locations_weights,
                 },
                 "primary_bn": primary_bn,
+                "residual_block_count": int(config.get("blocks", 0)),
                 "residual_block_0": {
+                    "index": 0,
                     "config": {"channels": int(config.get("channels", 0))},
                     "layers": {
                         "conv1": residual_conv1_layer,
