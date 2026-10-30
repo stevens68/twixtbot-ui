@@ -67,6 +67,15 @@ class Handler(SimpleHTTPRequestHandler):
             pegs_layer, peg_weights = read_conv_layer("pegs")
             locations_layer, locations_weights = read_conv_layer("location")
 
+            # Expose both convolutions from the first residual block. The
+            # checkpoint stores Conv2d weights as [out, in, height, width];
+            # the browser renderer consumes [filter, row, column, channel].
+            config = checkpoint.get("config", {})
+            if int(config.get("blocks", 0)) < 1:
+                raise ValueError("The checkpoint does not contain a residual block.")
+            residual_conv1_layer, residual_conv1_weights = read_conv_layer("blocks.0.conv1")
+            residual_conv2_layer, residual_conv2_weights = read_conv_layer("blocks.0.conv2")
+
             # The first three convolution branches are summed before this
             # BatchNorm2d layer, then the model applies torch.abs().
             bn_prefix = "primary_bn."
@@ -97,6 +106,17 @@ class Handler(SimpleHTTPRequestHandler):
                     "locations": locations_weights,
                 },
                 "primary_bn": primary_bn,
+                "residual_block_0": {
+                    "config": {"channels": int(config.get("channels", 0))},
+                    "layers": {
+                        "conv1": residual_conv1_layer,
+                        "conv2": residual_conv2_layer,
+                    },
+                    "weights": {
+                        "conv1": residual_conv1_weights,
+                        "conv2": residual_conv2_weights,
+                    },
+                },
             }, separators=(",", ":")).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
