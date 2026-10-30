@@ -164,7 +164,16 @@ function createDemoData() {
     locations:createTensor4(FILTER_COUNT,1,1,2,()=> (random()-0.5)*0.3),
   };
   const bias=Array.from({length:FILTER_COUNT},()=> (random()-0.5)*0.15);
-  return {pegs,links,locations,weights,bias,isDemo:true};
+  // Identity BN keeps the generated fallback numerically usable, but it is
+  // explicitly a demo and is never confused with checkpoint inference.
+  const primaryBn = {
+    weight: Array(FILTER_COUNT).fill(1),
+    bias: Array(FILTER_COUNT).fill(0),
+    running_mean: Array(FILTER_COUNT).fill(0),
+    running_var: Array(FILTER_COUNT).fill(1),
+    eps: 1e-3,
+  };
+  return {pegs,links,locations,weights,bias,primaryBn,isDemo:true};
 }
 
 /**
@@ -221,8 +230,27 @@ function calculateConvolutionOutput() {
     }
   }
 
-  // This is the summed first-layer convolution output before the model's
-  // batch-normalization and absolute-value activation.
+  // Match TwixtNet.forward exactly: sum the three convolution branches,
+  // apply primary BatchNorm2d in inference mode, then torch.abs().
+  const bn = data.primaryBn;
+  if (!bn) {
+    throw new Error('Primary batch-normalization parameters are unavailable; refusing to label raw convolution sums as model features.');
+  }
+  const epsilon = Number(bn.eps ?? 1e-3);
+  for (let row = 0; row < BOARD_SIZE; row += 1) {
+    for (let col = 0; col < BOARD_SIZE; col += 1) {
+      for (let channel = 0; channel < FILTER_COUNT; channel += 1) {
+        const variance = Number(bn.running_var[channel]);
+        const normalized =
+          (output[row][col][channel] - Number(bn.running_mean[channel])) /
+          Math.sqrt(variance + epsilon);
+        const scaled = normalized * Number(bn.weight[channel]) +
+          Number(bn.bias[channel]);
+        output[row][col][channel] = Math.abs(scaled);
+      }
+    }
+  }
+
   cachedOutput = { source: data, tensor: output };
   return output;
 }
@@ -581,7 +609,16 @@ async function loadTrainedLinkWeights() {
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
-    modelWeightStatus = 'Trained peg/link/location weights and convolution biases loaded from ' + result.layers.links.source +
+    const primaryBn = result.primary_bn;
+    for (const key of ['weight', 'bias', 'running_mean', 'running_var']) {
+      if (!Array.isArray(primaryBn?.[key]) ||
+          primaryBn[key].length !== FILTER_COUNT ||
+          primaryBn[key].some((value) => !Number.isFinite(Number(value)))) {
+        throw new Error('The model-weight endpoint returned invalid primary batch-normalization parameter: ' + key);
+      }
+    }
+    demoModel.primaryBn = primaryBn;
+    modelWeightStatus = 'Trained peg/link/location weights and primary batch-normalization parameters loaded from ' + result.layers.links.source +
       ' (pegs: ' + result.layers.pegs.filter_count + ' filters, bias=' +
       (result.layers.pegs.has_bias ? 'loaded' : 'none') + '; links: ' +
       result.layers.links.filter_count + ' filters, bias=' +
@@ -877,6 +914,8 @@ async function loadGamePosition(ply) {
     isDemo: false,
     linkConvMetadata: demoModel.linkConvMetadata,
     pegConvMetadata: demoModel.pegConvMetadata,
+    locationConvMetadata: demoModel.locationConvMetadata,
+    primaryBn: demoModel.primaryBn,
   };
 
   gamePly = ply;
