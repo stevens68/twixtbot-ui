@@ -4,7 +4,7 @@ import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } fr
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js?v=20261030-residual0-filters-v2';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261031-residual-instancing-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -419,8 +419,9 @@ const { logLinkEncodingDiagnostic, logFullInputTensorValidation } =
 
 
 
-const { drawInputs, drawFilters, drawOutput } =
-  createTensorRenderer({
+const {
+  drawInputs, drawFilters, drawOutput, setResidualFiltersVisible,
+} = createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
     createTensor3, getSceneGroup: () => sceneGroup, getData: () => data,
     getInputStaticGroup: () => inputStaticTensorGroup,
@@ -666,7 +667,29 @@ function updateCameraCoordinates() {
     '\nTarget  x ' + fmt(controls.target.x) + '  y ' + fmt(controls.target.y) + '  z ' + fmt(controls.target.z);
 }
 
-controls.addEventListener('change', updateCameraCoordinates);
+// Hide the dense residual weight cubes during camera interaction, then
+// restore them after OrbitControls has finished its damping motion. The
+// simpler first-layer banks and all tensor/board geometry remain visible.
+let residualRestoreTimer = null;
+function deferResidualFilterRestore() {
+  if (residualRestoreTimer !== null) clearTimeout(residualRestoreTimer);
+  residualRestoreTimer = setTimeout(() => {
+    setResidualFiltersVisible(true);
+    residualRestoreTimer = null;
+  }, 180);
+}
+controls.addEventListener('start', () => {
+  if (residualRestoreTimer !== null) {
+    clearTimeout(residualRestoreTimer);
+    residualRestoreTimer = null;
+  }
+  setResidualFiltersVisible(false);
+});
+controls.addEventListener('change', () => {
+  updateCameraCoordinates();
+  deferResidualFilterRestore();
+});
+controls.addEventListener('end', deferResidualFilterRestore);
 
 function resetCamera() {
   camera.position.copy(INITIAL_CAMERA_POSITION);
