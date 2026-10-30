@@ -16,6 +16,10 @@ export function createTensorRenderer({
   ];
   const inputSpacing = 0.33;
   const inputCellSize = 0.22;
+  // Shared dimensions for every convolution filter and the feature tensor.
+  const filterScale = 0.5832;
+  const filterSpacing = inputSpacing * filterScale;
+  const filterCubeSize = inputCellSize * filterScale * 0.72;
   // Keep zero-valued cells visible, but make them much smaller than active cells.
   const minimumCubeScale = 0.08;
 
@@ -231,9 +235,9 @@ export function createTensorRenderer({
   ) {
     // Reduce convolution-filter dimensions and internal gaps by a further 20%.
     // Keep these dimensions consistent across peg/link filters.
-    const spacing = inputSpacing * 0.5832;
-    const cellSize = inputCellSize * 0.5832;
-    const channelDepth = inputSpacing * 0.5832;
+    const spacing = filterSpacing;
+    const cubeSize = filterCubeSize;
+    const channelDepth = filterSpacing;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
       // with channels along X, rows along Y, and columns along Z.
@@ -253,8 +257,6 @@ export function createTensorRenderer({
         for (let col = 0; col < kernelWidth; col += 1) {
           for (let channel = 0; channel < channels; channel += 1) {
             const value = Number(weights[filterIndex][row][col][channel]);
-            // Reduce each filter cube's side by a further 20%.
-            const cubeSize = cellSize * 0.72;
             transform.position.set(
               originX + channel * channelDepth,
               originY + (kernelHeight - 1 - row) * spacing,
@@ -286,14 +288,14 @@ export function createTensorRenderer({
           }),
         );
         // Bias sits beside the channel stack, with twice the normal gap.
-        const doubleGap = 2 * (inputSpacing - inputCellSize) * 0.5832;
+        const doubleGap = 2 * (inputSpacing - inputCellSize) * filterScale;
         biasCube.position.set(
           originX,
           originY + ((kernelHeight - 1) * spacing) / 2,
           originZ + kernelWidth * spacing + doubleGap,
         );
         // Color shows sign; side length also reflects absolute magnitude.
-        biasCube.scale.setScalar(cellSize * 0.72 * biasMagnitudeScale);
+        biasCube.scale.setScalar(cubeSize * biasMagnitudeScale);
         biasCube.name = 'filter-' + filterIndex + '-bias';
         biasCube.userData.biasValue = biasValue;
         filterStaticGroup.add(biasCube);
@@ -404,7 +406,6 @@ export function createTensorRenderer({
     const kernelWidth = weights.links[0][0].length;
     const channels = weights.links[0][0][0].length;
     const rows = Math.ceil(filterCount / columns);
-    const filterSpacing = inputSpacing * 0.5832;
     const filterWidth = kernelWidth * filterSpacing;
     const filterHeight = kernelHeight * filterSpacing;
     const gapZ = 0.3;
@@ -518,7 +519,11 @@ export function createTensorRenderer({
       values, BOARD_SIZE, BOARD_SIZE, FILTER_COUNT,
       [14, -4, -((FILTER_COUNT - 1) * 0.105) / 2],
       COLORS.output,
-      { spacing: 0.34, cellSize: 0.26, channelGap: 0.105 },
+      {
+        spacing: filterSpacing,
+        cellSize: filterCubeSize / 0.9,
+        channelGap: filterSpacing - filterCubeSize,
+      },
     );
     addLabel('First-layer feature tensor · 24×24×48', [22.6, 5, 2], 28);
     return {
