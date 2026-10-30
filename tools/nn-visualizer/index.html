@@ -46,7 +46,7 @@
 <body>
   <header class="topbar">
     <div>
-      <div class="brand-line"><h1>TWIXTBOT MODEL EXPLORER</h1><p class="subtitle">Inspect the game encoding, trained first-layer filters, first residual block, and 24×24×48 feature tensor in one scene.</p></div>
+      <div class="brand-line"><h1>TWIXTBOT MODEL EXPLORER</h1><p class="subtitle">Inspect the game encoding, trained first-layer filters, all 20 residual blocks, and the 24×24×48 feature tensor in one scene.</p></div>
     </div>
   </header>
 
@@ -103,7 +103,7 @@ Target  x —  y —  z —</div>
       <div class="stat"><span>Tensor shape</span><strong id="tensor-shape">24 × 24 × 2</strong></div>
       <div class="stat"><span>Value range</span><strong id="value-range">0 … 1</strong></div>
       <div class="stat"><span>Visible cubes</span><strong id="cube-count">—</strong></div>
-      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan. Feature values are shown as a heat map. Drag to orbit · scroll to zoom · right-drag to pan.</p>
+      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan · click a residual-block cube to inspect both convolutions.</p>
       <details>
         <summary>Input JSON format</summary>
         <p>Provide <code>pegs</code>, <code>links</code>, and <code>locations</code> as nested arrays in <code>[row][column][channel]</code> order. Optional <code>weights</code> enable convolution calculations; otherwise demo weights are generated.</p>
