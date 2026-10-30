@@ -42,7 +42,9 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 // A larger damping factor dissipates OrbitControls inertia more quickly after
 // the pointer is released, while keeping rotation smooth during the drag.
-controls.dampingFactor = 0.16;
+// Dissipate the post-drag inertia quickly so the detailed residual banks
+// can return without a long period of invisible-but-moving camera updates.
+controls.dampingFactor = 0.3;
 controls.target.copy(INITIAL_CAMERA_TARGET);
 
 scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x253041, 2));
@@ -685,10 +687,10 @@ controls.addEventListener('start', () => {
   }
   setResidualFiltersVisible(false);
 });
-controls.addEventListener('change', () => {
-  updateCameraCoordinates();
-  deferResidualFilterRestore();
-});
+controls.addEventListener('change', updateCameraCoordinates);
+// OrbitControls emits "change" throughout damping, not just while the user is
+// dragging. Do not restart the visibility timer on every such frame: that can
+// postpone the residual banks for seconds after motion is no longer noticeable.
 controls.addEventListener('end', deferResidualFilterRestore);
 
 function resetCamera() {
