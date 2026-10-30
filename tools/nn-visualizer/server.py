@@ -66,6 +66,25 @@ class Handler(SimpleHTTPRequestHandler):
             links_layer, link_weights = read_conv_layer("links")
             pegs_layer, peg_weights = read_conv_layer("pegs")
             locations_layer, locations_weights = read_conv_layer("location")
+
+            # The first three convolution branches are summed before this
+            # BatchNorm2d layer, then the model applies torch.abs().
+            bn_prefix = "primary_bn."
+            bn_keys = {
+                "weight": bn_prefix + "weight",
+                "bias": bn_prefix + "bias",
+                "running_mean": bn_prefix + "running_mean",
+                "running_var": bn_prefix + "running_var",
+            }
+            missing_bn = [key for key in bn_keys.values() if key not in state_dict]
+            if missing_bn:
+                raise KeyError("Model checkpoint is missing primary batch-normalization values: " + ", ".join(missing_bn))
+            primary_bn = {
+                name: state_dict[key].detach().cpu().tolist()
+                for name, key in bn_keys.items()
+            }
+            primary_bn["eps"] = 1e-3
+
             body = json.dumps({
                 "layers": {
                     "links": links_layer,
@@ -77,6 +96,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "pegs": peg_weights,
                     "locations": locations_weights,
                 },
+                "primary_bn": primary_bn,
             }, separators=(",", ":")).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
