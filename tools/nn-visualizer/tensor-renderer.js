@@ -384,10 +384,10 @@ export function createTensorRenderer({
 
     return {
       title: 'First-layer network view',
-      description: 'Sample/effective boards, the three input tensors, trained peg/link/location convolution filters, and the summed 24×24×48 feature tensor are shown together. The feature tensor is the raw branch sum before batch normalization and the absolute-value activation.',
+      description: 'Sample/effective boards, the three input tensors, trained first-layer filters, both 48-channel convolution filter banks from residual block 1, and the post-BN + abs first-layer feature tensor are shown together.',
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
       range: 'Feature range ' + featureInfo.range,
-      count: '3 input tensors · ' + filterInfo.count + ' · ' + featureInfo.count + ' feature values',
+      count: '3 input tensors · ' + filterInfo.count + ' · ' + featureInfo.residualCount + ' residual filters · ' + featureInfo.count + ' feature values',
     };
   }
 
@@ -509,12 +509,13 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained location, peg, and link convolution kernels from the PyTorch checkpoint. Each bank uses 8 columns and 1-based filter labels; the location bank is 1×1×2, the peg bank 5×5×2, and the link bank 4×4×8.',
+      description: 'Trained first-layer kernels plus both convolutions from residual block 1. Every bank uses 8 columns and 1-based filter labels. The residual conv1 and conv2 banks each contain 48 filters of shape 5×5×48, rendered with the same cubes and spacing as the peg filters.',
       shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
         '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
         '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
       range: 'Trained signed weights; all three convolutions have no bias in this checkpoint.',
       count: locationCount + ' location filters + ' + pegCount + ' peg filters + ' + filterCount + ' link filters',
+      residualCount: 2 * FILTER_COUNT,
     };
   }
 
