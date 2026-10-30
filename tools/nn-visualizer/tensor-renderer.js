@@ -517,7 +517,7 @@ export function createTensorRenderer({
     const values = flattenTensor(calculateConvolutionOutput());
     const stats = addValueCubes(
       values, BOARD_SIZE, BOARD_SIZE, FILTER_COUNT,
-      [14, -4, -((FILTER_COUNT - 1) * 0.105) / 2],
+      [20, -2.5, -((FILTER_COUNT - 1) * 0.105) / 2],
       COLORS.output,
       {
         spacing: filterSpacing,
