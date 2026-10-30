@@ -525,10 +525,10 @@ export function createTensorRenderer({
         channelGap: filterSpacing - filterCubeSize,
       },
     );
-    addLabel('First-layer feature tensor · 24×24×48', [22.6, 5, 2], 28);
+    addLabel('Post-BN + abs feature tensor · 24×24×48', [22.6, 5, 2], 28);
     return {
       title: 'Convolution output',
-      description: 'The 48 channels are the sum of the trained peg, link, and location convolutions before batch normalization and the absolute-value activation. Color encodes the signed value.',
+      description: 'The 48 channels show the trained peg + link + location convolution sum, followed by checkpoint primary batch normalization (inference running statistics, scale and offset) and absolute-value activation. Color encodes the resulting nonnegative magnitude.',
       shape: '24 × 24 × 48',
       range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4),
       count: stats.count.toLocaleString() + ' cells',
