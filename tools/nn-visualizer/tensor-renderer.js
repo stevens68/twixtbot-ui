@@ -398,7 +398,7 @@ export function createTensorRenderer({
       description: 'Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, and the post-BN + abs first-layer feature tensor are shown together.',
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
       range: 'Feature range ' + featureInfo.range,
-      count: '3 input tensors · ' + filterInfo.count + ' · ' + featureInfo.residualCount + ' residual filters · ' + featureInfo.count + ' feature values',
+      count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed weights) · ' + featureInfo.count + ' feature values',
     };
   }
 
@@ -545,13 +545,15 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained first-layer kernels plus both convolutions from residual block 1. Every bank uses 8 columns and 1-based filter labels. The residual conv1 and conv2 banks each contain 48 filters of shape 5×5×48, rendered with the same cubes and spacing as the peg filters.',
+      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block is represented by one wireframe cube; the selected block expands into both 48-filter 5×5×48 convolution banks. Click another cube to inspect that block.',
       shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
         '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
         '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
       range: 'Trained signed weights; all three convolutions have no bias in this checkpoint.',
       count: locationCount + ' location filters + ' + pegCount + ' peg filters + ' + filterCount + ' link filters',
       residualCount: 2 * FILTER_COUNT,
+      residualBlockCount: blockCount,
+      selectedResidualBlockIndex,
     };
   }
 
