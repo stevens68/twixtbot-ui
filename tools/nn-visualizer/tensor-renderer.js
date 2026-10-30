@@ -220,16 +220,23 @@ export function createTensorRenderer({
   }
 
   function clearFilterGeometry() {
+    const geometries = new Set();
+    const materials = new Set();
     for (const child of [...filterStaticGroup.children]) {
       filterStaticGroup.remove(child);
       child.traverse((object) => {
-        if (!object.material) return;
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((material) => material?.dispose());
+        if (object.geometry && object.geometry !== cubeGeometry) geometries.add(object.geometry);
+        if (object.material) {
+          const assigned = Array.isArray(object.material) ? object.material : [object.material];
+          assigned.forEach((material) => material && materials.add(material));
+        }
       });
     }
+    geometries.forEach((geometry) => geometry.dispose());
+    materials.forEach((material) => material.dispose());
     residualFilterGroup = null;
     residualPlaceholderGroup = null;
+    residualPlaceholderDirty = false;
     residualHitTargets = [];
   }
 
@@ -511,8 +518,19 @@ export function createTensorRenderer({
       selectedResidualBlockIndex = 0;
     }
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
-    if (rebuild || !residualPlaceholderGroup) {
+    if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
+      if (residualPlaceholderGroup) {
+        filterStaticGroup.remove(residualPlaceholderGroup);
+        residualPlaceholderGroup.traverse((object) => {
+          object.geometry?.dispose();
+          if (object.material) {
+            const materials = Array.isArray(object.material) ? object.material : [object.material];
+            materials.forEach((material) => material?.dispose());
+          }
+        });
+      }
       createResidualBlockPlaceholders(blockCount);
+      residualPlaceholderDirty = false;
     }
     if (rebuild || residualGeometryDirty) {
       disposeResidualDetail();
@@ -539,6 +557,7 @@ export function createTensorRenderer({
 
   let residualFilterGroup = null;
   let residualPlaceholderGroup = null;
+  let residualPlaceholderDirty = false;
   let residualHitTargets = [];
   let selectedResidualBlockIndex = 0;
   let selectedResidualWeights = null;
@@ -555,7 +574,8 @@ export function createTensorRenderer({
     const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
     boxGeometry.dispose();
 
-    for (let index = 1; index < blockCount; index += 1) {
+    for (let index = 0; index < blockCount; index += 1) {
+      if (index === selectedResidualBlockIndex) continue;
       // A compact chain makes the depth of the residual stack visible without
       // allocating any of the millions of weight-cube instances.
       const position = new THREE.Vector3(39 + (index - 1) * 2.05, -4.8, 35);
@@ -694,7 +714,8 @@ export function createTensorRenderer({
   }
 
   function drawResidualPlaceholderLabels(blockCount) {
-    for (let index = 1; index < blockCount; index += 1) {
+    for (let index = 0; index < blockCount; index += 1) {
+      if (index === selectedResidualBlockIndex) continue;
       addLabel(
         'Block ' + index,
         [39 + (index - 1) * 2.05, -3.75, 35],
@@ -709,6 +730,7 @@ export function createTensorRenderer({
     selectedResidualBlockIndex = blockIndex;
     selectedResidualWeights = weights;
     residualGeometryDirty = true;
+    residualPlaceholderDirty = true;
   }
 
   function pickResidualBlock(event, camera, domElement) {
@@ -726,7 +748,8 @@ export function createTensorRenderer({
   }
 
   function setResidualFiltersVisible(visible) {
-    if (residualFilterGroup) residualFilterGroup.visible = Boolean(visible);
+    residualFiltersVisible = Boolean(visible);
+    if (residualFilterGroup) residualFilterGroup.visible = residualFiltersVisible;
   }
 
   function drawOutput() {
