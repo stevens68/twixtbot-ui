@@ -68,6 +68,9 @@ let backendSnapshot = null;
 const demoModel = createDemoData();
 let data = demoModel;
 let modelWeightStatus = 'Using generated demo weights.';
+const residualBlockWeightCache = new Map();
+let selectedResidualBlockIndex = 0;
+let residualSelectionPending = false;
 let cachedOutput = null;
 let gameMoves = [];
 let gamePly = 0;
@@ -179,7 +182,7 @@ function createDemoData() {
     running_var: Array(FILTER_COUNT).fill(1),
     eps: 1e-3,
   };
-  return {pegs,links,locations,weights,bias,primaryBn,isDemo:true};
+  return {pegs,links,locations,weights,bias,primaryBn,residualBlockCount:20,isDemo:true};
 }
 
 /**
@@ -423,6 +426,7 @@ const { logLinkEncodingDiagnostic, logFullInputTensorValidation } =
 
 const {
   drawInputs, drawFilters, drawOutput, setResidualFiltersVisible,
+  setSelectedResidualBlock, pickResidualBlock,
 } = createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
     createTensor3, getSceneGroup: () => sceneGroup, getData: () => data,
@@ -630,6 +634,9 @@ async function loadTrainedLinkWeights() {
     }
     demoModel.weights.residualBlock0 = residualBlock0.weights;
     demoModel.residualBlock0Metadata = residualBlock0.layers;
+    demoModel.residualBlockCount = Number(result.residual_block_count) || 1;
+    residualBlockWeightCache.set(0, residualBlock0.weights);
+    selectedResidualBlockIndex = 0;
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
@@ -657,6 +664,63 @@ async function loadTrainedLinkWeights() {
   } catch (error) {
     modelWeightStatus = 'Using generated demo weights; trained weights and biases could not be loaded: ' + error.message;
     console.warn('[NN visualizer] ' + modelWeightStatus);
+  }
+}
+
+function validateResidualBlockPayload(payload, expectedIndex) {
+  if (payload?.index !== expectedIndex || payload.config?.channels !== FILTER_COUNT) {
+    throw new Error('The server returned unexpected metadata for residual block ' + expectedIndex + '.');
+  }
+  for (const name of ['conv1', 'conv2']) {
+    const layer = payload.layers?.[name];
+    const filters = payload.weights?.[name];
+    if (!layer || layer.filter_count !== FILTER_COUNT || layer.kernel_height !== 5 ||
+        layer.kernel_width !== 5 || layer.channels !== FILTER_COUNT ||
+        !Array.isArray(filters) || filters.length !== FILTER_COUNT ||
+        filters.some(filter => filter.length !== 5 || filter.some(row => row.length !== 5 ||
+          row.some(cell => cell.length !== FILTER_COUNT ||
+            cell.some(value => !Number.isFinite(Number(value))))))) {
+      throw new Error('The server returned an invalid ' + name + ' filter bank for residual block ' + expectedIndex + '.');
+    }
+  }
+  return payload.weights;
+}
+
+async function selectResidualBlock(blockIndex) {
+  if (residualSelectionPending || blockIndex === selectedResidualBlockIndex) return;
+  if (blockIndex < 0 || blockIndex >= Number(data.residualBlockCount || 1)) return;
+  residualSelectionPending = true;
+  status.textContent = 'Loading residual block ' + blockIndex + '…';
+  try {
+    let weights = residualBlockWeightCache.get(blockIndex);
+    if (!weights) {
+      const response = await fetch('/api/residual-block?index=' + encodeURIComponent(blockIndex), {
+        cache: 'no-store',
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || response.statusText);
+      weights = validateResidualBlockPayload(payload, blockIndex);
+      residualBlockWeightCache.set(blockIndex, weights);
+      // Bound memory usage while retaining the initial block and recent choices.
+      while (residualBlockWeightCache.size > 4) {
+        const oldest = residualBlockWeightCache.keys().next().value;
+        if (oldest === 0 || oldest === blockIndex) {
+          const next = [...residualBlockWeightCache.keys()].find((key) => key !== 0 && key !== blockIndex);
+          if (next === undefined) break;
+          residualBlockWeightCache.delete(next);
+        } else {
+          residualBlockWeightCache.delete(oldest);
+        }
+      }
+    }
+    selectedResidualBlockIndex = blockIndex;
+    setSelectedResidualBlock(blockIndex, weights);
+    renderStep();
+    status.textContent = 'Showing residual block ' + blockIndex + ' (both convolutions).';
+  } catch (error) {
+    status.textContent = 'Could not load residual block ' + blockIndex + ': ' + error.message;
+  } finally {
+    residualSelectionPending = false;
   }
 }
 
@@ -838,6 +902,11 @@ renderer.domElement.addEventListener('pointercancel', () => {
 renderer.domElement.addEventListener('click', (event) => {
   if (boardPointerDragged) {
     boardPointerDragged = false;
+    return;
+  }
+  const residualBlockIndex = pickResidualBlock(event, camera, renderer.domElement);
+  if (residualBlockIndex !== null) {
+    selectResidualBlock(residualBlockIndex);
     return;
   }
   handleSampleBoardClick(event);
