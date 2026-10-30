@@ -46,7 +46,7 @@
 <body>
   <header class="topbar">
     <div>
-      <div class="brand-line"><h1>TWIXTBOT MODEL EXPLORER</h1><p class="subtitle">Inspect board tensors, convolution filters, and feature maps.</p></div>
+      <div class="brand-line"><h1>TWIXTBOT MODEL EXPLORER</h1><p class="subtitle">Inspect the game encoding, trained first-layer filters, and 24×24×48 feature tensor in one scene.</p></div>
     </div>
   </header>
 
@@ -71,11 +71,6 @@
 
       <section class="control-section">
         <h3>Visualization</h3>
-        <div class="step-tabs" role="tablist" aria-label="Processing step">
-          <button class="step-tab active" data-step="inputs" role="tab" aria-selected="true">board & input tensors</button>
-          <button class="step-tab" data-step="filters" role="tab" aria-selected="false">conv filters & feature maps</button>
-          <button class="step-tab" data-step="output" role="tab" aria-selected="false">residual filters</button>
-        </div>
         <button id="reset-camera" class="quiet full-width">Reset camera</button>
       </section>
       <div id="camera-coordinates" class="camera-coordinates" aria-live="polite">Camera  x —  y —  z —
@@ -97,21 +92,21 @@ Target  x —  y —  z —</div>
         </div>
         <button id="toggle-explanation" class="collapse-button" aria-label="Collapse explanation panel" title="Collapse explanation panel">Collapse ‹</button>
       </div>
-      <p id="view-description">Three input tensors, positioned side by side.</p>
+      <p id="view-description">One scene: sample and effective boards, input tensors, all three trained first-layer filter banks, and their summed 24×24×48 feature tensor.</p>
       <div class="legend">
         <div><span class="swatch input"></span>Board inputs (pegs, links)</div>
         <div><span class="swatch fixed"></span>Fixed input (locations)</div>
         <div><span class="swatch weights"></span>Filter weights</div>
         <div><span class="swatch bias"></span>Bias</div>
-        <div><span class="swatch output"></span>Summed feature maps</div>
+        <div><span class="swatch output"></span>First-layer feature tensor</div>
       </div>
       <div class="stat"><span>Tensor shape</span><strong id="tensor-shape">24 × 24 × 2</strong></div>
       <div class="stat"><span>Value range</span><strong id="value-range">0 … 1</strong></div>
       <div class="stat"><span>Visible cubes</span><strong id="cube-count">—</strong></div>
-      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan. Cube thickness along X represents the value: negative values extend toward −X, positive values toward +X.</p>
+      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan. Feature values are shown as a heat map. Drag to orbit · scroll to zoom · right-drag to pan.</p>
       <details>
         <summary>Input JSON format</summary>
-        <p>Provide <code>pegs</code>, <code>links</code>, and <code>locations</code> as nested arrays in <code>[row][column][channel]</code> order. Optional <code>weights</code> and <code>bias</code> enable real convolution calculations; otherwise demo weights are generated.</p>
+        <p>Provide <code>pegs</code>, <code>links</code>, and <code>locations</code> as nested arrays in <code>[row][column][channel]</code> order. Optional <code>weights</code> enable convolution calculations; otherwise demo weights are generated.</p>
         <pre>{
   "pegs": [[[0,1], "..."]],
   "links": [[[0,0,0,0,0,0,0,0], "..."]],
