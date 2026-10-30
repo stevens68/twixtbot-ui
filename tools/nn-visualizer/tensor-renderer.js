@@ -229,6 +229,8 @@ export function createTensorRenderer({
       });
     }
     residualFilterGroup = null;
+    residualPlaceholderGroup = null;
+    residualHitTargets = [];
   }
 
   function drawFilterKernel(
@@ -386,7 +388,7 @@ export function createTensorRenderer({
 
     return {
       title: 'First-layer network view',
-      description: 'Sample/effective boards, the three input tensors, trained first-layer filters, both 48-channel convolution filter banks from residual block 1, and the post-BN + abs first-layer feature tensor are shown together.',
+      description: 'Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, and the post-BN + abs first-layer feature tensor are shown together.',
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
       range: 'Feature range ' + featureInfo.range,
       count: '3 input tensors · ' + filterInfo.count + ' · ' + featureInfo.residualCount + ' residual filters · ' + featureInfo.count + ' feature values',
@@ -502,10 +504,24 @@ export function createTensorRenderer({
         metadata?.bias || null,
       );
     }
-    // First residual block: both 5×5 convolutions consume and produce
-    // 48 feature channels. Keep the exact peg-filter cube dimensions,
-    // 8-column × 6-row arrangement, labels, and signed-weight heat map.
-    drawResidualBlock0Filters(weights.residualBlock0, rebuild);
+    // One lightweight wireframe cube represents each remaining residual
+    // block. Only the selected block gets its two full convolution banks.
+    if (!selectedResidualWeights) {
+      selectedResidualWeights = weights.residualBlock0;
+      selectedResidualBlockIndex = 0;
+    }
+    const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
+    if (rebuild || !residualPlaceholderGroup) {
+      createResidualBlockPlaceholders(blockCount);
+    }
+    if (rebuild || residualGeometryDirty) {
+      disposeResidualDetail();
+      residualGeometryDirty = false;
+      drawSelectedResidualBlock(selectedResidualWeights, true, selectedResidualBlockIndex);
+    } else {
+      drawSelectedResidualBlock(selectedResidualWeights, false, selectedResidualBlockIndex);
+    }
+    drawResidualPlaceholderLabels(blockCount);
 
     cachedFilterWeights = weights;
 
@@ -522,10 +538,72 @@ export function createTensorRenderer({
   }
 
   let residualFilterGroup = null;
+  let residualPlaceholderGroup = null;
+  let residualHitTargets = [];
+  let selectedResidualBlockIndex = 0;
+  let selectedResidualWeights = null;
+  let residualGeometryDirty = false;
+  let residualFiltersVisible = true;
 
-  function drawResidualBlock0Filters(residualWeights, buildGeometry) {
+  function createResidualBlockPlaceholders(blockCount) {
+    residualPlaceholderGroup = new THREE.Group();
+    residualPlaceholderGroup.name = 'residual-block-placeholders';
+    residualHitTargets = [];
+
+    const size = 1.25;
+    const boxGeometry = new THREE.BoxGeometry(size, size, size);
+    const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
+    boxGeometry.dispose();
+
+    for (let index = 1; index < blockCount; index += 1) {
+      // A compact chain makes the depth of the residual stack visible without
+      // allocating any of the millions of weight-cube instances.
+      const position = new THREE.Vector3(39 + (index - 1) * 2.05, -4.8, 35);
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: index === selectedResidualBlockIndex ? 0xf0c66e : 0x9bb4c8,
+        transparent: true,
+        opacity: 0.88,
+      });
+      const outline = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+      outline.position.copy(position);
+      outline.name = 'residual-block-' + index + '-wireframe';
+      outline.userData.residualBlockIndex = index;
+      residualPlaceholderGroup.add(outline);
+
+      // Invisible mesh is the reliable raycast target; the visible outline
+      // remains a lightweight set of line segments.
+      const hitTarget = new THREE.Mesh(
+        new THREE.BoxGeometry(size, size, size),
+        new THREE.MeshBasicMaterial({
+          transparent: true,
+          opacity: 0,
+          colorWrite: false,
+          depthWrite: false,
+        }),
+      );
+      hitTarget.position.copy(position);
+      hitTarget.name = 'residual-block-' + index + '-hit-target';
+      hitTarget.userData.residualBlockIndex = index;
+      residualPlaceholderGroup.add(hitTarget);
+      residualHitTargets.push(hitTarget);
+    }
+    filterStaticGroup.add(residualPlaceholderGroup);
+  }
+
+  function disposeResidualDetail() {
+    if (!residualFilterGroup) return;
+    filterStaticGroup.remove(residualFilterGroup);
+    residualFilterGroup.traverse((object) => {
+      if (!object.material) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => material?.dispose());
+    });
+    residualFilterGroup = null;
+  }
+
+  function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     if (!residualWeights?.conv1 || !residualWeights?.conv2) {
-      throw new Error('First residual block convolution weights are unavailable.');
+      throw new Error('Residual block ' + blockIndex + ' convolution weights are unavailable.');
     }
     const channels = FILTER_COUNT;
     const kernelHeight = 5;
@@ -540,12 +618,12 @@ export function createTensorRenderer({
     const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
     const bankStartZ = [14, 28];
 
-    // Keep labels in the transient label layer, but put all residual weight
-    // cubes in one InstancedMesh per convolution. This preserves every weight
-    // and the per-filter colour normalization while reducing 96 draw calls to 2.
+    // Keep both convolutions of the selected residual block visible together.
+    // All other blocks remain as cheap wireframe placeholders.
     if (buildGeometry) {
       residualFilterGroup = new THREE.Group();
-      residualFilterGroup.name = 'residual-block-1-filter-banks';
+      residualFilterGroup.name = 'residual-block-' + blockIndex + '-filter-banks';
+      residualFilterGroup.visible = residualFiltersVisible;
       for (const [bankIndex, name] of ['conv1', 'conv2'].entries()) {
         const bank = residualWeights[name];
         const instancesPerFilter = kernelHeight * kernelWidth * channels;
@@ -556,7 +634,7 @@ export function createTensorRenderer({
           }),
           FILTER_COUNT * instancesPerFilter,
         );
-        mesh.name = 'residual-block-1-' + name + '-all-filter-weights';
+        mesh.name = 'residual-block-' + blockIndex + '-' + name + '-all-filter-weights';
         const transform = new THREE.Object3D();
         let instance = 0;
         for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
@@ -594,7 +672,7 @@ export function createTensorRenderer({
 
     for (const [index, name] of ['conv1', 'conv2'].entries()) {
       addLabel(
-        'Residual block 1 · ' + name + ' · 48 × 5×5×48 filters',
+        'Residual block ' + blockIndex + ' · ' + name + ' · 48 × 5×5×48 filters',
         [34, startY + filterHeight + 0.8, bankStartZ[index] + 3.5 * (filterWidth + gapZ)],
         22,
       );
@@ -613,6 +691,38 @@ export function createTensorRenderer({
         );
       }
     }
+  }
+
+  function drawResidualPlaceholderLabels(blockCount) {
+    for (let index = 1; index < blockCount; index += 1) {
+      addLabel(
+        'Block ' + index,
+        [39 + (index - 1) * 2.05, -3.75, 35],
+        12,
+        '#dce7f5',
+        80,
+      );
+    }
+  }
+
+  function setSelectedResidualBlock(blockIndex, weights) {
+    selectedResidualBlockIndex = blockIndex;
+    selectedResidualWeights = weights;
+    residualGeometryDirty = true;
+  }
+
+  function pickResidualBlock(event, camera, domElement) {
+    if (!residualHitTargets.length) return null;
+    const rect = domElement.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const pointer = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(residualHitTargets, false);
+    return hits.length ? hits[0].object.userData.residualBlockIndex : null;
   }
 
   function setResidualFiltersVisible(visible) {
@@ -648,5 +758,7 @@ export function createTensorRenderer({
     drawFilters,
     drawOutput,
     setResidualFiltersVisible,
+    setSelectedResidualBlock,
+    pickResidualBlock,
   };
 }
