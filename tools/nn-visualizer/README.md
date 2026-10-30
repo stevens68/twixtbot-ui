@@ -1,8 +1,8 @@
 # Twixtbot 3D neural-network visualizer
 
-A local browser-based Three.js tool for inspecting Twixt game positions, model input tensors, convolution filters, and feature-map values. It is part of `twixtbot-ui`; the Python backend is the source of truth for game rules and input encoding.
+A local browser-based Three.js tool for exploring a Twixt position and the first stage of the trained neural network in **one 3D scene**. The scene combines the sample and effective boards, the `pegs`, `links`, and `locations` input tensors, the three trained convolution filter banks, and the resulting `24 × 24 × 48` feature tensor.
 
-The visualizer loads the trained `links` convolution weights from `model/torch.pt` when it starts. It does **not** run a complete PyTorch model forward pass: the feature/output view remains illustrative and is not a numerical-parity result.
+The Python backend is the source of truth for game rules and input encoding. The visualizer loads the trained peg, link, and location convolution weights from `model/torch.pt` through its local API.
 
 ## Run locally
 
@@ -22,72 +22,62 @@ The server binds to loopback (`127.0.0.1`) and is intended for local development
 - **Load game...** loads a local `.T1` game file. The server parses it using the repository's game-file parser.
 - Edit **Current game** and click **Apply changes** to replay a space- or comma-separated move sequence. Trajectories are limited to 500 moves.
 - Use the navigation buttons to jump to the start, step backward or forward, or jump to the end.
-- **Reset camera** restores the default view. Drag to orbit, scroll to zoom, and right-drag to pan.
-- Select **board & input tensors**, **conv filters & feature maps**, or **residual filters** to change the visualization. The explanation panel can be collapsed to give the scene more room.
+- **Reset camera** restores the overview framing. Drag to orbit, scroll to zoom, and right-drag to pan. The explanation panel can be collapsed to give the scene more room.
 
 Game positions are reconstructed by the Python backend. The browser does not independently re-implement the authoritative game rules when using this server.
 
 ## What is displayed
 
-- **Board & input tensors:** sample and effective boards alongside the `pegs`, `links`, and `locations` tensors.
-- **Input tensor shapes:** pegs `24 × 24 × 2`, links `24 × 24 × 8`, and locations `24 × 24 × 2`. Tensor coordinates use `[row][column][channel]` order.
-- **Convolution filters:** the trained `links.weight` tensor is loaded from `model/torch.pt` through `/api/weights`. The bank uses the checkpoint's actual filter count and kernel dimensions, arranged in up to 8 columns. A bias is shown only if the loaded layer has one.
-- **Feature values:** signed values are represented by cube thickness along X; negative values extend toward −X and positive values toward +X.
+- **Boards:** the sample board and the effective board used for model input.
+- **Input tensors:** `pegs` `24 × 24 × 2`, `links` `24 × 24 × 8`, and `locations` `24 × 24 × 2`. Tensor coordinates use `[row][column][channel]` order.
+- **Convolution filters:** trained peg, link, and location filter banks loaded from `model/torch.pt`. The banks use the checkpoint's actual filter and kernel dimensions. Bias cubes are shown only for layers that have a bias.
+- **Feature tensor:** the three first-layer branch convolutions are summed into a `24 × 24 × 48` tensor. The displayed values are the raw sum **before** batch normalization and the absolute-value activation. A signed heat map encodes the feature values.
 
-The browser uses the exact three arrays returned by `NetInputs.to_input_arrays()` for backend-loaded positions. It does not return or send the intermediate `NetInputs.naf` array because the visualizer does not consume it.
+The feature tensor is calculated in the browser from the backend's input arrays and the loaded checkpoint weights. The convolution uses TensorFlow-style `SAME` padding, including asymmetric padding for even-sized kernels.
 
-## Performance work
+**Scope:** this is a view of the input encoding and first convolution stage, not a complete forward pass through the network. Residual blocks, policy/value heads, batch-normalization transforms, and later activations are not currently evaluated or rendered. Use framework-level tests to establish numerical parity with the PyTorch model.
 
-The visualizer includes several optimizations for navigating longer games:
+## Interaction and diagnostics
 
-- The backend caches up to 2,048 game states by normalized move prefix and relevant game-rule setting. Cached states are cloned before continuing replay.
-- The browser keeps a bounded 128-entry least-recently-used cache of exact API snapshots.
-- API responses are gzip-compressed when the browser supports it.
-- Static board geometry, tensor markers, location tensors, labels, and filter geometry are reused where possible. Occupied peg/link instances are updated instead of recreating their meshes.
-- Board links and directional indicators are rendered in instanced batches.
+The board can be navigated with the game controls. In the 3D viewport:
 
-These optimizations are described in more detail in [PERFORMANCE.md](./PERFORMANCE.md).
+- Drag to orbit.
+- Scroll to zoom.
+- Right-drag to pan.
+- Click an empty intersection on the sample board to submit a move to the backend; invalid moves leave the current position unchanged.
 
-### Inspect performance
-
-Open browser developer tools (F12) and use the Console:
+For performance diagnostics, open browser developer tools (F12) and use the Console:
 
 ```js
 nnPerf.reset()    // clear collected samples
-nnPerf.report()   // print and return the collected samples
+nnPerf.report()   // print and return collected samples
 nnPerf.samples    // inspect or copy the raw samples
 ```
 
-The samples include API request/body/JSON parsing timings, snapshot-cache hits, scene construction timings, object counts, and renderer draw-call/frame statistics. JavaScript construction timings are not GPU completion timings; use Chrome DevTools Performance when profiling actual frame time.
+Samples include API request/body/JSON parsing timings, snapshot-cache hits, scene construction timings, object counts, and renderer draw-call/frame statistics. These are synchronous JavaScript timings, not GPU completion timings; use Chrome DevTools Performance when profiling actual frame time.
 
-## Backend and API
+The visualizer reuses static board and tensor geometry, updates occupied peg/link instances, caches filter geometry and API snapshots, and uses instanced batches for board links and directional indicators. The backend caches reconstructed game states by move prefix. The browser's snapshot cache is bounded to 128 entries.
 
-The local server exposes two POST endpoints used by the page:
+## Backend API and tests
 
-- `/api/trace`: accepts a JSON object with a `moves` array and optional `allow_scl` / `allow_swap` settings. It returns the reconstructed board, next player, tensor arrays, tensor shapes, and source metadata. Interactive trace requests skip recursive draw detection to keep navigation responsive.
-- `/api/t1`: accepts the text contents of a `.T1` file and returns the parsed move sequence.
-- `GET /api/weights`: reads `model/torch.pt` and returns the trained `links.weight` values in browser-friendly `[filter][row][column][channel]` order, plus layer-shape metadata.
+The local server exposes:
 
-The adapter can also be invoked from the repository root to inspect a trajectory:
+- `POST /api/trace`: accepts a JSON object with a `moves` array and optional `allow_scl` / `allow_swap` settings. It returns the reconstructed board, next player, input tensor arrays, tensor shapes, and source metadata. Interactive trace requests skip recursive draw detection to keep navigation responsive.
+- `POST /api/t1`: accepts the text contents of a `.T1` file and returns the parsed move sequence.
+- `GET /api/weights`: reads `model/torch.pt` and returns the trained peg, link, and location convolution weights in browser-friendly order, plus layer-shape and bias metadata.
+
+The adapter can also be invoked from the repository root:
 
 ```powershell
 python tools/nn_visualizer_adapter.py --moves L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7
 ```
 
-The adapter CLI performs draw checking by default. Interactive snapshots omit the raw 24 × 24 × 11 NAF intermediate to reduce response size.
+The adapter CLI performs draw checking by default. Interactive snapshots omit the raw `24 × 24 × 11` NAF intermediate because the browser consumes the three arrays returned by `NetInputs.to_input_arrays()`.
 
-## Tests
-
-From the repository root, run the adapter tests with the project environment:
+Run the adapter tests from the repository root:
 
 ```powershell
 python -m unittest tools.test_nn_visualizer_adapter
 ```
 
-The tests check that the serialized peg, link, and location tensors match the backend's `NetInputs.to_input_arrays()` results and that the API's compact snapshot schema stays consistent.
-
-## Scope and limitations
-
-- The input tensors for loaded games come from the Python backend.
-- The displayed link convolution weights are loaded from the trained PyTorch checkpoint. The other branch weights and feature-map/output calculations are still demo data; the visualizer does not yet run full model inference.
-- The visualizer is for exploration and debugging. Use framework-level tests to establish numerical parity with the PyTorch model.
+The tests check that serialized peg, link, and location tensors match the backend's `NetInputs.to_input_arrays()` results and that the compact snapshot schema stays consistent.
