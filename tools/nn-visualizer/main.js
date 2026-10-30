@@ -991,7 +991,7 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gamePly = 0;
     gameLoaded = true;
     backendSnapshot = null;
-    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata };
+    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata, primaryBn: demoModel.primaryBn };
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
