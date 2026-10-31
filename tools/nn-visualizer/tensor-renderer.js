@@ -545,7 +545,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block is represented by one wireframe cube; the selected block expands into both 48-filter 5×5×48 convolution banks. Click another cube to inspect that block.',
+      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block is represented by two full-size wireframe volumes, one per convolution; select either volume to inspect both 48-filter 5×5×48 convolution banks.',
       shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
         '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
         '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
@@ -565,6 +565,26 @@ export function createTensorRenderer({
   let selectedResidualWeights = null;
   let residualGeometryDirty = false;
   let residualFiltersVisible = true;
+
+  function disposeResidualDetail() {
+    if (!residualFilterGroup) return;
+    filterStaticGroup.remove(residualFilterGroup);
+    const geometries = new Set();
+    const materials = new Set();
+    residualFilterGroup.traverse((object) => {
+      // cubeGeometry is shared by the other tensor/filter renderers.
+      if (object.geometry && object.geometry !== cubeGeometry) {
+        geometries.add(object.geometry);
+      }
+      if (object.material) {
+        const assigned = Array.isArray(object.material) ? object.material : [object.material];
+        assigned.forEach((material) => material && materials.add(material));
+      }
+    });
+    geometries.forEach((geometry) => geometry.dispose());
+    materials.forEach((material) => material.dispose());
+    residualFilterGroup = null;
+  }
 
   function createResidualBlockPlaceholders(blockCount) {
     residualPlaceholderGroup = new THREE.Group();
