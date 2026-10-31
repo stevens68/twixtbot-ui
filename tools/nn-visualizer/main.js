@@ -802,12 +802,12 @@ document.querySelector('#camera-residual-block').addEventListener('click', () =>
   [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
 ));
 function setResidualBlock20CameraPreset() {
-  lastCameraPreset = 'residual-block-20';
   const offset = getBlock20CameraOffset();
   setCameraPreset(
     [901.83 - offset, 27.43, -43.67],
     [900.09 - offset, -14.86, 29.37],
   );
+  lastCameraPreset = 'residual-block-20';
 }
 document.querySelector('#camera-residual-block-20').addEventListener('click', setResidualBlock20CameraPreset);
 document.querySelector('#toggle-residual-blocks-2-19').addEventListener('change', (event) => {
