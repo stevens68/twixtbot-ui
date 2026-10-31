@@ -273,6 +273,7 @@ class Handler(SimpleHTTPRequestHandler):
             pegs_layer, peg_weights = read_conv_layer("pegs")
             locations_layer, locations_weights = read_conv_layer("location")
             policy_conv1_layer, policy_conv1_weights = read_conv_layer("policy_conv1")
+            policy_conv2_layer, policy_conv2_weights = read_conv_layer("policy_conv2")
 
             # Expose both convolutions from the first residual block. The
             # checkpoint stores Conv2d weights as [out, in, height, width];
@@ -323,12 +324,14 @@ class Handler(SimpleHTTPRequestHandler):
                     "pegs": pegs_layer,
                     "locations": locations_layer,
                     "policy_conv1": policy_conv1_layer,
+                    "policy_conv2": policy_conv2_layer,
                 },
                 "weights": {
                     "links": link_weights,
                     "pegs": peg_weights,
                     "locations": locations_weights,
                     "policy_conv1": policy_conv1_weights,
+                    "policy_conv2": policy_conv2_weights,
                 },
                 "primary_bn": primary_bn,
                 "policy_bn": policy_bn,
