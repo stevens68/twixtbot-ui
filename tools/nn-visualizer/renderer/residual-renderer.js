@@ -369,10 +369,10 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       }
       createResidualBlockPlaceholders(blockCount);
       residualPlaceholderDirty = false;
-      if (!residualLabelsBuilt) {
-        drawResidualPlaceholderLabels(blockCount);
-        residualLabelsBuilt = true;
-      }
+      // Labels live in the transient scene group, which is cleared on each
+      // renderStep; recreate them whenever the residual placeholders are drawn.
+      drawResidualPlaceholderLabels(blockCount);
+      residualLabelsBuilt = true;
     }
     const visibleBlockIndices = showIntermediateResidualBlocks
       ? [0, blockCount - 1, selectedResidualBlockIndex]
