@@ -9,6 +9,9 @@ export function createResidualRenderer({
   const residualOutputGroups = new Map();
   const residualOutputMeshes = new Map();
   let residualLabelsBuilt = false;
+  // These labels are attached to the persistent annotation group, so retain
+  // their sprites and explicitly hide them when blocks 2–19 are collapsed.
+  let intermediateResidualLabelSprites = [];
   let residualPlaceholderGroup = null;
   let residualPlaceholderDirty = false;
   let residualHitTargets = [];
@@ -151,7 +154,7 @@ function addResidualOutputValues(group,layout,index,tensor,mesh=null){
 }
 function addResidualArrow(group,x1,x2,y,z,name,label=null){const gap=x2-x1;if(gap<=.15)return;const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x1+gap*.22,y,z),gap*.67,0x71879b,.42,.22);arrow.name=name;group.add(arrow);if(label)addFormulaLabel(label,[(x1+x2)/2,y+1.15,z],25,'#f2f4f8',92);}
 function addResidualCurvedArrow(group,x1,x2,y1,z1,y2,z2,name,label=null){const dx=x2-x1;if(dx<=.2)return;const c=new THREE.CubicBezierCurve3(new THREE.Vector3(x1,y1,z1),new THREE.Vector3(x1+dx*.42,y1,z1),new THREE.Vector3(x2-dx*.42,y2,z2),new THREE.Vector3(x2,y2,z2));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(c.getPoints(64)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);if(label){const p=c.getPoint(.5);addFormulaLabel(label,[p.x,p.y+1.15,p.z],25,'#f2f4f8',92);}}
-function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;if(dx<=1)return;const t=Math.min(dx*.22,3),oz=z+offset,p=new THREE.CurvePath();p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x1,0,z),new THREE.Vector3(x1+t*.45,0,z),new THREE.Vector3(x1+t*.55,0,oz),new THREE.Vector3(x1+t,0,oz)));p.add(new THREE.LineCurve3(new THREE.Vector3(x1+t,0,oz),new THREE.Vector3(x2-t,0,oz)));p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x2-t,0,oz),new THREE.Vector3(x2-t*.55,0,oz),new THREE.Vector3(x2-t*.45,0,z),new THREE.Vector3(x2,0,z)));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(p.getPoints(96)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);const head=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x2-.48,0,z),.48,0x71879b,.34,.18);head.name=name+'-arrowhead';group.add(head);if(label)addFormulaLabel(label,[(x1+x2)/2,1.15,z+offset],25,'#f2f4f8',92);}
+function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;if(dx<=1)return null;const t=Math.min(dx*.22,3),oz=z+offset,p=new THREE.CurvePath();p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x1,0,z),new THREE.Vector3(x1+t*.45,0,z),new THREE.Vector3(x1+t*.55,0,oz),new THREE.Vector3(x1+t,0,oz)));p.add(new THREE.LineCurve3(new THREE.Vector3(x1+t,0,oz),new THREE.Vector3(x2-t,0,oz)));p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x2-t,0,oz),new THREE.Vector3(x2-t*.55,0,oz),new THREE.Vector3(x2-t*.45,0,z),new THREE.Vector3(x2,0,z)));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(p.getPoints(96)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);const head=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x2-.48,0,z),.48,0x71879b,.34,.18);head.name=name+'-arrowhead';group.add(head);if(label)return addFormulaLabel(label,[(x1+x2)/2,1.15,z+offset],25,'#f2f4f8',92);return null;}
   function createResidualBlockPlaceholders(blockCount) {
     residualPlaceholderGroup = new THREE.Group();
     residualPlaceholderGroup.name = 'residual-block-placeholders';
@@ -218,7 +221,16 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
        }
       }else if(index<blockCount-1){
        const mergeX=br2+1.1;
-       addResidualBypass(residualPlaceholderGroup,layout.bankStartXs[0]-filterCubeSize/2,mergeX,cz,layout.bankSizeZ*1.08/2+1,'block-'+(index+1)+'-identity-skip','y₃ = x');
+       const intermediateSkipLabel = addResidualBypass(
+         residualPlaceholderGroup,
+         layout.bankStartXs[0] - filterCubeSize / 2,
+         mergeX,
+         cz,
+         layout.bankSizeZ * 1.08 / 2 + 1,
+         'block-' + (index + 1) + '-identity-skip',
+         'y₃ = x',
+       );
+       if (intermediateSkipLabel) intermediateResidualLabelSprites.push(intermediateSkipLabel);
        const next=residualLayout(index+1),nextLeft=next.bankStartXs[0]-filterCubeSize/2;
        const gapCenterX=(br2+nextLeft)/2;
        const outputWidth=layout.outputSizeX;
@@ -257,15 +269,29 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     filterStaticGroup.add(residualPlaceholderGroup);
   }
 
-  function drawResidualPlaceholderLabels(blockCount){
-   for(let index=0;index<blockCount;index++){if(!showIntermediateResidualBlocks && index>0 && index<blockCount-1)continue;const layout=residualLayout(index),cx=layout.blockStartX+layout.blockSpanX/2,y=layout.bankStartY+layout.bankSizeY/2+2,z=layout.bankStartZ+layout.bankSizeZ/2;
-    addLabel('Residual block '+(index+1),[cx,y,z],24,'#ffffff',70);}
+  function drawResidualPlaceholderLabels(blockCount) {
+    for (let index = 0; index < blockCount; index += 1) {
+      if (!showIntermediateResidualBlocks && index > 0 && index < blockCount - 1) continue;
+      const layout = residualLayout(index);
+      const cx = layout.blockStartX + layout.blockSpanX / 2;
+      const y = layout.bankStartY + layout.bankSizeY / 2 + 2;
+      const z = layout.bankStartZ + layout.bankSizeZ / 2;
+      const sprite = addLabel('Residual block ' + (index + 1), [cx, y, z], 24, '#ffffff', 70);
+      if (index > 0 && index < blockCount - 1 && sprite) {
+        intermediateResidualLabelSprites.push(sprite);
+      }
+    }
   }
 
   function setShowIntermediateResidualBlocks(visible) {
     const next=Boolean(visible);
     if(showIntermediateResidualBlocks===next)return;
     showIntermediateResidualBlocks=next;
+    // Annotation sprites are in a persistent scene group. Hide the previous
+    // intermediate labels before rebuilding the set for the new layout.
+    for (const sprite of intermediateResidualLabelSprites) sprite.visible = false;
+    intermediateResidualLabelSprites = [];
+    residualLabelsBuilt = false;
     residualPlaceholderDirty=true;
     residualGeometryDirty=true;
     // Output tensors move with their blocks; dispose and recreate them at the new positions.
@@ -339,6 +365,8 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     for (const index of [...residualOutputGroups.keys()]) updateResidualOutput(index, null);
     residualPlaceholderGroup = null;
     residualPlaceholderDirty = false;
+    for (const sprite of intermediateResidualLabelSprites) sprite.visible = false;
+    intermediateResidualLabelSprites = [];
     residualLabelsBuilt = false;
     lastRenderedOutputTensor = null;
     lastRenderedLastOutputTensor = null;
@@ -375,10 +403,12 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       createResidualBlockPlaceholders(blockCount);
       residualPlaceholderDirty = false;
     }
-    // Labels live in the transient scene group, which is cleared on each
-    // renderStep; recreate them on every draw, independently of geometry rebuilds.
-    drawResidualPlaceholderLabels(blockCount);
-    residualLabelsBuilt = true;
+    // Annotation labels live in a persistent scene group. Build them once,
+    // then explicitly replace/hide the intermediate set when the toggle changes.
+    if (!residualLabelsBuilt) {
+      drawResidualPlaceholderLabels(blockCount);
+      residualLabelsBuilt = true;
+    }
     const visibleBlockIndices = showIntermediateResidualBlocks
       ? [0, blockCount - 1, selectedResidualBlockIndex]
       : [0, blockCount - 1];
