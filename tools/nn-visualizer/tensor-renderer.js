@@ -630,8 +630,8 @@ function residualLayout(blockIndex) {
   const outputMaxX =
     20 + (channels - 1) * outputChannelStep + outputCubeSize / 2;
   const firstResidualGapX = 5.0;
-  const convGapZ = 2.0;
-  const outputGapX = 1.25 * 1.15;
+  const convGapZ = 2.0 * 3;
+  const outputGapX = 1.25 * 1.15 * 3;
   const blockPitchX =
     bankSizeX + outputGapX + outputCubeSize / 2 +
     outputSizeX + 1.25 + filterCubeSize / 2;
