@@ -15,7 +15,9 @@ export function createBoardInteraction({
   const boardSpacing = 0.34;
   const boardWorldSize = (boardSize - 1) * boardSpacing;
   const boardX = -26.675 + 0.026;
-  const boardStart = -boardWorldSize / 2;
+  // Match the exact Y/Z origin used by board-renderer.js.
+  const boardStartY = -0.287 - boardWorldSize / 2;
+  const boardStartZ = -0.2545 - boardWorldSize / 2;
   const dragThresholdPx = 5;
   let pointerDown = null;
   let pointerDragged = false;
@@ -23,8 +25,8 @@ export function createBoardInteraction({
   function projectIntersection(row, col, rect) {
     const point = new THREE.Vector3(
       boardX,
-      boardStart + (boardSize - 1 - row) * boardSpacing,
-      boardStart + col * boardSpacing,
+      boardStartY + (boardSize - 1 - row) * boardSpacing,
+      boardStartZ + col * boardSpacing,
     );
     point.project(camera);
     if (point.z < -1 || point.z > 1) return null;
