@@ -396,7 +396,10 @@ export function createTensorRenderer({
     // feature tensor. Place its bank directly downstream of block 20's output.
     const policyInput = residualRenderer.getLastOutputAnchor();
     const policyInputRight = policyInput.right;
-    const policyStartX = policyInputRight + 2.5 + filterCubeSize / 2;
+    // Keep the policy bank adjacent to the final residual output; the arrow
+    // only needs a small clearance, not a multi-unit spacer.
+    const policyGapX = filterSpacing * 1.5;
+    const policyStartX = policyInputRight + policyGapX + filterCubeSize / 2;
     const policyStartY = -0.287;
     const policyStartZ = -0.2545 + 22 - (policyColumns - 1) * (policySlot + policyGapZ) / 2;
     const policyInfo = filterBankRenderer.drawBank({
