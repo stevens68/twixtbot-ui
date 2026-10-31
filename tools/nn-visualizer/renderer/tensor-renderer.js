@@ -44,7 +44,7 @@ export function createTensorRenderer({
   }
   const featureOutputRenderer = createFeatureOutputRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
-    getSceneGroup, calculateConvolutionOutput, addLabel, filterSpacing,
+    getSceneGroup, getData, calculateConvolutionOutput, addLabel, filterSpacing,
     filterCubeSize, heatMapColor,
     addLabel: addAnnotationLabel,
   });
