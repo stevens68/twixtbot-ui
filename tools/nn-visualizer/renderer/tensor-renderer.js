@@ -96,9 +96,9 @@ export function createTensorRenderer({
       new THREE.Vector3(endX - dx * 0.42, endY, endZ),
       new THREE.Vector3(endX, endY, endZ),
     );
-    const shaft = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 48, 0.06, 8, false),
-      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+    const shaft = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(64)),
+      new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
     );
     shaft.name = name + '-shaft';
     group.add(shaft);
@@ -240,9 +240,9 @@ export function createTensorRenderer({
           new THREE.Vector3(bankRight, featureY, featureZ),
           new THREE.Vector3(mergeX, featureY, featureZ),
         );
-        const linkShaft = new THREE.Mesh(
-          new THREE.TubeGeometry(linkLine, 1, 0.06, 8, false),
-          new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+        const linkShaft = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(linkLine.getPoints(1)),
+          new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
         );
         linkShaft.name = bank.key + '-filter-bank-to-merge-shaft';
         arrowGroup.add(linkShaft);
@@ -258,7 +258,7 @@ export function createTensorRenderer({
     const mergeX = featureLeftX - 1.35;
     addXArrow(
       arrowGroup, mergeX, featureLeftX,
-      featureY, featureZ, null, 0.58, 'merged-convolutions-to-feature-output',
+      featureY, featureZ, 'Σ', 0.58, 'merged-convolutions-to-feature-output',
     );
 
     return {
