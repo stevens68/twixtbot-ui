@@ -42,7 +42,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     return texture;
   }
 
-  function acquireSprite(texture, position, scale, alignment) {
+  function acquireSprite(texture, position, scale, alignment, isBigBlockLabel = false) {
     let sprite = spritePool[spriteCursor];
     if (!sprite) {
       sprite = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -61,7 +61,8 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     sprite.center.set(alignment === 'left' ? 0 : 0.5, 0.5);
     sprite.position.set(position[0], position[1], position[2]);
     sprite.userData.baseLabelScale = [scale[0], scale[1]];
-    if (sprite.userData.isBigBlockLabel) sprite.visible = bigLabelsVisible;
+    sprite.userData.isBigBlockLabel = isBigBlockLabel;
+    sprite.visible = !isBigBlockLabel || bigLabelsVisible;
     sprite.onBeforeRender = (_renderer, _scene, camera) => {
       const base = sprite.userData.baseLabelScale;
       const distance = camera.position.distanceTo(sprite.position);
@@ -94,16 +95,13 @@ export function createLabelHelpers(THREE, getSceneGroup) {
       return { width, height };
     });
 
-    const spriteIndex = spriteCursor;
     acquireSprite(
       texture,
       position,
       [texture.image.width / scaleDivisor, texture.image.height / scaleDivisor],
       alignment,
+      fontSize >= 24,
     );
-    const sprite = spritePool[spriteIndex];
-    sprite.userData.isBigBlockLabel = fontSize >= 24;
-    sprite.visible = !sprite.userData.isBigBlockLabel || bigLabelsVisible;
   }
 
   function addFormulaLabel(
