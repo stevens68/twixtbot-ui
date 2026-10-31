@@ -586,13 +586,8 @@ export function createTensorRenderer({
     residualFilterGroup = null;
   }
 
-function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
-  if (!residualWeights?.conv1 || !residualWeights?.conv2) {
-    throw new Error(
-      'Residual block ' + blockIndex + ' convolution weights are unavailable.'
-    );
-  }
 
+function residualLayout(blockIndex) {
   const channels = FILTER_COUNT;
   const kernelHeight = 5;
   const kernelWidth = 5;
@@ -602,34 +597,94 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   const filterHeight = kernelHeight * filterSpacing;
   const gapY = 0.3 * 1.4;
   const gapZ = 0.3 * 1.4;
-
-  // Continue the network as a chain along X: output tensor first, then
-  // residual block 0, block 1, and so on. Keep each bank's channels on X.
-  const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
-  const outputMaxX =
-    20 + (channels - 1) * outputChannelStep + filterCubeSize / 2;
-  const firstResidualGapX = 5.0;
-  const blockGapX = 1.25;
-  const blockWidthX =
-    (channels - 1) * filterSpacing + filterCubeSize;
-  const startX =
-    outputMaxX + firstResidualGapX + filterCubeSize / 2 +
-    blockIndex * (blockWidthX + blockGapX);
-  const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
-
-  // Center both convolution banks together on the output tensor's Z center.
-  // Their separation along Z is retained, but the pair is moved behind the
-  // output rather than being offset far away from the rest of the network.
+  const bankSizeX = (channels - 1) * filterSpacing + filterCubeSize;
+  const bankMinYOffset =
+    -(rows - 1) * (filterHeight + gapY) - filterCubeSize / 2;
+  const bankMaxYOffset =
+    (kernelHeight - 1) * filterSpacing + filterCubeSize / 2;
+  const bankSizeY = bankMaxYOffset - bankMinYOffset;
+  const bankSizeZ =
+    (columns - 1) * (filterWidth + gapZ) +
+    (kernelWidth - 1) * filterSpacing + filterCubeSize;
+  const outputChannelStep =
+    filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
+  const outputCubeSize = filterCubeSize / 0.9;
+  const outputSizeX =
+    (channels - 1) * outputChannelStep + outputCubeSize;
+  const outputSizeY =
+    (BOARD_SIZE - 1) * filterSpacing + outputCubeSize;
+  const outputSizeZ = outputSizeY;
+  const outputCenterY = -2.5 + (BOARD_SIZE - 1) * filterSpacing / 2;
   const outputCenterZ =
-    -((channels - 1) * 0.105) / 2 + ((BOARD_SIZE - 1) * filterSpacing) / 2;
-  const originalBankStartZ = [14, 28];
-  const bankPairMinZ = originalBankStartZ[0] - filterCubeSize / 2;
-  const bankPairMaxZ =
-    originalBankStartZ[1] + (columns - 1) * (filterWidth + gapZ) +
-    (kernelWidth - 1) * filterSpacing + filterCubeSize / 2;
-  const bankPairShiftZ = outputCenterZ - (bankPairMinZ + bankPairMaxZ) / 2;
-  const bankStartZ = originalBankStartZ.map((z) => z + bankPairShiftZ);
+    -((channels - 1) * 0.105) / 2 +
+    (BOARD_SIZE - 1) * filterSpacing / 2;
+  const bankStartY = outputCenterY -
+    (bankMinYOffset + bankMaxYOffset) / 2;
+  const bankStartZ = outputCenterZ - bankSizeZ / 2 + filterCubeSize / 2;
+  const outputMaxX =
+    20 + (channels - 1) * outputChannelStep + outputCubeSize / 2;
+  const firstResidualGapX = 5.0;
+  const convGapX = 1.25;
+  const outputGapX = 1.25;
+  const blockStartX =
+    outputMaxX + firstResidualGapX + filterCubeSize / 2 +
+    blockIndex * (2 * bankSizeX + convGapX + outputSizeX + outputGapX);
+  const conv2StartX = blockStartX + bankSizeX + convGapX;
+  const outputStartX =
+    conv2StartX + bankSizeX + outputGapX + outputCubeSize / 2;
+  const outputCenterX =
+    outputStartX + (channels - 1) * outputChannelStep / 2;
+  return {
+    channels, kernelHeight, kernelWidth, columns, rows,
+    filterWidth, filterHeight, gapY, gapZ,
+    bankSizeX, bankSizeY, bankSizeZ, bankStartY, bankStartZ,
+    bankStartXs: [blockStartX, conv2StartX],
+    outputStartX, outputCenterX,
+    outputSizeX, outputSizeY, outputSizeZ,
+    outputCenterY, outputCenterZ, outputCubeSize,
+  };
+}
 
+function addResidualOutputGlass(group, layout, blockIndex) {
+  const geometry = new THREE.BoxGeometry(
+    layout.outputSizeX, layout.outputSizeY, layout.outputSizeZ,
+  );
+  const glass = new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      color: 0x9bb4c8,
+      roughness: 0.18,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.12,
+      depthWrite: false,
+    }),
+  );
+  glass.position.set(
+    layout.outputCenterX, layout.outputCenterY, layout.outputCenterZ,
+  );
+  glass.name = 'residual-block-' + blockIndex + '-output-tensor-glass';
+  group.add(glass);
+
+  const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(geometry),
+    new THREE.LineBasicMaterial({
+      color: 0xb9d5e8, transparent: true, opacity: 0.9,
+    }),
+  );
+  edges.position.copy(glass.position);
+  edges.name = 'residual-block-' + blockIndex + '-output-tensor-outline';
+  group.add(edges);
+}
+
+function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
+  if (!residualWeights?.conv1 || !residualWeights?.conv2) {
+    throw new Error(
+      'Residual block ' + blockIndex + ' convolution weights are unavailable.'
+    );
+  }
+
+  const layout = residualLayout(blockIndex);
   if (buildGeometry) {
     residualFilterGroup = new THREE.Group();
     residualFilterGroup.name =
@@ -639,113 +694,68 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     for (const [bankIndex, name] of ['conv1', 'conv2'].entries()) {
       const bank = residualWeights[name];
       const instancesPerFilter =
-        kernelHeight * kernelWidth * channels;
-
+        layout.kernelHeight * layout.kernelWidth * layout.channels;
       const mesh = new THREE.InstancedMesh(
         cubeGeometry,
         new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          roughness: 0.6,
-          transparent: true,
-          opacity: 0.9,
+          color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.9,
         }),
         FILTER_COUNT * instancesPerFilter,
       );
-
       mesh.name =
         'residual-block-' + blockIndex + '-' + name + '-all-filter-weights';
-
       const transform = new THREE.Object3D();
       let instance = 0;
 
       for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
-        const column = filter % columns;
-        const row = Math.floor(filter / columns);
-
-        const originY = startY - row * (filterHeight + gapY);
+        const column = filter % layout.columns;
+        const row = Math.floor(filter / layout.columns);
+        const originY =
+          layout.bankStartY - row * (layout.filterHeight + layout.gapY);
         const originZ =
-          bankStartZ[bankIndex] + column * (filterWidth + gapZ);
-
+          layout.bankStartZ + column * (layout.filterWidth + layout.gapZ);
         const values = flattenTensor(bank[filter]);
         const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
 
-        for (let kernelRow = 0; kernelRow < kernelHeight; kernelRow += 1) {
-          for (let kernelCol = 0; kernelCol < kernelWidth; kernelCol += 1) {
-            for (let channel = 0; channel < channels; channel += 1) {
+        for (let kernelRow = 0; kernelRow < layout.kernelHeight; kernelRow += 1) {
+          for (let kernelCol = 0; kernelCol < layout.kernelWidth; kernelCol += 1) {
+            for (let channel = 0; channel < layout.channels; channel += 1) {
               const value = Number(
                 bank[filter][kernelRow][kernelCol][channel]
               );
-
               transform.position.set(
-                startX + channel * filterSpacing,
-                originY + (kernelHeight - 1 - kernelRow) * filterSpacing,
+                layout.bankStartXs[bankIndex] + channel * filterSpacing,
+                originY + (layout.kernelHeight - 1 - kernelRow) * filterSpacing,
                 originZ + kernelCol * filterSpacing,
               );
-
-              transform.scale.set(
-                filterCubeSize,
-                filterCubeSize,
-                filterCubeSize,
-              );
-
+              transform.scale.setScalar(filterCubeSize);
               transform.updateMatrix();
-
               mesh.setMatrixAt(instance, transform.matrix);
-              mesh.setColorAt(
-                instance,
-                heatMapColor(value, -maxAbs, maxAbs),
-              );
-
+              mesh.setColorAt(instance, heatMapColor(value, -maxAbs, maxAbs));
               instance += 1;
             }
           }
         }
       }
-
       mesh.count = instance;
       mesh.instanceMatrix.needsUpdate = true;
-
-      if (mesh.instanceColor) {
-        mesh.instanceColor.needsUpdate = true;
-      }
-
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       residualFilterGroup.add(mesh);
     }
-
     filterStaticGroup.add(residualFilterGroup);
   }
 
-  // Labels for both convolution banks.
   for (const [index, name] of ['conv1', 'conv2'].entries()) {
+    const startX = layout.bankStartXs[index];
     addLabel(
       'Residual block ' + blockIndex + ' · ' + name + ' · 48 × 5×5×48 filters',
       [
-        startX + ((channels - 1) * filterSpacing) / 2,
-        startY + filterHeight + 0.8,
-        bankStartZ[index] + 3.5 * (filterWidth + gapZ),
+        startX + layout.bankSizeX / 2,
+        layout.bankStartY + layout.filterHeight + 0.8,
+        layout.bankStartZ + layout.bankSizeZ / 2,
       ],
       22,
     );
-
-    for (let filter = 0; filter < FILTER_COUNT; filter += 1) {
-      const column = filter % columns;
-      const row = Math.floor(filter / columns);
-
-      addLabel(
-        String(filter + 1),
-        [
-          startX + ((channels - 1) * filterSpacing) / 2,
-          startY -
-            row * (filterHeight + gapY) +
-            kernelHeight * filterSpacing +
-            0.096,
-          bankStartZ[index] +
-            column * (filterWidth + gapZ) +
-            ((kernelWidth - 1) * filterSpacing) / 2,
-        ],
-        10,
-      );
-    }
   }
 }
 
@@ -754,105 +764,81 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     residualPlaceholderGroup.name = 'residual-block-placeholders';
     residualHitTargets = [];
 
-    // Each convolution bank has the same outer dimensions as the complete
-    // 8 × 6 formation of 48 filters (each filter is 5 × 5 × 48).
-    const columns = 8;
-    const rows = Math.ceil(FILTER_COUNT / columns);
-    const kernelWidth = 5;
-    const kernelHeight = 5;
-    const gapY = 0.3 * 1.4;
-    const gapZ = 0.3 * 1.4;
-    const filterWidth = kernelWidth * filterSpacing;
-    const filterHeight = kernelHeight * filterSpacing;
-    const sizeX = FILTER_COUNT * filterSpacing;
-    const sizeY = rows * filterHeight + (rows - 1) * gapY;
-    const sizeZ = columns * filterWidth + (columns - 1) * gapZ;
-    const boxGeometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ);
+    const boxGeometry = new THREE.BoxGeometry(
+      residualLayout(0).bankSizeX,
+      residualLayout(0).bankSizeY,
+      residualLayout(0).bankSizeZ,
+    );
     const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
     boxGeometry.dispose();
 
-    // Use the same Y/Z placement and X-chain spacing as the selected
-    // residual block's full convolution banks.
-    const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
-    const centerY =
-      (startY + (rows - 1) * (filterHeight + gapY) * -1 +
-        (kernelHeight - 1) * filterSpacing) / 2;
-    const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
-    const outputMaxX =
-      20 + (FILTER_COUNT - 1) * outputChannelStep + filterCubeSize / 2;
-    const firstResidualGapX = 5.0;
-    const blockGapX = 1.25;
-    const blockWidthX =
-      (FILTER_COUNT - 1) * filterSpacing + filterCubeSize;
-    const outputCenterZ =
-      -((FILTER_COUNT - 1) * 0.105) / 2 +
-      ((BOARD_SIZE - 1) * filterSpacing) / 2;
-    const originalBankStartZ = [14, 28];
-    const bankPairMinZ = originalBankStartZ[0];
-    const bankPairMaxZ =
-      originalBankStartZ[1] + (columns - 1) * (filterWidth + gapZ) +
-      (kernelWidth - 1) * filterSpacing + filterCubeSize / 2;
-    const bankPairShiftZ = outputCenterZ - (bankPairMinZ + bankPairMaxZ) / 2;
-    const bankStartZ = originalBankStartZ.map((z) => z + bankPairShiftZ);
-    const bankCentersZ = bankStartZ.map(
-      (z) => z + (columns - 1) * (filterWidth + gapZ) / 2 +
-        (kernelWidth - 1) * filterSpacing / 2
-    );
-
     for (let index = 0; index < blockCount; index += 1) {
-      if (index === selectedResidualBlockIndex) continue;
-      const blockStartX =
-        outputMaxX + firstResidualGapX + filterCubeSize / 2 +
-        index * (blockWidthX + blockGapX);
-      const layerX = blockStartX + ((FILTER_COUNT - 1) * filterSpacing) / 2;
+      const layout = residualLayout(index);
+      if (index !== selectedResidualBlockIndex) {
+        for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
+          const position = new THREE.Vector3(
+            layout.bankStartXs[bankIndex] + layout.bankSizeX / 2,
+            layout.bankStartY +
+              (-(layout.rows - 1) * (layout.filterHeight + layout.gapY) +
+                (layout.kernelHeight - 1) * filterSpacing) / 2,
+            layout.bankStartZ + layout.bankSizeZ / 2,
+          );
+          const edgeMaterial = new THREE.LineBasicMaterial({
+            color: 0x9bb4c8, transparent: true, opacity: 0.88,
+          });
+          const outline = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+          outline.position.copy(position);
+          outline.name =
+            'residual-block-' + index + '-conv' + (bankIndex + 1) + '-wireframe';
+          outline.userData.residualBlockIndex = index;
+          residualPlaceholderGroup.add(outline);
 
-      for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
-        const position = new THREE.Vector3(layerX, centerY, bankCentersZ[bankIndex]);
-        const edgeMaterial = new THREE.LineBasicMaterial({
-          color: 0x9bb4c8,
-          transparent: true,
-          opacity: 0.88,
-        });
-        const outline = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-        outline.position.copy(position);
-        outline.name = 'residual-block-' + index + '-conv' + (bankIndex + 1) + '-wireframe';
-        outline.userData.residualBlockIndex = index;
-        residualPlaceholderGroup.add(outline);
-
-        // Invisible mesh uses the exact same full-bank dimensions for picking.
-        const hitTarget = new THREE.Mesh(
-          new THREE.BoxGeometry(sizeX, sizeY, sizeZ),
-          new THREE.MeshBasicMaterial({ visible: false }),
-        );
-        hitTarget.position.copy(position);
-        hitTarget.name = 'residual-block-' + index + '-conv' + (bankIndex + 1) + '-hit-target';
-        hitTarget.userData.residualBlockIndex = index;
-        residualPlaceholderGroup.add(hitTarget);
-        residualHitTargets.push(hitTarget);
+          const hitTarget = new THREE.Mesh(
+            new THREE.BoxGeometry(
+              layout.bankSizeX, layout.bankSizeY, layout.bankSizeZ,
+            ),
+            new THREE.MeshBasicMaterial({ visible: false }),
+          );
+          hitTarget.position.copy(position);
+          hitTarget.name =
+            'residual-block-' + index + '-conv' + (bankIndex + 1) + '-hit-target';
+          hitTarget.userData.residualBlockIndex = index;
+          residualPlaceholderGroup.add(hitTarget);
+          residualHitTargets.push(hitTarget);
+        }
       }
+
+      // Every block, including the selected one, has a glass output tensor
+      // between it and the next residual block.
+      addResidualOutputGlass(residualPlaceholderGroup, layout, index);
+
+      if (index !== selectedResidualBlockIndex) {
+        addLabel(
+          'Residual block ' + index,
+          [
+            layout.bankStartXs[0] + layout.bankSizeX +
+              (layout.bankStartXs[1] - layout.bankStartXs[0]) / 2,
+            layout.outputCenterY + layout.bankSizeY / 2 + 1.0,
+            layout.outputCenterZ,
+          ],
+          12, '#dce7f5', 100,
+        );
+      }
+      addLabel(
+        'Block ' + index + ' output · 24×24×48',
+        [
+          layout.outputCenterX,
+          layout.outputCenterY + layout.outputSizeY / 2 + 0.45,
+          layout.outputCenterZ,
+        ],
+        11, '#dce7f5', 100,
+      );
     }
     filterStaticGroup.add(residualPlaceholderGroup);
   }
 
-  function drawResidualPlaceholderLabels(blockCount) {
-    for (let index = 0; index < blockCount; index += 1) {
-      if (index === selectedResidualBlockIndex) continue;
-      addLabel(
-        'Block ' + index,
-        [
-          20 + (FILTER_COUNT - 1) * (filterCubeSize / 0.9 + filterSpacing - filterCubeSize) +
-            filterCubeSize / 2 + 5.0 + filterCubeSize / 2 +
-            index * ((FILTER_COUNT - 1) * filterSpacing + filterCubeSize + 1.25) +
-            ((FILTER_COUNT - 1) * filterSpacing) / 2,
-          1.0,
-          -((FILTER_COUNT - 1) * 0.105) / 2 +
-            ((BOARD_SIZE - 1) * filterSpacing) / 2,
-        ],
-        12,
-        '#dce7f5',
-        80,
-      );
-    }
+  function drawResidualPlaceholderLabels() {
+    // Labels are created alongside their corresponding placeholder geometry.
   }
 
   function setSelectedResidualBlock(blockIndex, weights) {
