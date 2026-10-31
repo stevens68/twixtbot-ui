@@ -259,21 +259,48 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     }
   }
 
-  function addResidualCurvedArrow(group, startX, endX, startY, startZ, endY, endZ, name, bypassHeight = 0) {
+  function addResidualCurvedArrow(group, startX, endX, startY, startZ, endY, endZ, name) {
     const dx = endX - startX;
     if (dx <= 0.2) return;
-    // A cubic Bezier gives a horizontal tangent at both ends. For the
-    // identity path, lift the two control points together to make one broad
-    // bypass arch around both convolution banks, then return to the axis.
     const curve = new THREE.CubicBezierCurve3(
       new THREE.Vector3(startX, startY, startZ),
-      new THREE.Vector3(startX + dx * 0.34, startY + bypassHeight, startZ),
-      new THREE.Vector3(endX - dx * 0.34, endY + bypassHeight, endZ),
+      new THREE.Vector3(startX + dx * 0.42, startY, startZ),
+      new THREE.Vector3(endX - dx * 0.42, endY, endZ),
       new THREE.Vector3(endX, endY, endZ),
     );
-    const shaft = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 64, 0.06, 8, false),
-      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+    const shaft = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(64)),
+      new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
+    );
+    shaft.name = name + '-shaft';
+    group.add(shaft);
+  }
+
+  function addResidualBypass(group, startX, endX, centerZ, offsetZ, name) {
+    const dx = endX - startX;
+    if (dx <= 1) return;
+    const turn = Math.min(dx * 0.22, 3.0);
+    const outsideZ = centerZ + offsetZ;
+    const path = new THREE.CurvePath();
+    path.add(new THREE.CubicBezierCurve3(
+      new THREE.Vector3(startX, 0, centerZ),
+      new THREE.Vector3(startX + turn * 0.45, 0, centerZ),
+      new THREE.Vector3(startX + turn * 0.55, 0, outsideZ),
+      new THREE.Vector3(startX + turn, 0, outsideZ),
+    ));
+    path.add(new THREE.LineCurve3(
+      new THREE.Vector3(startX + turn, 0, outsideZ),
+      new THREE.Vector3(endX - turn, 0, outsideZ),
+    ));
+    path.add(new THREE.CubicBezierCurve3(
+      new THREE.Vector3(endX - turn, 0, outsideZ),
+      new THREE.Vector3(endX - turn * 0.55, 0, outsideZ),
+      new THREE.Vector3(endX - turn * 0.45, 0, centerZ),
+      new THREE.Vector3(endX, 0, centerZ),
+    ));
+    const shaft = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(path.getPoints(96)),
+      new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
     );
     shaft.name = name + '-shaft';
     group.add(shaft);
@@ -377,8 +404,8 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       const mergeX = outputLeftX - 1.35;
       addResidualCurvedArrow(
         residualPlaceholderGroup, bankRight2, mergeX,
-        bankCenterY, bankCenterZ, bankCenterY, bankCenterZ,
-        'residual-' + index + '-conv2-to-merge', 1.0,
+        0, bankCenterZ, 0, bankCenterZ,
+        'residual-' + index + '-conv2-to-merge',
       );
 
       // The identity path bypasses both convolutions with a double-S curve,
@@ -386,14 +413,14 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       const skipStartX = index === 0
         ? 20 + (FILTER_COUNT - 1) * layout.outputChannelStep + layout.outputCubeSize / 2
         : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
-      // Route the identity path above the full convolution enclosure,
-      // including its 8% frame margin. A cubic Bezier reaches 75% of the
-      // control-point offset at its apex.
-      const bypassControlHeight = (layout.bankSizeY * 1.08 / 2 + 1.0) / 0.75;
-      addResidualCurvedArrow(
+      // Keep the bypass in the y=0 plane. It leaves the bank smoothly,
+      // runs straight outside the full Z extent of both convolution banks,
+      // then turns back to the shared merge point.
+      const bypassOffsetZ = layout.bankSizeZ * 1.08 / 2 + 1.0;
+      addResidualBypass(
         residualPlaceholderGroup, skipStartX, mergeX,
-        bankCenterY, bankCenterZ, bankCenterY, bankCenterZ,
-        'residual-' + index + '-identity-skip', bypassControlHeight,
+        bankCenterZ, bypassOffsetZ,
+        'residual-' + index + '-identity-skip',
       );
       addResidualArrow(
         residualPlaceholderGroup, mergeX, outputLeftX,
