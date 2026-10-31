@@ -71,35 +71,32 @@ function residualLayout(blockIndex) {
   const outputMaxX =
     20 + (channels - 1) * outputChannelStep + outputCubeSize / 2;
   const firstResidualGapX = 5.0;
-  const convGapZ = 2.0 * 3 * 3 * 0.5;
+  const convGapX = 2.0 * 3 * 3 * 0.5;
   const outputGapX = 1.25 * 1.15 * 3;
   const baseBlockPitchX =
-    bankSizeX + outputGapX + outputCubeSize / 2 +
-    outputSizeX + 1.25 + filterCubeSize / 2;
+    2 * bankSizeX + convGapX + outputGapX +
+    outputCubeSize / 2 + outputSizeX + 1.25 + filterCubeSize / 2;
   // Increase the complete pitch between successive residual blocks by 20%.
   const blockPitchX = baseBlockPitchX * 1.2;
   const blockStartX =
     outputMaxX + firstResidualGapX + filterCubeSize / 2 +
     blockIndex * blockPitchX;
-  // Center the output tensor in the clear X gap between the right edge of
-  // this residual block's filter bank and the left edge of the next block.
+  // Place Conv2 to the right of Conv1, then leave room for the block output.
   const currentBlockRightX =
-    blockStartX - filterCubeSize / 2 + bankSizeX;
+    blockStartX - filterCubeSize / 2 + 2 * bankSizeX + convGapX;
   const nextBlockLeftX =
     blockStartX + blockPitchX - filterCubeSize / 2;
   const outputCenterX = (currentBlockRightX + nextBlockLeftX) / 2;
   const outputStartX =
     outputCenterX - (channels - 1) * outputChannelStep / 2;
-  const bankPairSizeZ = 2 * bankSizeZ + convGapZ;
-  const bankPairStartZ = outputCenterZ - bankPairSizeZ / 2 + filterCubeSize / 2;
+  const bankStartZ = outputCenterZ - bankSizeZ / 2 + filterCubeSize / 2;
   return {
     channels, kernelHeight, kernelWidth, columns, rows,
     filterWidth, filterHeight, gapY, gapZ,
     bankSizeX, bankSizeY, bankSizeZ, bankStartY,
-    bankStartZ: bankPairStartZ,
-    bankStartXs: [blockStartX, blockStartX],
-    bankStartZs: [bankPairStartZ, bankPairStartZ + bankSizeZ + convGapZ],
-    bankPairSizeZ,
+    bankStartZ,
+    bankStartXs: [blockStartX, blockStartX + bankSizeX + convGapX],
+    bankStartZs: [bankStartZ, bankStartZ],
     blockStartX, outputStartX, outputCenterX, outputChannelStep,
     outputSizeX, outputSizeY, outputSizeZ,
     outputCenterY, outputCenterZ, outputCubeSize,
