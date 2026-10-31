@@ -216,6 +216,7 @@ export function createTensorRenderer({
     // Show all trained first-layer filters and their summed feature tensor
     // alongside the game encoding, rather than switching between separate tabs.
     const filterInfo = drawFilters();
+    const policyOutputStats = filterInfo.policyOutputStats;
     const featureInfo = featureOutputRenderer.drawOutput();
 
     // Connect each input/filter pair and the three filter banks to the
@@ -560,6 +561,7 @@ export function createTensorRenderer({
       count: locationInfo.count + ' location filters + ' + pegInfo.count + ' peg filters + ' + linkInfo.count + ' link filters + ' + policyInfo.count + ' policy filters' +
         (policyOutputStats ? ' · ' + policyOutputStats.count.toLocaleString() + ' policy output cells' : ''),
       residualCount: 2 * FILTER_COUNT,
+      policyOutputStats,
       residualBlockCount: blockCount,
       selectedResidualBlockIndex,
       arrowBanks: [
