@@ -601,6 +601,7 @@ async function loadGamePosition(ply) {
     primaryBn: demoModel.primaryBn,
     residualBlock0Output: null,
     residualBlockLastOutput: null,
+    residualBlockCount: demoModel.residualBlockCount,
   };
 
   gamePly = ply;
