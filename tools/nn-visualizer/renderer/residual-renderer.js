@@ -16,6 +16,7 @@ export function createResidualRenderer({
   let selectedResidualWeights = null;
   let residualGeometryDirty = false;
   let residualFiltersVisible = true;
+  let showIntermediateResidualBlocks = false;
   let lastRenderedOutputTensor = null;
   let lastRenderedLastOutputTensor = null;
   function disposeResidualDetail(blockIndex) {
@@ -36,6 +37,8 @@ export function createResidualRenderer({
 
 
 function residualLayout(blockIndex) {
+ const actualLastIndex=Number(getData().residualBlockCount || 20)-1;
+ const layoutIndex=(!showIntermediateResidualBlocks && blockIndex===actualLastIndex)?1:blockIndex;
  const channels=FILTER_COUNT,kernelHeight=5,kernelWidth=5,columns=8,rows=Math.ceil(FILTER_COUNT/columns);
  const filterWidth=kernelWidth*filterSpacing,filterHeight=kernelHeight*filterSpacing,gapY=.42,gapZ=.42;
  const bankSizeX=(channels-1)*filterSpacing+filterCubeSize;
@@ -54,8 +57,8 @@ function residualLayout(blockIndex) {
  // while retaining the compact conv1-to-conv2 gap inside every later block.
  const firstInterBlockGap=firstPitch-(2*bankSizeX+firstConvGap);
  const compactPitch=2*bankSizeX+compactConvGap+firstInterBlockGap;
- const blockStartX=blockIndex===0?firstX:nextLeft+filterCubeSize/2+(blockIndex-1)*compactPitch;
- const isEndpoint=blockIndex===0 || blockIndex===Number(getData().residualBlockCount || 20)-1;
+ const blockStartX=layoutIndex===0?firstX:nextLeft+filterCubeSize/2+(layoutIndex-1)*compactPitch;
+ const isEndpoint=blockIndex===0 || blockIndex===actualLastIndex;
  const convGap=isEndpoint?firstConvGap:compactConvGap;
  const shift=blockStartX-firstX;
  return {channels,kernelHeight,kernelWidth,columns,rows,filterWidth,filterHeight,gapY,gapZ,bankSizeX,bankSizeY,bankSizeZ,bankStartY,bankStartZ,
@@ -153,6 +156,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     residualHitTargets = [];
 
     for (let index = 0; index < blockCount; index += 1) {
+      if (!showIntermediateResidualBlocks && index > 0 && index < blockCount - 1) continue;
       const layout = residualLayout(index);
       for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
         const position = new THREE.Vector3(
@@ -194,7 +198,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
        const prefix='block-'+(index+1);
        let inputRight=20+(FILTER_COUNT-1)*layout.outputChannelStep+layout.outputCubeSize/2;
        if(index===blockCount-1 && index>0){
-        const previous=residualLayout(index-1);
+        const previous=residualLayout((!showIntermediateResidualBlocks && index===blockCount-1)?0:index-1);
         const previousRight=previous.bankStartXs[1]+(previous.channels-1)*filterSpacing+filterCubeSize/2;
         const currentLeft=layout.bankStartXs[0]-filterCubeSize/2;
         const previousGapCenter=(previousRight+currentLeft)/2;
@@ -207,7 +211,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
        addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,prefix+'-identity-skip','y₃ = x');
        addResidualArrow(residualPlaceholderGroup,merge,outLeft,0,cz,prefix+'-merged-output','Σ');
        if(index===0){
-        const outRight=layout.outputCenterX+layout.outputSizeX/2,nextLeft=residualLayout(1).bankStartXs[0]-filterCubeSize/2;
+        const outRight=layout.outputCenterX+layout.outputSizeX/2,nextIndex=showIntermediateResidualBlocks?1:blockCount-1,nextLeft=residualLayout(nextIndex).bankStartXs[0]-filterCubeSize/2;
         addResidualArrow(residualPlaceholderGroup,outRight,nextLeft,cy,cz,'block-1-output-to-block-2');
        }
       }else if(index<blockCount-1){
@@ -252,8 +256,25 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
   }
 
   function drawResidualPlaceholderLabels(blockCount){
-   for(let index=0;index<blockCount;index++){const layout=residualLayout(index),cx=layout.blockStartX+layout.blockSpanX/2,y=layout.bankStartY+layout.bankSizeY/2+2,z=layout.bankStartZ+layout.bankSizeZ/2;
+   for(let index=0;index<blockCount;index++){if(!showIntermediateResidualBlocks && index>0 && index<blockCount-1)continue;const layout=residualLayout(index),cx=layout.blockStartX+layout.blockSpanX/2,y=layout.bankStartY+layout.bankSizeY/2+2,z=layout.bankStartZ+layout.bankSizeZ/2;
     addLabel('Residual block '+(index+1),[cx,y,z],24,'#ffffff',70);}
+  }
+
+  function setShowIntermediateResidualBlocks(visible) {
+    const next=Boolean(visible);
+    if(showIntermediateResidualBlocks===next)return;
+    showIntermediateResidualBlocks=next;
+    residualPlaceholderDirty=true;
+    residualGeometryDirty=true;
+    // Output tensors move with their blocks; dispose and recreate them at the new positions.
+    for(const index of [...residualOutputGroups.keys()]) updateResidualOutput(index,null);
+    lastRenderedOutputTensor=null;
+    lastRenderedLastOutputTensor=null;
+  }
+
+  function getBlock20CameraOffset() {
+    const lastIndex=Number(getData().residualBlockCount || 20)-1;
+    return residualLayout(lastIndex).blockStartX-residualLayout(1).blockStartX;
   }
 
   function setSelectedResidualBlock(blockIndex, weights) {
@@ -369,6 +390,8 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     draw,
     reset,
     setResidualFiltersVisible,
+    setShowIntermediateResidualBlocks,
+    getBlock20CameraOffset,
     setSelectedResidualBlock,
     pickResidualBlock,
   };
