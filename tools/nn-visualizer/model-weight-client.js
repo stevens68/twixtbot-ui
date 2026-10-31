@@ -97,6 +97,16 @@ export async function loadTrainedModelWeights({
     }
     demoModel.primaryBn = primaryBn;
 
+    const policyBn = result.policy_bn;
+    for (const key of ['weight', 'bias', 'running_mean', 'running_var']) {
+      if (!Array.isArray(policyBn?.[key]) ||
+          policyBn[key].length !== 2 ||
+          policyBn[key].some((value) => !Number.isFinite(Number(value)))) {
+        throw new Error('The model-weight endpoint returned invalid policy batch-normalization parameter: ' + key);
+      }
+    }
+    demoModel.policyBn = policyBn;
+
     const status = 'Trained peg/link/location and policy-convolution weights plus primary batch-normalization parameters loaded from ' + result.layers.links.source +
       ' (pegs: ' + result.layers.pegs.filter_count + ' filters, bias=' +
       (result.layers.pegs.has_bias ? 'loaded' : 'none') + '; links: ' +
