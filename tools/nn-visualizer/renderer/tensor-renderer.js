@@ -207,7 +207,7 @@ export function createTensorRenderer({
         'y = |BN(Conv(x))|', 0.62,
         bank.key + '-filter-bank-to-feature-output',
       );
-    });
+    }
 
     return {
       title: 'First-layer network view',
