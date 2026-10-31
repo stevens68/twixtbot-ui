@@ -630,8 +630,8 @@ function residualLayout(blockIndex) {
   const outputMaxX =
     20 + (channels - 1) * outputChannelStep + outputCubeSize / 2;
   const firstResidualGapX = 5.0;
-  const convGapZ = 1.25;
-  const outputGapX = 1.25;
+  const convGapZ = 2.0;
+  const outputGapX = 1.25 * 1.15;
   const blockPitchX =
     bankSizeX + outputGapX + outputCubeSize / 2 +
     outputSizeX + 1.25 + filterCubeSize / 2;
@@ -709,23 +709,8 @@ function addResidualOutputGlass(group, layout, blockIndex) {
   const geometry = new THREE.BoxGeometry(
     layout.outputSizeX * 1.08, layout.outputSizeY * 1.08, layout.outputSizeZ * 1.08,
   );
-  const glass = new THREE.Mesh(
-    geometry,
-    new THREE.MeshStandardMaterial({
-      color: 0x9bb4c8,
-      roughness: 0.18,
-      metalness: 0.05,
-      transparent: true,
-      opacity: 0.12,
-      depthWrite: false,
-    }),
-  );
-  glass.position.set(
-    layout.outputCenterX, layout.outputCenterY, layout.outputCenterZ,
-  );
-  glass.name = 'residual-block-' + blockIndex + '-output-tensor-glass';
-  group.add(glass);
-
+  // Use an open wireframe enclosure: solid transparent faces obscured the
+  // tensor when orbiting the camera inside the box.
   const edges = new THREE.LineSegments(
     new THREE.EdgesGeometry(geometry),
     new THREE.LineBasicMaterial({
@@ -847,18 +832,9 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
           const glassGeometry = new THREE.BoxGeometry(
             layout.bankSizeX * 1.08, layout.bankSizeY * 1.08, layout.bankSizeZ * 1.08,
           );
-          const glass = new THREE.Mesh(
-            glassGeometry,
-            new THREE.MeshStandardMaterial({
-              color: 0x9bb4c8, roughness: 0.16, metalness: 0.04,
-              transparent: true, opacity: 0.16, depthWrite: false,
-            }),
-          );
-          glass.position.copy(position);
-          glass.name =
-            'residual-block-' + index + '-conv' + (bankIndex + 1) + '-glass';
-          residualPlaceholderGroup.add(glass);
-
+          // Keep the enclosure as an open frame rather than solid glass
+          // panes, so the camera can move inside without the walls obscuring
+          // the filters.
           const outline = new THREE.LineSegments(
             new THREE.EdgesGeometry(glassGeometry),
             new THREE.LineBasicMaterial({
@@ -883,27 +859,6 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
           residualPlaceholderGroup.add(hitTarget);
           residualHitTargets.push(hitTarget);
         }
-      }
-
-      if (index === 0) {
-        const skipY = layout.outputCenterY + layout.bankSizeY / 2 + 2.0;
-        const skipStartX = layout.blockStartX - 1.0;
-        const skipEndX = layout.outputCenterX;
-        const skipPoints = [
-          new THREE.Vector3(skipStartX, layout.outputCenterY, layout.outputCenterZ),
-          new THREE.Vector3(skipStartX, skipY, layout.outputCenterZ),
-          new THREE.Vector3(skipEndX, skipY, layout.outputCenterZ),
-          new THREE.Vector3(skipEndX, layout.outputCenterY, layout.outputCenterZ),
-        ];
-        const skipLine = new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints(skipPoints),
-          new THREE.LineBasicMaterial({ color: 0xf0c76a, transparent: true, opacity: 0.95 }),
-        );
-        skipLine.name = 'residual-block-0-skip-connection';
-        residualPlaceholderGroup.add(skipLine);
-        addLabel('skip connection (+ input)', [
-          (skipStartX + skipEndX) / 2, skipY + 0.25, layout.outputCenterZ,
-        ], 12, '#f0c76a', 110);
       }
 
       // Keep the output enclosure visible and show actual values for block 0.
