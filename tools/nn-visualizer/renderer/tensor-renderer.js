@@ -373,9 +373,9 @@ export function createTensorRenderer({
     if (rebuild) {
       addAnnotationLabel(
         'Conv 1x1x2x48',
-        [startX + (locationChannels - 1) * filterSpacing / 2,
-          locationStartY + locationHeight * filterSpacing + 0.75,
-          locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
+        [startX + (pegChannels - 1) * filterSpacing / 2,
+          pegStartY + pegHeight * filterSpacing + 0.75,
+          pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
@@ -387,9 +387,9 @@ export function createTensorRenderer({
       );
       addAnnotationLabel(
         'Conv 5x5x2x48',
-        [startX + (pegChannels - 1) * filterSpacing / 2,
-          pegStartY + pegHeight * filterSpacing + 0.75,
-          pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
+        [startX + (locationChannels - 1) * filterSpacing / 2,
+          locationStartY + locationHeight * filterSpacing + 0.75,
+          locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
         24, '#ffffff', 90,
       );
     }
