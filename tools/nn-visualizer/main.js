@@ -120,6 +120,30 @@ const nnPerf = {
 };
 window.nnPerf = nnPerf;
 
+// Record browser main-thread tasks that can delay fetch promise callbacks even
+// when Chrome's Network panel shows that the response has already arrived.
+if (typeof PerformanceObserver !== 'undefined' &&
+    PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
+  try {
+    const longTaskObserver = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        nnPerf.record('mainThreadLongTask', {
+          startMs: Number(entry.startTime.toFixed(2)),
+          durationMs: Number(entry.duration.toFixed(2)),
+          attribution: (entry.attribution || []).map(item => ({
+            name: item.name,
+            entryType: item.entryType,
+            containerType: item.containerType,
+          })),
+        });
+      }
+    });
+    longTaskObserver.observe({ type: 'longtask', buffered: true });
+  } catch (error) {
+    console.warn('[NN perf] Long-task observation unavailable:', error);
+  }
+}
+
 const { requestSnapshot, requestPosition } = createSnapshotClient({
   recordPerf: (label, metrics) => nnPerf.record(label, metrics),
 });
@@ -517,13 +541,16 @@ applyChangesButton.addEventListener('click', async () => {
 
 async function loadGamePosition(ply) {
   const loadStarted = performance.now();
+  const requestStarted = performance.now();
   // Rebuild the authoritative backend position from the move prefix. This
   // makes Back an undo and Forward a redo, including captures/links and the
   // model's perspective-dependent input encoding.
   const position = demoModel.weights.residualBlock0
     ? await requestPosition(gameMoves.slice(0, ply))
     : { snapshot: await requestSnapshot(gameMoves.slice(0, ply)), residualBlock0Output: null };
+  const requestWaitMs = performance.now() - requestStarted;
   const result = position.snapshot;
+  const stateSetupStarted = performance.now();
   backendSnapshot = result;
   currentPlayerName = result.next_player === 1 ? 'Red' : 'Black';
 
@@ -544,6 +571,8 @@ async function loadGamePosition(ply) {
 
   gamePly = ply;
   gameLoaded = true;
+  const stateSetupMs = performance.now() - stateSetupStarted;
+  const residualValidationStarted = performance.now();
   residualBlock0Output = null;
   residualBlock0OutputError = null;
   if (demoModel.weights.residualBlock0) {
@@ -579,17 +608,27 @@ async function loadGamePosition(ply) {
       });
     }
   }
+  const residualValidationMs = performance.now() - residualValidationStarted;
   // Rebuild whichever visualization is currently selected, not just Inputs.
   // Keep the camera and selected tab stable while the board/tensors change.
+  const renderStarted = performance.now();
   renderStep();
+  const renderStepCallMs = performance.now() - renderStarted;
+  const navigationStarted = performance.now();
   updateGameNavigation();
   status.textContent = 'Game position ' + gamePly + '/' + gameMoves.length +
     '. Next player: ' + result.next_player_name +
     (residualBlock0OutputError ? ' | Residual block 1 output unavailable: ' + residualBlock0OutputError : '') +
     '. Board and input tensors updated. ' + modelWeightStatus;
+  const navigationAndStatusMs = performance.now() - navigationStarted;
   nnPerf.record('loadGamePosition', {
     ply,
     moves: gameMoves.length,
+    requestWaitMs: Number(requestWaitMs.toFixed(2)),
+    stateSetupMs: Number(stateSetupMs.toFixed(2)),
+    residualValidationMs: Number(residualValidationMs.toFixed(2)),
+    renderStepCallMs: Number(renderStepCallMs.toFixed(2)),
+    navigationAndStatusMs: Number(navigationAndStatusMs.toFixed(2)),
     totalMs: Number((performance.now() - loadStarted).toFixed(2)),
   });
 }
