@@ -5,7 +5,7 @@ import { createResidualRenderer } from './residual-renderer.js?v=20261031-residu
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
-  createTensor3, getSceneGroup, getData, createSampleGame,
+  getSceneGroup, getData, createSampleGame,
   getBackendSnapshot, drawSampleBoard, drawEffectiveBoard,
   logLinkEncodingDiagnostic, logFullInputTensorValidation,
   calculateConvolutionOutput, addLabel,
