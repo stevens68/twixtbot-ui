@@ -861,6 +861,25 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         }
       }
 
+      // Connect consecutive residual output tensors with a straight grey
+      // arrow. Raise it above the filter banks so it remains visible.
+      if (index < blockCount - 1) {
+        const nextLayout = residualLayout(index + 1);
+        const arrowY = layout.outputCenterY + layout.outputSizeY / 2 + 1.2;
+        const arrowStartX = layout.outputCenterX + layout.outputSizeX / 2 + 0.12;
+        const arrowEndX = nextLayout.outputCenterX - nextLayout.outputSizeX / 2 - 0.12;
+        const arrow = new THREE.ArrowHelper(
+          new THREE.Vector3(1, 0, 0),
+          new THREE.Vector3(arrowStartX, arrowY, layout.outputCenterZ),
+          Math.max(0.1, arrowEndX - arrowStartX),
+          0xaeb7c2,
+          0.48,
+          0.26,
+        );
+        arrow.name = 'residual-output-' + index + '-to-output-' + (index + 1);
+        residualPlaceholderGroup.add(arrow);
+      }
+
       // Keep the output enclosure visible and show actual values for block 0.
       addResidualOutputGlass(residualPlaceholderGroup, layout, index);
       if (index === 0 && getData().residualBlock0Output) {
