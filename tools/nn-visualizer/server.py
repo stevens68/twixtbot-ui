@@ -198,12 +198,16 @@ def last_residual_output(checkpoint, tensors):
             h = F.conv2d(h, parameter(prefix + ".conv2.weight"), padding=2)
             h = torch.abs(batch_norm(h, prefix + ".bn2"))
             x = h + x
+            if index == 0:
+                first = x[0].permute(1, 2, 0).contiguous()
 
         output = x[0].permute(1, 2, 0).contiguous()
-        return {
-            "shape": list(output.shape), "values": output.tolist(),
-            "min": float(output.min()), "max": float(output.max()),
-        }
+        def serialize(tensor):
+            return {
+                "shape": list(tensor.shape), "values": tensor.tolist(),
+                "min": float(tensor.min()), "max": float(tensor.max()),
+            }
+        return {"first": serialize(first), "last": serialize(output)}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -384,13 +388,12 @@ class Handler(SimpleHTTPRequestHandler):
                 if endpoint == "/api/position":
                     residual_started = time.perf_counter()
                     checkpoint = load_checkpoint()
-                    residual_result = first_residual_output(checkpoint, snapshot_result["tensors"])
-                    last_residual_result = last_residual_output(checkpoint, snapshot_result["tensors"])
+                    residual_results = last_residual_output(checkpoint, snapshot_result["tensors"])
                     residual_ms = (time.perf_counter() - residual_started) * 1000
                     result = {
                         "snapshot": snapshot_result,
-                        "residualBlock0Output": residual_result,
-                        "residualBlockLastOutput": last_residual_result,
+                        "residualBlock0Output": residual_results["first"],
+                        "residualBlockLastOutput": residual_results["last"],
                     }
                 else:
                     result = snapshot_result
