@@ -53,6 +53,7 @@ export function createFeatureOutputRenderer({
       count: values.length,
       min: Math.min(...values),
       max: Math.max(...values),
+      colorMax,
     };
   }
 
@@ -77,7 +78,7 @@ export function createFeatureOutputRenderer({
       title: 'Convolution output',
       description: 'The 48 channels show the trained peg + link + location convolution sum, followed by checkpoint primary batch normalization (inference running statistics, scale and offset) and absolute-value activation. Color encodes the resulting nonnegative magnitude.',
       shape: '24 × 24 × 48',
-      range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4) + ' (colour scale 0 … ' + colorMax.toFixed(4) + ', fixed from primary BN ±3σ)',
+      range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4) + ' (colour scale 0 … ' + stats.colorMax.toFixed(4) + ', fixed from primary BN ±3σ)',
       count: stats.count.toLocaleString() + ' cells',
     };
   }
