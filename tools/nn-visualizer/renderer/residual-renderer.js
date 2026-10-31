@@ -179,7 +179,6 @@ function addResidualBypass(group,x1,x2,z,offset,name){const dx=x2-x1;if(dx<=1)re
         residualPlaceholderGroup.add(hitTarget);
         residualHitTargets.push(hitTarget);
       }
-    }
       const br1=layout.bankStartXs[0]+(layout.channels-1)*filterSpacing+filterCubeSize/2,bl2=layout.bankStartXs[1]-filterCubeSize/2;
       const br2=layout.bankStartXs[1]+(layout.channels-1)*filterSpacing+filterCubeSize/2,cy=layout.outputCenterY,cz=layout.outputCenterZ;
       if(index===0){
@@ -197,6 +196,7 @@ function addResidualBypass(group,x1,x2,z,offset,name){const dx=x2-x1;if(dx<=1)re
        const next=residualLayout(index+1),nextLeft=next.bankStartXs[0]-filterCubeSize/2;
        addResidualArrow(residualPlaceholderGroup,br2,nextLeft,cy,cz,'block-'+(index+1)+'-to-block-'+(index+2));
       }
+    }
     filterStaticGroup.add(residualPlaceholderGroup);
   }
 
