@@ -36,9 +36,11 @@ export function createResidualRenderer({
   }
 
 
-function residualLayout(blockIndex) {
+function residualLayout(blockIndex, forceExpanded = false) {
  const actualLastIndex=Number(getData().residualBlockCount || 20)-1;
- const layoutIndex=(!showIntermediateResidualBlocks && blockIndex===actualLastIndex)?1:blockIndex;
+ // Camera framing sometimes needs the full-stack coordinates even while the
+ // intermediate blocks are hidden and the last block is rendered compactly.
+ const layoutIndex=(!showIntermediateResidualBlocks && !forceExpanded && blockIndex===actualLastIndex)?1:blockIndex;
  const channels=FILTER_COUNT,kernelHeight=5,kernelWidth=5,columns=8,rows=Math.ceil(FILTER_COUNT/columns);
  const filterWidth=kernelWidth*filterSpacing,filterHeight=kernelHeight*filterSpacing,gapY=.42,gapZ=.42;
  const bankSizeX=(channels-1)*filterSpacing+filterCubeSize;
@@ -274,7 +276,10 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
 
   function getBlock20CameraOffset() {
     const lastIndex=Number(getData().residualBlockCount || 20)-1;
-    return residualLayout(lastIndex).blockStartX-residualLayout(1).blockStartX;
+    // The preset coordinates describe the expanded stack. When blocks 2–19
+    // are hidden, shift the camera by the distance the final block moved left.
+    if (showIntermediateResidualBlocks) return 0;
+    return residualLayout(lastIndex, true).blockStartX-residualLayout(1, true).blockStartX;
   }
 
   function setSelectedResidualBlock(blockIndex, weights) {
