@@ -314,9 +314,9 @@ export function createTensorRenderer({
     const pegGapZ = gapZ * 1.4;
     const pegFilterWidth = pegWidth * filterSpacing;
     const pegFilterHeight = pegHeight * filterSpacing;
+    const pegRows = Math.ceil(pegWeights.length / columns);
     const pegStartY = -0.287 + (pegRows - 1) * (pegFilterHeight + pegGapY) / 2 - (pegHeight - 1) * filterSpacing / 2;
     const pegStartZ = startZ - 11;
-    const pegRows = Math.ceil(pegWeights.length / columns);
     const pegBankHeight = pegRows * pegFilterHeight + (pegRows - 1) * pegGapY;
     const pegMetadata = getData().pegConvMetadata;
     const pegInfo = filterBankRenderer.drawBank({
@@ -338,9 +338,9 @@ export function createTensorRenderer({
     const locationChannels = locationWeights[0][0][0].length;
     const locationGapY = gapY * 0.1;
     const locationGapZ = gapZ * 0.1;
+    const locationRows = Math.ceil(locationWeights.length / columns);
     const locationStartY = -0.287 + (locationRows - 1) * (pegFilterHeight + locationGapY) / 2 - (locationHeight - 1) * filterSpacing / 2;
     const locationStartZ = startZ + 11;
-    const locationRows = Math.ceil(locationWeights.length / columns);
     const locationBankHeight = locationRows * pegFilterHeight + (locationRows - 1) * locationGapY;
     const locationMetadata = getData().locationConvMetadata;
     const locationInfo = filterBankRenderer.drawBank({
