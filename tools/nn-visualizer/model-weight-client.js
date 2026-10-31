@@ -7,6 +7,7 @@ export async function loadTrainedModelWeights({
   filterCount,
   residualBlockWeightCache,
   onInitialResidualBlock,
+  onInitialLastResidualBlock,
 }) {
   try {
     const response = await fetch('/api/weights', { cache: 'no-store' });
@@ -55,6 +56,17 @@ export async function loadTrainedModelWeights({
     demoModel.residualBlockCount = Number(result.residual_block_count) || 1;
     residualBlockWeightCache.set(0, residualBlock0.weights);
     onInitialResidualBlock(residualBlock0.weights);
+    const lastIndex = demoModel.residualBlockCount - 1;
+    if (lastIndex > 0 && typeof onInitialLastResidualBlock === 'function') {
+      const lastResponse = await fetch('/api/residual-block?index=' + encodeURIComponent(lastIndex), { cache: 'no-store' });
+      const lastPayload = await lastResponse.json();
+      if (!lastResponse.ok) throw new Error(lastPayload.error || lastResponse.statusText);
+      if (lastPayload?.index !== lastIndex || lastPayload.config?.channels !== filterCount) {
+        throw new Error('Unexpected metadata for final residual block.');
+      }
+      residualBlockWeightCache.set(lastIndex, lastPayload.weights);
+      onInitialLastResidualBlock(lastPayload.weights);
+    }
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
