@@ -427,7 +427,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
 
   function getLastOutputAnchor() {
     const lastIndex = Number(getData().residualBlockCount || 20) - 1;
-    const layout = residualLayout(lastIndex, true);
+    const layout = residualLayout(lastIndex);
     return {
       right: layout.outputCenterX + layout.outputSizeX / 2,
       centerY: layout.outputCenterY,
