@@ -136,9 +136,9 @@ function addResidualOutputValues(group,layout,index,tensor){
  o.scale.setScalar(layout.outputCubeSize*.72);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);mesh.setColorAt(i,new THREE.Color().setHSL((1/3)*(1-Math.max(0,Math.min(1,v/max))),1,.5));i++;}
  mesh.count=i;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;group.add(mesh);
 }
-function addResidualArrow(group,x1,x2,y,z,name){const gap=x2-x1;if(gap<=.15)return;const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x1+gap*.22,y,z),gap*.67,0x71879b,.42,.22);arrow.name=name;group.add(arrow);}
-function addResidualCurvedArrow(group,x1,x2,y1,z1,y2,z2,name){const dx=x2-x1;if(dx<=.2)return;const c=new THREE.CubicBezierCurve3(new THREE.Vector3(x1,y1,z1),new THREE.Vector3(x1+dx*.42,y1,z1),new THREE.Vector3(x2-dx*.42,y2,z2),new THREE.Vector3(x2,y2,z2));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(c.getPoints(64)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);}
-function addResidualBypass(group,x1,x2,z,offset,name){const dx=x2-x1;if(dx<=1)return;const t=Math.min(dx*.22,3),oz=z+offset,p=new THREE.CurvePath();p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x1,0,z),new THREE.Vector3(x1+t*.45,0,z),new THREE.Vector3(x1+t*.55,0,oz),new THREE.Vector3(x1+t,0,oz)));p.add(new THREE.LineCurve3(new THREE.Vector3(x1+t,0,oz),new THREE.Vector3(x2-t,0,oz)));p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x2-t,0,oz),new THREE.Vector3(x2-t*.55,0,oz),new THREE.Vector3(x2-t*.45,0,z),new THREE.Vector3(x2,0,z)));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(p.getPoints(96)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);}
+function addResidualArrow(group,x1,x2,y,z,name,label=null){const gap=x2-x1;if(gap<=.15)return;const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x1+gap*.22,y,z),gap*.67,0x71879b,.42,.22);arrow.name=name;group.add(arrow);if(label)addFormulaLabel(label,[(x1+x2)/2,y+1.15,z],25,'#f2f4f8',92);}
+function addResidualCurvedArrow(group,x1,x2,y1,z1,y2,z2,name,label=null){const dx=x2-x1;if(dx<=.2)return;const c=new THREE.CubicBezierCurve3(new THREE.Vector3(x1,y1,z1),new THREE.Vector3(x1+dx*.42,y1,z1),new THREE.Vector3(x2-dx*.42,y2,z2),new THREE.Vector3(x2,y2,z2));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(c.getPoints(64)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);if(label){const p=c.getPoint(.5);addFormulaLabel(label,[p.x,p.y+1.15,p.z],25,'#f2f4f8',92);}}
+function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;if(dx<=1)return;const t=Math.min(dx*.22,3),oz=z+offset,p=new THREE.CurvePath();p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x1,0,z),new THREE.Vector3(x1+t*.45,0,z),new THREE.Vector3(x1+t*.55,0,oz),new THREE.Vector3(x1+t,0,oz)));p.add(new THREE.LineCurve3(new THREE.Vector3(x1+t,0,oz),new THREE.Vector3(x2-t,0,oz)));p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x2-t,0,oz),new THREE.Vector3(x2-t*.55,0,oz),new THREE.Vector3(x2-t*.45,0,z),new THREE.Vector3(x2,0,z)));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(p.getPoints(96)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);if(label)addFormulaLabel(label,[(x1+x2)/2,1.15,z+offset*.5],25,'#f2f4f8',92);}
   function createResidualBlockPlaceholders(blockCount) {
     residualPlaceholderGroup = new THREE.Group();
     residualPlaceholderGroup.name = 'residual-block-placeholders';
@@ -185,10 +185,10 @@ function addResidualBypass(group,x1,x2,z,offset,name){const dx=x2-x1;if(dx<=1)re
       if(index===0){
        const inputRight=20+(FILTER_COUNT-1)*layout.outputChannelStep+layout.outputCubeSize/2;
        addResidualArrow(residualPlaceholderGroup,inputRight,layout.bankStartXs[0]-filterCubeSize/2,cy,cz,'input-to-block-1');
-       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,'block-1-conv1-to-conv2');
+       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,'block-1-conv1-to-conv2','y = |BN(Conv(x))|');
        const outLeft=layout.outputCenterX-layout.outputSizeX/2,merge=outLeft-1.35;
-       addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,'block-1-conv2-to-merge');
-       addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,'block-1-identity-skip');
+       addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,'block-1-conv2-to-merge','y = |BN(Conv(x))|');
+       addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,'block-1-identity-skip','y = x');
        addResidualArrow(residualPlaceholderGroup,merge,outLeft,0,cz,'block-1-merged-output');
        if(getData().residualBlock0Output)addResidualOutputValues(residualPlaceholderGroup,layout,index,getData().residualBlock0Output);
        const outRight=layout.outputCenterX+layout.outputSizeX/2,nextLeft=residualLayout(1).bankStartXs[0]-filterCubeSize/2;
