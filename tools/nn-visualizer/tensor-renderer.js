@@ -511,12 +511,8 @@ export function createTensorRenderer({
         metadata?.bias || null,
       );
     }
-    // One lightweight wireframe cube represents each remaining residual
-    // block. Only the selected block gets its two full convolution banks.
-    if (!selectedResidualWeights) {
-      selectedResidualWeights = weights.residualBlock0;
-      selectedResidualBlockIndex = 0;
-    }
+    // Residual blocks start as glass volumes. Full trained filter weights
+    // are fetched and rendered only after the user selects a block.
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
     if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
       if (residualPlaceholderGroup) {
@@ -532,12 +528,17 @@ export function createTensorRenderer({
       createResidualBlockPlaceholders(blockCount);
       residualPlaceholderDirty = false;
     }
-    if (rebuild || residualGeometryDirty) {
+    if (selectedResidualBlockIndex >= 0 && selectedResidualWeights) {
+      if (rebuild || residualGeometryDirty) {
+        disposeResidualDetail();
+        residualGeometryDirty = false;
+        drawSelectedResidualBlock(selectedResidualWeights, true, selectedResidualBlockIndex);
+      } else {
+        drawSelectedResidualBlock(selectedResidualWeights, false, selectedResidualBlockIndex);
+      }
+    } else {
       disposeResidualDetail();
       residualGeometryDirty = false;
-      drawSelectedResidualBlock(selectedResidualWeights, true, selectedResidualBlockIndex);
-    } else {
-      drawSelectedResidualBlock(selectedResidualWeights, false, selectedResidualBlockIndex);
     }
     drawResidualPlaceholderLabels(blockCount);
 
@@ -561,7 +562,7 @@ export function createTensorRenderer({
   let residualPlaceholderGroup = null;
   let residualPlaceholderDirty = false;
   let residualHitTargets = [];
-  let selectedResidualBlockIndex = 0;
+  let selectedResidualBlockIndex = -1;
   let selectedResidualWeights = null;
   let residualGeometryDirty = false;
   let residualFiltersVisible = true;
@@ -784,14 +785,30 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
                 (layout.kernelHeight - 1) * filterSpacing) / 2,
             layout.bankStartZ + (layout.bankSizeZ - filterCubeSize) / 2,
           );
-          const edgeMaterial = new THREE.LineBasicMaterial({
-            color: 0x9bb4c8, transparent: true, opacity: 0.88,
-          });
-          const outline = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+          const glassGeometry = new THREE.BoxGeometry(
+            layout.bankSizeX, layout.bankSizeY, layout.bankSizeZ,
+          );
+          const glass = new THREE.Mesh(
+            glassGeometry,
+            new THREE.MeshStandardMaterial({
+              color: 0x9bb4c8, roughness: 0.16, metalness: 0.04,
+              transparent: true, opacity: 0.16, depthWrite: false,
+            }),
+          );
+          glass.position.copy(position);
+          glass.name =
+            'residual-block-' + index + '-conv' + (bankIndex + 1) + '-glass';
+          residualPlaceholderGroup.add(glass);
+
+          const outline = new THREE.LineSegments(
+            new THREE.EdgesGeometry(glassGeometry),
+            new THREE.LineBasicMaterial({
+              color: 0x6f879a, transparent: true, opacity: 0.95,
+            }),
+          );
           outline.position.copy(position);
           outline.name =
-            'residual-block-' + index + '-conv' + (bankIndex + 1) + '-wireframe';
-          outline.userData.residualBlockIndex = index;
+            'residual-block-' + index + '-conv' + (bankIndex + 1) + '-outline';
           residualPlaceholderGroup.add(outline);
 
           const hitTarget = new THREE.Mesh(
