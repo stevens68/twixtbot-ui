@@ -444,9 +444,8 @@ export function createTensorRenderer({
 
 
   function refreshTensorColors() {
+    // Force filter and residual meshes to rebuild on the next full render.
     cachedFilterWeights = null;
-    drawFilters();
-    featureOutputRenderer.drawOutput();
   }
 
   return {
