@@ -32,7 +32,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     }),
   );
   backing.rotation.y = -Math.PI / 2;
-  backing.position.set(boardX + 0.035, 0, boardCenterZ);
+  backing.position.set(boardX + 0.035, -0.287, boardCenterZ);
   getStaticSceneGroup().add(backing);
 
   // Flat 2D finish lines lie directly on the board face (no cylinders or gaps).
@@ -255,7 +255,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     }),
   );
   backing.rotation.y = -Math.PI / 2;
-  backing.position.set(boardX + 0.035, 0, 0);
+  backing.position.set(boardX + 0.035, -0.287, -0.2545);
   getStaticSceneGroup().add(backing);
 
   // The board grid uses tensor coordinates. For a Black-to-move game those
