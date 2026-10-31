@@ -750,9 +750,9 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     addLabel(
       'Residual block ' + blockIndex + ' · ' + name + ' · 48 × 5×5×48 filters',
       [
-        startX + layout.bankSizeX / 2,
+        startX + (layout.bankSizeX - filterCubeSize) / 2,
         layout.bankStartY + layout.filterHeight + 0.8,
-        layout.bankStartZ + layout.bankSizeZ / 2,
+        layout.bankStartZ + (layout.bankSizeZ - filterCubeSize) / 2,
       ],
       22,
     );
@@ -777,7 +777,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       if (index !== selectedResidualBlockIndex) {
         for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
           const position = new THREE.Vector3(
-            layout.bankStartXs[bankIndex] + layout.bankSizeX / 2,
+            layout.bankStartXs[bankIndex] + (layout.bankSizeX - filterCubeSize) / 2,
             layout.bankStartY +
               (-(layout.rows - 1) * (layout.filterHeight + layout.gapY) +
                 (layout.kernelHeight - 1) * filterSpacing) / 2,
