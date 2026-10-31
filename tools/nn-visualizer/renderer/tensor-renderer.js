@@ -267,7 +267,7 @@ export function createTensorRenderer({
         );
         linkShaft.name = bank.key + '-filter-bank-to-merge-shaft';
         arrowGroup.add(linkShaft);
-        addFormulaLabel(
+        addAnnotationFormulaLabel(
           bank.key === 'links' ? 'y₂ = |BN(Conv₂(x₂))|' : 'y₁ = |BN(Conv₁(x₁))|',
           [(bankRight + mergeX) / 2, featureY + 0.62, featureZ],
           25, '#f2f4f8', 92,
@@ -379,21 +379,21 @@ export function createTensorRenderer({
 
     if (rebuild) {
       addAnnotationLabel(
-        'Conv1 · 1×1×2×48',
+        'Conv₁ · 1×1×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
           pegStartY + pegHeight * filterSpacing + 0.75,
           pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Conv2 · 4×4×8×48',
+        'Conv₂ · 4×4×8×48',
         [startX + (channels - 1) * filterSpacing / 2,
           startY + kernelHeight * filterSpacing + 0.75,
           startZ + (columns * filterWidth + (columns - 1) * gapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Conv3 · 5×5×2×48',
+        'Conv₃ · 5×5×2×48',
         [startX + (locationChannels - 1) * filterSpacing / 2,
           locationStartY + locationHeight * filterSpacing + 0.75,
           locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
