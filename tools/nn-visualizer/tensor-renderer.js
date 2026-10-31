@@ -622,7 +622,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   const outputCenterZ =
     -((channels - 1) * 0.105) / 2 + ((BOARD_SIZE - 1) * filterSpacing) / 2;
   const originalBankStartZ = [14, 28];
-  const bankPairMinZ = originalBankStartZ[0];
+  const bankPairMinZ = originalBankStartZ[0] - filterCubeSize / 2;
   const bankPairMaxZ =
     originalBankStartZ[1] + (columns - 1) * (filterWidth + gapZ) +
     (kernelWidth - 1) * filterSpacing + filterCubeSize / 2;
@@ -837,7 +837,15 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       if (index === selectedResidualBlockIndex) continue;
       addLabel(
         'Block ' + index,
-        [25.6 + 1.25 + filterCubeSize / 2 + index * (((FILTER_COUNT - 1) * filterSpacing + filterCubeSize) + 1.25) + ((FILTER_COUNT - 1) * filterSpacing) / 2, 1.0, 1.3],
+        [
+          20 + (FILTER_COUNT - 1) * (filterCubeSize / 0.9 + filterSpacing - filterCubeSize) +
+            filterCubeSize / 2 + 1.25 + filterCubeSize / 2 +
+            index * ((FILTER_COUNT - 1) * filterSpacing + filterCubeSize + 1.25) +
+            ((FILTER_COUNT - 1) * filterSpacing) / 2,
+          1.0,
+          -((FILTER_COUNT - 1) * 0.105) / 2 +
+            ((BOARD_SIZE - 1) * filterSpacing) / 2,
+        ],
         12,
         '#dce7f5',
         80,
