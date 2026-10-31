@@ -380,8 +380,14 @@ export function createTensorRenderer({
 
     // Policy Conv1 maps the 48-channel shared feature tensor to two output
     // channels. Keep its two 1×1 filters together, with a dedicated Z offset.
-    const policyWeights = weights.policyConv1;
-    const policyChannels = policyWeights[0][0][0].length;
+    const policyChannels = weights.links[0][0][0].length;
+    // Keep the visualizer renderable if an older cached/demo data object is
+    // supplied. The normal initialization path replaces this zero fallback
+    // with the trained policy_conv1 checkpoint weights.
+    const policyWeights = Array.isArray(weights.policyConv1) &&
+      weights.policyConv1.length === 2 && Array.isArray(weights.policyConv1[0]?.[0]?.[0])
+      ? weights.policyConv1
+      : Array.from({ length: 2 }, () => [[Array(policyChannels).fill(0)]]);
     const policyColumns = 2;
     const policyGapY = gapY * 0.1;
     const policyGapZ = gapZ * 0.1;
