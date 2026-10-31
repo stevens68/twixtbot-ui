@@ -189,10 +189,10 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       if(index===0){
        const inputRight=20+(FILTER_COUNT-1)*layout.outputChannelStep+layout.outputCubeSize/2;
        addResidualArrow(residualPlaceholderGroup,inputRight,layout.bankStartXs[0]-filterCubeSize/2,cy,cz,'input-to-block-1');
-       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,'block-1-conv1-to-conv2','y = |BN(Conv(x))|');
+       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,'block-1-conv1-to-conv2','y₁ = |BN(Conv₁(x))|');
        const outLeft=layout.outputCenterX-layout.outputSizeX/2,merge=outLeft-1.35;
-       addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,'block-1-conv2-to-merge','y = |BN(Conv(x))|');
-       addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,'block-1-identity-skip','y = x');
+       addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,'block-1-conv2-to-merge','y₂ = |BN(Conv₂(y₁))|');
+       addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,'block-1-identity-skip','y₃ = x');
        addResidualArrow(residualPlaceholderGroup,merge,outLeft,0,cz,'block-1-merged-output','Σ');
        const outRight=layout.outputCenterX+layout.outputSizeX/2,nextLeft=residualLayout(1).bankStartXs[0]-filterCubeSize/2;
        addResidualArrow(residualPlaceholderGroup,outRight,nextLeft,cy,cz,'block-1-output-to-block-2');
