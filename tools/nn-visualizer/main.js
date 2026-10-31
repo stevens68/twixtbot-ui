@@ -810,6 +810,16 @@ function setResidualBlock20CameraPreset() {
   lastCameraPreset = 'residual-block-20';
 }
 document.querySelector('#camera-residual-block-20').addEventListener('click', setResidualBlock20CameraPreset);
+function setPolicyConv1CameraPreset() {
+  // Policy Conv1 sits immediately to the right of the final residual output.
+  // Keep the same viewing direction as the block-20 preset, but center the
+  // camera on the two-filter policy bank and its annotations.
+  setCameraPreset(
+    [901.83, 27.43, -43.67], [900.09, -4.86, 21.7],
+  );
+  lastCameraPreset = 'policy-conv1';
+}
+document.querySelector('#camera-policy-conv1').addEventListener('click', setPolicyConv1CameraPreset);
 document.querySelector('#toggle-residual-blocks-2-19').addEventListener('change', (event) => {
   setShowIntermediateResidualBlocks(event.target.checked);
   renderStep();
