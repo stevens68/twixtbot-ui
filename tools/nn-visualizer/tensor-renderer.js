@@ -608,12 +608,13 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
   const outputMaxX =
     20 + (channels - 1) * outputChannelStep + filterCubeSize / 2;
-  const chainGapX = 1.25;
+  const firstResidualGapX = 5.0;
+  const blockGapX = 1.25;
   const blockWidthX =
     (channels - 1) * filterSpacing + filterCubeSize;
   const startX =
-    outputMaxX + chainGapX + filterCubeSize / 2 +
-    blockIndex * (blockWidthX + chainGapX);
+    outputMaxX + firstResidualGapX + filterCubeSize / 2 +
+    blockIndex * (blockWidthX + blockGapX);
   const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
 
   // Center both convolution banks together on the output tensor's Z center.
@@ -779,7 +780,8 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
     const outputMaxX =
       20 + (FILTER_COUNT - 1) * outputChannelStep + filterCubeSize / 2;
-    const chainGapX = 1.25;
+    const firstResidualGapX = 5.0;
+    const blockGapX = 1.25;
     const blockWidthX =
       (FILTER_COUNT - 1) * filterSpacing + filterCubeSize;
     const outputCenterZ =
@@ -800,8 +802,8 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     for (let index = 0; index < blockCount; index += 1) {
       if (index === selectedResidualBlockIndex) continue;
       const blockStartX =
-        outputMaxX + chainGapX + filterCubeSize / 2 +
-        index * (blockWidthX + chainGapX);
+        outputMaxX + firstResidualGapX + filterCubeSize / 2 +
+        index * (blockWidthX + blockGapX);
       const layerX = blockStartX + ((FILTER_COUNT - 1) * filterSpacing) / 2;
 
       for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
@@ -839,7 +841,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         'Block ' + index,
         [
           20 + (FILTER_COUNT - 1) * (filterCubeSize / 0.9 + filterSpacing - filterCubeSize) +
-            filterCubeSize / 2 + 1.25 + filterCubeSize / 2 +
+            filterCubeSize / 2 + 5.0 + filterCubeSize / 2 +
             index * ((FILTER_COUNT - 1) * filterSpacing + filterCubeSize + 1.25) +
             ((FILTER_COUNT - 1) * filterSpacing) / 2,
           1.0,
