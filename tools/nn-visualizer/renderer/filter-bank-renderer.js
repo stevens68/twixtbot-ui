@@ -89,8 +89,8 @@ export function createFilterBankRenderer({
   }
 
 
-  function addBankGlass(name, x, y, z, sizeX, sizeY, sizeZ) {
-    const geometry = new THREE.BoxGeometry(sizeX * 1.08, sizeY * 1.08, sizeZ * 1.08);
+  function addBankGlass(name, x, y, z, sizeX, sizeY, sizeZ, padding = [1.08, 1.08, 1.08]) {
+    const geometry = new THREE.BoxGeometry(sizeX * padding[0], sizeY * padding[1], sizeZ * padding[2]);
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
       new THREE.LineBasicMaterial({ color: 0x9eabb9, transparent: true, opacity: 0.48 }),
@@ -104,7 +104,7 @@ export function createFilterBankRenderer({
   function drawBank({
     name, weights, startX, startY, startZ, columns, gapY, gapZ,
     showBias = false, biasValues = null, buildGeometry = true,
-    slotWidth, slotHeight, bankWidth, bankHeight,
+    slotWidth, slotHeight, bankWidth, bankHeight, glassPadding,
   }) {
     const count = weights.length;
     const kernelHeight = weights[0].length;
@@ -116,6 +116,7 @@ export function createFilterBankRenderer({
         name, startX, startY - (rows - 1) * (slotHeight + gapY),
         startZ, channels * filterSpacing, bankHeight,
         columns * slotWidth + (columns - 1) * gapZ,
+        glassPadding,
       );
     }
     for (let filter = 0; filter < count; filter += 1) {
