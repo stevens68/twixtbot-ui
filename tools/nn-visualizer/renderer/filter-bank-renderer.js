@@ -5,12 +5,12 @@ export function createFilterBankRenderer({
 }) {
   function drawFilterKernel(
     filterIndex, originX, originY, originZ, weights,
-    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null,
+    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null, cubeScale = 1,
   ) {
     // Reduce convolution-filter dimensions and internal gaps by a further 20%.
     // Keep these dimensions consistent across peg/link filters.
     const spacing = filterSpacing;
-    const cubeSize = filterCubeSize;
+    const cubeSize = filterCubeSize * cubeScale;
     const channelDepth = filterSpacing;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
@@ -93,7 +93,7 @@ export function createFilterBankRenderer({
     const geometry = new THREE.BoxGeometry(sizeX * padding[0], sizeY * padding[1], sizeZ * padding[2]);
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
-      new THREE.LineBasicMaterial({ color: 0x9eabb9, transparent: true, opacity: 0.48 }),
+      new THREE.LineBasicMaterial({ color: 0xb9d9ee, transparent: true, opacity: 0.88 }),
     );
     geometry.dispose();
     edges.position.set(x + sizeX / 2, y + sizeY / 2, z + sizeZ / 2);
@@ -104,7 +104,7 @@ export function createFilterBankRenderer({
   function drawBank({
     name, weights, startX, startY, startZ, columns, gapY, gapZ,
     showBias = false, biasValues = null, buildGeometry = true,
-    slotWidth, slotHeight, bankWidth, bankHeight, glassPadding,
+    slotWidth, slotHeight, bankWidth, bankHeight, glassPadding, cubeScale = 1,
   }) {
     const count = weights.length;
     const kernelHeight = weights[0].length;
@@ -116,13 +116,14 @@ export function createFilterBankRenderer({
         // For 1×1 kernels, each filter contains only one cube per input
         // channel. The glass must follow the actual cube bounds, not the
         // larger nominal slots used to space filters in the bank.
-        const cubeHalf = filterCubeSize / 2;
+        const actualCubeSize = filterCubeSize * cubeScale;
+        const cubeHalf = actualCubeSize / 2;
         const glassX = startX - cubeHalf;
         const glassY = startY - (rows - 1) * (slotHeight + gapY) - cubeHalf;
         const glassZ = startZ - cubeHalf;
-        const glassWidth = (channels - 1) * filterSpacing + filterCubeSize;
-        const glassHeight = (rows - 1) * (slotHeight + gapY) + filterCubeSize;
-        const glassDepth = (columns - 1) * (slotWidth + gapZ) + filterCubeSize;
+        const glassWidth = (channels - 1) * filterSpacing + actualCubeSize;
+        const glassHeight = (rows - 1) * (slotHeight + gapY) + actualCubeSize;
+        const glassDepth = (columns - 1) * (slotWidth + gapZ) + actualCubeSize;
         addBankGlass(
           name, glassX, glassY, glassZ,
           glassWidth, glassHeight, glassDepth, glassPadding,
@@ -145,7 +146,7 @@ export function createFilterBankRenderer({
         startY - row * (slotHeight + gapY),
         startZ + column * (slotWidth + gapZ),
         weights, kernelHeight, kernelWidth, channels,
-        String(filter + 1), showBias, buildGeometry, biasValues,
+        String(filter + 1), showBias, buildGeometry, biasValues, cubeScale,
       );
     }
     return { count, kernelHeight, kernelWidth, channels, rows };
