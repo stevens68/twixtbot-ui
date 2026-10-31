@@ -10,7 +10,7 @@ export function createTensorRenderer({
   logLinkEncodingDiagnostic, logFullInputTensorValidation,
   calculateConvolutionOutput, addLabel, addFormulaLabel,
   getInputStaticGroup, getInputDynamicGroup, getFilterStaticGroup,
-  getAnnotationGroup, addAnnotationLabel, addAnnotationFormulaLabel,
+  getAnnotationGroup, addAnnotationLabel, addAnnotationFormulaLabel, getColorTanhA,
 }) {
   const filterStaticGroup = getFilterStaticGroup();
   const inputTensorSpecs = [
@@ -33,7 +33,11 @@ export function createTensorRenderer({
     // magnitude scale also keeps zero green when the supplied range is 0…max.
     const magnitude = Math.max(Math.abs(minValue), Math.abs(maxValue), 1e-8);
     const normalized = Math.max(-1, Math.min(1, Number(value) / magnitude));
-    const hue = 1 / 3 - normalized / 3;
+    const a = Math.max(0, Math.min(2, Number(getColorTanhA?.()) || 0));
+    // Normalize tanh(a*x) by tanh(a), keeping endpoints fixed at -1/+1.
+    // At a=0, use the original linear mapping.
+    const scaled = a < 1e-8 ? normalized : Math.tanh(a * normalized) / Math.tanh(a);
+    const hue = 1 / 3 - scaled / 3;
     return new THREE.Color().setHSL(hue, 1, 0.5);
   }
 
@@ -439,7 +443,14 @@ export function createTensorRenderer({
   }
 
 
+  function refreshTensorColors() {
+    cachedFilterWeights = null;
+    drawFilters();
+    featureOutputRenderer.drawOutput();
+  }
+
   return {
+    refreshTensorColors,
     addValueCubes: featureOutputRenderer.addValueCubes,
     drawFilterKernel: filterBankRenderer.drawFilterKernel,
     drawInputs,
