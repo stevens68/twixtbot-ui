@@ -83,6 +83,7 @@ let gameLoaded = false;
 let interactiveMovePending = false;
 let currentPlayerName = "Black";
 let residualBlock0Output = null;
+let residualBlock0OutputError = null;
 
 scene.add(staticSceneGroup);
 scene.add(inputStaticTensorGroup);
@@ -513,6 +514,7 @@ async function loadGamePosition(ply) {
   gameLoaded = true;
   cachedOutput = null;
   residualBlock0Output = null;
+  residualBlock0OutputError = null;
   if (demoModel.weights.residualBlock0) {
     try {
       const outputResponse = await fetch('/api/residual-output', {
@@ -533,8 +535,8 @@ async function loadGamePosition(ply) {
       residualBlock0Output = values;
       data.residualBlock0Output = values;
     } catch (error) {
+      residualBlock0OutputError = error.message;
       console.error('[NN visualizer] Could not calculate residual block 0 output:', error);
-      status.textContent = 'Residual block 0 output unavailable: ' + error.message;
     }
   }
   // Rebuild whichever visualization is currently selected, not just Inputs.
@@ -543,6 +545,7 @@ async function loadGamePosition(ply) {
   updateGameNavigation();
   status.textContent = 'Game position ' + gamePly + '/' + gameMoves.length +
     '. Next player: ' + result.next_player_name +
+    (residualBlock0OutputError ? ' | Residual block 1 output unavailable: ' + residualBlock0OutputError : '') +
     '. Board and input tensors updated. ' + modelWeightStatus;
   nnPerf.record('loadGamePosition', {
     ply,
