@@ -2,7 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.m
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
 import { createTensor3, flattenTensor } from './tensor-utils.js';
 import { encodeGameInputs } from './game-encoding.js?v=20261031-game-encoding-v1';
-import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-client-v1';
+import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-client-v2';
 import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-model-weight-client-v1';
 import { createBoardInteraction } from './board-interaction.js?v=20261031-board-interaction-v1';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
