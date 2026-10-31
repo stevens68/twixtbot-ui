@@ -797,6 +797,9 @@ document.querySelector('#camera-input-top').addEventListener('click', () => setC
 document.querySelector('#camera-residual-block').addEventListener('click', () => setCameraPreset(
   [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
 ));
+document.querySelector('#camera-residual-block-20').addEventListener('click', () => setCameraPreset(
+  [901.83, 27.43, -43.67], [900.09, -14.86, 29.37],
+));
 const tanhSlider = document.querySelector('#tanh-a');
 const tanhValue = document.querySelector('#tanh-a-value');
 tanhSlider.addEventListener('input', () => {
