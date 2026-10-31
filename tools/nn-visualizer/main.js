@@ -9,7 +9,7 @@ import { createDemoData, calculateConvolutionOutput as calculateConvolution, val
 import { createLabelHelpers } from './labels.js?v=20261031-big-label-toggle-v5';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-filter-index-size-v2';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-static-annotations-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -60,6 +60,8 @@ scene.add(new THREE.AmbientLight(0xffffff, 1.65));
 
 const activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
+const annotationGroup = new THREE.Group();
+annotationGroup.name = 'persistent-static-annotations';
 const staticSceneGroup = new THREE.Group();
 staticSceneGroup.name = 'persistent-static-board';
 const inputStaticTensorGroup = new THREE.Group();
@@ -90,6 +92,7 @@ scene.add(inputStaticTensorGroup);
 scene.add(inputDynamicTensorGroup);
 scene.add(filterStaticGroup);
 scene.add(sceneGroup);
+scene.add(annotationGroup);
 
 // Temporary baseline instrumentation for the performance work. This is
 // observational only: it does not alter scene construction or game state.
@@ -172,6 +175,8 @@ const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame: beginLabelFrame, setBigLabelsVisible } = createLabelHelpers(THREE, () => sceneGroup);
 const { addLabel: addStaticLabel, addRichLabel: addStaticRichLabel, setBigLabelsVisible: setStaticBigLabelsVisible } =
   createLabelHelpers(THREE, () => staticSceneGroup);
+const { addLabel: addAnnotationLabel, addFormulaLabel: addAnnotationFormulaLabel } =
+  createLabelHelpers(THREE, () => annotationGroup);
 
 /**
  * Convert a [row][column][channel] tensor into channel-major order.
@@ -280,10 +285,12 @@ const {
     getInputStaticGroup: () => inputStaticTensorGroup,
     getInputDynamicGroup: () => inputDynamicTensorGroup,
     getFilterStaticGroup: () => filterStaticGroup,
+    getAnnotationGroup: () => annotationGroup,
     createSampleGame, getBackendSnapshot: () => backendSnapshot,
     drawSampleBoard, drawEffectiveBoard,
     logLinkEncodingDiagnostic, logFullInputTensorValidation,
     calculateConvolutionOutput, addLabel, addFormulaLabel,
+    addAnnotationLabel, addAnnotationFormulaLabel,
   });
 
 function renderStep() {
