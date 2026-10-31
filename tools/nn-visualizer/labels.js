@@ -7,6 +7,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
   const spritePool = [];
   const textureCache = new Map();
   let spriteCursor = 0;
+  let bigLabelsVisible = true;
   const TEXTURE_CACHE_LIMIT = 4096;
 
   function beginFrame() {
@@ -60,6 +61,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     sprite.center.set(alignment === 'left' ? 0 : 0.5, 0.5);
     sprite.position.set(position[0], position[1], position[2]);
     sprite.userData.baseLabelScale = [scale[0], scale[1]];
+    if (sprite.userData.isBigBlockLabel) sprite.visible = bigLabelsVisible;
     sprite.onBeforeRender = (_renderer, _scene, camera) => {
       const base = sprite.userData.baseLabelScale;
       const distance = camera.position.distanceTo(sprite.position);
@@ -92,12 +94,16 @@ export function createLabelHelpers(THREE, getSceneGroup) {
       return { width, height };
     });
 
+    const spriteIndex = spriteCursor;
     acquireSprite(
       texture,
       position,
       [texture.image.width / scaleDivisor, texture.image.height / scaleDivisor],
       alignment,
     );
+    const sprite = spritePool[spriteIndex];
+    sprite.userData.isBigBlockLabel = fontSize >= 24;
+    sprite.visible = !sprite.userData.isBigBlockLabel || bigLabelsVisible;
   }
 
   function addFormulaLabel(
@@ -185,5 +191,12 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     );
   }
 
-  return { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame };
+  function setBigLabelsVisible(visible) {
+    bigLabelsVisible = Boolean(visible);
+    spritePool.forEach((sprite) => {
+      if (sprite.userData.isBigBlockLabel) sprite.visible = bigLabelsVisible;
+    });
+  }
+
+  return { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame, setBigLabelsVisible };
 }
