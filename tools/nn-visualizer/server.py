@@ -299,7 +299,23 @@ class Handler(SimpleHTTPRequestHandler):
                 name: state_dict[key].detach().cpu().tolist()
                 for name, key in bn_keys.items()
             }
-            primary_bn["eps"] = 1e-3
+            primary_bn["eps"] = float(config.get("bn_eps", 1e-3))
+
+            policy_bn_prefix = "policy_bn."
+            policy_bn_keys = {
+                "weight": policy_bn_prefix + "weight",
+                "bias": policy_bn_prefix + "bias",
+                "running_mean": policy_bn_prefix + "running_mean",
+                "running_var": policy_bn_prefix + "running_var",
+            }
+            missing_policy_bn = [key for key in policy_bn_keys.values() if key not in state_dict]
+            if missing_policy_bn:
+                raise KeyError("Model checkpoint is missing policy batch-normalization values: " + ", ".join(missing_policy_bn))
+            policy_bn = {
+                name: state_dict[key].detach().cpu().tolist()
+                for name, key in policy_bn_keys.items()
+            }
+            policy_bn["eps"] = float(config.get("bn_eps", 1e-3))
 
             body = json.dumps({
                 "layers": {
@@ -315,6 +331,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "policy_conv1": policy_conv1_weights,
                 },
                 "primary_bn": primary_bn,
+                "policy_bn": policy_bn,
                 "residual_block_count": int(config.get("blocks", 0)),
                 "residual_block_0": {
                     "index": 0,
