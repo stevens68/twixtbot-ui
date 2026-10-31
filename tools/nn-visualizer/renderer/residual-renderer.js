@@ -374,7 +374,10 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
         residualLabelsBuilt = true;
       }
     }
-    for (const index of [0, blockCount - 1, selectedResidualBlockIndex]) {
+    const visibleBlockIndices = showIntermediateResidualBlocks
+      ? [0, blockCount - 1, selectedResidualBlockIndex]
+      : [0, blockCount - 1];
+    for (const index of new Set(visibleBlockIndices)) {
       const weights = residualWeightsByIndex.get(index);
       if (index < 0 || !weights) continue;
       if (rebuild || residualGeometryDirty || !residualFilterGroups.has(index)) {
