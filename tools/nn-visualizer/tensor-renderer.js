@@ -43,6 +43,7 @@ export function createTensorRenderer({
   const inputOriginY = -4;
   let inputGeometryBuilt = false;
   let cachedFilterWeights = null;
+  let cachedResidualOutput = null;
   const inputMeshes = new Map();
 
   function inputOrigin(spec) {
@@ -405,6 +406,9 @@ export function createTensorRenderer({
   function drawFilters() {
     const weights = getData().weights;
     const rebuild = cachedFilterWeights !== weights;
+    if (getData().residualBlock0Output !== cachedResidualOutput) {
+      residualPlaceholderDirty = true;
+    }
     if (rebuild) {
       clearFilterGeometry();
     }
@@ -526,6 +530,7 @@ export function createTensorRenderer({
         });
       }
       createResidualBlockPlaceholders(blockCount);
+      cachedResidualOutput = getData().residualBlock0Output || null;
       residualPlaceholderDirty = false;
     }
     if (selectedResidualBlockIndex >= 0 && selectedResidualWeights) {
@@ -647,7 +652,7 @@ function residualLayout(blockIndex) {
     bankStartXs: [blockStartX, blockStartX],
     bankStartZs: [bankPairStartZ, bankPairStartZ + bankSizeZ + convGapZ],
     bankPairSizeZ,
-    outputStartX, outputCenterX, outputChannelStep,
+    blockStartX, outputStartX, outputCenterX, outputChannelStep,
     outputSizeX, outputSizeY, outputSizeZ,
     outputCenterY, outputCenterZ, outputCubeSize,
   };
@@ -880,6 +885,27 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         }
       }
 
+      if (index === 0) {
+        const skipY = layout.outputCenterY + layout.bankSizeY / 2 + 2.0;
+        const skipStartX = layout.blockStartX - 1.0;
+        const skipEndX = layout.outputCenterX;
+        const skipPoints = [
+          new THREE.Vector3(skipStartX, layout.outputCenterY, layout.outputCenterZ),
+          new THREE.Vector3(skipStartX, skipY, layout.outputCenterZ),
+          new THREE.Vector3(skipEndX, skipY, layout.outputCenterZ),
+          new THREE.Vector3(skipEndX, layout.outputCenterY, layout.outputCenterZ),
+        ];
+        const skipLine = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(skipPoints),
+          new THREE.LineBasicMaterial({ color: 0xf0c76a, transparent: true, opacity: 0.95 }),
+        );
+        skipLine.name = 'residual-block-0-skip-connection';
+        residualPlaceholderGroup.add(skipLine);
+        addLabel('skip connection (+ input)', [
+          (skipStartX + skipEndX) / 2, skipY + 0.25, layout.outputCenterZ,
+        ], 12, '#f0c76a', 110);
+      }
+
       // Keep the output enclosure visible and show actual values for block 0.
       addResidualOutputGlass(residualPlaceholderGroup, layout, index);
       if (index === 0 && getData().residualBlock0Output) {
@@ -896,7 +922,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         16, '#dce7f5', 110,
       );
       addLabel(
-        'Block ' + index + ' output · 24×24×48',
+        (index === 0 && getData().residualBlock0Output ? 'Block 0 actual output · 24×24×48' : 'Block ' + index + ' output · 24×24×48'),
         [
           layout.outputCenterX,
           layout.outputCenterY + layout.outputSizeY / 2 + 0.45,
