@@ -1,7 +1,7 @@
-import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-residual-arrow-labels-v3';
+import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-static-annotations-v1';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-axis-alignment-v2';
-import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-index-size-v2';
-import { createResidualRenderer } from './residual-renderer.js?v=20261031-residual-arrow-labels-v3';
+import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-static-labels-v1';
+import { createResidualRenderer } from './residual-renderer.js?v=20261031-static-annotations-v1';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -369,6 +369,30 @@ export function createTensorRenderer({
       bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 0.1,
       bankHeight: locationBankHeight,
     });
+
+    if (rebuild) {
+      addAnnotationLabel(
+        'Conv 1x1x2x48',
+        [startX + (locationChannels - 1) * filterSpacing / 2,
+          locationStartY + locationHeight * filterSpacing + 0.75,
+          locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
+        24, '#ffffff', 90,
+      );
+      addAnnotationLabel(
+        'Conv 4x4x8x48',
+        [startX + (channels - 1) * filterSpacing / 2,
+          startY + kernelHeight * filterSpacing + 0.75,
+          startZ + (columns * filterWidth + (columns - 1) * gapZ) / 2],
+        24, '#ffffff', 90,
+      );
+      addAnnotationLabel(
+        'Conv 5x5x2x48',
+        [startX + (pegChannels - 1) * filterSpacing / 2,
+          pegStartY + pegHeight * filterSpacing + 0.75,
+          pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
+        24, '#ffffff', 90,
+      );
+    }
 
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
     const selectedResidualBlockIndex = residualRenderer.draw(rebuild, blockCount);
