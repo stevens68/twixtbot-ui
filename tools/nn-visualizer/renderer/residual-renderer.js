@@ -259,6 +259,38 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     }
   }
 
+  function addResidualCurvedArrow(group, startX, endX, startY, startZ, endY, endZ, name, amplitude, doubleS = false) {
+    if (endX - startX <= 0.2) return;
+    const points = [];
+    const segments = doubleS ? 8 : 4;
+    for (let i = 0; i <= segments; i += 1) {
+      const t = i / segments;
+      const envelope = Math.sin(Math.PI * t);
+      const wave = doubleS ? Math.sin(2 * Math.PI * t) : Math.sin(Math.PI * t);
+      points.push(new THREE.Vector3(
+        startX + (endX - startX) * t,
+        startY + (endY - startY) * t + amplitude * envelope * wave,
+        startZ + (endZ - startZ) * t,
+      ));
+    }
+    const curve = new THREE.CatmullRomCurve3(points);
+    const shaft = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 48, 0.045, 8, false),
+      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+    );
+    shaft.name = name + '-shaft';
+    group.add(shaft);
+    const tangent = curve.getTangent(1).normalize();
+    const head = new THREE.Mesh(
+      new THREE.ConeGeometry(0.2, 0.48, 10),
+      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+    );
+    head.position.copy(curve.getPoint(1)).addScaledVector(tangent, -0.18);
+    head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+    head.name = name + '-head';
+    group.add(head);
+  }
+
   function createResidualBlockPlaceholders(blockCount) {
     residualPlaceholderGroup = new THREE.Group();
     residualPlaceholderGroup.name = 'residual-block-placeholders';
@@ -353,24 +385,28 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         null,
         'residual-' + index + '-conv1-to-conv2',
       );
-      addResidualArrow(
-        residualPlaceholderGroup, bankRight2, outputLeftX,
-        bankCenterY, bankCenterZ,
-        null,
-        'residual-' + index + '-conv2-to-output',
+      // Main path bends into a shared merge point just before the output.
+      const mergeX = outputLeftX - 1.35;
+      addResidualCurvedArrow(
+        residualPlaceholderGroup, bankRight2, mergeX,
+        bankCenterY, bankCenterZ, bankCenterY, bankCenterZ,
+        'residual-' + index + '-conv2-to-merge', 1.0,
       );
 
-      // Identity skip path: it joins the main path at the output. Keep it
-      // slightly offset in Y so both incoming arrows remain distinguishable.
+      // The identity path bypasses both convolutions with a double-S curve,
+      // then joins the main path at the same merge point.
       const skipStartX = index === 0
         ? 20 + (FILTER_COUNT - 1) * layout.outputChannelStep + layout.outputCubeSize / 2
         : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
-      const skipY = bankCenterY + 0.72;
+      addResidualCurvedArrow(
+        residualPlaceholderGroup, skipStartX, mergeX,
+        bankCenterY, bankCenterZ, bankCenterY, bankCenterZ,
+        'residual-' + index + '-identity-skip', 1.35, true,
+      );
       addResidualArrow(
-        residualPlaceholderGroup, skipStartX, outputLeftX,
-        skipY, bankCenterZ, null,
-        'residual-' + index + '-identity-skip',
-        0.48,
+        residualPlaceholderGroup, mergeX, outputLeftX,
+        bankCenterY, bankCenterZ, null,
+        'residual-' + index + '-merged-output',
       );
 
 
@@ -421,19 +457,19 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         [(bankRight1 + bankLeft2) / 2, centerY + 0.58, centerZ],
         25, '#f2f4f8', 92,
       );
+      const mergeX = outputLeftX - 1.35;
       addFormulaLabel(
         'y = |BN(Conv(x))|',
-        [(bankRight2 + outputLeftX) / 2, centerY + 0.58, centerZ],
+        [(bankRight2 + mergeX) / 2, centerY + 1.15, centerZ],
         25, '#f2f4f8', 92,
       );
 
       const skipStartX = index === 0
         ? 20 + (FILTER_COUNT - 1) * layout.outputChannelStep + layout.outputCubeSize / 2
         : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
-      const skipY = centerY + 0.72;
       addFormulaLabel(
         'y = x',
-        [(skipStartX + outputLeftX) / 2, skipY + 0.48, centerZ],
+        [(skipStartX + mergeX) / 2, centerY + 1.65, centerZ],
         25, '#f2f4f8', 92,
       );
     }
