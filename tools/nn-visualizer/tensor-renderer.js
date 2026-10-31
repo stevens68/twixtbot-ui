@@ -670,16 +670,19 @@ function residualLayout(blockIndex) {
   const firstResidualGapX = 5.0;
   const convGapZ = 2.0 * 3 * 3 * 0.5;
   const outputGapX = 1.25 * 1.15 * 3;
-  const blockPitchX =
+  const baseBlockPitchX =
     bankSizeX + outputGapX + outputCubeSize / 2 +
     outputSizeX + 1.25 + filterCubeSize / 2;
+  // Increase the complete pitch between successive residual blocks by 20%.
+  const blockPitchX = baseBlockPitchX * 1.2;
   const blockStartX =
     outputMaxX + firstResidualGapX + filterCubeSize / 2 +
     blockIndex * blockPitchX;
+  // Each residual output tensor sits halfway between this block and the
+  // next block along X, rather than being offset toward either convolution bank.
+  const outputCenterX = blockStartX + blockPitchX / 2;
   const outputStartX =
-    blockStartX + bankSizeX + outputGapX + outputCubeSize / 2;
-  const outputCenterX =
-    outputStartX + (channels - 1) * outputChannelStep / 2;
+    outputCenterX - (channels - 1) * outputChannelStep / 2;
   const bankPairSizeZ = 2 * bankSizeZ + convGapZ;
   const bankPairStartZ = outputCenterZ - bankPairSizeZ / 2 + filterCubeSize / 2;
   return {
@@ -886,9 +889,11 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       if (index === 0) {
         const initialOutputRightX =
           20 + (FILTER_COUNT - 1) * layout.outputChannelStep +
-          layout.outputCubeSize / 2;
+          filterCubeSize / 2;
         const residualBankLeftX = layout.blockStartX - filterCubeSize / 2;
         const fullArrowLength = Math.max(0.1, residualBankLeftX - initialOutputRightX);
+        // Match the inter-block arrows: use 80% of the available gap and
+        // center the shortened arrow exactly between source and target.
         const shortenedArrowLength = fullArrowLength * 0.8;
         const arrowY = layout.outputCenterY + layout.outputSizeY / 2 + 1.2;
         const arrow = new THREE.ArrowHelper(
