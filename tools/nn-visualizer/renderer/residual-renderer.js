@@ -240,13 +240,17 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   }
 }
 
-  function addResidualArrow(group, startX, endX, y, z, label, name, labelYOffset = 0.58) {
+  function addResidualArrow(
+    group, startX, endX, y, z, label, name,
+    labelYOffset = 0.58, startClearanceFraction = 0.22,
+  ) {
     const gap = endX - startX;
     if (gap <= 0.15) return;
-    // Double the clearance from the starting object to the arrow shaft.
-    // Keep the same clearance at the destination for a balanced connector.
-    const startClearance = gap * 0.22;
-    const length = gap * 0.67;
+    // Most arrows leave a deliberate gap after their source object. The
+    // post-merge arrow is the exception: it must begin exactly at the
+    // curved convolution/identity join point.
+    const startClearance = gap * startClearanceFraction;
+    const length = gap * (0.89 - startClearanceFraction);
     const arrow = new THREE.ArrowHelper(
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(startX + startClearance, y, z),
@@ -429,6 +433,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         residualPlaceholderGroup, mergeX, outputLeftX,
         bankCenterY, bankCenterZ, null,
         'residual-' + index + '-merged-output',
+        0.58, 0,
       );
 
 
