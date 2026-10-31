@@ -13,6 +13,7 @@ export function createInputTensorRenderer({
   const inputOriginY = -4.082; // Centre each input tensor on the NN Y axis.
   let inputGeometryBuilt = false;
   const inputMeshes = new Map();
+  let locationMesh = null;
 
   function inputOrigin(spec) {
     return [
@@ -73,6 +74,7 @@ export function createInputTensorRenderer({
       }),
       capacity,
     );
+    locationMesh = mesh;
     mesh.name = 'locations-persistent-values';
     const origin = inputOrigin(spec);
     const transform = new THREE.Object3D();
@@ -116,6 +118,20 @@ export function createInputTensorRenderer({
     mesh.instanceMatrix.needsUpdate = true;
   }
 
+  function refreshLocationColors() {
+    if (!locationMesh) return;
+    const tensor = getData().locations;
+    let index = 0;
+    for (let channel = 0; channel < 2; channel += 1) {
+      for (let row = 0; row < BOARD_SIZE; row += 1) {
+        for (let col = 0; col < BOARD_SIZE; col += 1) {
+          locationMesh.setColorAt(index++, locationHeatMapColor(Number(tensor[row][col][channel])));
+        }
+      }
+    }
+    if (locationMesh.instanceColor) locationMesh.instanceColor.needsUpdate = true;
+  }
+
   function ensureInputGeometry() {
     if (inputGeometryBuilt) return;
     inputTensorSpecs.forEach((spec) => {
@@ -133,5 +149,5 @@ export function createInputTensorRenderer({
     inputGeometryBuilt = true;
   }
 
-  return { ensureInputGeometry, updateOccupiedTensor };
+  return { ensureInputGeometry, updateOccupiedTensor, refreshLocationColors };
 }
