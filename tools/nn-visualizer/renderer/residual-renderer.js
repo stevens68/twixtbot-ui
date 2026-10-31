@@ -4,9 +4,10 @@ export function createResidualRenderer({
   filterCubeSize, filterStaticGroup, flattenTensor, addLabel, addFormulaLabel, getData,
   heatMapColor,
 }) {
-  let residualFilterGroup = null;
-  let residualOutputGroup = null;
-  let residualOutputMesh = null;
+  const residualFilterGroups = new Map();
+  const residualWeightsByIndex = new Map();
+  const residualOutputGroups = new Map();
+  const residualOutputMeshes = new Map();
   let residualLabelsBuilt = false;
   let residualPlaceholderGroup = null;
   let residualPlaceholderDirty = false;
@@ -16,24 +17,20 @@ export function createResidualRenderer({
   let residualGeometryDirty = false;
   let residualFiltersVisible = true;
   let lastRenderedOutputTensor = null;
-  function disposeResidualDetail() {
-    if (!residualFilterGroup) return;
-    filterStaticGroup.remove(residualFilterGroup);
+  function disposeResidualDetail(blockIndex) {
+    const group = residualFilterGroups.get(blockIndex);
+    if (!group) return;
+    filterStaticGroup.remove(group);
     const geometries = new Set();
     const materials = new Set();
-    residualFilterGroup.traverse((object) => {
-      // cubeGeometry is shared by the other tensor/filter renderers.
-      if (object.geometry && object.geometry !== cubeGeometry) {
-        geometries.add(object.geometry);
-      }
-      if (object.material) {
-        const assigned = Array.isArray(object.material) ? object.material : [object.material];
-        assigned.forEach((material) => material && materials.add(material));
-      }
+    group.traverse((object) => {
+      if (object.geometry && object.geometry !== cubeGeometry) geometries.add(object.geometry);
+      if (object.material) (Array.isArray(object.material) ? object.material : [object.material])
+        .forEach((material) => material && materials.add(material));
     });
     geometries.forEach((geometry) => geometry.dispose());
     materials.forEach((material) => material.dispose());
-    residualFilterGroup = null;
+    residualFilterGroups.delete(blockIndex);
   }
 
 
@@ -56,10 +53,13 @@ function residualLayout(blockIndex) {
  // while retaining the compact conv1-to-conv2 gap inside every later block.
  const firstInterBlockGap=firstPitch-(2*bankSizeX+firstConvGap);
  const compactPitch=2*bankSizeX+compactConvGap+firstInterBlockGap;
- const blockStartX=blockIndex===0?firstX:nextLeft+filterCubeSize/2+(blockIndex-1)*compactPitch,convGap=blockIndex===0?firstConvGap:compactConvGap;
+ const blockStartX=blockIndex===0?firstX:nextLeft+filterCubeSize/2+(blockIndex-1)*compactPitch;
+ const isEndpoint=blockIndex===0 || blockIndex===Number(getData().residualBlockCount || 20)-1;
+ const convGap=isEndpoint?firstConvGap:compactConvGap;
+ const shift=blockStartX-firstX;
  return {channels,kernelHeight,kernelWidth,columns,rows,filterWidth,filterHeight,gapY,gapZ,bankSizeX,bankSizeY,bankSizeZ,bankStartY,bankStartZ,
  bankStartXs:[blockStartX,blockStartX+bankSizeX+convGap],bankStartZs:[bankStartZ,bankStartZ],blockStartX,blockSpanX:2*bankSizeX+convGap,
- outputStartX,outputCenterX,outputChannelStep,outputSizeX,outputSizeY,outputSizeZ:outputSizeY,outputCenterY,outputCenterZ,outputCubeSize};
+ outputStartX:outputStartX+shift,outputCenterX:outputCenterX+shift,outputChannelStep,outputSizeX,outputSizeY,outputSizeZ:outputSizeY,outputCenterY,outputCenterZ,outputCubeSize};
 }
 
 function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
@@ -71,9 +71,8 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
   const layout = residualLayout(blockIndex);
   if (buildGeometry) {
-    residualFilterGroup = new THREE.Group();
-    residualFilterGroup.name =
-      'residual-block-' + blockIndex + '-filter-banks';
+    const residualFilterGroup = new THREE.Group();
+    residualFilterGroup.name = 'residual-block-' + blockIndex + '-filter-banks';
     residualFilterGroup.visible = residualFiltersVisible;
 
     for (const [bankIndex, name] of ['conv1', 'conv2'].entries()) {
@@ -128,8 +127,8 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       residualFilterGroup.add(mesh);
     }
     filterStaticGroup.add(residualFilterGroup);
+    residualFilterGroups.set(blockIndex, residualFilterGroup);
   }
-
 
 }
 
