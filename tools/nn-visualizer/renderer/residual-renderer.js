@@ -255,7 +255,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(startX + startClearance, y, z),
       length,
-      0xaeb7c2,
+      0x71879b,
       0.42,
       0.22,
     );
@@ -277,7 +277,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     );
     const shaft = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(curve.getPoints(64)),
-      new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
+      new THREE.LineBasicMaterial({ color: 0x71879b }),
     );
     shaft.name = name + '-shaft';
     group.add(shaft);
@@ -307,7 +307,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     ));
     const shaft = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(path.getPoints(96)),
-      new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
+      new THREE.LineBasicMaterial({ color: 0x71879b }),
     );
     shaft.name = name + '-shaft';
     group.add(shaft);
