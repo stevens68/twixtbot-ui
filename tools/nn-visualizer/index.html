@@ -98,6 +98,7 @@ Target  x —  y —  z —</div>
     </aside>
 
     <section class="visual-panel" aria-label="3D visualization">
+      <button id="toggle-explanation" class="collapse-button explanation-tab" aria-label="Collapse explanation panel" title="Collapse explanation panel">‹</button>
       <div id="viewport" aria-label="Interactive 3D tensor scene">
         <div id="loading" class="loading">Building the tensor scene…</div>
       </div>
@@ -109,7 +110,6 @@ Target  x —  y —  z —</div>
           <p class="eyebrow">EXPLANATION</p>
           <h2 id="view-title">Input tensors</h2>
         </div>
-        <button id="toggle-explanation" class="collapse-button" aria-label="Collapse explanation panel" title="Collapse explanation panel">Collapse ‹</button>
       </div>
       <p id="view-description">One scene: sample and effective boards, input tensors, all three trained first-layer filter banks, both 48-filter convolution banks from residual block 1, and the first-layer 24×24×48 feature tensor.</p>
       <div class="legend">
