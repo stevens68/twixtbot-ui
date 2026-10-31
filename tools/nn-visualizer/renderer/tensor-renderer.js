@@ -394,7 +394,8 @@ export function createTensorRenderer({
     const policySlot = filterSpacing;
     // Policy Conv1 consumes the final residual-stack output, not the first-layer
     // feature tensor. Place its bank directly downstream of block 20's output.
-    const policyInputRight = residualRenderer.getLastOutputRightEdge();
+    const policyInput = residualRenderer.getLastOutputAnchor();
+    const policyInputRight = policyInput.right;
     const policyStartX = policyInputRight + 2.5 + filterCubeSize / 2;
     const policyStartY = -0.287;
     const policyStartZ = -0.2545 + 22 - (policyColumns - 1) * (policySlot + policyGapZ) / 2;
@@ -410,6 +411,16 @@ export function createTensorRenderer({
     });
 
     if (rebuild) {
+      addXArrow(
+        filterStaticGroup,
+        policyInputRight,
+        policyStartX - filterCubeSize / 2,
+        policyInput.centerY,
+        policyInput.centerZ,
+        'h₂₀',
+        0.58,
+        'final-residual-output-to-policy-conv1',
+      );
       addAnnotationLabel(
         'Conv₁ · 1×1×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
