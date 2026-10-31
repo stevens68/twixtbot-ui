@@ -262,11 +262,11 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   function addResidualCurvedArrow(group, startX, endX, startY, startZ, endY, endZ, name, amplitude, doubleS = false) {
     if (endX - startX <= 0.2) return;
     const points = [];
-    const segments = doubleS ? 8 : 4;
+    const segments = doubleS ? 16 : 8;
     for (let i = 0; i <= segments; i += 1) {
       const t = i / segments;
       const envelope = Math.sin(Math.PI * t);
-      const wave = doubleS ? Math.sin(2 * Math.PI * t) : Math.sin(Math.PI * t);
+      const wave = doubleS ? Math.sin(4 * Math.PI * t) : Math.sin(2 * Math.PI * t);
       points.push(new THREE.Vector3(
         startX + (endX - startX) * t,
         startY + (endY - startY) * t + amplitude * envelope * wave,
