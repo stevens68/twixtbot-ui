@@ -1,6 +1,7 @@
 /** Cached, instrumented client for authoritative game-position snapshots. */
 export function createSnapshotClient({ recordPerf, cacheLimit = 128 }) {
   const snapshotCache = new Map();
+  const positionCache = new Map();
 
   function getCachedSnapshot(key) {
     if (!snapshotCache.has(key)) return null;
@@ -88,6 +89,18 @@ export function createSnapshotClient({ recordPerf, cacheLimit = 128 }) {
 
   async function requestPosition(moves) {
     const cacheKey = JSON.stringify({ moves, allow_scl: false, allow_swap: true });
+    if (positionCache.has(cacheKey)) {
+      const cached = positionCache.get(cacheKey);
+      positionCache.delete(cacheKey);
+      positionCache.set(cacheKey, cached);
+      recordPerf('positionCacheHit', {
+        moves: moves.length,
+        responseBytes: cached.responseBytes,
+        wireResponseBytes: cached.wireResponseBytes,
+        cacheEntries: positionCache.size,
+      });
+      return cached;
+    }
     const started = performance.now();
     const response = await fetch('/api/position', {
       method: 'POST',
@@ -141,6 +154,10 @@ export function createSnapshotClient({ recordPerf, cacheLimit = 128 }) {
       compression: response.headers.get('content-encoding') || 'none',
     });
     const value = { ...result, responseBytes, wireResponseBytes };
+    positionCache.set(cacheKey, value);
+    while (positionCache.size > cacheLimit) {
+      positionCache.delete(positionCache.keys().next().value);
+    }
     cacheSnapshot(cacheKey, { result: result.snapshot, responseBytes, wireResponseBytes });
     return value;
   }
