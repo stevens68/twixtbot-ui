@@ -400,8 +400,11 @@ export function createTensorRenderer({
     // only needs a small clearance, not a multi-unit spacer.
     const policyGapX = filterSpacing * 1.5;
     const policyStartX = policyInputRight + policyGapX + filterCubeSize / 2;
-    const policyStartY = -0.287;
-    const policyStartZ = -0.2545 + 22 - (policyColumns - 1) * (policySlot + policyGapZ) / 2;
+    const policyStartY = policyInput.centerY;
+    // Center the two-filter bank on the residual output depth, just as the
+    // location-convolution bank is centered on its input/output lane.
+    const policyBankDepth = policyColumns * policySlot + (policyColumns - 1) * policyGapZ;
+    const policyStartZ = policyInput.centerZ - policyBankDepth / 2;
     const policyInfo = filterBankRenderer.drawBank({
       name: 'policy-conv1', weights: policyWeights,
       startX: policyStartX, startY: policyStartY, startZ: policyStartZ,
@@ -410,7 +413,7 @@ export function createTensorRenderer({
       slotWidth: policySlot, slotHeight: policySlot,
       bankWidth: policyColumns * policySlot + (policyColumns - 1) * policyGapZ,
       bankHeight: policySlot,
-      glassPadding: [1.04, 1.15, 1.15],
+      glassPadding: [1.02, 1.0, 1.0],
     });
 
     if (rebuild) {
