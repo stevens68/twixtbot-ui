@@ -388,44 +388,60 @@ export function createTensorRenderer({
       weights.policyConv1.length === 2 && Array.isArray(weights.policyConv1[0]?.[0]?.[0])
       ? weights.policyConv1
       : Array.from({ length: 2 }, () => [[Array(policyChannels).fill(0)]]);
-    const policyColumns = 2;
-    const policyGapY = gapY * 0.1;
-    const policyGapZ = gapZ * 0.1;
-    const policySlot = filterSpacing;
+    // Render the [2 output filters, 48 input channels] weights as 48
+    // two-value cells. This gives Policy Conv1 the same 8×6 filter-bank
+    // arrangement as the location convolution: 48 cells, each containing
+    // the two weights for its corresponding channel.
+    const policyDisplayWeights = Array.from({ length: policyChannels }, (_, channel) => [[[
+      Number(policyWeights[0][0][0][channel]),
+      Number(policyWeights[1][0][0][channel]),
+    ]]]);
+    const policyRows = Math.ceil(policyDisplayWeights.length / columns);
+    const policyGapY = locationGapY;
+    const policyGapZ = locationGapZ;
+    const policySlotWidth = pegFilterWidth;
+    const policySlotHeight = pegFilterHeight;
+    const policyBankHeight = policyRows * policySlotHeight + (policyRows - 1) * policyGapY;
     // Policy Conv1 consumes the final residual-stack output, not the first-layer
     // feature tensor. Place its bank directly downstream of block 20's output.
     const policyInput = residualRenderer.getLastOutputAnchor();
     const policyInputRight = policyInput.right;
-    // Keep the policy bank adjacent to the final residual output; the arrow
-    // only needs a small clearance, not a multi-unit spacer.
     const policyGapX = filterSpacing * 1.5;
     const policyStartX = policyInputRight + policyGapX + filterCubeSize / 2;
-    const policyStartY = policyInput.centerY;
-    // Center the two-filter bank on the residual output depth, just as the
-    // location-convolution bank is centered on its input/output lane.
-    const policyBankDepth = policyColumns * policySlot + (policyColumns - 1) * policyGapZ;
+    // Use the same row/column layout and vertical centering convention as Conv3.
+    const policyStartY = policyInput.centerY +
+      (policyRows - 1) * (policySlotHeight + policyGapY) / 2;
+    const policyBankDepth = columns * policySlotWidth + (columns - 1) * policyGapZ;
     const policyStartZ = policyInput.centerZ - policyBankDepth / 2;
     const policyInfo = filterBankRenderer.drawBank({
-      name: 'policy-conv1', weights: policyWeights,
+      name: 'policy-conv1', weights: policyDisplayWeights,
       startX: policyStartX, startY: policyStartY, startZ: policyStartZ,
-      columns: policyColumns, gapY: policyGapY, gapZ: policyGapZ,
+      columns, gapY: policyGapY, gapZ: policyGapZ,
       showBias: false, buildGeometry: rebuild,
-      slotWidth: policySlot, slotHeight: policySlot,
-      bankWidth: policyColumns * policySlot + (policyColumns - 1) * policyGapZ,
-      bankHeight: policySlot,
+      slotWidth: policySlotWidth, slotHeight: policySlotHeight,
+      bankWidth: columns * policySlotWidth + (columns - 1) * policyGapZ,
+      bankHeight: policyBankHeight,
       glassPadding: [1.02, 1.0, 1.0],
     });
 
     if (rebuild) {
-      addXArrow(
-        filterStaticGroup,
-        policyInputRight,
-        policyStartX - filterCubeSize / 2,
-        policyInput.centerY,
-        policyInput.centerZ,
+      const arrowStartX = policyInputRight + 0.04;
+      const arrowEndX = policyStartX - 0.04;
+      const arrowLength = arrowEndX - arrowStartX;
+      const policyArrow = new THREE.ArrowHelper(
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(arrowStartX, policyInput.centerY, policyInput.centerZ),
+        arrowLength,
+        0x71879b,
+        Math.min(0.14, arrowLength * 0.38),
+        Math.min(0.10, arrowLength * 0.26),
+      );
+      policyArrow.name = 'final-residual-output-to-policy-conv1';
+      filterStaticGroup.add(policyArrow);
+      addAnnotationFormulaLabel(
         'h₂₀',
-        0.58,
-        'final-residual-output-to-policy-conv1',
+        [(arrowStartX + arrowEndX) / 2, policyInput.centerY + 0.58, policyInput.centerZ],
+        25, '#f2f4f8', 92,
       );
       addAnnotationLabel(
         'Conv₁ · 1×1×2×48',
@@ -450,16 +466,16 @@ export function createTensorRenderer({
       );
       addAnnotationLabel(
         'Policy Conv₁ · 1×1×48×2',
-        [policyStartX + (policyChannels - 1) * filterSpacing / 2,
-          policyStartY + filterSpacing + 0.75,
-          policyStartZ + (policyColumns * policySlot + (policyColumns - 1) * policyGapZ) / 2],
+        [policyStartX + filterSpacing / 2,
+          policyStartY + policySlotHeight + 0.75,
+          policyStartZ + (columns * policySlotWidth + (columns - 1) * policyGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationFormulaLabel(
         'p₁ = |BN(Conv₁(h₂₀))|',
-        [policyStartX + (policyChannels - 1) * filterSpacing / 2,
-          policyStartY - 0.85,
-          policyStartZ + (policyColumns * policySlot + (policyColumns - 1) * policyGapZ) / 2],
+        [policyStartX + filterSpacing / 2,
+          policyStartY - (policyRows - 1) * (policySlotHeight + policyGapY) - 0.85,
+          policyStartZ + (columns * policySlotWidth + (columns - 1) * policyGapZ) / 2],
         22, '#f2f4f8', 92,
       );
     }
