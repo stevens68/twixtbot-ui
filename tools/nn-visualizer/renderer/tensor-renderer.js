@@ -218,7 +218,7 @@ export function createTensorRenderer({
     const featureInfo = featureOutputRenderer.drawOutput();
 
     // Connect each input/filter pair and the three filter banks to the
-    // shared post-BN feature tensor. The bank layouts are calculated in
+    // shared feature tensor. The bank layouts are calculated in
     // drawFilters(), where their actual geometry dimensions are available.
     const arrowGroup = getAnnotationGroup();
     const featureY = -2.5 + (BOARD_SIZE - 1) * filterSpacing / 2;
@@ -253,7 +253,7 @@ export function createTensorRenderer({
           bankCenterY, bankCenterZ, featureY, featureZ,
           {
             name: bank.key + '-filter-bank-to-merge',
-            label: 'y = |BN(Conv(x))|',
+            label: bank.key === 'pegs' ? 'y₁ = |BN(Conv₁(x₁))|' : 'y₃ = |BN(Conv₃(x₃))|',
           },
         );
       } else {
@@ -268,7 +268,7 @@ export function createTensorRenderer({
         linkShaft.name = bank.key + '-filter-bank-to-merge-shaft';
         arrowGroup.add(linkShaft);
         addFormulaLabel(
-          'y = |BN(Conv(x))|',
+          bank.key === 'links' ? 'y₂ = |BN(Conv₂(x₂))|' : 'y₁ = |BN(Conv₁(x₁))|',
           [(bankRight + mergeX) / 2, featureY + 0.62, featureZ],
           25, '#f2f4f8', 92,
         );
@@ -286,7 +286,7 @@ export function createTensorRenderer({
 
     return {
       title: 'First-layer network view',
-      description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, and the post-BN + abs first-layer feature tensor are shown together.",
+      description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, and the first-layer feature tensor are shown together.",
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
       range: 'Feature range ' + featureInfo.range,
       count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + filterInfo.count + ' feature values',
@@ -379,21 +379,21 @@ export function createTensorRenderer({
 
     if (rebuild) {
       addAnnotationLabel(
-        'Conv 1x1x2x48',
+        'Conv1 · 1×1×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
           pegStartY + pegHeight * filterSpacing + 0.75,
           pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Conv 4x4x8x48',
+        'Conv2 · 4×4×8×48',
         [startX + (channels - 1) * filterSpacing / 2,
           startY + kernelHeight * filterSpacing + 0.75,
           startZ + (columns * filterWidth + (columns - 1) * gapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Conv 5x5x2x48',
+        'Conv3 · 5×5×2×48',
         [startX + (locationChannels - 1) * filterSpacing / 2,
           locationStartY + locationHeight * filterSpacing + 0.75,
           locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
