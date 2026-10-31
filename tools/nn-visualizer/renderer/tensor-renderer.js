@@ -10,6 +10,7 @@ export function createTensorRenderer({
   logLinkEncodingDiagnostic, logFullInputTensorValidation,
   calculateConvolutionOutput, addLabel, addFormulaLabel,
   getInputStaticGroup, getInputDynamicGroup, getFilterStaticGroup,
+  getAnnotationGroup, addAnnotationLabel, addAnnotationFormulaLabel,
 }) {
   const filterStaticGroup = getFilterStaticGroup();
   const inputTensorSpecs = [
@@ -45,6 +46,7 @@ export function createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
     getSceneGroup, calculateConvolutionOutput, addLabel, filterSpacing,
     filterCubeSize, heatMapColor,
+    addLabel: addAnnotationLabel,
   });
   const inputRenderer = createInputTensorRenderer({
     THREE, BOARD_SIZE, COLORS, cubeGeometry, getData,
@@ -54,11 +56,14 @@ export function createTensorRenderer({
   const filterBankRenderer = createFilterBankRenderer({
     THREE, cubeGeometry, filterStaticGroup, flattenTensor, addLabel,
     heatMapColor, filterSpacing, filterCubeSize, inputSpacing, inputCellSize, filterScale,
+    addAnnotationLabel,
   });
   const residualRenderer = createResidualRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, cubeGeometry, filterSpacing,
     filterCubeSize, filterStaticGroup, flattenTensor, addLabel, addFormulaLabel, getData,
     heatMapColor,
+    addLabel: addAnnotationLabel,
+    addFormulaLabel: addAnnotationFormulaLabel,
   });
 
   function addXArrow(group, startX, endX, y, z, label = null, labelOffset = 0.58, name = 'tensor-flow-arrow') {
@@ -78,7 +83,7 @@ export function createTensorRenderer({
     arrow.name = name;
     group.add(arrow);
     if (label) {
-      addFormulaLabel(label, [
+      addAnnotationFormulaLabel(label, [
         (startX + endX) / 2,
         y + labelOffset,
         z,
@@ -106,7 +111,7 @@ export function createTensorRenderer({
     group.add(shaft);
     if (label) {
       const point = curve.getPoint(0.5);
-      addFormulaLabel(label, [point.x, point.y + labelOffset, point.z], 25, '#f2f4f8', 92);
+      addAnnotationFormulaLabel(label, [point.x, point.y + labelOffset, point.z], 25, '#f2f4f8', 92);
     }
   }
 
@@ -130,6 +135,9 @@ export function createTensorRenderer({
     materials.forEach((material) => material.dispose());
     residualRenderer.reset();
   }
+
+  let inputAnnotationsBuilt = false;
+  let inputArrowsBuilt = false;
 
   function drawInputs() {
     const game = createSampleGame();
@@ -169,8 +177,9 @@ export function createTensorRenderer({
       },
     ];
 
+    if (!inputAnnotationsBuilt) {
     tensors.forEach((tensor) => {
-      addLabel(
+      addAnnotationLabel(
         tensor.label,
         [tensor.x, 7.0, tensor.z + ((BOARD_SIZE - 1) * inputSpacing) / 2],
         24, '#ffffff', 70,
@@ -178,7 +187,7 @@ export function createTensorRenderer({
       const firstBladeX = tensor.x - ((tensor.channels - 1) * inputDepthStep) / 2;
       const boardTopY = -4.082 + (BOARD_SIZE - 1) * inputSpacing;
       tensor.bladeLabels.forEach((bladeLabel, channel) => {
-        addLabel(
+        addAnnotationLabel(
           bladeLabel,
           [firstBladeX + channel * inputDepthStep, 5.65, tensor.z - 0.08],
           20, '#e7edf6', 115, 'left',
@@ -186,13 +195,15 @@ export function createTensorRenderer({
       });
       if (tensor.key === 'links') {
         for (let col = 0; col < BOARD_SIZE; col += 1) {
-          addLabel(String(col), [firstBladeX, 4.6, tensor.z + col * inputSpacing], 17, '#dce7f5', 145, 'center');
+          addAnnotationLabel(String(col), [firstBladeX, 4.6, tensor.z + col * inputSpacing], 17, '#dce7f5', 145, 'center');
         }
         for (let row = 0; row < BOARD_SIZE; row += 1) {
-          addLabel(String(row), [firstBladeX - 0.12, boardTopY - row * inputSpacing, tensor.z - 0.48], 17, '#dce7f5', 145, 'center');
+          addAnnotationLabel(String(row), [firstBladeX - 0.12, boardTopY - row * inputSpacing, tensor.z - 0.48], 17, '#dce7f5', 145, 'center');
         }
       }
     });
+    inputAnnotationsBuilt = true;
+    }
 
     // Show all trained first-layer filters and their summed feature tensor
     // alongside the game encoding, rather than switching between separate tabs.
@@ -202,11 +213,12 @@ export function createTensorRenderer({
     // Connect each input/filter pair and the three filter banks to the
     // shared post-BN feature tensor. The bank layouts are calculated in
     // drawFilters(), where their actual geometry dimensions are available.
-    const arrowGroup = getSceneGroup();
+    const arrowGroup = getAnnotationGroup();
     const featureY = -2.5 + (BOARD_SIZE - 1) * filterSpacing / 2;
     const featureZ = -((FILTER_COUNT - 1) * 0.105) / 2 +
       (BOARD_SIZE - 1) * filterSpacing / 2;
     const featureLeftX = 20 - filterCubeSize / 2;
+    if (!inputArrowsBuilt) {
     for (const bank of filterInfo.arrowBanks) {
       const tensorRight = -1.8 +
         ((bank.tensorChannels - 1) * inputDepthStep) / 2 + inputCellSize / 2;
@@ -262,6 +274,8 @@ export function createTensorRenderer({
       arrowGroup, mergeX, featureLeftX,
       featureY, featureZ, 'Σ', 0.58, 'merged-convolutions-to-feature-output',
     );
+    inputArrowsBuilt = true;
+    }
 
     return {
       title: 'First-layer network view',
