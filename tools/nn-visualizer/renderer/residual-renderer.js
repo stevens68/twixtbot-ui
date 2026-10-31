@@ -51,7 +51,11 @@ function residualLayout(blockIndex) {
  const firstPitch=(2*bankSizeX+firstConvGap+1.25*1.15*3+outputCubeSize/2+outputSizeX+1.25+filterCubeSize/2)*1.2;
  const nextLeft=firstX+firstPitch-filterCubeSize/2,right=firstX-filterCubeSize/2+2*bankSizeX+firstConvGap;
  const outputCenterX=(right+nextLeft)/2,outputStartX=outputCenterX-(channels-1)*outputChannelStep/2;
- const compactConvGap=2.5,interBlockGap=8,compactPitch=2*bankSizeX+compactConvGap+interBlockGap;
+ const compactConvGap=2.5;
+ // Match the clear space after block 1 (which contains its output tensor),
+ // while retaining the compact conv1-to-conv2 gap inside every later block.
+ const firstInterBlockGap=firstPitch-(2*bankSizeX+firstConvGap);
+ const compactPitch=2*bankSizeX+compactConvGap+firstInterBlockGap;
  const blockStartX=blockIndex===0?firstX:nextLeft+filterCubeSize/2+(blockIndex-1)*compactPitch,convGap=blockIndex===0?firstConvGap:compactConvGap;
  return {channels,kernelHeight,kernelWidth,columns,rows,filterWidth,filterHeight,gapY,gapZ,bankSizeX,bankSizeY,bankSizeZ,bankStartY,bankStartZ,
  bankStartXs:[blockStartX,blockStartX+bankSizeX+convGap],bankStartZs:[bankStartZ,bankStartZ],blockStartX,blockSpanX:2*bankSizeX+convGap,
@@ -198,7 +202,38 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
        addResidualArrow(residualPlaceholderGroup,outRight,nextLeft,cy,cz,'block-1-output-to-block-2');
       }else if(index<blockCount-1){
        const next=residualLayout(index+1),nextLeft=next.bankStartXs[0]-filterCubeSize/2;
-       addResidualArrow(residualPlaceholderGroup,br2,nextLeft,cy,cz,'block-'+(index+1)+'-to-block-'+(index+2));
+       const gapCenterX=(br2+nextLeft)/2;
+       const outputWidth=layout.outputSizeX;
+       const glassLeft=gapCenterX-outputWidth/2;
+       const glassRight=gapCenterX+outputWidth/2;
+
+       // A borderless green glass volume represents the 24x24x48 tensor
+       // produced by this residual block.
+       const outputGlass=new THREE.Mesh(
+         new THREE.BoxGeometry(outputWidth,layout.outputSizeY,layout.outputSizeZ),
+         new THREE.MeshPhysicalMaterial({
+           color:0x00ff00,
+           transparent:true,
+           opacity:0.16,
+           transmission:0.72,
+           roughness:0.08,
+           metalness:0,
+           depthWrite:false,
+           side:THREE.DoubleSide,
+         }),
+       );
+       outputGlass.position.set(gapCenterX,cy,cz);
+       outputGlass.name='residual-block-'+(index+1)+'-output-tensor-glass';
+       residualPlaceholderGroup.add(outputGlass);
+
+       addResidualArrow(
+         residualPlaceholderGroup,br2,glassLeft,cy,cz,
+         'block-'+(index+1)+'-to-output-tensor',
+       );
+       addResidualArrow(
+         residualPlaceholderGroup,glassRight,nextLeft,cy,cz,
+         'output-tensor-to-block-'+(index+2),
+       );
       }
     }
     filterStaticGroup.add(residualPlaceholderGroup);
