@@ -291,7 +291,8 @@ export function createTensorRenderer({
       title: 'First-layer network view',
       description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and both policy convolutions with their outputs are shown together.",
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48' +
-        (policyOutputStats ? ' · Policy Conv₁: 24 × 24 × 2' : ''),
+        (policyOutputStats ? ' · Policy Conv₁: 24 × 24 × 2' +
+          (policyOutputStats.policyConv2 ? ' · Policy Conv₂: 22 × 24 × 1 (528 logits)' : '') : ''),
       range: 'Feature range ' + featureInfo.range +
         (policyOutputStats ? ' · Policy Conv₁ range ' + policyOutputStats.min.toFixed(4) +
           ' … ' + policyOutputStats.max.toFixed(4) +
