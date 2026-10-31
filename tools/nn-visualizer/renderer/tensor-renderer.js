@@ -88,9 +88,8 @@ export function createTensorRenderer({
     const { name = 'centerline-curve-arrow', label = null, labelOffset = 0.62 } = options;
     const dx = endX - startX;
     if (dx <= 0.2) return;
-    // Both end tangents point along +X. The curve therefore leaves the bank
-    // horizontally, makes one broad, controlled turn, and joins the NN axis
-    // horizontally instead of forming a sinusoidal S-wave.
+    // This is a shaft only. All three first-layer paths converge at the
+    // feature axis; the single downstream arrow supplies their common head.
     const curve = new THREE.CubicBezierCurve3(
       new THREE.Vector3(startX, startY, startZ),
       new THREE.Vector3(startX + dx * 0.42, startY, startZ),
@@ -98,20 +97,11 @@ export function createTensorRenderer({
       new THREE.Vector3(endX, endY, endZ),
     );
     const shaft = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 48, 0.045, 8, false),
+      new THREE.TubeGeometry(curve, 48, 0.06, 8, false),
       new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
     );
     shaft.name = name + '-shaft';
     group.add(shaft);
-    const tangent = curve.getTangent(1).normalize();
-    const head = new THREE.Mesh(
-      new THREE.ConeGeometry(0.2, 0.48, 10),
-      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
-    );
-    head.position.copy(curve.getPoint(1)).addScaledVector(tangent, -0.18);
-    head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
-    head.name = name + '-head';
-    group.add(head);
     if (label) {
       const point = curve.getPoint(0.5);
       addFormulaLabel(label, [point.x, point.y + labelOffset, point.z], 25, '#f2f4f8', 92);
@@ -238,7 +228,7 @@ export function createTensorRenderer({
       const isOuterBank = bank.key === 'pegs' || bank.key === 'locations';
       if (isOuterBank) {
         addCenterlineCurveArrow(
-          arrowGroup, bankRight, mergeX,
+          arrowGroup, bankRight + 0.8, mergeX,
           bankCenterY, bankCenterZ, featureY, featureZ,
           {
             name: bank.key + '-filter-bank-to-merge',
@@ -246,11 +236,20 @@ export function createTensorRenderer({
           },
         );
       } else {
-        addXArrow(
-          arrowGroup, bankRight, mergeX,
-          featureY, featureZ,
-          'y = |BN(Conv(x))|', 0.62,
-          bank.key + '-filter-bank-to-merge',
+        const linkLine = new THREE.LineCurve3(
+          new THREE.Vector3(bankRight, featureY, featureZ),
+          new THREE.Vector3(mergeX, featureY, featureZ),
+        );
+        const linkShaft = new THREE.Mesh(
+          new THREE.TubeGeometry(linkLine, 1, 0.06, 8, false),
+          new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+        );
+        linkShaft.name = bank.key + '-filter-bank-to-merge-shaft';
+        arrowGroup.add(linkShaft);
+        addFormulaLabel(
+          'y = |BN(Conv(x))|',
+          [(bankRight + mergeX) / 2, featureY + 0.62, featureZ],
+          25, '#f2f4f8', 92,
         );
       }
     }
