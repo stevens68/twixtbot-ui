@@ -137,7 +137,7 @@ function addResidualOutputValues(group,layout,index,tensor,mesh=null){
  const o=new THREE.Object3D();let i=0;
  for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++){
  const v=Number(tensor[r][col][c]);o.position.set(layout.outputStartX+c*layout.outputChannelStep,layout.outputCenterY+(BOARD_SIZE-1-r)*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2,layout.outputCenterZ+col*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2);
- o.scale.setScalar(layout.outputCubeSize*.72);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);mesh.setColorAt(i,new THREE.Color().setHSL((1/3)*(1-Math.max(0,Math.min(1,v/max))),1,.5));i++;}
+ o.scale.setScalar(layout.outputCubeSize*.72);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);mesh.setColorAt(i,heatMapColor(v,0,max));i++;}
  mesh.count=i;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;return mesh;
 }
 function addResidualArrow(group,x1,x2,y,z,name,label=null){const gap=x2-x1;if(gap<=.15)return;const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x1+gap*.22,y,z),gap*.67,0x71879b,.42,.22);arrow.name=name;group.add(arrow);if(label)addFormulaLabel(label,[(x1+x2)/2,y+1.15,z],25,'#f2f4f8',92);}
