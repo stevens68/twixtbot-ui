@@ -112,9 +112,13 @@ export function createFilterBankRenderer({
     const channels = weights[0][0][0].length;
     const rows = Math.ceil(count / columns);
     if (buildGeometry) {
+      // Center the glass along Z over the actual filter cells. For 1×1
+      // kernels in peg-sized slots, the occupied cells sit at each slot's
+      // leading edge; shifting the enclosure by half a slot centers it.
+      const glassStartZ = startZ - (slotWidth - filterSpacing) / 2;
       addBankGlass(
         name, startX, startY - (rows - 1) * (slotHeight + gapY),
-        startZ, channels * filterSpacing, bankHeight,
+        glassStartZ, channels * filterSpacing, bankHeight,
         columns * slotWidth + (columns - 1) * gapZ,
         glassPadding,
       );
