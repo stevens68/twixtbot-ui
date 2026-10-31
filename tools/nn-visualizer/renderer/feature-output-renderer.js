@@ -47,6 +47,7 @@ export function createFeatureOutputRenderer({
     };
   }
 
+  let outputLabelAdded = false;
   function drawOutput() {
     const values = flattenTensor(calculateConvolutionOutput());
     const stats = addValueCubes(
@@ -59,7 +60,10 @@ export function createFeatureOutputRenderer({
         channelGap: filterSpacing - filterCubeSize,
       },
     );
-    addLabel('Post-BN + abs feature tensor · 24×24×48', [22.6, 5, 2], 24, '#ffffff', 70);
+    if (!outputLabelAdded) {
+      addLabel('Post-BN + abs feature tensor · 24×24×48', [22.6, 5, 2], 24, '#ffffff', 70);
+      outputLabelAdded = true;
+    }
     return {
       title: 'Convolution output',
       description: 'The 48 channels show the trained peg + link + location convolution sum, followed by checkpoint primary batch normalization (inference running statistics, scale and offset) and absolute-value activation. Color encodes the resulting nonnegative magnitude.',
