@@ -707,7 +707,7 @@ function addResidualOutputValues(group, layout, blockIndex, tensor) {
 
 function addResidualOutputGlass(group, layout, blockIndex) {
   const geometry = new THREE.BoxGeometry(
-    layout.outputSizeX, layout.outputSizeY, layout.outputSizeZ,
+    layout.outputSizeX * 1.08, layout.outputSizeY * 1.08, layout.outputSizeZ * 1.08,
   );
   const glass = new THREE.Mesh(
     geometry,
