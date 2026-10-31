@@ -43,7 +43,12 @@ export function createFeatureOutputRenderer({
           transform.scale.set(cubeSize, cubeSize, cubeSize);
           transform.updateMatrix();
           mesh.setMatrixAt(index, transform.matrix);
-          mesh.setColorAt(index, heatMapColor(value, 0, colorMax));
+          mesh.setColorAt(
+            index,
+            options.positiveOnly
+              ? heatMapColor(Math.abs(Number(value)), 0, colorMax)
+              : heatMapColor(value, 0, colorMax),
+          );
           index += 1;
         }
       }
