@@ -135,7 +135,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
 function addResidualOutputValues(group,layout,index,tensor,mesh=null){
  const count=FILTER_COUNT*BOARD_SIZE*BOARD_SIZE;
- if(!mesh){mesh=new THREE.InstancedMesh(cubeGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55,transparent:true,opacity:.96}),count);mesh.name='residual-block-1-actual-output-values';group.add(mesh);}
+ if(!mesh){mesh=new THREE.InstancedMesh(cubeGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55,transparent:true,opacity:.96}),count);mesh.name='residual-block-'+(index+1)+'-actual-output-values';group.add(mesh);}
  let max=1e-8;
  for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++)max=Math.max(max,Math.abs(Number(tensor[r][col][c])));
  const o=new THREE.Object3D();let i=0;
