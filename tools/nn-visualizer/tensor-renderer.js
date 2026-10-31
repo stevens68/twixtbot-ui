@@ -447,11 +447,13 @@ export function createTensorRenderer({
     const metadata = getData().linkConvMetadata;
     // Missing checkpoint metadata must not invent bias cubes.
     const showBias = Boolean(metadata?.has_bias);
-    addFirstLayerBankGlass(
-      'links', startX, startY - (rows - 1) * (filterHeight + gapY),
-      startZ, channels * filterSpacing,
-      bankHeight, columns * (filterWidth + gapZ) - gapZ + filterWidth,
-    );
+    if (rebuild) {
+      addFirstLayerBankGlass(
+        'links', startX, startY - (rows - 1) * (filterHeight + gapY),
+        startZ, channels * filterSpacing,
+        bankHeight, columns * filterWidth + (columns - 1) * gapZ,
+      );
+    }
 
     // Peg filters use their own 5×5×2 geometry in an 8-column × 6-row bank.
     const pegWeights = weights.pegs;
@@ -470,11 +472,13 @@ export function createTensorRenderer({
     const pegShowBias = Boolean(pegMetadata?.has_bias);
     const pegRows = Math.ceil(pegCount / columns);
     const pegBankHeight = pegRows * pegFilterHeight + (pegRows - 1) * pegGapY;
-    addFirstLayerBankGlass(
-      'pegs', pegStartX, pegStartY - (pegRows - 1) * (pegFilterHeight + pegGapY),
-      pegStartZ, pegChannels * filterSpacing,
-      pegBankHeight, columns * (pegFilterWidth + pegGapZ) - pegGapZ + pegFilterWidth,
-    );
+    if (rebuild) {
+      addFirstLayerBankGlass(
+        'pegs', pegStartX, pegStartY - (pegRows - 1) * (pegFilterHeight + pegGapY),
+        pegStartZ, pegChannels * filterSpacing,
+        pegBankHeight, columns * pegFilterWidth + (columns - 1) * pegGapZ,
+      );
+    }
     for (let filter = 0; filter < pegCount; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
@@ -509,11 +513,13 @@ export function createTensorRenderer({
     const locationShowBias = Boolean(locationMetadata?.has_bias);
     const locationRows = Math.ceil(locationCount / columns);
     const locationBankHeight = locationRows * locationSlotHeight + (locationRows - 1) * locationGapY;
-    addFirstLayerBankGlass(
-      'locations', locationStartX, locationStartY - (locationRows - 1) * (locationSlotHeight + locationGapY),
-      locationStartZ, locationChannels * filterSpacing,
-      locationBankHeight, columns * (locationSlotWidth + locationGapZ) - locationGapZ + locationSlotWidth,
-    );
+    if (rebuild) {
+      addFirstLayerBankGlass(
+        'locations', locationStartX, locationStartY - (locationRows - 1) * (locationSlotHeight + locationGapY),
+        locationStartZ, locationChannels * filterSpacing,
+        locationBankHeight, columns * locationSlotWidth + (columns - 1) * locationGapZ,
+      );
+    }
     for (let filter = 0; filter < locationCount; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
@@ -662,7 +668,7 @@ function residualLayout(blockIndex) {
   const outputMaxX =
     20 + (channels - 1) * outputChannelStep + outputCubeSize / 2;
   const firstResidualGapX = 5.0;
-  const convGapZ = 2.0 * 3 * 3;
+  const convGapZ = 2.0 * 3 * 3 * 0.5;
   const outputGapX = 1.25 * 1.15 * 3;
   const blockPitchX =
     bankSizeX + outputGapX + outputCubeSize / 2 +
@@ -735,27 +741,6 @@ function addResidualOutputValues(group, layout, blockIndex, tensor) {
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   group.add(mesh);
   mesh.userData.valueRange = { min: Math.min(...values), max: maxAbs };
-}
-
-function addResidualOutputGlass(group, layout, blockIndex) {
-  const geometry = new THREE.BoxGeometry(
-    layout.outputSizeX * 1.08, layout.outputSizeY * 1.08, layout.outputSizeZ * 1.08,
-  );
-  // Use an open wireframe enclosure: solid transparent faces obscured the
-  // tensor when orbiting the camera inside the box.
-  const edgesGeometry = new THREE.EdgesGeometry(geometry);
-  geometry.dispose();
-  const edges = new THREE.LineSegments(
-    edgesGeometry,
-    new THREE.LineBasicMaterial({
-      color: 0xb9d5e8, transparent: true, opacity: 0.9,
-    }),
-  );
-  edges.position.set(
-    layout.outputCenterX, layout.outputCenterY, layout.outputCenterZ,
-  );
-  edges.name = 'residual-block-' + blockIndex + '-output-tensor-outline';
-  group.add(edges);
 }
 
 function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
@@ -897,6 +882,31 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         }
       }
 
+      // Connect the initial post-BN feature tensor to residual block 0.
+      if (index === 0) {
+        const initialOutputRightX =
+          20 + (FILTER_COUNT - 1) * layout.outputChannelStep +
+          layout.outputCubeSize / 2;
+        const residualBankLeftX = layout.blockStartX - filterCubeSize / 2;
+        const fullArrowLength = Math.max(0.1, residualBankLeftX - initialOutputRightX);
+        const shortenedArrowLength = fullArrowLength * 0.8;
+        const arrowY = layout.outputCenterY + layout.outputSizeY / 2 + 1.2;
+        const arrow = new THREE.ArrowHelper(
+          new THREE.Vector3(1, 0, 0),
+          new THREE.Vector3(
+            initialOutputRightX + (fullArrowLength - shortenedArrowLength) / 2,
+            arrowY,
+            layout.outputCenterZ,
+          ),
+          shortenedArrowLength,
+          0xaeb7c2,
+          0.48,
+          0.26,
+        );
+        arrow.name = 'initial-feature-output-to-residual-0';
+        residualPlaceholderGroup.add(arrow);
+      }
+
       // Connect consecutive residual output tensors with a straight grey
       // arrow. Raise it above the filter banks so it remains visible.
       if (index < blockCount - 1) {
@@ -918,8 +928,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         residualPlaceholderGroup.add(arrow);
       }
 
-      // Keep the output enclosure visible and show actual values for block 0.
-      addResidualOutputGlass(residualPlaceholderGroup, layout, index);
+      // Output tensors remain unenclosed; show actual values for block 0.
       if (index === 0 && getData().residualBlock0Output) {
         addResidualOutputValues(residualPlaceholderGroup, layout, index, getData().residualBlock0Output);
       }
