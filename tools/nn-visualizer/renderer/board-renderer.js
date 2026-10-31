@@ -278,8 +278,8 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   };
   const redFinish = new THREE.MeshBasicMaterial({ color: 0xe0525d });
   const blackFinish = new THREE.MeshBasicMaterial({ color: 0x20252d });
-  const rowY = (row) => start + (BOARD_SIZE - 1 - row) * spacing;
-  const colZ = (col) => start + col * spacing;
+  const rowY = (row) => startY + (BOARD_SIZE - 1 - row) * spacing;
+  const colZ = (col) => startZ + col * spacing;
 
   // Keep goal-line colours and positions fixed in the displayed coordinate
   // system. Only encoded peg/link cells and their player colours are transposed.
