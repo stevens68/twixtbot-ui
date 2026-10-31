@@ -373,15 +373,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         0.48,
       );
 
-      if (index < blockCount - 1) {
-        const nextLayout = residualLayout(index + 1);
-        const nextBankLeftX = nextLayout.bankStartXs[0] - filterCubeSize / 2;
-        addResidualArrow(
-          residualPlaceholderGroup, outputRightX, nextBankLeftX,
-          bankCenterY, bankCenterZ, null,
-          'residual-output-' + index + '-to-conv1-' + (index + 1),
-        );
-      }
+
 
       // Output tensors remain unenclosed; show actual values for block 0.
       if (index === 0 && getData().residualBlock0Output) {
