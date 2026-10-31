@@ -378,9 +378,9 @@ export function createTensorRenderer({
       glassPadding: [1.02, 1.0, 1.0],
     });
 
-    // Policy Conv1 maps the 48-channel shared feature tensor to two output
-    // channels. Keep its two 1×1 filters together, with a dedicated Z offset.
-    const policyChannels = weights.links[0][0][0].length;
+    // Policy Conv1 maps the 48-channel residual output to two output channels.
+    // Use the residual feature depth (48), not the link input depth (8).
+    const policyChannels = weights.locations[0][0][0].length;
     // Keep the visualizer renderable if an older cached/demo data object is
     // supplied. The normal initialization path replaces this zero fallback
     // with the trained policy_conv1 checkpoint weights.
@@ -406,7 +406,9 @@ export function createTensorRenderer({
     // feature tensor. Place its bank directly downstream of block 20's output.
     const policyInput = residualRenderer.getLastOutputAnchor();
     const policyInputRight = policyInput.right;
-    const policyGapX = filterSpacing * 1.5;
+    // Leave a clearly visible processing gap between the residual output and
+    // the policy bank; the arrow spans this full separation.
+    const policyGapX = 6.0;
     const policyStartX = policyInputRight + policyGapX + filterCubeSize / 2;
     // Use the same row/column layout and vertical centering convention as Conv3.
     const policyStartY = policyInput.centerY +
