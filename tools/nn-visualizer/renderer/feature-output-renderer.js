@@ -1,11 +1,20 @@
 /** Generic tensor-value meshes and the first convolution feature output. */
 export function createFeatureOutputRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
-  getSceneGroup, calculateConvolutionOutput, addLabel, filterSpacing,
+  getSceneGroup, getData, calculateConvolutionOutput, addLabel, filterSpacing,
   filterCubeSize, heatMapColor,
 }) {
   function addValueCubes(values, rows, cols, channels, origin, color, options = {}) {
-    const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
+    // Use a position-independent scale derived from the trained primary BN.
+    // A three-standard-deviation envelope is a stable reference for normalized
+    // activations; unlike per-position autoscaling it keeps colours comparable
+    // when moving between the empty board and later game positions.
+    const bn = getData()?.primaryBn;
+    const bnScale = bn?.weight && bn?.bias
+      ? Math.max(...bn.weight.map((weight, channel) =>
+          Math.abs(Number(bn.bias[channel])) + 3 * Math.abs(Number(weight))))
+      : 1;
+    const colorMax = Math.max(1e-8, Number.isFinite(bnScale) ? bnScale : 1);
     const spacing = options.spacing || 0.34;
     const cellSize = options.cellSize || 0.26;
     const channelGap = options.channelGap ?? 0.2;
@@ -32,7 +41,7 @@ export function createFeatureOutputRenderer({
           transform.scale.set(cubeSize, cubeSize, cubeSize);
           transform.updateMatrix();
           mesh.setMatrixAt(index, transform.matrix);
-          mesh.setColorAt(index, heatMapColor(value, -maxAbs, maxAbs));
+          mesh.setColorAt(index, heatMapColor(value, 0, colorMax));
           index += 1;
         }
       }
@@ -68,7 +77,7 @@ export function createFeatureOutputRenderer({
       title: 'Convolution output',
       description: 'The 48 channels show the trained peg + link + location convolution sum, followed by checkpoint primary batch normalization (inference running statistics, scale and offset) and absolute-value activation. Color encodes the resulting nonnegative magnitude.',
       shape: '24 × 24 × 48',
-      range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4),
+      range: stats.min.toFixed(4) + ' … ' + stats.max.toFixed(4) + ' (colour scale 0 … ' + colorMax.toFixed(4) + ', fixed from primary BN ±3σ)',
       count: stats.count.toLocaleString() + ' cells',
     };
   }
