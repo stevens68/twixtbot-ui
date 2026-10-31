@@ -546,7 +546,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block contains two convolution banks aligned along X, followed by a glass 24×24×48 output tensor; select either convolution volume to inspect both 48-filter 5×5×48 banks.',
+      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block contains two convolution banks side by side along Z, followed by a glass 24×24×48 output tensor; select either convolution volume to inspect both 48-filter 5×5×48 banks.',
       shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
         '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
         '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
@@ -625,22 +625,28 @@ function residualLayout(blockIndex) {
   const outputMaxX =
     20 + (channels - 1) * outputChannelStep + outputCubeSize / 2;
   const firstResidualGapX = 5.0;
-  const convGapX = 1.25;
+  const convGapZ = 1.25;
   const outputGapX = 1.25;
+  const blockPitchX =
+    bankSizeX + outputGapX + outputCubeSize / 2 +
+    outputSizeX + 1.25 + filterCubeSize / 2;
   const blockStartX =
     outputMaxX + firstResidualGapX + filterCubeSize / 2 +
-    blockIndex * (2 * bankSizeX + convGapX + outputGapX +
-      outputCubeSize / 2 + outputSizeX + 1.25 + filterCubeSize / 2);
-  const conv2StartX = blockStartX + bankSizeX + convGapX;
+    blockIndex * blockPitchX;
   const outputStartX =
-    conv2StartX + bankSizeX + outputGapX + outputCubeSize / 2;
+    blockStartX + bankSizeX + outputGapX + outputCubeSize / 2;
   const outputCenterX =
     outputStartX + (channels - 1) * outputChannelStep / 2;
+  const bankPairSizeZ = 2 * bankSizeZ + convGapZ;
+  const bankPairStartZ = outputCenterZ - bankPairSizeZ / 2 + filterCubeSize / 2;
   return {
     channels, kernelHeight, kernelWidth, columns, rows,
     filterWidth, filterHeight, gapY, gapZ,
-    bankSizeX, bankSizeY, bankSizeZ, bankStartY, bankStartZ,
-    bankStartXs: [blockStartX, conv2StartX],
+    bankSizeX, bankSizeY, bankSizeZ, bankStartY,
+    bankStartZ: bankPairStartZ,
+    bankStartXs: [blockStartX, blockStartX],
+    bankStartZs: [bankPairStartZ, bankPairStartZ + bankSizeZ + convGapZ],
+    bankPairSizeZ,
     outputStartX, outputCenterX,
     outputSizeX, outputSizeY, outputSizeZ,
     outputCenterY, outputCenterZ, outputCubeSize,
@@ -715,7 +721,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         const originY =
           layout.bankStartY - row * (layout.filterHeight + layout.gapY);
         const originZ =
-          layout.bankStartZ + column * (layout.filterWidth + layout.gapZ);
+          layout.bankStartZs[bankIndex] + column * (layout.filterWidth + layout.gapZ);
         const values = flattenTensor(bank[filter]);
         const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
 
@@ -749,12 +755,13 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
   for (const [index, name] of ['conv1', 'conv2'].entries()) {
     const startX = layout.bankStartXs[index];
+    const startZ = layout.bankStartZs[index];
     addLabel(
       'Residual block ' + blockIndex + ' · ' + name + ' · 48 × 5×5×48 filters',
       [
         startX + (layout.bankSizeX - filterCubeSize) / 2,
         layout.bankStartY + layout.filterHeight + 0.8,
-        layout.bankStartZ + (layout.bankSizeZ - filterCubeSize) / 2,
+        startZ + (layout.bankSizeZ - filterCubeSize) / 2,
       ],
       22,
     );
@@ -783,7 +790,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
             layout.bankStartY +
               (-(layout.rows - 1) * (layout.filterHeight + layout.gapY) +
                 (layout.kernelHeight - 1) * filterSpacing) / 2,
-            layout.bankStartZ + (layout.bankSizeZ - filterCubeSize) / 2,
+            layout.bankStartZs[bankIndex] + (layout.bankSizeZ - filterCubeSize) / 2,
           );
           const glassGeometry = new THREE.BoxGeometry(
             layout.bankSizeX, layout.bankSizeY, layout.bankSizeZ,
@@ -830,18 +837,15 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       // between it and the next residual block.
       addResidualOutputGlass(residualPlaceholderGroup, layout, index);
 
-      if (index !== selectedResidualBlockIndex) {
-        addLabel(
-          'Residual block ' + index,
-          [
-            layout.bankStartXs[0] + layout.bankSizeX +
-              (layout.bankStartXs[1] - layout.bankStartXs[0]) / 2,
-            layout.outputCenterY + layout.bankSizeY / 2 + 1.0,
-            layout.outputCenterZ,
-          ],
-          12, '#dce7f5', 100,
-        );
-      }
+      addLabel(
+        'residual ' + index,
+        [
+          layout.bankStartXs[0] + layout.bankSizeX / 2,
+          layout.outputCenterY + layout.bankSizeY / 2 + 1.0,
+          layout.bankStartZ + layout.bankPairSizeZ / 2,
+        ],
+        16, '#dce7f5', 110,
+      );
       addLabel(
         'Block ' + index + ' output · 24×24×48',
         [
