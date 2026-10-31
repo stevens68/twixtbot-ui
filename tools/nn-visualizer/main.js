@@ -9,7 +9,7 @@ import { createDemoData, calculateConvolutionOutput as calculateConvolution, val
 import { createLabelHelpers } from './labels.js?v=20261031-big-label-toggle-v5';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-stable-conv-colours-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-tanh-colour-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -88,6 +88,7 @@ let interactiveMovePending = false;
 let currentPlayerName = "Black";
 let residualBlock0Output = null;
 let residualBlock0OutputError = null;
+let colorTanhA = 0;
 
 scene.add(staticSceneGroup);
 scene.add(inputStaticTensorGroup);
@@ -287,7 +288,7 @@ const { logLinkEncodingDiagnostic, logFullInputTensorValidation } =
 
 
 const {
-  drawInputs, drawFilters, drawOutput, setResidualFiltersVisible,
+  drawInputs, drawFilters, drawOutput, refreshTensorColors, setResidualFiltersVisible,
   setSelectedResidualBlock, pickResidualBlock,
 } = createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -300,6 +301,7 @@ const {
     drawSampleBoard, drawEffectiveBoard,
     logLinkEncodingDiagnostic, logFullInputTensorValidation,
     calculateConvolutionOutput, addLabel, addFormulaLabel,
+    getColorTanhA: () => colorTanhA,
     addAnnotationLabel, addAnnotationFormulaLabel,
   });
 
@@ -703,6 +705,14 @@ document.querySelector('#camera-input-top').addEventListener('click', () => setC
 document.querySelector('#camera-residual-block').addEventListener('click', () => setCameraPreset(
   [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
 ));
+const tanhSlider = document.querySelector('#tanh-a');
+const tanhValue = document.querySelector('#tanh-a-value');
+tanhSlider.addEventListener('input', () => {
+  colorTanhA = Number(tanhSlider.value);
+  tanhValue.value = colorTanhA.toFixed(2);
+  tanhValue.textContent = colorTanhA.toFixed(2);
+  refreshTensorColors();
+});
 const bigLabelsToggle = document.querySelector('#toggle-big-labels');
 bigLabelsToggle.addEventListener('change', () => {
   setBigLabelsVisible(bigLabelsToggle.checked);
