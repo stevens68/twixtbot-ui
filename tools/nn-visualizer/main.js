@@ -6,10 +6,10 @@ import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-c
 import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-model-weight-client-v1';
 import { createBoardInteraction } from './board-interaction.js?v=20261031-board-interaction-v1';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
-import { createLabelHelpers } from './labels.js?v=20261031-distance-scaled-labels-v2';
+import { createLabelHelpers } from './labels.js?v=20261031-equal-screen-labels-v3';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-heading-labels-v2';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-residual-arrow-labels-v3';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
