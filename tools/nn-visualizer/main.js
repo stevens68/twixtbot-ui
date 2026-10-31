@@ -712,6 +712,7 @@ tanhSlider.addEventListener('input', () => {
   tanhValue.value = colorTanhA.toFixed(2);
   tanhValue.textContent = colorTanhA.toFixed(2);
   refreshTensorColors();
+  renderStep();
 });
 const bigLabelsToggle = document.querySelector('#toggle-big-labels');
 bigLabelsToggle.addEventListener('change', () => {
