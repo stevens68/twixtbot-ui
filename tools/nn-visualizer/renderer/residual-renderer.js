@@ -317,7 +317,10 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     lastRenderedOutputTensor = null;
     lastRenderedLastOutputTensor = null;
     residualHitTargets = [];
-    residualWeightsByIndex.clear();
+    // clearFilterGeometry() calls reset() before rebuilding the filter scene.
+    // Keep the trained payloads: draw() needs them to recreate both endpoint
+    // banks (and the currently selected block) after that geometry rebuild.
+    residualGeometryDirty = true;
   }
 
   function draw(rebuild, blockCount) {
