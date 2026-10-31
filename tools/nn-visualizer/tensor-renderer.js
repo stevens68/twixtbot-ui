@@ -148,7 +148,7 @@ export function createTensorRenderer({
     // Show all trained first-layer filters and their summed feature tensor
     // alongside the game encoding, rather than switching between separate tabs.
     const filterInfo = drawFilters();
-    const featureInfo = drawOutput();
+    const featureInfo = featureOutputRenderer.drawOutput();
 
     return {
       title: 'First-layer network view',
