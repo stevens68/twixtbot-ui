@@ -272,20 +272,11 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       new THREE.Vector3(endX, endY, endZ),
     );
     const shaft = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 64, 0.045, 8, false),
+      new THREE.TubeGeometry(curve, 64, 0.06, 8, false),
       new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
     );
     shaft.name = name + '-shaft';
     group.add(shaft);
-    const tangent = curve.getTangent(1).normalize();
-    const head = new THREE.Mesh(
-      new THREE.ConeGeometry(0.2, 0.48, 10),
-      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
-    );
-    head.position.copy(curve.getPoint(1)).addScaledVector(tangent, -0.18);
-    head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
-    head.name = name + '-head';
-    group.add(head);
   }
 
   function createResidualBlockPlaceholders(blockCount) {
@@ -395,10 +386,14 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       const skipStartX = index === 0
         ? 20 + (FILTER_COUNT - 1) * layout.outputChannelStep + layout.outputCubeSize / 2
         : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
+      // Route the identity path above the full convolution enclosure,
+      // including its 8% frame margin. A cubic Bezier reaches 75% of the
+      // control-point offset at its apex.
+      const bypassControlHeight = (layout.bankSizeY * 1.08 / 2 + 1.0) / 0.75;
       addResidualCurvedArrow(
         residualPlaceholderGroup, skipStartX, mergeX,
         bankCenterY, bankCenterZ, bankCenterY, bankCenterZ,
-        'residual-' + index + '-identity-skip', 2.0,
+        'residual-' + index + '-identity-skip', bypassControlHeight,
       );
       addResidualArrow(
         residualPlaceholderGroup, mergeX, outputLeftX,
