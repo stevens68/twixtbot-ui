@@ -1,7 +1,7 @@
 import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-feature-output-v1';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-input-tensor-v2';
 import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-bank-v1';
-import { createResidualRenderer } from './residual-renderer.js?v=20261031-residual-arrows-v2';
+import { createResidualRenderer } from './residual-renderer.js?v=20261031-curved-arrows-v1';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -89,13 +89,13 @@ export function createTensorRenderer({
       amplitude = 1.15, waves = 1 } = options;
     if (endX - startX <= 0.2) return;
     const points = [];
-    const segments = waves === 2 ? 8 : 4;
+    const segments = waves === 2 ? 16 : 8;
     for (let i = 0; i <= segments; i += 1) {
       const t = i / segments;
       const envelope = Math.sin(Math.PI * t);
       const oscillation = waves === 2
-        ? Math.sin(2 * Math.PI * t)
-        : Math.sin(Math.PI * t);
+        ? Math.sin(4 * Math.PI * t)
+        : Math.sin(2 * Math.PI * t);
       points.push(new THREE.Vector3(
         startX + (endX - startX) * t,
         startY + (endY - startY) * t + amplitude * envelope * oscillation,
