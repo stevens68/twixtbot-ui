@@ -232,3 +232,32 @@ pre { white-space: pre-wrap; word-break: break-word; background: #0b1018; paddin
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
+
+
+.colour-scale-control {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--panel-border);
+}
+.colour-scale-control label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  color: #c5d1e1;
+  font-size: 11px;
+  font-weight: 700;
+}
+.colour-scale-control output {
+  color: #e7edf6;
+  font-variant-numeric: tabular-nums;
+}
+.colour-scale-control input[type="range"] {
+  display: block;
+  width: 100%;
+  margin: 7px 0;
+  accent-color: #8fb9e8;
+}
+.colour-scale-control .control-help {
+  margin: 3px 0 0;
+}
