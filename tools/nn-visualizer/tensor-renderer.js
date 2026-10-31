@@ -63,6 +63,25 @@ export function createTensorRenderer({
 
   let cachedFilterWeights = null;
 
+  // Dispose the current filter scene before rebuilding it with new weights.
+  function clearFilterGeometry() {
+    const geometries = new Set();
+    const materials = new Set();
+    for (const child of [...filterStaticGroup.children]) {
+      filterStaticGroup.remove(child);
+      child.traverse((object) => {
+        if (object.geometry && object.geometry !== cubeGeometry) geometries.add(object.geometry);
+        if (object.material) {
+          const assigned = Array.isArray(object.material) ? object.material : [object.material];
+          assigned.forEach((material) => material && materials.add(material));
+        }
+      });
+    }
+    geometries.forEach((geometry) => geometry.dispose());
+    materials.forEach((material) => material.dispose());
+    residualRenderer.reset();
+  }
+
   function drawInputs() {
     const game = createSampleGame();
     drawSampleBoard();
