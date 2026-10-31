@@ -314,6 +314,7 @@ const { logLinkEncodingDiagnostic, logFullInputTensorValidation } =
 
 const {
   drawInputs, drawFilters, drawOutput, refreshTensorColors, setResidualFiltersVisible,
+  setShowIntermediateResidualBlocks, getBlock20CameraOffset,
   setSelectedResidualBlock, pickResidualBlock,
 } = createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -498,7 +499,9 @@ renderer.domElement.addEventListener('wheel', requestRender, { passive: true });
 // postpone the residual banks for seconds after motion is no longer noticeable.
 controls.addEventListener('end', deferResidualFilterRestore);
 
+let lastCameraPreset = null;
 function setCameraPreset(position, target) {
+  lastCameraPreset = null;
   camera.position.set(position[0], position[1], position[2]);
   controls.target.set(target[0], target[1], target[2]);
   controls.update();
@@ -507,6 +510,7 @@ function setCameraPreset(position, target) {
 }
 
 function resetCamera() {
+  lastCameraPreset = null;
   camera.position.copy(INITIAL_CAMERA_POSITION);
   controls.target.copy(INITIAL_CAMERA_TARGET);
   controls.update();
@@ -797,9 +801,21 @@ document.querySelector('#camera-input-top').addEventListener('click', () => setC
 document.querySelector('#camera-residual-block').addEventListener('click', () => setCameraPreset(
   [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
 ));
-document.querySelector('#camera-residual-block-20').addEventListener('click', () => setCameraPreset(
-  [901.83, 27.43, -43.67], [900.09, -14.86, 29.37],
-));
+function setResidualBlock20CameraPreset() {
+  lastCameraPreset = 'residual-block-20';
+  const offset = getBlock20CameraOffset();
+  setCameraPreset(
+    [901.83 - offset, 27.43, -43.67],
+    [900.09 - offset, -14.86, 29.37],
+  );
+}
+document.querySelector('#camera-residual-block-20').addEventListener('click', setResidualBlock20CameraPreset);
+document.querySelector('#toggle-residual-blocks-2-19').addEventListener('change', (event) => {
+  setShowIntermediateResidualBlocks(event.target.checked);
+  renderStep();
+  // If the block-20 preset is active, keep it framed after the stack changes.
+  if (lastCameraPreset === 'residual-block-20') setResidualBlock20CameraPreset();
+});
 const tanhSlider = document.querySelector('#tanh-a');
 const tanhValue = document.querySelector('#tanh-a-value');
 tanhSlider.addEventListener('input', () => {
