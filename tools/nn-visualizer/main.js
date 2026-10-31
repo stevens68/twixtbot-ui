@@ -3,6 +3,7 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/exampl
 import { createTensor3, flattenTensor } from './tensor-utils.js';
 import { encodeGameInputs } from './game-encoding.js?v=20261031-game-encoding-v1';
 import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-client-v1';
+import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-model-weight-client-v1';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
@@ -312,84 +313,16 @@ function renderStep() {
 }
 
 async function loadTrainedLinkWeights() {
-  try {
-    const response = await fetch('/api/weights', { cache: 'no-store' });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || response.statusText);
-    if (!result.layers || !result.weights ||
-        !result.layers.links || !result.layers.pegs || !result.layers.locations ||
-        !Array.isArray(result.weights.links) ||
-        !Array.isArray(result.weights.pegs) ||
-        !Array.isArray(result.weights.locations) ||
-        result.weights.links.length !== result.layers.links.filter_count ||
-        result.weights.pegs.length !== result.layers.pegs.filter_count ||
-        result.weights.locations.length !== result.layers.locations.filter_count) {
-      throw new Error('The model-weight endpoint returned an unexpected peg/link/location weight shape.');
-    }
-
-    for (const [name, layer] of Object.entries(result.layers)) {
-      if (layer.has_bias &&
-          (!Array.isArray(layer.bias) ||
-           layer.bias.length !== layer.filter_count ||
-           layer.bias.some((value) => !Number.isFinite(Number(value))))) {
-        throw new Error('The model-weight endpoint returned invalid bias values for ' + name + '.');
-      }
-    }
-
-    demoModel.weights.links = result.weights.links;
-    demoModel.weights.pegs = result.weights.pegs;
-    demoModel.weights.locations = result.weights.locations;
-    const residualBlock0 = result.residual_block_0;
-    if (!residualBlock0 || residualBlock0.config?.channels !== FILTER_COUNT) {
-      throw new Error('The model-weight endpoint did not return a 48-channel first residual block.');
-    }
-    for (const name of ['conv1', 'conv2']) {
-      const layer = residualBlock0.layers?.[name];
-      const filters = residualBlock0.weights?.[name];
-      if (!layer || layer.filter_count !== FILTER_COUNT || layer.kernel_height !== 5 ||
-          layer.kernel_width !== 5 || layer.channels !== FILTER_COUNT ||
-          !Array.isArray(filters) || filters.length !== FILTER_COUNT ||
-          filters.some(filter => filter.length !== 5 || filter.some(row => row.length !== 5 ||
-            row.some(cell => cell.length !== FILTER_COUNT || cell.some(value => !Number.isFinite(Number(value))))))) {
-        throw new Error('The model-weight endpoint returned an invalid first residual ' + name + ' filter bank.');
-      }
-    }
-    demoModel.weights.residualBlock0 = residualBlock0.weights;
-    demoModel.residualBlock0Metadata = residualBlock0.layers;
-    demoModel.residualBlockCount = Number(result.residual_block_count) || 1;
-    residualBlockWeightCache.set(0, residualBlock0.weights);
-    selectedResidualBlockIndex = 0;
-    setSelectedResidualBlock(0, residualBlock0.weights);
-    demoModel.linkConvMetadata = result.layers.links;
-    demoModel.pegConvMetadata = result.layers.pegs;
-    demoModel.locationConvMetadata = result.layers.locations;
-    const primaryBn = result.primary_bn;
-    for (const key of ['weight', 'bias', 'running_mean', 'running_var']) {
-      if (!Array.isArray(primaryBn?.[key]) ||
-          primaryBn[key].length !== FILTER_COUNT ||
-          primaryBn[key].some((value) => !Number.isFinite(Number(value)))) {
-        throw new Error('The model-weight endpoint returned invalid primary batch-normalization parameter: ' + key);
-      }
-    }
-    demoModel.primaryBn = primaryBn;
-    modelWeightStatus = 'Trained peg/link/location weights and primary batch-normalization parameters loaded from ' + result.layers.links.source +
-      ' (pegs: ' + result.layers.pegs.filter_count + ' filters, bias=' +
-      (result.layers.pegs.has_bias ? 'loaded' : 'none') + '; links: ' +
-      result.layers.links.filter_count + ' filters, bias=' +
-      (result.layers.links.has_bias ? 'loaded' : 'none') + '; locations: ' +
-      result.layers.locations.filter_count + ' filters, bias=' +
-      (result.layers.locations.has_bias ? 'loaded' : 'none') + ').';
-    console.info('[NN visualizer] ' + modelWeightStatus, {
-      pegs: result.layers.pegs,
-      links: result.layers.links,
-      locations: result.layers.locations,
-    });
-  } catch (error) {
-    modelWeightStatus = 'Using generated demo weights; trained weights and biases could not be loaded: ' + error.message;
-    console.warn('[NN visualizer] ' + modelWeightStatus);
-  }
+  modelWeightStatus = await loadTrainedModelWeights({
+    demoModel,
+    filterCount: FILTER_COUNT,
+    residualBlockWeightCache,
+    onInitialResidualBlock: (weights) => {
+      selectedResidualBlockIndex = 0;
+      setSelectedResidualBlock(0, weights);
+    },
+  });
 }
-
 async function selectResidualBlock(blockIndex) {
   if (residualSelectionPending || blockIndex === selectedResidualBlockIndex) return;
   if (blockIndex < 0 || blockIndex >= Number(data.residualBlockCount || 1)) return;
