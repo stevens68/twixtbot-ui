@@ -431,7 +431,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       );
       addResidualArrow(
         residualPlaceholderGroup, mergeX, outputLeftX,
-        bankCenterY, bankCenterZ, null,
+        0, bankCenterZ, null,
         'residual-' + index + '-merged-output',
         0.58, 0,
       );
