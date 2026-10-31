@@ -8,8 +8,6 @@ export function createTensorRenderer({
   calculateConvolutionOutput, addLabel,
   getInputStaticGroup, getInputDynamicGroup, getFilterStaticGroup,
 }) {
-  const { createResidualRenderer } = residualRendererModule;
-
   const inputStaticGroup = getInputStaticGroup();
   const inputDynamicGroup = getInputDynamicGroup();
   const filterStaticGroup = getFilterStaticGroup();
