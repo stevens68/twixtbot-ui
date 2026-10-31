@@ -678,9 +678,13 @@ function residualLayout(blockIndex) {
   const blockStartX =
     outputMaxX + firstResidualGapX + filterCubeSize / 2 +
     blockIndex * blockPitchX;
-  // Each residual output tensor sits halfway between this block and the
-  // next block along X, rather than being offset toward either convolution bank.
-  const outputCenterX = blockStartX + blockPitchX / 2;
+  // Center the output tensor in the clear X gap between the right edge of
+  // this residual block's filter bank and the left edge of the next block.
+  const currentBlockRightX =
+    blockStartX - filterCubeSize / 2 + bankSizeX;
+  const nextBlockLeftX =
+    blockStartX + blockPitchX - filterCubeSize / 2;
+  const outputCenterX = (currentBlockRightX + nextBlockLeftX) / 2;
   const outputStartX =
     outputCenterX - (channels - 1) * outputChannelStep / 2;
   const bankPairSizeZ = 2 * bankSizeZ + convGapZ;
@@ -734,7 +738,15 @@ function addResidualOutputValues(group, layout, blockIndex, tensor) {
         transform.scale.setScalar(layout.outputCubeSize * 0.72);
         transform.updateMatrix();
         mesh.setMatrixAt(instance, transform.matrix);
-        mesh.setColorAt(instance, heatMapColor(value, 0, maxAbs));
+        // Residual outputs are nonnegative by construction (abs activations
+        // in the stem and both residual convolutions, followed by h + x).
+        // Use a positive-only green-to-red scale so blue is not mistaken for
+        // a negative value.
+        mesh.setColorAt(instance, new THREE.Color().setHSL(
+          (1 / 3) * (1 - Math.max(0, Math.min(1, value / maxAbs))),
+          1,
+          0.5,
+        ));
         instance += 1;
       }
     }
