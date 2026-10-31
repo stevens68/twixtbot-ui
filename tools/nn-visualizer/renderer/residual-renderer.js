@@ -34,51 +34,24 @@ export function createResidualRenderer({
 
 
 function residualLayout(blockIndex) {
-  const channels = FILTER_COUNT;
-  const kernelHeight = 5;
-  const kernelWidth = 5;
-  const columns = 8;
-  const rows = Math.ceil(FILTER_COUNT / columns);
-  const filterWidth = kernelWidth * filterSpacing;
-  const filterHeight = kernelHeight * filterSpacing;
-  const gapY = 0.3 * 1.4;
-  const gapZ = 0.3 * 1.4;
-  const bankSizeX = (channels - 1) * filterSpacing + filterCubeSize;
-  const bankMinYOffset =
-    -(rows - 1) * (filterHeight + gapY) - filterCubeSize / 2;
-  const bankMaxYOffset =
-    (kernelHeight - 1) * filterSpacing + filterCubeSize / 2;
-  const bankSizeY = bankMaxYOffset - bankMinYOffset;
-  const bankSizeZ =
-    (columns - 1) * (filterWidth + gapZ) +
-    (kernelWidth - 1) * filterSpacing + filterCubeSize;
-  // The output tensor is no longer part of the residual-stack view.
-  // Keep only a compact separation between the two convolution banks.
-  const convGapX = 4.5;
-  const blockGapX = 2.5;
-  const blockSpanX = 2 * bankSizeX + convGapX;
-  const blockPitchX = blockSpanX + blockGapX;
-  const outputCenterY = -2.5 + (BOARD_SIZE - 1) * filterSpacing / 2;
-  const outputCenterZ =
-    -((channels - 1) * 0.105) / 2 +
-    (BOARD_SIZE - 1) * filterSpacing / 2;
-  const bankStartY = outputCenterY -
-    (bankMinYOffset + bankMaxYOffset) / 2;
-  const bankStartZ = outputCenterZ - bankSizeZ / 2 + filterCubeSize / 2;
-  const firstResidualGapX = 5.0;
-  const firstBlockX = 20 + (channels - 1) *
-    (filterCubeSize / 0.9 + filterSpacing - filterCubeSize) +
-    filterCubeSize / 0.9 / 2 + firstResidualGapX + filterCubeSize / 2;
-  const blockStartX = firstBlockX + blockIndex * blockPitchX;
-  return {
-    channels, kernelHeight, kernelWidth, columns, rows,
-    filterWidth, filterHeight, gapY, gapZ,
-    bankSizeX, bankSizeY, bankSizeZ, bankStartY, bankStartZ,
-    bankStartXs: [blockStartX, blockStartX + bankSizeX + convGapX],
-    bankStartZs: [bankStartZ, bankStartZ],
-    blockStartX, blockPitchX, blockSpanX,
-    outputCenterY, outputCenterZ,
-  };
+ const channels=FILTER_COUNT,kernelHeight=5,kernelWidth=5,columns=8,rows=Math.ceil(FILTER_COUNT/columns);
+ const filterWidth=kernelWidth*filterSpacing,filterHeight=kernelHeight*filterSpacing,gapY=.42,gapZ=.42;
+ const bankSizeX=(channels-1)*filterSpacing+filterCubeSize;
+ const bankMinYOffset=-(rows-1)*(filterHeight+gapY)-filterCubeSize/2,bankMaxYOffset=(kernelHeight-1)*filterSpacing+filterCubeSize/2;
+ const bankSizeY=bankMaxYOffset-bankMinYOffset,bankSizeZ=(columns-1)*(filterWidth+gapZ)+(kernelWidth-1)*filterSpacing+filterCubeSize;
+ const outputChannelStep=filterCubeSize/.9+filterSpacing-filterCubeSize,outputCubeSize=filterCubeSize/.9;
+ const outputSizeX=(channels-1)*outputChannelStep+outputCubeSize,outputSizeY=(BOARD_SIZE-1)*filterSpacing+outputCubeSize;
+ const outputCenterY=-2.5+(BOARD_SIZE-1)*filterSpacing/2,outputCenterZ=-((channels-1)*.105)/2+(BOARD_SIZE-1)*filterSpacing/2;
+ const bankStartY=outputCenterY-(bankMinYOffset+bankMaxYOffset)/2,bankStartZ=outputCenterZ-bankSizeZ/2+filterCubeSize/2;
+ const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2,firstConvGap=9;
+ const firstPitch=(2*bankSizeX+firstConvGap+1.25*1.15*3+outputCubeSize/2+outputSizeX+1.25+filterCubeSize/2)*1.2;
+ const nextLeft=firstX+firstPitch-filterCubeSize/2,right=firstX-filterCubeSize/2+2*bankSizeX+firstConvGap;
+ const outputCenterX=(right+nextLeft)/2,outputStartX=outputCenterX-(channels-1)*outputChannelStep/2;
+ const compactConvGap=2.5,interBlockGap=8,compactPitch=2*bankSizeX+compactConvGap+interBlockGap;
+ const blockStartX=blockIndex===0?firstX:nextLeft+filterCubeSize/2+(blockIndex-1)*compactPitch,convGap=blockIndex===0?firstConvGap:compactConvGap;
+ return {channels,kernelHeight,kernelWidth,columns,rows,filterWidth,filterHeight,gapY,gapZ,bankSizeX,bankSizeY,bankSizeZ,bankStartY,bankStartZ,
+ bankStartXs:[blockStartX,blockStartX+bankSizeX+convGap],bankStartZs:[bankStartZ,bankStartZ],blockStartX,blockSpanX:2*bankSizeX+convGap,
+ outputStartX,outputCenterX,outputChannelStep,outputSizeX,outputSizeY,outputSizeZ:outputSizeY,outputCenterY,outputCenterZ,outputCubeSize};
 }
 
 function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
@@ -149,21 +122,22 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     filterStaticGroup.add(residualFilterGroup);
   }
 
-  for (const [index, name] of ['conv1', 'conv2'].entries()) {
-    const startX = layout.bankStartXs[index];
-    const startZ = layout.bankStartZs[index];
-    addLabel(
-      'Residual block ' + (blockIndex + 1) + ' · ' + name + ' · 48 × 5×5×48 filters',
-      [
-        startX + (layout.bankSizeX - filterCubeSize) / 2,
-        layout.bankStartY + layout.filterHeight + 0.8,
-        startZ + (layout.bankSizeZ - filterCubeSize) / 2,
-      ],
-      22,
-    );
-  }
+
 }
 
+function addResidualOutputValues(group,layout,index,tensor){
+ const count=FILTER_COUNT*BOARD_SIZE*BOARD_SIZE,mesh=new THREE.InstancedMesh(cubeGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55,transparent:true,opacity:.96}),count);
+ mesh.name='residual-block-1-actual-output-values';const vals=[];
+ for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++)vals.push(Number(tensor[r][col][c]));
+ const max=Math.max(1e-8,...vals.map(Math.abs)),o=new THREE.Object3D();let i=0;
+ for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++){
+ const v=Number(tensor[r][col][c]);o.position.set(layout.outputStartX+c*layout.outputChannelStep,layout.outputCenterY+(BOARD_SIZE-1-r)*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2,layout.outputCenterZ+col*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2);
+ o.scale.setScalar(layout.outputCubeSize*.72);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);mesh.setColorAt(i,new THREE.Color().setHSL((1/3)*(1-Math.max(0,Math.min(1,v/max))),1,.5));i++;}
+ mesh.count=i;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;group.add(mesh);
+}
+function addResidualArrow(group,x1,x2,y,z,name){const gap=x2-x1;if(gap<=.15)return;const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x1+gap*.22,y,z),gap*.67,0x71879b,.42,.22);arrow.name=name;group.add(arrow);}
+function addResidualCurvedArrow(group,x1,x2,y1,z1,y2,z2,name){const dx=x2-x1;if(dx<=.2)return;const c=new THREE.CubicBezierCurve3(new THREE.Vector3(x1,y1,z1),new THREE.Vector3(x1+dx*.42,y1,z1),new THREE.Vector3(x2-dx*.42,y2,z2),new THREE.Vector3(x2,y2,z2));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(c.getPoints(64)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);}
+function addResidualBypass(group,x1,x2,z,offset,name){const dx=x2-x1;if(dx<=1)return;const t=Math.min(dx*.22,3),oz=z+offset,p=new THREE.CurvePath();p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x1,0,z),new THREE.Vector3(x1+t*.45,0,z),new THREE.Vector3(x1+t*.55,0,oz),new THREE.Vector3(x1+t,0,oz)));p.add(new THREE.LineCurve3(new THREE.Vector3(x1+t,0,oz),new THREE.Vector3(x2-t,0,oz)));p.add(new THREE.CubicBezierCurve3(new THREE.Vector3(x2-t,0,oz),new THREE.Vector3(x2-t*.55,0,oz),new THREE.Vector3(x2-t*.45,0,z),new THREE.Vector3(x2,0,z)));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(p.getPoints(96)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);}
   function createResidualBlockPlaceholders(blockCount) {
     residualPlaceholderGroup = new THREE.Group();
     residualPlaceholderGroup.name = 'residual-block-placeholders';
@@ -206,32 +180,29 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         residualHitTargets.push(hitTarget);
       }
     }
+      const br1=layout.bankStartXs[0]+(layout.channels-1)*filterSpacing+filterCubeSize/2,bl2=layout.bankStartXs[1]-filterCubeSize/2;
+      const br2=layout.bankStartXs[1]+(layout.channels-1)*filterSpacing+filterCubeSize/2,cy=layout.outputCenterY,cz=layout.outputCenterZ;
+      if(index===0){
+       const inputRight=20+(FILTER_COUNT-1)*layout.outputChannelStep+layout.outputCubeSize/2;
+       addResidualArrow(residualPlaceholderGroup,inputRight,layout.bankStartXs[0]-filterCubeSize/2,cy,cz,'input-to-block-1');
+       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,'block-1-conv1-to-conv2');
+       const outLeft=layout.outputCenterX-layout.outputSizeX/2,merge=outLeft-1.35;
+       addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,'block-1-conv2-to-merge');
+       addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,'block-1-identity-skip');
+       addResidualArrow(residualPlaceholderGroup,merge,outLeft,0,cz,'block-1-merged-output');
+       if(getData().residualBlock0Output)addResidualOutputValues(residualPlaceholderGroup,layout,index,getData().residualBlock0Output);
+       const outRight=layout.outputCenterX+layout.outputSizeX/2,nextLeft=residualLayout(1).bankStartXs[0]-filterCubeSize/2;
+       addResidualArrow(residualPlaceholderGroup,outRight,nextLeft,cy,cz,'block-1-output-to-block-2');
+      }else if(index<blockCount-1){
+       const next=residualLayout(index+1),nextLeft=next.bankStartXs[0]-filterCubeSize/2;
+       addResidualArrow(residualPlaceholderGroup,br2,nextLeft,cy,cz,'block-'+(index+1)+'-to-block-'+(index+2));
+      }
     filterStaticGroup.add(residualPlaceholderGroup);
   }
 
-  function drawResidualPlaceholderLabels(blockCount) {
-    for (let index = 0; index < blockCount; index += 1) {
-      const layout = residualLayout(index);
-      const blockCenterX = layout.blockStartX + layout.blockSpanX / 2;
-      const labelY = layout.bankStartY + layout.bankSizeY / 2 + 1.0;
-      const labelZ = layout.bankStartZ + layout.bankSizeZ / 2;
-
-      addLabel(
-        'Residual block ' + (index + 1),
-        [blockCenterX, labelY + 1.0, labelZ],
-        20, '#dce7f5', 110,
-      );
-      addLabel(
-        'Conv1 · 48 × 5×5×48 weights',
-        [layout.bankStartXs[0] + layout.bankSizeX / 2, labelY, labelZ],
-        15, '#dce7f5', 110,
-      );
-      addLabel(
-        'Conv2 · 48 × 5×5×48 weights',
-        [layout.bankStartXs[1] + layout.bankSizeX / 2, labelY, labelZ],
-        15, '#dce7f5', 110,
-      );
-    }
+  function drawResidualPlaceholderLabels(blockCount){
+   for(let index=0;index<blockCount;index++){const layout=residualLayout(index),cx=layout.blockStartX+layout.blockSpanX/2,y=layout.bankStartY+layout.bankSizeY/2+2,z=layout.bankStartZ+layout.bankSizeZ/2;
+    addLabel('Residual block '+(index+1),[cx,y,z],20,'#dce7f5',110);}
   }
 
   function setSelectedResidualBlock(blockIndex, weights) {
