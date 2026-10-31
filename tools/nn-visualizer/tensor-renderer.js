@@ -1,5 +1,5 @@
 import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-feature-output-v1';
-import { createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-input-tensor-v1';
+import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-input-tensor-v2';
 import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-bank-v1';
 import { createResidualRenderer } from './residual-renderer.js?v=20261031-residual-renderer-v1';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
@@ -18,6 +18,7 @@ export function createTensorRenderer({
   ];
   const inputSpacing = 0.33;
   const inputCellSize = 0.22;
+  const inputDepthStep = inputCellSize + INPUT_CHANNEL_GAP;
   // Shared dimensions for every convolution filter and the feature tensor.
   const filterScale = 0.5832;
   const filterSpacing = inputSpacing * filterScale;
@@ -135,7 +136,7 @@ export function createTensorRenderer({
       description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, and the post-BN + abs first-layer feature tensor are shown together.",
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
       range: 'Feature range ' + featureInfo.range,
-      count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + featureInfo.count + ' feature values',
+      count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + filterInfo.count + ' feature values',
     };
   }
 
