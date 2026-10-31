@@ -112,18 +112,29 @@ export function createFilterBankRenderer({
     const channels = weights[0][0][0].length;
     const rows = Math.ceil(count / columns);
     if (buildGeometry) {
-      // 1×1 kernels use peg-sized slots for consistent bank spacing, but
-      // their single cube sits at the slot's leading edge. Center the glass
-      // over those cells without shifting the 5×5 peg/link enclosures.
-      const glassStartZ = kernelWidth === 1
-        ? startZ - (slotWidth - filterSpacing) / 2
-        : startZ;
-      addBankGlass(
-        name, startX, startY - (rows - 1) * (slotHeight + gapY),
-        glassStartZ, channels * filterSpacing, bankHeight,
-        columns * slotWidth + (columns - 1) * gapZ,
-        glassPadding,
-      );
+      if (kernelHeight === 1 && kernelWidth === 1) {
+        // For 1×1 kernels, each filter contains only one cube per input
+        // channel. The glass must follow the actual cube bounds, not the
+        // larger nominal slots used to space filters in the bank.
+        const cubeHalf = filterCubeSize / 2;
+        const glassX = startX - cubeHalf;
+        const glassY = startY - (rows - 1) * (slotHeight + gapY) - cubeHalf;
+        const glassZ = startZ - cubeHalf;
+        const glassWidth = (channels - 1) * filterSpacing + filterCubeSize;
+        const glassHeight = (rows - 1) * (slotHeight + gapY) + filterCubeSize;
+        const glassDepth = (columns - 1) * (slotWidth + gapZ) + filterCubeSize;
+        addBankGlass(
+          name, glassX, glassY, glassZ,
+          glassWidth, glassHeight, glassDepth, glassPadding,
+        );
+      } else {
+        addBankGlass(
+          name, startX, startY - (rows - 1) * (slotHeight + gapY),
+          startZ, channels * filterSpacing, bankHeight,
+          columns * slotWidth + (columns - 1) * gapZ,
+          glassPadding,
+        );
+      }
     }
     for (let filter = 0; filter < count; filter += 1) {
       const column = filter % columns;
