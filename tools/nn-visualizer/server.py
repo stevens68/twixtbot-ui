@@ -151,6 +151,61 @@ def first_residual_output(checkpoint, tensors):
         }
 
 
+def last_residual_output(checkpoint, tensors):
+    """Evaluate the trained stem and every residual block, returning the final tensor."""
+    state = checkpoint["state_dict"]
+    config = checkpoint.get("config", {})
+    block_count = int(config.get("blocks", 0))
+    if int(config.get("channels", 0)) != 48 or block_count < 1:
+        raise ValueError("The checkpoint must contain 48-channel residual blocks.")
+
+    expected = {"pegs": (24, 24, 2), "links": (24, 24, 8), "locations": (24, 24, 2)}
+    inputs = {}
+    for name, shape in expected.items():
+        if name not in tensors:
+            raise ValueError(f"Missing {name} input tensor.")
+        value = torch.as_tensor(tensors[name], dtype=torch.float32)
+        if tuple(value.shape) != shape or not torch.isfinite(value).all():
+            raise ValueError(f"{name} must be a finite tensor with shape {shape}.")
+        inputs[name] = value.unsqueeze(0).permute(0, 3, 1, 2).contiguous()
+
+    def parameter(key):
+        if key not in state:
+            raise KeyError(f"Model checkpoint does not contain {key}.")
+        return state[key].detach().cpu()
+
+    def batch_norm(value, prefix):
+        return F.batch_norm(
+            value, parameter(prefix + ".running_mean"), parameter(prefix + ".running_var"),
+            parameter(prefix + ".weight"), parameter(prefix + ".bias"),
+            training=False, momentum=0.1, eps=float(config.get("bn_eps", 1e-3)),
+        )
+
+    with torch.inference_mode():
+        pegs = inputs["pegs"]
+        links = F.pad(inputs["links"], (1, 2, 1, 2))
+        locations = inputs["locations"]
+        stem = (
+            F.conv2d(locations, parameter("location.weight")) +
+            F.conv2d(pegs, parameter("pegs.weight"), padding=2) +
+            F.conv2d(links, parameter("links.weight"))
+        )
+        x = torch.abs(batch_norm(stem, "primary_bn"))
+        for index in range(block_count):
+            prefix = f"blocks.{index}"
+            h = F.conv2d(x, parameter(prefix + ".conv1.weight"), padding=2)
+            h = torch.abs(batch_norm(h, prefix + ".bn1"))
+            h = F.conv2d(h, parameter(prefix + ".conv2.weight"), padding=2)
+            h = torch.abs(batch_norm(h, prefix + ".bn2"))
+            x = h + x
+
+        output = x[0].permute(1, 2, 0).contiguous()
+        return {
+            "shape": list(output.shape), "values": output.tolist(),
+            "min": float(output.min()), "max": float(output.max()),
+        }
+
+
 class Handler(SimpleHTTPRequestHandler):
     # Keep local browser fetches on one TCP connection instead of paying a new
     # connection setup for every step through a long game. Every POST response
@@ -328,13 +383,14 @@ class Handler(SimpleHTTPRequestHandler):
                 snapshot_ms = (time.perf_counter() - snapshot_started) * 1000
                 if endpoint == "/api/position":
                     residual_started = time.perf_counter()
-                    residual_result = first_residual_output(
-                        load_checkpoint(), snapshot_result["tensors"]
-                    )
+                    checkpoint = load_checkpoint()
+                    residual_result = first_residual_output(checkpoint, snapshot_result["tensors"])
+                    last_residual_result = last_residual_output(checkpoint, snapshot_result["tensors"])
                     residual_ms = (time.perf_counter() - residual_started) * 1000
                     result = {
                         "snapshot": snapshot_result,
                         "residualBlock0Output": residual_result,
+                        "residualBlockLastOutput": last_residual_result,
                     }
                 else:
                     result = snapshot_result
