@@ -4,7 +4,7 @@ import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } fr
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js?v=20261031-residual-z-pair-v8';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261031-residual-output-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -69,13 +69,14 @@ const demoModel = createDemoData();
 let data = demoModel;
 let modelWeightStatus = 'Using generated demo weights.';
 const residualBlockWeightCache = new Map();
-let selectedResidualBlockIndex = -1;
+let selectedResidualBlockIndex = 0;
 let residualSelectionPending = false;
 let cachedOutput = null;
 let gameMoves = [];
 let gamePly = 0;
 let gameLoaded = false;
 let currentPlayerName = "Black";
+let residualBlock0Output = null;
 
 scene.add(staticSceneGroup);
 scene.add(inputStaticTensorGroup);
@@ -636,7 +637,8 @@ async function loadTrainedLinkWeights() {
     demoModel.residualBlock0Metadata = residualBlock0.layers;
     demoModel.residualBlockCount = Number(result.residual_block_count) || 1;
     residualBlockWeightCache.set(0, residualBlock0.weights);
-    selectedResidualBlockIndex = -1;
+    selectedResidualBlockIndex = 0;
+    setSelectedResidualBlock(0, residualBlock0.weights);
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
@@ -1031,11 +1033,37 @@ async function loadGamePosition(ply) {
     pegConvMetadata: demoModel.pegConvMetadata,
     locationConvMetadata: demoModel.locationConvMetadata,
     primaryBn: demoModel.primaryBn,
+    residualBlock0Output: null,
   };
 
   gamePly = ply;
   gameLoaded = true;
   cachedOutput = null;
+  residualBlock0Output = null;
+  if (demoModel.weights.residualBlock0) {
+    try {
+      const outputResponse = await fetch('/api/residual-output', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tensors: result.tensors }),
+      });
+      const outputPayload = await outputResponse.json();
+      if (!outputResponse.ok) throw new Error(outputPayload.error || outputResponse.statusText);
+      const values = outputPayload.values;
+      if (outputPayload.shape?.join('x') !== '24x24x48' ||
+          !Array.isArray(values) || values.length !== 24 ||
+          values.some(row => !Array.isArray(row) || row.length !== 24 ||
+            row.some(cell => !Array.isArray(cell) || cell.length !== 48 ||
+              cell.some(value => !Number.isFinite(Number(value)))))) {
+        throw new Error('The backend returned an invalid 24×24×48 output tensor.');
+      }
+      residualBlock0Output = values;
+      data.residualBlock0Output = values;
+    } catch (error) {
+      console.error('[NN visualizer] Could not calculate residual block 0 output:', error);
+      status.textContent = 'Residual block 0 output unavailable: ' + error.message;
+    }
+  }
   // Rebuild whichever visualization is currently selected, not just Inputs.
   // Keep the camera and selected tab stable while the board/tensors change.
   renderStep();
@@ -1106,7 +1134,7 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gamePly = 0;
     gameLoaded = true;
     backendSnapshot = null;
-    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata, primaryBn: demoModel.primaryBn };
+    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata, primaryBn: demoModel.primaryBn, residualBlock0Output: null };
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
