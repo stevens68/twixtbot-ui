@@ -111,7 +111,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     color = '#f2f4f8',
     scaleDivisor = 90,
   ) {
-    const font = 'italic 500 ' + fontSize + 'px "Cambria Math", "STIX Two Math", "Times New Roman", serif';
+    const font = '500 ' + fontSize + 'px "Cambria Math", "STIX Two Math", "Times New Roman", serif';
     const key = JSON.stringify(['formula', text, fontSize, color, scaleDivisor]);
     const texture = getTexture(key, (context) => {
       context.font = font;
