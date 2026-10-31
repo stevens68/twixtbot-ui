@@ -6,7 +6,7 @@ import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-c
 import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-model-weight-client-v1';
 import { createBoardInteraction } from './board-interaction.js?v=20261031-board-interaction-v1';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
-import { createLabelHelpers } from './labels.js?v=20261031-big-label-toggle-v5';
+import { createLabelHelpers } from './labels.js?v=20261031-formula-upright-v6';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
 import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-tanh-colour-v2';
@@ -759,7 +759,7 @@ document.querySelector('#t1-file').addEventListener('change',async(event)=>{cons
 document.querySelector('#toggle-explanation').addEventListener('click', () => {
   const layout = document.querySelector('.app-layout');
   const collapsed = layout.classList.toggle('explanation-collapsed');
-  document.querySelector('#toggle-explanation').textContent = collapsed ? 'Expand ›' : 'Collapse ‹';
+  document.querySelector('#toggle-explanation').textContent = collapsed ? '›' : '‹';
   document.querySelector('#toggle-explanation').setAttribute('aria-label', collapsed ? 'Expand explanation panel' : 'Collapse explanation panel');
   document.querySelector('#toggle-explanation').title = collapsed ? 'Expand explanation panel' : 'Collapse explanation panel';
   // Resize the renderer after the grid has changed so the canvas matches its panel.
