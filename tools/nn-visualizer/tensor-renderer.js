@@ -603,11 +603,10 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   const gapY = 0.3 * 1.4;
   const gapZ = 0.3 * 1.4;
 
-  // Preserve yesterday's X anchor: conv1 remains centered at X = 34.
-  // Place conv2 one complete filter-bank width to its right.
-  const startX = 34 - ((channels - 1) * filterSpacing) / 2;
-  const channelSpan = (channels - 1) * filterSpacing + filterCubeSize;
-  const gapX = 0.3 * 1.4;
+  // Both convolutions occupy the same Y level and are separated along Z.
+  // Center the complete residual block on the output tensor's channel axis.
+  const outputCenterX = 20 + ((channels - 1) * filterSpacing) / 2;
+  const startX = outputCenterX - ((channels - 1) * filterSpacing) / 2;
   const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
   const bankStartZ = [14, 28];
 
@@ -618,7 +617,6 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     residualFilterGroup.visible = residualFiltersVisible;
 
     for (const [bankIndex, name] of ['conv1', 'conv2'].entries()) {
-      const bankStartX = startX + bankIndex * (channelSpan + gapX);
       const bank = residualWeights[name];
       const instancesPerFilter =
         kernelHeight * kernelWidth * channels;
@@ -659,7 +657,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
               );
 
               transform.position.set(
-                bankStartX + channel * filterSpacing,
+                startX + channel * filterSpacing,
                 originY + (kernelHeight - 1 - kernelRow) * filterSpacing,
                 originZ + kernelCol * filterSpacing,
               );
@@ -699,11 +697,10 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
   // Labels for both convolution banks.
   for (const [index, name] of ['conv1', 'conv2'].entries()) {
-    const bankStartX = startX + index * (channelSpan + gapX);
     addLabel(
       'Residual block ' + blockIndex + ' · ' + name + ' · 48 × 5×5×48 filters',
       [
-        34,
+        outputCenterX,
         startY + filterHeight + 0.8,
         bankStartZ[index] + 3.5 * (filterWidth + gapZ),
       ],
@@ -717,7 +714,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       addLabel(
         String(filter + 1),
         [
-          bankStartX + ((channels - 1) * filterSpacing) / 2,
+          outputCenterX,
           startY -
             row * (filterHeight + gapY) +
             kernelHeight * filterSpacing +
@@ -754,15 +751,23 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
     boxGeometry.dispose();
 
-    // There are two convolution layers in every residual block, so show two
-    // matching wireframe volumes at the same relative Z positions as the
-    // selected block's conv1 and conv2 filter formations.
-    const bankCentersZ = [19.5, 33.5];
-    const centerY = -4.8;
+    // Match the selected convolution banks exactly: same Y level, same Z
+    // centers, and the same outer dimensions. The residual stack is centered
+    // on the output tensor's channel axis.
+    const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
+    const centerY =
+      (startY + (rows - 1) * (filterHeight + gapY) * -1 +
+        (kernelHeight - 1) * filterSpacing) / 2;
+    const bankStartZ = [14, 28];
+    const bankCentersZ = bankStartZ.map(
+      (z) => z + (columns - 1) * (filterWidth + gapZ) / 2 +
+        (kernelWidth - 1) * filterSpacing / 2
+    );
+    const outputCenterX = 20 + ((FILTER_COUNT - 1) * filterSpacing) / 2;
 
     for (let index = 0; index < blockCount; index += 1) {
       if (index === selectedResidualBlockIndex) continue;
-      const layerX = 39 + (index - 1) * 2.05;
+      const layerX = outputCenterX + (index - selectedResidualBlockIndex) * 2.05;
 
       for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
         const position = new THREE.Vector3(layerX, centerY, bankCentersZ[bankIndex]);
