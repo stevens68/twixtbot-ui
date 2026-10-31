@@ -46,7 +46,12 @@ export function createFeatureOutputRenderer({
           mesh.setColorAt(
             index,
             options.positiveOnly
-              ? heatMapColor(Math.abs(Number(value)), 0, colorMax)
+              ? new THREE.Color().setHSL(
+                  (1 / 3) * (1 - Math.max(0, Math.min(1,
+                    Math.abs(Number(value)) / colorMax))),
+                  1,
+                  0.5,
+                )
               : heatMapColor(value, 0, colorMax),
           );
           index += 1;
