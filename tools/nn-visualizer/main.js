@@ -88,6 +88,7 @@ let interactiveMovePending = false;
 let currentPlayerName = "Black";
 let residualBlock0Output = null;
 let residualBlock0OutputError = null;
+let residualBlockLastOutput = null;
 let colorTanhA = 0;
 
 scene.add(staticSceneGroup);
@@ -410,6 +411,9 @@ async function loadTrainedLinkWeights() {
       selectedResidualBlockIndex = 0;
       setSelectedResidualBlock(0, weights);
     },
+    onInitialLastResidualBlock: (weights) => {
+      setSelectedResidualBlock(data.residualBlockCount - 1, weights);
+    },
   });
 }
 async function selectResidualBlock(blockIndex) {
@@ -596,6 +600,7 @@ async function loadGamePosition(ply) {
     locationConvMetadata: demoModel.locationConvMetadata,
     primaryBn: demoModel.primaryBn,
     residualBlock0Output: null,
+    residualBlockLastOutput: null,
   };
 
   gamePly = ply;
@@ -603,6 +608,7 @@ async function loadGamePosition(ply) {
   const stateSetupMs = performance.now() - stateSetupStarted;
   const residualValidationStarted = performance.now();
   residualBlock0Output = null;
+  residualBlockLastOutput = null;
   residualBlock0OutputError = null;
   if (demoModel.weights.residualBlock0) {
     const residualStarted = performance.now();
@@ -618,6 +624,15 @@ async function loadGamePosition(ply) {
       }
       residualBlock0Output = values;
       data.residualBlock0Output = values;
+      const finalPayload = position.residualBlockLastOutput;
+      if (finalPayload?.shape?.join('x') === '24x24x48' &&
+          Array.isArray(finalPayload.values) && finalPayload.values.length === 24 &&
+          finalPayload.values.every(row => Array.isArray(row) && row.length === 24 &&
+            row.every(cell => Array.isArray(cell) && cell.length === 48 &&
+              cell.every(value => Number.isFinite(Number(value)))))) {
+        residualBlockLastOutput = finalPayload.values;
+        data.residualBlockLastOutput = finalPayload.values;
+      }
     } catch (error) {
       residualBlock0OutputError = error.message;
       console.error('[NN visualizer] Could not calculate residual block 0 output:', error);
