@@ -15,6 +15,15 @@ export async function loadTrainedModelWeights({
     if (!response.ok) throw new Error(result.error || response.statusText);
     if (!result.layers || !result.weights ||
         !result.layers.links || !result.layers.pegs || !result.layers.locations ||
+        !result.layers.policy_conv1 || !Array.isArray(result.weights.policy_conv1) ||
+        result.layers.policy_conv1.filter_count !== 2 ||
+        result.layers.policy_conv1.kernel_height !== 1 ||
+        result.layers.policy_conv1.kernel_width !== 1 ||
+        result.layers.policy_conv1.channels !== filterCount ||
+        result.weights.policy_conv1.length !== 2 ||
+        result.weights.policy_conv1.some(filter => filter.length !== 1 ||
+          filter[0].length !== 1 || filter[0][0].length !== filterCount ||
+          filter[0][0].some(value => !Number.isFinite(Number(value)))) ||
         !Array.isArray(result.weights.links) ||
         !Array.isArray(result.weights.pegs) ||
         !Array.isArray(result.weights.locations) ||
@@ -35,7 +44,13 @@ export async function loadTrainedModelWeights({
 
     demoModel.weights.links = result.weights.links;
     demoModel.weights.pegs = result.weights.pegs;
-    demoModel.weights.locations = result.weights.locations;
+    demoModel.weights = {
+      ...demoModel.weights,
+      links: result.weights.links,
+      pegs: result.weights.pegs,
+      locations: result.weights.locations,
+      policyConv1: result.weights.policy_conv1,
+    };
     const residualBlock0 = result.residual_block_0;
     if (!residualBlock0 || residualBlock0.config?.channels !== filterCount) {
       throw new Error('The model-weight endpoint did not return a ' + filterCount + '-channel first residual block.');
@@ -70,6 +85,7 @@ export async function loadTrainedModelWeights({
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
+    demoModel.policyConv1Metadata = result.layers.policy_conv1;
 
     const primaryBn = result.primary_bn;
     for (const key of ['weight', 'bias', 'running_mean', 'running_var']) {
@@ -81,7 +97,7 @@ export async function loadTrainedModelWeights({
     }
     demoModel.primaryBn = primaryBn;
 
-    const status = 'Trained peg/link/location weights and primary batch-normalization parameters loaded from ' + result.layers.links.source +
+    const status = 'Trained peg/link/location and policy-convolution weights plus primary batch-normalization parameters loaded from ' + result.layers.links.source +
       ' (pegs: ' + result.layers.pegs.filter_count + ' filters, bias=' +
       (result.layers.pegs.has_bias ? 'loaded' : 'none') + '; links: ' +
       result.layers.links.filter_count + ' filters, bias=' +

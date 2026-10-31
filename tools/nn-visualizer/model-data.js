@@ -12,6 +12,7 @@ export function createDemoData({ BOARD_SIZE, FILTER_COUNT, encodeGameInputs }) {
       pegs:createTensor4(FILTER_COUNT,5,5,2,()=> (random()-0.5)*0.4),
       links:createTensor4(FILTER_COUNT,4,4,8,()=> (random()-0.5)*0.16),
       locations:createTensor4(FILTER_COUNT,1,1,2,()=> (random()-0.5)*0.3),
+      policyConv1:createTensor4(2,1,1,FILTER_COUNT,()=> (random()-0.5)*0.08),
       residualBlock0: {
         conv1: createTensor4(FILTER_COUNT,5,5,FILTER_COUNT,()=> (random()-0.5)*0.08),
         conv2: createTensor4(FILTER_COUNT,5,5,FILTER_COUNT,()=> (random()-0.5)*0.08),

@@ -378,6 +378,29 @@ export function createTensorRenderer({
       glassPadding: [1.02, 1.0, 1.0],
     });
 
+    // Policy Conv1 maps the 48-channel shared feature tensor to two output
+    // channels. Keep its two 1×1 filters together, with a dedicated Z offset.
+    const policyWeights = weights.policyConv1;
+    const policyChannels = policyWeights[0][0][0].length;
+    const policyColumns = 2;
+    const policyGapY = gapY * 0.1;
+    const policyGapZ = gapZ * 0.1;
+    const policySlot = filterSpacing;
+    const policyStartX = 12 + inputTensorSpecs[1].x - ((policyChannels - 1) * filterSpacing) / 2;
+    const policyStartY = -0.287;
+    const policyStartZ = -0.2545 + 22 - (policyColumns - 1) * (policySlot + policyGapZ) / 2;
+    const policyMetadata = getData().policyConv1Metadata;
+    const policyInfo = filterBankRenderer.drawBank({
+      name: 'policy-conv1', weights: policyWeights,
+      startX: policyStartX, startY: policyStartY, startZ: policyStartZ,
+      columns: policyColumns, gapY: policyGapY, gapZ: policyGapZ,
+      showBias: false, buildGeometry: rebuild,
+      slotWidth: policySlot, slotHeight: policySlot,
+      bankWidth: policyColumns * policySlot + (policyColumns - 1) * policyGapZ,
+      bankHeight: policySlot,
+      glassPadding: [1.04, 1.15, 1.15],
+    });
+
     if (rebuild) {
       addAnnotationLabel(
         'Conv₁ · 1×1×2×48',
@@ -394,10 +417,17 @@ export function createTensorRenderer({
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Conv₃ · 5×5×2×48',
+        'Conv₃ · 1×1×2×48',
         [startX + (locationChannels - 1) * filterSpacing / 2,
           locationStartY + locationHeight * filterSpacing + 0.75,
           locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
+        24, '#ffffff', 90,
+      );
+      addAnnotationLabel(
+        'Policy Conv₁ · 1×1×48×2',
+        [policyStartX + (policyChannels - 1) * filterSpacing / 2,
+          policyStartY + filterSpacing + 0.75,
+          policyStartZ + (policyColumns * policySlot + (policyColumns - 1) * policyGapZ) / 2],
         24, '#ffffff', 90,
       );
     }
@@ -413,7 +443,7 @@ export function createTensorRenderer({
         '; pegs ' + pegInfo.kernelHeight + ' × ' + pegInfo.kernelWidth + ' × ' + pegInfo.channels +
         '; links ' + linkInfo.kernelHeight + ' × ' + linkInfo.kernelWidth + ' × ' + linkInfo.channels,
       range: 'Trained signed weights; all three convolutions have no bias in this checkpoint.',
-      count: locationInfo.count + ' location filters + ' + pegInfo.count + ' peg filters + ' + linkInfo.count + ' link filters',
+      count: locationInfo.count + ' location filters + ' + pegInfo.count + ' peg filters + ' + linkInfo.count + ' link filters + ' + policyInfo.count + ' policy filters',
       residualCount: 2 * FILTER_COUNT,
       residualBlockCount: blockCount,
       selectedResidualBlockIndex,
