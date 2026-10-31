@@ -2,6 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.m
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
 import { createTensor3, flattenTensor } from './tensor-utils.js';
 import { encodeGameInputs } from './game-encoding.js?v=20261031-game-encoding-v1';
+import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-client-v1';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
@@ -107,26 +108,9 @@ const nnPerf = {
 };
 window.nnPerf = nnPerf;
 
-// Cache recent backend snapshots by exact move prefix. This avoids repeated
-// HTTP and JSON work when revisiting positions or rendering a validated endpoint.
-const SNAPSHOT_CACHE_LIMIT = 128;
-const snapshotCache = new Map();
-
-function getCachedSnapshot(key) {
-  if (!snapshotCache.has(key)) return null;
-  const value = snapshotCache.get(key);
-  snapshotCache.delete(key);
-  snapshotCache.set(key, value);
-  return value;
-}
-
-function cacheSnapshot(key, value) {
-  snapshotCache.delete(key);
-  snapshotCache.set(key, value);
-  while (snapshotCache.size > SNAPSHOT_CACHE_LIMIT) {
-    snapshotCache.delete(snapshotCache.keys().next().value);
-  }
-}
+const { requestSnapshot } = createSnapshotClient({
+  recordPerf: (label, metrics) => nnPerf.record(label, metrics),
+});
 
 function countSceneObjects(root) {
   const counts = { objects: 0, meshes: 0, instancedMeshes: 0, sprites: 0, geometries: 0, materials: 0 };
@@ -662,75 +646,6 @@ applyChangesButton.addEventListener('click', async () => {
   }
 });
 
-async function requestSnapshot(moves) {
-  const cacheKey = JSON.stringify({ moves, allow_scl: false, allow_swap: true });
-  const cached = getCachedSnapshot(cacheKey);
-  if (cached) {
-    nnPerf.record('snapshotCacheHit', {
-      moves: moves.length,
-      responseBytes: cached.responseBytes,
-      wireResponseBytes: cached.wireResponseBytes,
-      cacheEntries: snapshotCache.size,
-    });
-    return cached.result;
-  }
-
-  const started = performance.now();
-  const response = await fetch('/api/trace', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ moves, allow_scl: false, allow_swap: true }),
-  });
-  const headersMs = performance.now() - started;
-  const bodyStarted = performance.now();
-  // Measure when the first response bytes become readable separately from
-  // the full body read. This distinguishes delivery latency from body draining.
-  const reader = response.body.getReader();
-  const chunks = [];
-  let responseLength = 0;
-  let firstChunkMs = null;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (firstChunkMs === null) firstChunkMs = performance.now() - bodyStarted;
-    chunks.push(value);
-    responseLength += value.length;
-  }
-  const responseBuffer = new Uint8Array(responseLength);
-  let responseOffset = 0;
-  for (const chunk of chunks) {
-    responseBuffer.set(chunk, responseOffset);
-    responseOffset += chunk.length;
-  }
-  const responseText = new TextDecoder().decode(responseBuffer);
-  const bodyMs = performance.now() - bodyStarted;
-  const parseStarted = performance.now();
-  let result;
-  try {
-    result = JSON.parse(responseText);
-  } catch (error) {
-    throw new Error('The visualizer API returned invalid JSON: ' + error.message);
-  }
-  const jsonParseMs = performance.now() - parseStarted;
-  if (!response.ok) throw new Error(result.error || response.statusText);
-  // Fetch exposes the decompressed body text when Content-Encoding is gzip.
-  // Keep decoded and on-wire sizes separate so the perf report stays accurate.
-  const responseBytes = new TextEncoder().encode(responseText).length;
-  const wireResponseBytes = Number(response.headers.get('content-length')) || responseBytes;
-  nnPerf.record('requestSnapshot', {
-    moves: moves.length,
-    headersMs: Number(headersMs.toFixed(2)),
-    firstChunkMs: firstChunkMs === null ? null : Number(firstChunkMs.toFixed(2)),
-    bodyMs: Number(bodyMs.toFixed(2)),
-    jsonParseMs: Number(jsonParseMs.toFixed(2)),
-    totalMs: Number((performance.now() - started).toFixed(2)),
-    responseBytes,
-    wireResponseBytes,
-    compression: response.headers.get('content-encoding') || 'none',
-  });
-  cacheSnapshot(cacheKey, { result, responseBytes, wireResponseBytes });
-  return result;
-}
 async function loadGamePosition(ply) {
   const loadStarted = performance.now();
   // Rebuild the authoritative backend position from the move prefix. This
