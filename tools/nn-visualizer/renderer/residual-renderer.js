@@ -259,23 +259,20 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     }
   }
 
-  function addResidualCurvedArrow(group, startX, endX, startY, startZ, endY, endZ, name, amplitude, doubleS = false) {
-    if (endX - startX <= 0.2) return;
-    const points = [];
-    const segments = doubleS ? 16 : 8;
-    for (let i = 0; i <= segments; i += 1) {
-      const t = i / segments;
-      const envelope = Math.sin(Math.PI * t);
-      const wave = doubleS ? Math.sin(4 * Math.PI * t) : Math.sin(2 * Math.PI * t);
-      points.push(new THREE.Vector3(
-        startX + (endX - startX) * t,
-        startY + (endY - startY) * t + amplitude * envelope * wave,
-        startZ + (endZ - startZ) * t,
-      ));
-    }
-    const curve = new THREE.CatmullRomCurve3(points);
+  function addResidualCurvedArrow(group, startX, endX, startY, startZ, endY, endZ, name, bypassHeight = 0) {
+    const dx = endX - startX;
+    if (dx <= 0.2) return;
+    // A cubic Bezier gives a horizontal tangent at both ends. For the
+    // identity path, lift the two control points together to make one broad
+    // bypass arch around both convolution banks, then return to the axis.
+    const curve = new THREE.CubicBezierCurve3(
+      new THREE.Vector3(startX, startY, startZ),
+      new THREE.Vector3(startX + dx * 0.34, startY + bypassHeight, startZ),
+      new THREE.Vector3(endX - dx * 0.34, endY + bypassHeight, endZ),
+      new THREE.Vector3(endX, endY, endZ),
+    );
     const shaft = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 48, 0.045, 8, false),
+      new THREE.TubeGeometry(curve, 64, 0.045, 8, false),
       new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
     );
     shaft.name = name + '-shaft';
@@ -401,7 +398,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       addResidualCurvedArrow(
         residualPlaceholderGroup, skipStartX, mergeX,
         bankCenterY, bankCenterZ, bankCenterY, bankCenterZ,
-        'residual-' + index + '-identity-skip', 1.35, true,
+        'residual-' + index + '-identity-skip', 2.0,
       );
       addResidualArrow(
         residualPlaceholderGroup, mergeX, outputLeftX,
@@ -469,7 +466,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
       addFormulaLabel(
         'y = x',
-        [(skipStartX + mergeX) / 2, centerY + 1.65, centerZ],
+        [(skipStartX + mergeX) / 2, centerY + 2.0, centerZ],
         25, '#f2f4f8', 92,
       );
     }
