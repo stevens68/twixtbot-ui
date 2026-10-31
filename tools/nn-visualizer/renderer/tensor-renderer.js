@@ -124,6 +124,7 @@ export function createTensorRenderer({
 
   let cachedFilterWeights = null;
   let policyOutputAnnotationsBuilt = false;
+  let policyConv2AnnotationsBuilt = false;
 
   // Dispose the current filter scene before rebuilding it with new weights.
   function clearFilterGeometry() {
@@ -511,7 +512,8 @@ export function createTensorRenderer({
         Math.abs(Number(policyBn.bias[channel])) + 3 * Math.abs(Number(weight))));
       const policyBankRight = policyStartX +
         (policyChannels - 1) * filterSpacing + filterCubeSize / 2;
-      const policyOutputGap = 4.2;
+      // Reduce the Policy Conv1 → output separation by 20%.
+      const policyOutputGap = 4.2 * 0.8;
       const policyOutputStartX = policyBankRight + policyOutputGap + filterCubeSize / 2;
       const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
       const outputOriginX = policyOutputStartX - outputChannelStep / 2;
@@ -534,13 +536,140 @@ export function createTensorRenderer({
           [outputOriginX + outputChannelStep / 2, 5, policyInput.centerZ],
           24, '#ffffff', 90,
         );
-        addXArrow(
-          getAnnotationGroup(), policyBankRight + 0.08,
-          outputOriginX - filterCubeSize / 2,
-          policyInput.centerY, policyInput.centerZ,
-          null, 0.58, 'policy-conv1-to-policy-output',
+        const arrowLeft = policyBankRight + 0.08;
+        const arrowRight = outputOriginX - filterCubeSize / 2;
+        const arrowGap = arrowRight - arrowLeft;
+        const centeredArrowLength = arrowGap * 0.58;
+        const policyArrow = new THREE.ArrowHelper(
+          new THREE.Vector3(1, 0, 0),
+          new THREE.Vector3(
+            (arrowLeft + arrowRight - centeredArrowLength) / 2,
+            policyInput.centerY,
+            policyInput.centerZ,
+          ),
+          centeredArrowLength,
+          0x71879b,
+          Math.min(0.14, centeredArrowLength * 0.38),
+          Math.min(0.10, centeredArrowLength * 0.26),
         );
+        policyArrow.name = 'policy-conv1-to-policy-output';
+        getAnnotationGroup().add(policyArrow);
         policyOutputAnnotationsBuilt = true;
+      }
+
+      // Policy Conv2 is a 1×1 convolution from the two Policy Conv1
+      // activation channels to one policy-logit channel. The model then
+      // removes the first and last rows and flattens the remaining 22×24.
+      const policyConv2Weights = weights.policyConv2;
+      if (Array.isArray(policyConv2Weights) &&
+          policyConv2Weights.length === 1 &&
+          policyConv2Weights[0]?.[0]?.[0]?.length === 2) {
+        const policyConv2Gap = policyOutputGap;
+        const policyOutputRight = outputOriginX + outputChannelStep + filterCubeSize / 2;
+        const policyConv2StartX = policyOutputRight + policyConv2Gap +
+          filterCubeSize / 2 - filterSpacing / 2;
+        const policyConv2StartY = policyInput.centerY;
+        const policyConv2StartZ = policyInput.centerZ;
+        const policyConv2Info = filterBankRenderer.drawBank({
+          name: 'policy-conv2',
+          weights: policyConv2Weights,
+          startX: policyConv2StartX,
+          startY: policyConv2StartY,
+          startZ: policyConv2StartZ,
+          columns: 1,
+          gapY: 0,
+          gapZ: 0,
+          showBias: false,
+          buildGeometry: rebuild,
+          slotWidth: filterSpacing,
+          slotHeight: filterSpacing,
+          bankWidth: filterSpacing,
+          bankHeight: filterSpacing,
+          glassPadding: [1.08, 1.12, 1.12],
+        });
+        const policyConv2BankRight = policyConv2StartX + filterSpacing +
+          filterCubeSize / 2;
+        const policyConv2OutputGap = policyOutputGap;
+        const policyConv2OutputOriginX = policyConv2BankRight +
+          policyConv2OutputGap + filterCubeSize / 2;
+        const policyConv2Values = [];
+        for (let row = 1; row < BOARD_SIZE - 1; row += 1) {
+          for (let col = 0; col < BOARD_SIZE; col += 1) {
+            let sum = 0;
+            for (let channel = 0; channel < 2; channel += 1) {
+              sum += policyValues[channel * BOARD_SIZE * BOARD_SIZE +
+                row * BOARD_SIZE + col] *
+                Number(policyConv2Weights[0][0][0][channel]);
+            }
+            policyConv2Values.push(sum);
+          }
+        }
+        const policyConv2Stats = featureOutputRenderer.addValueCubes(
+          policyConv2Values, BOARD_SIZE - 2, BOARD_SIZE, 1,
+          [
+            policyConv2OutputOriginX,
+            policyInput.centerY - (BOARD_SIZE - 3) * filterSpacing / 2,
+            policyInput.centerZ - (BOARD_SIZE - 1) * filterSpacing / 2,
+          ],
+          COLORS.output,
+          {
+            spacing: filterSpacing,
+            cellSize: filterCubeSize / 0.9,
+            colorMax: Math.max(1e-8, ...policyConv2Weights[0][0][0].map(value =>
+              Math.abs(Number(value)))) * Math.max(1e-8, policyColorMax),
+          },
+        );
+        if (!policyConv2AnnotationsBuilt) {
+          addAnnotationLabel(
+            'Policy Conv₂ · 1×1×2',
+            [
+              policyConv2StartX + filterSpacing / 2,
+              policyConv2StartY + 1.0,
+              policyConv2StartZ,
+            ],
+            24, '#ffffff', 90,
+          );
+          addAnnotationLabel(
+            'Policy Conv₂ output · 22×24×1',
+            [
+              policyConv2OutputOriginX,
+              5,
+              policyInput.centerZ,
+            ],
+            24, '#ffffff', 90,
+          );
+          const addCenteredPolicyArrow = (left, right, name) => {
+            const gap = right - left;
+            const length = gap * 0.58;
+            const arrow = new THREE.ArrowHelper(
+              new THREE.Vector3(1, 0, 0),
+              new THREE.Vector3(
+                (left + right - length) / 2,
+                policyInput.centerY,
+                policyInput.centerZ,
+              ),
+              length,
+              0x71879b,
+              Math.min(0.14, length * 0.38),
+              Math.min(0.10, length * 0.26),
+            );
+            arrow.name = name;
+            getAnnotationGroup().add(arrow);
+          };
+          addCenteredPolicyArrow(
+            policyOutputRight + 0.08,
+            policyConv2StartX - filterCubeSize / 2,
+            'policy-output-to-conv2',
+          );
+          addCenteredPolicyArrow(
+            policyConv2BankRight + 0.08,
+            policyConv2OutputOriginX - filterCubeSize / 2,
+            'policy-conv2-to-policy-logits',
+          );
+          policyConv2AnnotationsBuilt = true;
+        }
+        policyOutputStats.policyConv2 = policyConv2Stats;
+        policyOutputStats.policyConv2FilterCount = policyConv2Info.count;
       }
     }
 
