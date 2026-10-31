@@ -1,7 +1,7 @@
 import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-feature-output-v1';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-axis-alignment-v2';
 import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-bank-v1';
-import { createResidualRenderer } from './residual-renderer.js?v=20261031-merge-alignment-v3';
+import { createResidualRenderer } from './residual-renderer.js?v=20261031-arrow-color-v1';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -71,7 +71,7 @@ export function createTensorRenderer({
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(startX + startClearance, y, z),
       length,
-      0xaeb7c2,
+      0x71879b,
       0.42,
       0.22,
     );
@@ -100,7 +100,7 @@ export function createTensorRenderer({
     );
     const shaft = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(curve.getPoints(64)),
-      new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
+      new THREE.LineBasicMaterial({ color: 0x71879b }),
     );
     shaft.name = name + '-shaft';
     group.add(shaft);
@@ -244,7 +244,7 @@ export function createTensorRenderer({
         );
         const linkShaft = new THREE.Line(
           new THREE.BufferGeometry().setFromPoints(linkLine.getPoints(1)),
-          new THREE.LineBasicMaterial({ color: 0xaeb7c2 }),
+          new THREE.LineBasicMaterial({ color: 0x71879b }),
         );
         linkShaft.name = bank.key + '-filter-bank-to-merge-shaft';
         arrowGroup.add(linkShaft);
