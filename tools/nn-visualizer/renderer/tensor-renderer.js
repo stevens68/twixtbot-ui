@@ -375,6 +375,7 @@ export function createTensorRenderer({
       slotWidth: pegFilterWidth, slotHeight: pegFilterHeight,
       bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 0.1,
       bankHeight: locationBankHeight,
+      glassPadding: [1.02, 1.0, 1.0],
     });
 
     if (rebuild) {
