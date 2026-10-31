@@ -628,7 +628,8 @@ function residualLayout(blockIndex) {
   const outputGapX = 1.25;
   const blockStartX =
     outputMaxX + firstResidualGapX + filterCubeSize / 2 +
-    blockIndex * (2 * bankSizeX + convGapX + outputGapX +\n      outputCubeSize / 2 + outputSizeX + 1.25 + filterCubeSize / 2);
+    blockIndex * (2 * bankSizeX + convGapX + outputGapX +
+      outputCubeSize / 2 + outputSizeX + 1.25 + filterCubeSize / 2);
   const conv2StartX = blockStartX + bankSizeX + convGapX;
   const outputStartX =
     conv2StartX + bankSizeX + outputGapX + outputCubeSize / 2;
@@ -781,7 +782,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
             layout.bankStartY +
               (-(layout.rows - 1) * (layout.filterHeight + layout.gapY) +
                 (layout.kernelHeight - 1) * filterSpacing) / 2,
-            layout.bankStartZ + layout.bankSizeZ / 2,
+            layout.bankStartZ + (layout.bankSizeZ - filterCubeSize) / 2,
           );
           const edgeMaterial = new THREE.LineBasicMaterial({
             color: 0x9bb4c8, transparent: true, opacity: 0.88,
