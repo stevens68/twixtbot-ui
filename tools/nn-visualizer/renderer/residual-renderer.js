@@ -6,6 +6,7 @@ export function createResidualRenderer({
 }) {
   let residualFilterGroup = null;
   let residualOutputGroup = null;
+  let residualOutputMesh = null;
   let residualLabelsBuilt = false;
   let residualPlaceholderGroup = null;
   let residualPlaceholderDirty = false;
@@ -128,15 +129,16 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
 }
 
-function addResidualOutputValues(group,layout,index,tensor){
- const count=FILTER_COUNT*BOARD_SIZE*BOARD_SIZE,mesh=new THREE.InstancedMesh(cubeGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55,transparent:true,opacity:.96}),count);
- mesh.name='residual-block-1-actual-output-values';const vals=[];
- for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++)vals.push(Number(tensor[r][col][c]));
- const max=Math.max(1e-8,...vals.map(Math.abs)),o=new THREE.Object3D();let i=0;
+function addResidualOutputValues(group,layout,index,tensor,mesh=null){
+ const count=FILTER_COUNT*BOARD_SIZE*BOARD_SIZE;
+ if(!mesh){mesh=new THREE.InstancedMesh(cubeGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55,transparent:true,opacity:.96}),count);mesh.name='residual-block-1-actual-output-values';group.add(mesh);}
+ let max=1e-8;
+ for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++)max=Math.max(max,Math.abs(Number(tensor[r][col][c])));
+ const o=new THREE.Object3D();let i=0;
  for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++){
  const v=Number(tensor[r][col][c]);o.position.set(layout.outputStartX+c*layout.outputChannelStep,layout.outputCenterY+(BOARD_SIZE-1-r)*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2,layout.outputCenterZ+col*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2);
  o.scale.setScalar(layout.outputCubeSize*.72);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);mesh.setColorAt(i,new THREE.Color().setHSL((1/3)*(1-Math.max(0,Math.min(1,v/max))),1,.5));i++;}
- mesh.count=i;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;group.add(mesh);
+ mesh.count=i;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;return mesh;
 }
 function addResidualArrow(group,x1,x2,y,z,name,label=null){const gap=x2-x1;if(gap<=.15)return;const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x1+gap*.22,y,z),gap*.67,0x71879b,.42,.22);arrow.name=name;group.add(arrow);if(label)addFormulaLabel(label,[(x1+x2)/2,y+1.15,z],25,'#f2f4f8',92);}
 function addResidualCurvedArrow(group,x1,x2,y1,z1,y2,z2,name,label=null){const dx=x2-x1;if(dx<=.2)return;const c=new THREE.CubicBezierCurve3(new THREE.Vector3(x1,y1,z1),new THREE.Vector3(x1+dx*.42,y1,z1),new THREE.Vector3(x2-dx*.42,y2,z2),new THREE.Vector3(x2,y2,z2));const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(c.getPoints(64)),new THREE.LineBasicMaterial({color:0x71879b}));line.name=name+'-shaft';group.add(line);if(label){const p=c.getPoint(.5);addFormulaLabel(label,[p.x,p.y+1.15,p.z],25,'#f2f4f8',92);}}
@@ -247,18 +249,26 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
   }
 
   function updateResidualOutput(tensor) {
-    disposeResidualOutput();
-    if (!tensor) return;
-    residualOutputGroup = new THREE.Group();
-    residualOutputGroup.name = 'residual-block-1-output-values';
-    addResidualOutputValues(residualOutputGroup, residualLayout(0), 0, tensor);
-    filterStaticGroup.add(residualOutputGroup);
+    if (!tensor) {
+      disposeResidualOutput();
+      residualOutputMesh = null;
+      return;
+    }
+    if (!residualOutputGroup) {
+      residualOutputGroup = new THREE.Group();
+      residualOutputGroup.name = 'residual-block-1-output-values';
+      filterStaticGroup.add(residualOutputGroup);
+    }
+    residualOutputMesh = addResidualOutputValues(
+      residualOutputGroup, residualLayout(0), 0, tensor, residualOutputMesh,
+    );
   }
 
   function reset() {
     residualFilterGroup = null;
     residualPlaceholderGroup = null;
     residualOutputGroup = null;
+    residualOutputMesh = null;
     residualPlaceholderDirty = false;
     residualLabelsBuilt = false;
     lastRenderedOutputTensor = null;
