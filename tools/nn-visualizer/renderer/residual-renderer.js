@@ -89,7 +89,6 @@ function residualLayout(blockIndex) {
   const outputCenterX = (currentBlockRightX + nextBlockLeftX) / 2;
   const outputStartX =
     outputCenterX - (channels - 1) * outputChannelStep / 2;
-  const bankStartZ = outputCenterZ - bankSizeZ / 2 + filterCubeSize / 2;
   return {
     channels, kernelHeight, kernelWidth, columns, rows,
     filterWidth, filterHeight, gapY, gapZ,
