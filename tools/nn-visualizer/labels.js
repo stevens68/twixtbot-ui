@@ -72,6 +72,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     };
     sprite.scale.set(scale[0], scale[1], 1);
     getSceneGroup().add(sprite);
+    return sprite;
   }
 
   function addLabel(
