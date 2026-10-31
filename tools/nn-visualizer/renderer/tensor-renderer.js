@@ -1,7 +1,7 @@
-import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-feature-output-v1';
+import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-heading-label-v2';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-axis-alignment-v2';
 import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-bank-v1';
-import { createResidualRenderer } from './residual-renderer.js?v=20261031-arrow-color-v1';
+import { createResidualRenderer } from './residual-renderer.js?v=20261031-residual-output-label-v2';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -173,7 +173,7 @@ export function createTensorRenderer({
       addLabel(
         tensor.label,
         [tensor.x, 7.0, tensor.z + ((BOARD_SIZE - 1) * inputSpacing) / 2],
-        22, '#ffffff', 70,
+        24, '#ffffff', 70,
       );
       const firstBladeX = tensor.x - ((tensor.channels - 1) * inputDepthStep) / 2;
       const boardTopY = -4.082 + (BOARD_SIZE - 1) * inputSpacing;
