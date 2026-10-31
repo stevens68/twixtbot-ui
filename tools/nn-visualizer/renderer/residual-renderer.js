@@ -251,6 +251,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
   function setSelectedResidualBlock(blockIndex, weights) {
     selectedResidualBlockIndex = blockIndex;
     selectedResidualWeights = weights;
+    residualWeightsByIndex.set(blockIndex, weights);
     residualGeometryDirty = true;
   }
 
@@ -270,56 +271,55 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
 
   function setResidualFiltersVisible(visible) {
     residualFiltersVisible = Boolean(visible);
-    if (residualFilterGroup) residualFilterGroup.visible = residualFiltersVisible;
+    for (const group of residualFilterGroups.values()) group.visible = residualFiltersVisible;
   }
 
-
-  function disposeResidualOutput() {
-    if (!residualOutputGroup) return;
-    filterStaticGroup.remove(residualOutputGroup);
-    residualOutputGroup.traverse((object) => {
-      if (object.geometry && object.geometry !== cubeGeometry) object.geometry.dispose();
-      if (object.material) {
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((material) => material?.dispose());
-      }
-    });
-    residualOutputGroup = null;
-  }
-
-  function updateResidualOutput(tensor) {
+  function updateResidualOutput(index, tensor) {
+    let group = residualOutputGroups.get(index);
     if (!tensor) {
-      disposeResidualOutput();
-      residualOutputMesh = null;
+      if (group) {
+        filterStaticGroup.remove(group);
+        group.traverse((object) => {
+          if (object.geometry && object.geometry !== cubeGeometry) object.geometry.dispose();
+          if (object.material) (Array.isArray(object.material) ? object.material : [object.material])
+            .forEach((material) => material?.dispose());
+        });
+        residualOutputGroups.delete(index);
+        residualOutputMeshes.delete(index);
+      }
       return;
     }
-    if (!residualOutputGroup) {
-      residualOutputGroup = new THREE.Group();
-      residualOutputGroup.name = 'residual-block-1-output-values';
-      filterStaticGroup.add(residualOutputGroup);
+    if (!group) {
+      group = new THREE.Group();
+      group.name = 'residual-block-' + (index + 1) + '-output-values';
+      residualOutputGroups.set(index, group);
+      filterStaticGroup.add(group);
     }
-    residualOutputMesh = addResidualOutputValues(
-      residualOutputGroup, residualLayout(0), 0, tensor, residualOutputMesh,
-    );
+    residualOutputMeshes.set(index, addResidualOutputValues(
+      group, residualLayout(index), index, tensor, residualOutputMeshes.get(index),
+    ));
   }
 
   function reset() {
-    residualFilterGroup = null;
+    for (const index of [...residualFilterGroups.keys()]) disposeResidualDetail(index);
+    for (const index of [...residualOutputGroups.keys()]) updateResidualOutput(index, null);
     residualPlaceholderGroup = null;
-    residualOutputGroup = null;
-    residualOutputMesh = null;
     residualPlaceholderDirty = false;
     residualLabelsBuilt = false;
     lastRenderedOutputTensor = null;
     residualHitTargets = [];
+    residualWeightsByIndex.clear();
   }
 
   function draw(rebuild, blockCount) {
-    const outputTensor = getData().residualBlock0Output || null;
+    const data = getData();
+    const outputTensor = data.residualBlock0Output || null;
+    const lastOutputTensor = data.residualBlockLastOutput || null;
     if (outputTensor !== lastRenderedOutputTensor) {
       lastRenderedOutputTensor = outputTensor;
-      updateResidualOutput(outputTensor);
+      updateResidualOutput(0, outputTensor);
     }
+    updateResidualOutput(blockCount - 1, lastOutputTensor);
     if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
       if (residualPlaceholderGroup) {
         filterStaticGroup.remove(residualPlaceholderGroup);
@@ -338,18 +338,15 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
         residualLabelsBuilt = true;
       }
     }
-    if (selectedResidualBlockIndex >= 0 && selectedResidualWeights) {
-      if (rebuild || residualGeometryDirty) {
-        disposeResidualDetail();
-        residualGeometryDirty = false;
-        drawSelectedResidualBlock(selectedResidualWeights, true, selectedResidualBlockIndex);
-      } else {
-        drawSelectedResidualBlock(selectedResidualWeights, false, selectedResidualBlockIndex);
+    for (const index of [0, blockCount - 1, selectedResidualBlockIndex]) {
+      const weights = residualWeightsByIndex.get(index);
+      if (index < 0 || !weights) continue;
+      if (rebuild || residualGeometryDirty || !residualFilterGroups.has(index)) {
+        disposeResidualDetail(index);
+        drawSelectedResidualBlock(weights, true, index);
       }
-    } else {
-      disposeResidualDetail();
-      residualGeometryDirty = false;
     }
+    residualGeometryDirty = false;
     return selectedResidualBlockIndex;
   }
 
