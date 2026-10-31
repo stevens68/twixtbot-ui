@@ -350,13 +350,13 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       addResidualArrow(
         residualPlaceholderGroup, bankRight1, bankLeft2,
         bankCenterY, bankCenterZ,
-        'y = |BN(Conv(x))|',
+        null,
         'residual-' + index + '-conv1-to-conv2',
       );
       addResidualArrow(
         residualPlaceholderGroup, bankRight2, outputLeftX,
         bankCenterY, bankCenterZ,
-        'y = |BN(Conv(x))|',
+        null,
         'residual-' + index + '-conv2-to-output',
       );
 
@@ -368,7 +368,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       const skipY = bankCenterY + 0.72;
       addResidualArrow(
         residualPlaceholderGroup, skipStartX, outputLeftX,
-        skipY, bankCenterZ, 'y = x',
+        skipY, bankCenterZ, null,
         'residual-' + index + '-identity-skip',
         0.48,
       );
@@ -410,8 +410,41 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     filterStaticGroup.add(residualPlaceholderGroup);
   }
 
-  function drawResidualPlaceholderLabels() {
-    // Labels are created alongside their corresponding placeholder geometry.
+  function drawResidualPlaceholderLabels(blockCount) {
+    // Arrow geometry is persistent, but formula sprites belong to the
+    // per-render label pool and therefore need to be attached every frame.
+    for (let index = 0; index < blockCount; index += 1) {
+      const layout = residualLayout(index);
+      const bankRight1 = layout.bankStartXs[0] +
+        (layout.channels - 1) * filterSpacing + filterCubeSize / 2;
+      const bankLeft2 = layout.bankStartXs[1] - filterCubeSize / 2;
+      const bankRight2 = layout.bankStartXs[1] +
+        (layout.channels - 1) * filterSpacing + filterCubeSize / 2;
+      const outputLeftX = layout.outputCenterX - layout.outputSizeX / 2;
+      const centerY = layout.outputCenterY;
+      const centerZ = layout.outputCenterZ;
+
+      addFormulaLabel(
+        'y = |BN(Conv(x))|',
+        [(bankRight1 + bankLeft2) / 2, centerY + 0.58, centerZ],
+        25, '#f2f4f8', 92,
+      );
+      addFormulaLabel(
+        'y = |BN(Conv(x))|',
+        [(bankRight2 + outputLeftX) / 2, centerY + 0.58, centerZ],
+        25, '#f2f4f8', 92,
+      );
+
+      const skipStartX = index === 0
+        ? 20 + (FILTER_COUNT - 1) * layout.outputChannelStep + layout.outputCubeSize / 2
+        : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
+      const skipY = centerY + 0.72;
+      addFormulaLabel(
+        'y = x',
+        [(skipStartX + outputLeftX) / 2, skipY + 0.48, centerZ],
+        25, '#f2f4f8', 92,
+      );
+    }
   }
 
   function setSelectedResidualBlock(blockIndex, weights) {
