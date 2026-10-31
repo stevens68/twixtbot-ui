@@ -771,8 +771,29 @@ window.addEventListener('resize', resizeRenderer);
 
 function animate() {
   requestAnimationFrame(animate);
+  const frameStarted = performance.now();
+  const controlsStarted = frameStarted;
   controls.update();
+  const controlsMs = performance.now() - controlsStarted;
+  const renderStarted = performance.now();
   renderer.render(scene, camera);
+  const renderMs = performance.now() - renderStarted;
+  const frameMs = performance.now() - frameStarted;
+
+  // Keep the normal animation loop lightweight; only retain unusually slow
+  // frames so the diagnostic does not itself create significant overhead.
+  if (nnPerf.enabled && (frameMs >= 50 || controlsMs >= 20 || renderMs >= 20)) {
+    nnPerf.record('slowAnimationFrame', {
+      frameMs: Number(frameMs.toFixed(2)),
+      controlsMs: Number(controlsMs.toFixed(2)),
+      renderMs: Number(renderMs.toFixed(2)),
+      drawCalls: renderer.info.render.calls,
+      triangles: renderer.info.render.triangles,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      dampingEnabled: controls.enableDamping,
+    });
+  }
 }
 
 async function initializeVisualizer() {
