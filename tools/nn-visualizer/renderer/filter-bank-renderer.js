@@ -1,6 +1,6 @@
 /** Shared rendering primitives for trained convolution filter banks. */
 export function createFilterBankRenderer({
-  THREE, cubeGeometry, filterStaticGroup, flattenTensor, addLabel,
+  THREE, cubeGeometry, filterStaticGroup, flattenTensor, addLabel, addAnnotationLabel,
   heatMapColor, filterSpacing, filterCubeSize, inputSpacing, inputCellSize, filterScale,
 }) {
   function drawFilterKernel(
@@ -77,7 +77,7 @@ export function createFilterBankRenderer({
     }
 
     // A simple numeric filter label, centered above the kernel face.
-    addLabel(
+    if (buildGeometry) addAnnotationLabel(
       String(filterIndex + 1),
       [
         originX + ((channels - 1) * channelDepth) / 2,
