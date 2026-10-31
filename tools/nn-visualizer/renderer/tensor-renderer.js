@@ -1,6 +1,6 @@
 import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-residual-arrow-labels-v3';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-axis-alignment-v2';
-import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-bank-v1';
+import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-index-size-v2';
 import { createResidualRenderer } from './residual-renderer.js?v=20261031-residual-arrow-labels-v3';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
