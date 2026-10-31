@@ -86,5 +86,64 @@ export function createSnapshotClient({ recordPerf, cacheLimit = 128 }) {
     return result;
   }
 
-  return { requestSnapshot };
+  async function requestPosition(moves) {
+    const cacheKey = JSON.stringify({ moves, allow_scl: false, allow_swap: true });
+    const started = performance.now();
+    const response = await fetch('/api/position', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moves, allow_scl: false, allow_swap: true }),
+    });
+    const headersMs = performance.now() - started;
+    const bodyStarted = performance.now();
+    const reader = response.body.getReader();
+    const chunks = [];
+    let responseLength = 0;
+    let firstChunkMs = null;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (firstChunkMs === null) firstChunkMs = performance.now() - bodyStarted;
+      chunks.push(value);
+      responseLength += value.length;
+    }
+    const responseBuffer = new Uint8Array(responseLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      responseBuffer.set(chunk, offset);
+      offset += chunk.length;
+    }
+    const responseText = new TextDecoder().decode(responseBuffer);
+    const bodyMs = performance.now() - bodyStarted;
+    const parseStarted = performance.now();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (error) {
+      throw new Error('The visualizer position API returned invalid JSON: ' + error.message);
+    }
+    const jsonParseMs = performance.now() - parseStarted;
+    if (!response.ok) throw new Error(result.error || response.statusText);
+    if (!result.snapshot || !result.residualBlock0Output) {
+      throw new Error('The visualizer position API returned an incomplete position.');
+    }
+    const responseBytes = new TextEncoder().encode(responseText).length;
+    const wireResponseBytes = Number(response.headers.get('content-length')) || responseBytes;
+    recordPerf('requestPosition', {
+      moves: moves.length,
+      headersMs: Number(headersMs.toFixed(2)),
+      firstChunkMs: firstChunkMs === null ? null : Number(firstChunkMs.toFixed(2)),
+      bodyMs: Number(bodyMs.toFixed(2)),
+      jsonParseMs: Number(jsonParseMs.toFixed(2)),
+      totalMs: Number((performance.now() - started).toFixed(2)),
+      responseBytes,
+      wireResponseBytes,
+      compression: response.headers.get('content-encoding') || 'none',
+    });
+    const value = { ...result, responseBytes, wireResponseBytes };
+    cacheSnapshot(cacheKey, { result: result.snapshot, responseBytes, wireResponseBytes });
+    return value;
+  }
+
+  return { requestSnapshot, requestPosition };
 }
