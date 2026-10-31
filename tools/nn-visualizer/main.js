@@ -483,6 +483,12 @@ controls.addEventListener('change', () => {
   updateCameraCoordinates();
   requestRender();
 });
+// OrbitControls accumulates pointer/wheel input and applies it in update().
+// Invalidate a frame on input so update() can consume that change; its "change"
+// event then schedules further frames while damping is still moving the camera.
+renderer.domElement.addEventListener('pointerdown', requestRender);
+renderer.domElement.addEventListener('pointermove', requestRender);
+renderer.domElement.addEventListener('wheel', requestRender, { passive: true });
 // OrbitControls emits "change" throughout damping, not just while the user is
 // dragging. Do not restart the visibility timer on every such frame: that can
 // postpone the residual banks for seconds after motion is no longer noticeable.
