@@ -594,7 +594,8 @@ export function createTensorRenderer({
           slotHeight: filterSpacing,
           bankWidth: filterSpacing,
           bankHeight: filterSpacing,
-          glassPadding: [1.08, 1.12, 1.12],
+          glassPadding: [1.32, 1.55, 1.55],
+          cubeScale: 1.8,
         });
         const policyConv2BankRight = policyConv2StartX + filterSpacing +
           filterCubeSize / 2;
