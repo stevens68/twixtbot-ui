@@ -10,7 +10,6 @@ export function createFeatureOutputRenderer({
     const cellSize = options.cellSize || 0.26;
     const channelGap = options.channelGap ?? 0.2;
     const depthStep = cellSize + channelGap;
-    const maxThickness = options.maxThickness || 0.4;
     const mesh = new THREE.InstancedMesh(
       cubeGeometry,
       new THREE.MeshStandardMaterial({
@@ -24,10 +23,6 @@ export function createFeatureOutputRenderer({
       for (let row = 0; row < rows; row += 1) {
         for (let col = 0; col < cols; col += 1) {
           const value = values[index];
-          const isZero = value === 0;
-          // Keep every marker a cube. Magnitude controls cube volume; the
-          // largest magnitude matches the existing one-hot cell size.
-          // Feature values retain their heat-map colors, but use a uniform size.
           const cubeSize = cellSize * 0.9;
           transform.position.set(
             origin[0] + channel * depthStep,
@@ -52,26 +47,7 @@ export function createFeatureOutputRenderer({
     };
   }
 
-  function clearFilterGeometry() {
-    const geometries = new Set();
-    const materials = new Set();
-    for (const child of [...filterStaticGroup.children]) {
-      filterStaticGroup.remove(child);
-      child.traverse((object) => {
-        if (object.geometry && object.geometry !== cubeGeometry) geometries.add(object.geometry);
-        if (object.material) {
-          const assigned = Array.isArray(object.material) ? object.material : [object.material];
-          assigned.forEach((material) => material && materials.add(material));
-        }
-      });
-    }
-    geometries.forEach((geometry) => geometry.dispose());
-    materials.forEach((material) => material.dispose());
-    residualRenderer.reset();
-  }
-
-
-  function drawOutput {
+  function drawOutput() {
     const values = flattenTensor(calculateConvolutionOutput());
     const stats = addValueCubes(
       values, BOARD_SIZE, BOARD_SIZE, FILTER_COUNT,
