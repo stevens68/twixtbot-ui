@@ -378,9 +378,9 @@ export function createTensorRenderer({
       glassPadding: [1.02, 1.0, 1.0],
     });
 
-    // Policy Conv1 maps the 48-channel residual output to two output channels.
-    // Use the residual feature depth (48), not the link input depth (8).
-    const policyChannels = weights.locations[0][0][0].length;
+    // Policy Conv1 maps 48 residual feature maps to two output channels.
+    // The location tensor's filter count is 48; its per-filter input depth is 2.
+    const policyChannels = weights.locations.length;
     // Keep the visualizer renderable if an older cached/demo data object is
     // supplied. The normal initialization path replaces this zero fallback
     // with the trained policy_conv1 checkpoint weights.
@@ -414,7 +414,10 @@ export function createTensorRenderer({
     const policyStartY = policyInput.centerY +
       (policyRows - 1) * (policySlotHeight + policyGapY) / 2;
     const policyBankDepth = columns * policySlotWidth + (columns - 1) * policyGapZ;
-    const policyStartZ = policyInput.centerZ - policyBankDepth / 2;
+    // Match the location bank's exact first-cell placement convention.
+    const policyStartZ = policyInput.centerZ -
+      (columns - 1) * (policySlotWidth + policyGapZ) / 2 -
+      (policySlotWidth - filterSpacing) / 2;
     const policyInfo = filterBankRenderer.drawBank({
       name: 'policy-conv1', weights: policyDisplayWeights,
       startX: policyStartX, startY: policyStartY, startZ: policyStartZ,
