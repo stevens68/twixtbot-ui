@@ -24,6 +24,16 @@ export async function loadTrainedModelWeights({
         result.weights.policy_conv1.some(filter => filter.length !== 1 ||
           filter[0].length !== 1 || filter[0][0].length !== filterCount ||
           filter[0][0].some(value => !Number.isFinite(Number(value)))) ||
+        !result.layers.policy_conv2 || !Array.isArray(result.weights.policy_conv2) ||
+        result.layers.policy_conv2.filter_count !== 1 ||
+        result.layers.policy_conv2.kernel_height !== 1 ||
+        result.layers.policy_conv2.kernel_width !== 1 ||
+        result.layers.policy_conv2.channels !== 2 ||
+        result.weights.policy_conv2.length !== 1 ||
+        result.weights.policy_conv2[0].length !== 1 ||
+        result.weights.policy_conv2[0][0].length !== 1 ||
+        result.weights.policy_conv2[0][0][0].length !== 2 ||
+        result.weights.policy_conv2[0][0][0].some(value => !Number.isFinite(Number(value))) ||
         !Array.isArray(result.weights.links) ||
         !Array.isArray(result.weights.pegs) ||
         !Array.isArray(result.weights.locations) ||
@@ -50,6 +60,7 @@ export async function loadTrainedModelWeights({
       pegs: result.weights.pegs,
       locations: result.weights.locations,
       policyConv1: result.weights.policy_conv1,
+      policyConv2: result.weights.policy_conv2,
     };
     const residualBlock0 = result.residual_block_0;
     if (!residualBlock0 || residualBlock0.config?.channels !== filterCount) {
@@ -86,6 +97,7 @@ export async function loadTrainedModelWeights({
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
     demoModel.policyConv1Metadata = result.layers.policy_conv1;
+    demoModel.policyConv2Metadata = result.layers.policy_conv2;
 
     const primaryBn = result.primary_bn;
     for (const key of ['weight', 'bias', 'running_mean', 'running_var']) {
