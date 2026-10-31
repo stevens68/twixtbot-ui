@@ -243,10 +243,13 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   function addResidualArrow(group, startX, endX, y, z, label, name, labelYOffset = 0.58) {
     const gap = endX - startX;
     if (gap <= 0.15) return;
-    const length = gap * 0.78;
+    // Double the clearance from the starting object to the arrow shaft.
+    // Keep the same clearance at the destination for a balanced connector.
+    const startClearance = gap * 0.22;
+    const length = gap * 0.67;
     const arrow = new THREE.ArrowHelper(
       new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(startX + (gap - length) / 2, y, z),
+      new THREE.Vector3(startX + startClearance, y, z),
       length,
       0xaeb7c2,
       0.42,
@@ -486,9 +489,18 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       const skipStartX = index === 0
         ? 20 + (FILTER_COUNT - 1) * layout.outputChannelStep + layout.outputCubeSize / 2
         : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
+      // Place the identity formula beside the straight section of the
+      // bypass itself (y=0, outside the convolution banks in Z).
+      const bypassOffsetZ = layout.bankSizeZ * 1.08 / 2 + 1.0;
       addFormulaLabel(
         'y = x',
-        [(skipStartX + mergeX) / 2, centerY + 2.0, centerZ],
+        [(skipStartX + mergeX) / 2, 0.62, centerZ + bypassOffsetZ],
+        25, '#f2f4f8', 92,
+      );
+      // The two convolution paths and identity path are summed at this arrow.
+      addFormulaLabel(
+        'Σ',
+        [(mergeX + outputLeftX) / 2, centerY + 0.58, centerZ],
         25, '#f2f4f8', 92,
       );
     }
