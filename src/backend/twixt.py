@@ -175,7 +175,7 @@ class Game:
 
         self.reachable_history.pop()
 
-    def play(self, move):
+    def play(self, move, check_draw=True):
 
         if move == SWAP:
             self.play_swap()
@@ -221,7 +221,7 @@ class Game:
         self.open_pegs[0].remove(move)
         self.open_pegs[1].remove(move)
 
-        if self._is_a_draw():
+        if check_draw and self._is_a_draw():
             self.result = DRAW
 
         # end play(self)

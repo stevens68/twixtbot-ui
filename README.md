@@ -235,3 +235,15 @@ python -m unittest discover -s tests
 
 * [agtoever](https://github.com/agtoever):  
 Load tsgf Files, Save Files, Evaluation History, Heatmap, Init Progressbar, Highlight Last Move, Hide Evaluation, Redo, Logging
+
+## Browser-based 3D neural-network visualizer
+
+A local Three.js visualizer in [`tools/nn-visualizer`](tools/nn-visualizer/README.md) displays the sample and effective TwixT boards, the three backend-generated input tensors, the trained peg/link/location convolution filters, and the summed first-layer `24 × 24 × 48` feature tensor together in one 3D scene.
+
+Start it from the repository root:
+
+```bash
+python tools/nn-visualizer/server.py
+```
+
+Then open <http://127.0.0.1:8765>. The visualizer loads game positions from the Python backend and convolution weights from `model/torch.pt`. The feature tensor shows the raw sum of the three convolution branches before batch normalization and the absolute-value activation; it is not a full network forward pass. See the [visualizer README](tools/nn-visualizer/README.md) for usage, API details, and current scope.

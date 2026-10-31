@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twixtbot · 3D neural-network visualizer</title>
+  <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Critical layout fallback: keep the three panels side by side even if style.css is stale. */
+    html body main.app-layout {
+      display: grid !important;
+      grid-template-columns: 265px minmax(0, 1fr) 285px !important;
+      width: 100% !important;
+      height: calc(100vh - 105px) !important;
+      min-height: 0 !important;
+      align-items: stretch;
+    }
+    html body main.app-layout.explanation-collapsed {
+      grid-template-columns: 265px minmax(0, 1fr) 0 !important;
+    }
+    html body main.app-layout > .controls-panel,
+    html body main.app-layout > .visual-panel,
+    html body main.app-layout > .inspector { min-width: 0; min-height: 0; }
+    html body main.app-layout > .visual-panel { height: 100%; }
+    @media (max-width: 1050px) {
+      html body main.app-layout { grid-template-columns: 235px minmax(0, 1fr) 255px !important; }
+      html body main.app-layout.explanation-collapsed { grid-template-columns: 235px minmax(0, 1fr) 0 !important; }
+    }
+    @media (max-width: 380px) {
+      html body main.app-layout,
+      html body main.app-layout.explanation-collapsed {
+        grid-template-columns: minmax(0, 1fr) !important;
+        height: auto !important;
+      }
+      html body main.app-layout > .visual-panel { min-height: 520px; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="brand-line"><h1>TWIXTBOT MODEL EXPLORER</h1><p class="subtitle">Inspect the game encoding, trained first-layer filters, all 20 residual blocks, and the 24×24×48 feature tensor in one scene.</p></div>
+    </div>
+  </header>
+
+  <main class="app-layout">
+    <aside class="controls-panel" aria-label="Visualizer controls">
+      <section class="control-section game-controls">
+        <button id="demo-button" class="quiet full-width">Load demo game</button>
+        <label class="file-button load-file">Load game...<input id="t1-file" type="file" accept=".T1,.t1,text/plain"></label>
+        <label class="current-game-label" for="trajectory">Current game:</label>
+        <div id="game-position" class="game-position-inline">No game loaded</div>
+        <div class="trajectory-row">
+          <textarea id="trajectory" rows="10">L12 L8 O9 L17 H16 I14 J13 N9 Q10 K6 H12 O11 F7</textarea>
+          <button id="apply-changes" class="apply-button" disabled>Apply changes</button>
+        </div>
+        <div class="game-navigation">
+          <button id="game-start" disabled title="Go to start" aria-label="Go to start">⏮</button>
+          <button id="game-back" disabled title="Previous move" aria-label="Previous move">◀</button>
+          <button id="game-forward" disabled title="Next move" aria-label="Next move">▶</button>
+          <button id="game-end" disabled title="Go to end" aria-label="Go to end">⏭</button>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <h3>Visualization</h3>
+        <button id="reset-camera" class="quiet full-width">Reset camera</button>
+      </section>
+      <div id="camera-coordinates" class="camera-coordinates" aria-live="polite">Camera  x —  y —  z —
+Target  x —  y —  z —</div>
+      <p id="status" class="status" role="status">Demo data ready.</p>
+    </aside>
+
+    <section class="visual-panel" aria-label="3D visualization">
+      <div id="viewport" aria-label="Interactive 3D tensor scene">
+        <div id="loading" class="loading">Building the tensor scene…</div>
+      </div>
+    </section>
+
+    <aside class="inspector" id="inspector" aria-label="Explanation panel">
+      <div class="inspector-heading">
+        <div>
+          <p class="eyebrow">EXPLANATION</p>
+          <h2 id="view-title">Input tensors</h2>
+        </div>
+        <button id="toggle-explanation" class="collapse-button" aria-label="Collapse explanation panel" title="Collapse explanation panel">Collapse ‹</button>
+      </div>
+      <p id="view-description">One scene: sample and effective boards, input tensors, all three trained first-layer filter banks, both 48-filter convolution banks from residual block 1, and the first-layer 24×24×48 feature tensor.</p>
+      <div class="legend">
+        <div><span class="swatch input"></span>Board inputs (pegs, links)</div>
+        <div><span class="swatch fixed"></span>Fixed input (locations)</div>
+        <div><span class="swatch weights"></span>Filter weights</div>
+        <div><span class="swatch bias"></span>Bias</div>
+        <div><span class="swatch output"></span>First-layer feature tensor</div>
+      </div>
+      <div class="stat"><span>Tensor shape</span><strong id="tensor-shape">24 × 24 × 2</strong></div>
+      <div class="stat"><span>Value range</span><strong id="value-range">0 … 1</strong></div>
+      <div class="stat"><span>Visible cubes</span><strong id="cube-count">—</strong></div>
+      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan · click a residual-block cube to inspect both convolutions.</p>
+      <details>
+        <summary>Input JSON format</summary>
+        <p>Provide <code>pegs</code>, <code>links</code>, and <code>locations</code> as nested arrays in <code>[row][column][channel]</code> order. Optional <code>weights</code> enable convolution calculations; otherwise demo weights are generated.</p>
+        <pre>{
+  "pegs": [[[0,1], "..."]],
+  "links": [[[0,0,0,0,0,0,0,0], "..."]],
+  "locations": [[[1,0], "..."]]
+}</pre>
+      </details>
+    </aside>
+  </main>
+  <script type="module" src="./main.js?v=20261031-main-renderer-folder-v1"></script>
+</body>
+</html>
