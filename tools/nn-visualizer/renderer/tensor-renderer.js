@@ -289,14 +289,21 @@ export function createTensorRenderer({
 
     return {
       title: 'First-layer network view',
-      description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and the final policy Conv1 output are shown together.",
+      description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and both policy convolutions with their outputs are shown together.",
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48' +
         (policyOutputStats ? ' · Policy Conv₁: 24 × 24 × 2' : ''),
       range: 'Feature range ' + featureInfo.range +
         (policyOutputStats ? ' · Policy Conv₁ range ' + policyOutputStats.min.toFixed(4) +
-          ' … ' + policyOutputStats.max.toFixed(4) : ''),
+          ' … ' + policyOutputStats.max.toFixed(4) +
+          (policyOutputStats.policyConv2 ? ' · Policy Conv₂ range ' +
+            policyOutputStats.policyConv2.min.toFixed(4) + ' … ' +
+            policyOutputStats.policyConv2.max.toFixed(4) : '') : ''),
       count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + filterInfo.count + ' feature values' +
-        (policyOutputStats ? ' · ' + policyOutputStats.count.toLocaleString() + ' policy output values' : ''),
+        (policyOutputStats ? ' · ' + policyOutputStats.count.toLocaleString() +
+          ' Policy Conv₁ values' +
+          (policyOutputStats.policyConv2 ? ' · ' +
+            policyOutputStats.policyConv2.count.toLocaleString() +
+            ' Policy Conv₂ output values' : '') : ''),
     };
   }
 
@@ -567,7 +574,7 @@ export function createTensorRenderer({
         const policyConv2Gap = policyOutputGap;
         const policyOutputRight = outputOriginX + outputChannelStep + filterCubeSize / 2;
         const policyConv2StartX = policyOutputRight + policyConv2Gap +
-          filterCubeSize / 2 - filterSpacing / 2;
+          filterCubeSize / 2;
         const policyConv2StartY = policyInput.centerY;
         const policyConv2StartZ = policyInput.centerZ;
         const policyConv2Info = filterBankRenderer.drawBank({
@@ -615,8 +622,9 @@ export function createTensorRenderer({
           {
             spacing: filterSpacing,
             cellSize: filterCubeSize / 0.9,
-            colorMax: Math.max(1e-8, ...policyConv2Weights[0][0][0].map(value =>
-              Math.abs(Number(value)))) * Math.max(1e-8, policyColorMax),
+            colorMax: Math.max(1e-8, policyConv2Weights[0][0][0].reduce(
+              (sum, value) => sum + Math.abs(Number(value)), 0)) *
+              Math.max(1e-8, policyColorMax),
           },
         );
         if (!policyConv2AnnotationsBuilt) {
