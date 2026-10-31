@@ -95,7 +95,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
       return { width, height };
     });
 
-    acquireSprite(
+    return acquireSprite(
       texture,
       position,
       [texture.image.width / scaleDivisor, texture.image.height / scaleDivisor],
@@ -124,7 +124,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
       context.fillText(text, width / 2, height / 2);
       return { width, height };
     });
-    acquireSprite(
+    return acquireSprite(
       texture,
       position,
       [texture.image.width / scaleDivisor, texture.image.height / scaleDivisor],
