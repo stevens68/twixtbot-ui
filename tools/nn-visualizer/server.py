@@ -284,7 +284,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         endpoint = urlparse(self.path).path
-        if endpoint not in ("/api/trace", "/api/t1", "/api/residual-output"):
+        if endpoint not in ("/api/trace", "/api/t1", "/api/residual-output", "/api/position"):
             self.send_error(404)
             return
         try:
@@ -296,6 +296,7 @@ class Handler(SimpleHTTPRequestHandler):
             read_done = time.perf_counter()
 
             snapshot_ms = 0.0
+            residual_ms = 0.0
             if endpoint == "/api/residual-output":
                 payload = json.loads(raw)
                 result = first_residual_output(load_checkpoint(), payload.get("tensors", {}))
@@ -318,13 +319,25 @@ class Handler(SimpleHTTPRequestHandler):
                 # not terminal-result detection. Draw detection performs an
                 # expensive recursive path search and is deliberately skipped
                 # for interactive snapshots; the CLI retains the default check.
-                result = snapshot(
+                snapshot_result = snapshot(
                     moves,
                     bool(payload.get("allow_scl", False)),
                     bool(payload.get("allow_swap", True)),
                     check_draw=False,
                 )
                 snapshot_ms = (time.perf_counter() - snapshot_started) * 1000
+                if endpoint == "/api/position":
+                    residual_started = time.perf_counter()
+                    residual_result = first_residual_output(
+                        load_checkpoint(), snapshot_result["tensors"]
+                    )
+                    residual_ms = (time.perf_counter() - residual_started) * 1000
+                    result = {
+                        "snapshot": snapshot_result,
+                        "residualBlock0Output": residual_result,
+                    }
+                else:
+                    result = snapshot_result
             parsed_done = time.perf_counter()
 
             body = json.dumps(result, separators=(",", ":")).encode("utf-8")
@@ -362,6 +375,7 @@ class Handler(SimpleHTTPRequestHandler):
                 f"read_ms={(read_done - started) * 1000:.1f} "
                 f"request_parse_ms={(parsed_done - read_done) * 1000 - snapshot_ms:.1f} "
                 f"snapshot_ms={snapshot_ms:.1f} "
+                f"residual_ms={residual_ms:.1f} "
                 f"serialize_ms={(serialized_done - parsed_done) * 1000:.1f} "
                 f"write_ms={(written_done - serialized_done) * 1000:.1f} "
                 f"response_bytes={uncompressed_bytes} "
