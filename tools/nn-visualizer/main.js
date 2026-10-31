@@ -80,6 +80,7 @@ let cachedOutput = null;
 let gameMoves = [];
 let gamePly = 0;
 let gameLoaded = false;
+let interactiveMovePending = false;
 let currentPlayerName = "Black";
 let residualBlock0Output = null;
 
@@ -113,6 +114,32 @@ window.nnPerf = nnPerf;
 const { requestSnapshot } = createSnapshotClient({
   recordPerf: (label, metrics) => nnPerf.record(label, metrics),
 });
+
+async function playInteractiveMove(coordinate) {
+  if (!gameLoaded || interactiveMovePending) return;
+
+  // Clicking after navigating backward branches from that position and drops
+  // the old future, just as editing the trajectory would.
+  const nextMoves = gameMoves.slice(0, gamePly).concat(coordinate);
+  interactiveMovePending = true;
+  try {
+    // Let the backend validate the move before changing the displayed game.
+    await requestSnapshot(nextMoves);
+    gameMoves = nextMoves;
+    trajectoryEditor.value = gameMoves.join(' ');
+    appliedTrajectory = trajectoryEditor.value.trim();
+    updateApplyButtonState();
+    await loadGamePosition(gameMoves.length);
+    status.textContent = 'Played ' + coordinate + '. ' + currentPlayerName.toLowerCase() +
+      ' to move; board and input tensors updated.';
+  } catch (error) {
+    status.textContent = 'Cannot play ' + coordinate + ': ' + error.message;
+  } finally {
+    interactiveMovePending = false;
+    updateGameNavigation();
+  }
+}
+
 
 function countSceneObjects(root) {
   const counts = { objects: 0, meshes: 0, instancedMeshes: 0, sprites: 0, geometries: 0, materials: 0 };
