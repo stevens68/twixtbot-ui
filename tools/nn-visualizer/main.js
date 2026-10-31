@@ -4,7 +4,7 @@ import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } fr
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js?v=20261031-residual-layout-v5';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261031-network-light-glass-v6';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -23,8 +23,8 @@ const loading = document.querySelector('#loading');
 const status = document.querySelector('#status');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b1018);
-scene.fog = new THREE.Fog(0x0b1018, 75, 190);
+// Keep the full 20-block network readable at depth; no distance fog.
+scene.background = new THREE.Color(0xdce5ed);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
 // Frame the boards, inputs, filter banks, and feature tensor together. Keep
@@ -47,11 +47,17 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.3;
 controls.target.copy(INITIAL_CAMERA_TARGET);
 
-scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x253041, 2));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa9b8, 2.6));
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
 keyLight.position.set(20, 40, 30);
 scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0xffffff, 1.8);
+fillLight.position.set(-45, 25, -35);
+scene.add(fillLight);
+const networkFillLight = new THREE.DirectionalLight(0xffffff, 1.4);
+networkFillLight.position.set(100, 15, 10);
+scene.add(networkFillLight);
 
 const activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
@@ -69,7 +75,7 @@ const demoModel = createDemoData();
 let data = demoModel;
 let modelWeightStatus = 'Using generated demo weights.';
 const residualBlockWeightCache = new Map();
-let selectedResidualBlockIndex = 0;
+let selectedResidualBlockIndex = -1;
 let residualSelectionPending = false;
 let cachedOutput = null;
 let gameMoves = [];
@@ -636,7 +642,7 @@ async function loadTrainedLinkWeights() {
     demoModel.residualBlock0Metadata = residualBlock0.layers;
     demoModel.residualBlockCount = Number(result.residual_block_count) || 1;
     residualBlockWeightCache.set(0, residualBlock0.weights);
-    selectedResidualBlockIndex = 0;
+    selectedResidualBlockIndex = -1;
     demoModel.linkConvMetadata = result.layers.links;
     demoModel.pegConvMetadata = result.layers.pegs;
     demoModel.locationConvMetadata = result.layers.locations;
