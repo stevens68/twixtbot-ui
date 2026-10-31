@@ -192,7 +192,14 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       const br2=layout.bankStartXs[1]+(layout.channels-1)*filterSpacing+filterCubeSize/2,cy=layout.outputCenterY,cz=layout.outputCenterZ;
       if(index===0 || index===blockCount-1){
        const prefix='block-'+(index+1);
-       const inputRight=20+(FILTER_COUNT-1)*layout.outputChannelStep+layout.outputCubeSize/2;
+       let inputRight=20+(FILTER_COUNT-1)*layout.outputChannelStep+layout.outputCubeSize/2;
+       if(index===blockCount-1 && index>0){
+        const previous=residualLayout(index-1);
+        const previousRight=previous.bankStartXs[1]+(previous.channels-1)*filterSpacing+filterCubeSize/2;
+        const currentLeft=layout.bankStartXs[0]-filterCubeSize/2;
+        const previousGapCenter=(previousRight+currentLeft)/2;
+        inputRight=previousGapCenter+layout.outputSizeX/2;
+       }
        addResidualArrow(residualPlaceholderGroup,inputRight,layout.bankStartXs[0]-filterCubeSize/2,cy,cz,prefix+'-input-to-block');
        addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,prefix+'-conv1-to-conv2','y₁ = |BN(Conv₁(x))|');
        const outLeft=layout.outputCenterX-layout.outputSizeX/2,merge=outLeft-1.35;
