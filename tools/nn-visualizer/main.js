@@ -5,7 +5,7 @@ import { createDemoData, calculateConvolutionOutput as calculateConvolution, val
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js?v=20261031-modular-renderers-v2';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261031-modular-renderers-v3';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
