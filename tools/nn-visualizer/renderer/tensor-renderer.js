@@ -173,52 +173,32 @@ export function createTensorRenderer({
     const filterInfo = drawFilters();
     const featureInfo = featureOutputRenderer.drawOutput();
 
-    // Keep every connection parallel to X and centered on the corresponding
-    // tensor/filter-bank pair. The three first-layer banks converge on one
-    // feature tensor; their sum is represented by the shared target.
+    // Connect each input/filter pair and the three filter banks to the
+    // shared post-BN feature tensor. The bank layouts are calculated in
+    // drawFilters(), where their actual geometry dimensions are available.
     const arrowGroup = getSceneGroup();
-    const inputY = -4 + (BOARD_SIZE - 1) * inputSpacing / 2;
     const featureY = -2.5 + (BOARD_SIZE - 1) * filterSpacing / 2;
     const featureZ = -((FILTER_COUNT - 1) * 0.105) / 2 +
       (BOARD_SIZE - 1) * filterSpacing / 2;
     const featureLeftX = 20 - filterCubeSize / 2;
-    const firstLayerBanks = [
-      {
-        key: 'pegs', tensorZ: -13, tensorChannels: 2,
-        startX, startY: pegStartY, startZ: pegStartZ,
-        rows: pegRows, slotHeight: pegFilterHeight, gapY: pegGapY,
-        bankHeight: pegBankHeight, bankWidth: columns * pegFilterWidth + (columns - 1) * pegGapZ,
-        channels: pegChannels,
-      },
-      {
-        key: 'links', tensorZ: -3.5, tensorChannels: 8,
-        startX, startY, startZ, rows, slotHeight: filterHeight, gapY,
-        bankHeight, bankWidth: columns * filterWidth + (columns - 1) * gapZ,
-        channels,
-      },
-      {
-        key: 'locations', tensorZ: 6, tensorChannels: 2,
-        startX, startY: locationStartY, startZ: locationStartZ,
-        rows: locationRows, slotHeight: pegFilterHeight, gapY: locationGapY,
-        bankHeight: locationBankHeight,
-        bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 0.1,
-        channels: locationChannels,
-      },
-    ];
-    firstLayerBanks.forEach((bank) => {
-      const tensorLeft = -1.8 - ((bank.tensorChannels - 1) * inputDepthStep) / 2 - inputCellSize / 2;
-      const tensorRight = -1.8 + ((bank.tensorChannels - 1) * inputDepthStep) / 2 + inputCellSize / 2;
+    for (const bank of filterInfo.arrowBanks) {
+      const tensorRight = -1.8 +
+        ((bank.tensorChannels - 1) * inputDepthStep) / 2 + inputCellSize / 2;
       const bankLeft = bank.startX - filterCubeSize / 2;
-      const bankRight = bank.startX + (bank.channels - 1) * filterSpacing + filterCubeSize / 2;
-      const bankBottomY = bank.startY - (bank.rows - 1) * (bank.slotHeight + bank.gapY);
+      const bankRight = bank.startX +
+        (bank.channels - 1) * filterSpacing + filterCubeSize / 2;
+      const bankBottomY = bank.startY -
+        (bank.rows - 1) * (bank.slotHeight + bank.gapY);
       const bankCenterY = bankBottomY + bank.bankHeight / 2;
       const bankCenterZ = bank.startZ + bank.bankWidth / 2;
+      const tensorCenterY = -4 + (BOARD_SIZE - 1) * inputSpacing / 2;
       const tensorCenterZ = bank.tensorZ + (BOARD_SIZE - 1) * inputSpacing / 2;
-      const arrowY = (inputY + bankCenterY) / 2;
-      const arrowZ = (tensorCenterZ + bankCenterZ) / 2;
+
       addXArrow(
-        arrowGroup, tensorRight, bankLeft, arrowY, arrowZ, null, 0.58,
-        bank.key + '-input-to-filter-bank',
+        arrowGroup, tensorRight, bankLeft,
+        (tensorCenterY + bankCenterY) / 2,
+        (tensorCenterZ + bankCenterZ) / 2,
+        null, 0.58, bank.key + '-input-to-filter-bank',
       );
       addXArrow(
         arrowGroup, bankRight, featureLeftX,
@@ -337,6 +317,31 @@ export function createTensorRenderer({
       residualCount: 2 * FILTER_COUNT,
       residualBlockCount: blockCount,
       selectedResidualBlockIndex,
+      arrowBanks: [
+        {
+          key: 'pegs', tensorZ: -13, tensorChannels: 2,
+          startX, startY: pegStartY, startZ: pegStartZ,
+          rows: pegRows, slotHeight: pegFilterHeight, gapY: pegGapY,
+          bankHeight: pegBankHeight,
+          bankWidth: columns * pegFilterWidth + (columns - 1) * pegGapZ,
+          channels: pegChannels,
+        },
+        {
+          key: 'links', tensorZ: -3.5, tensorChannels: 8,
+          startX, startY, startZ, rows, slotHeight: filterHeight, gapY,
+          bankHeight,
+          bankWidth: columns * filterWidth + (columns - 1) * gapZ,
+          channels,
+        },
+        {
+          key: 'locations', tensorZ: 6, tensorChannels: 2,
+          startX, startY: locationStartY, startZ: locationStartZ,
+          rows: locationRows, slotHeight: pegFilterHeight, gapY: locationGapY,
+          bankHeight: locationBankHeight,
+          bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 0.1,
+          channels: locationChannels,
+        },
+      ],
     };
   }
 
