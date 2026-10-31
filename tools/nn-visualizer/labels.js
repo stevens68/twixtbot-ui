@@ -59,6 +59,14 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     spriteCursor += 1;
     sprite.center.set(alignment === 'left' ? 0 : 0.5, 0.5);
     sprite.position.set(position[0], position[1], position[2]);
+    sprite.userData.baseLabelScale = [scale[0], scale[1]];
+    sprite.onBeforeRender = (_renderer, _scene, camera) => {
+      const base = sprite.userData.baseLabelScale;
+      const distance = camera.position.distanceTo(sprite.position);
+      // Keep labels readable as the camera pulls back, but cap the growth.
+      const distanceFactor = Math.min(1.55, Math.max(1, distance / 32));
+      sprite.scale.set(base[0] * distanceFactor, base[1] * distanceFactor, 1);
+    };
     sprite.scale.set(scale[0], scale[1], 1);
     getSceneGroup().add(sprite);
   }
