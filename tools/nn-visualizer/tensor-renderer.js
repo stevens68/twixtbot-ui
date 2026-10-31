@@ -42,7 +42,7 @@ export function createTensorRenderer({
   }
   const filterBankRenderer = createFilterBankRenderer({
     THREE, cubeGeometry, filterStaticGroup, flattenTensor, addLabel,
-    heatMapColor, filterSpacing, filterCubeSize, inputSpacing, inputCellSize,
+    heatMapColor, filterSpacing, filterCubeSize, inputSpacing, inputCellSize, filterScale,
   });
   const residualRenderer = createResidualRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, cubeGeometry, filterSpacing,
@@ -452,7 +452,7 @@ export function createTensorRenderer({
 
   return {
     addValueCubes,
-    drawFilterKernel,
+    drawFilterKernel: filterBankRenderer.drawFilterKernel,
     drawInputs,
     drawFilters,
     drawOutput,
