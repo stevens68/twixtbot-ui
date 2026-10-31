@@ -12,6 +12,7 @@ export function createResidualRenderer({
   let selectedResidualWeights = null;
   let residualGeometryDirty = false;
   let residualFiltersVisible = true;
+  let lastRenderedOutputTensor = null;
   function disposeResidualDetail() {
     if (!residualFilterGroup) return;
     filterStaticGroup.remove(residualFilterGroup);
@@ -240,6 +241,11 @@ function addResidualBypass(group,x1,x2,z,offset,name){const dx=x2-x1;if(dx<=1)re
   }
 
   function draw(rebuild, blockCount) {
+    const outputTensor = getData().residualBlock0Output || null;
+    if (outputTensor !== lastRenderedOutputTensor) {
+      lastRenderedOutputTensor = outputTensor;
+      residualPlaceholderDirty = true;
+    }
     if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
       if (residualPlaceholderGroup) {
         filterStaticGroup.remove(residualPlaceholderGroup);
