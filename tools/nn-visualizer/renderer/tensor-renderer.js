@@ -443,13 +443,8 @@ export function createTensorRenderer({
       );
       policyArrow.name = 'final-residual-output-to-policy-conv1';
       filterStaticGroup.add(policyArrow);
-      addAnnotationFormulaLabel(
-        'h₂₀',
-        [(arrowStartX + arrowEndX) / 2, policyInput.centerY + 0.58, policyInput.centerZ],
-        25, '#f2f4f8', 92,
-      );
       addAnnotationLabel(
-        'Conv₁ · 1×1×2×48',
+        'Conv₁ · 5×5×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
           pegStartY + pegHeight * filterSpacing + 0.75,
           pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
@@ -470,18 +465,11 @@ export function createTensorRenderer({
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Policy Conv₁ · 1×1×48×2',
+        'Policy Conv₁ · 1×1×2×48',
         [policyStartX + filterSpacing / 2,
           policyStartY + policySlotHeight + 0.75,
           policyStartZ + (columns * policySlotWidth + (columns - 1) * policyGapZ) / 2],
         24, '#ffffff', 90,
-      );
-      addAnnotationFormulaLabel(
-        'p₁ = |BN(Conv₁(h₂₀))|',
-        [policyStartX + filterSpacing / 2,
-          policyStartY - (policyRows - 1) * (policySlotHeight + policyGapY) - 0.85,
-          policyStartZ + (columns * policySlotWidth + (columns - 1) * policyGapZ) / 2],
-        22, '#f2f4f8', 92,
       );
     }
 
