@@ -123,6 +123,7 @@ export function createTensorRenderer({
   }
 
   let cachedFilterWeights = null;
+  let policyOutputAnnotationsBuilt = false;
 
   // Dispose the current filter scene before rebuilding it with new weights.
   function clearFilterGeometry() {
@@ -286,10 +287,14 @@ export function createTensorRenderer({
 
     return {
       title: 'First-layer network view',
-      description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, and the first-layer feature tensor are shown together.",
-      shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48',
-      range: 'Feature range ' + featureInfo.range,
-      count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + filterInfo.count + ' feature values',
+      description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and the final policy Conv1 output are shown together.",
+      shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48' +
+        (policyOutputStats ? ' · Policy Conv₁: 24 × 24 × 2' : ''),
+      range: 'Feature range ' + featureInfo.range +
+        (policyOutputStats ? ' · Policy Conv₁ range ' + policyOutputStats.min.toFixed(4) +
+          ' … ' + policyOutputStats.max.toFixed(4) : ''),
+      count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + filterInfo.count + ' feature values' +
+        (policyOutputStats ? ' · ' + policyOutputStats.count.toLocaleString() + ' policy output values' : ''),
     };
   }
 
@@ -522,17 +527,20 @@ export function createTensorRenderer({
           colorMax: policyColorMax,
         },
       );
-      addAnnotationLabel(
-        'Policy Conv₁ output · 24×24×2',
-        [policyOutputStartX + outputChannelStep / 2, 5, policyInput.centerZ],
-        24, '#ffffff', 90,
-      );
-      addXArrow(
-        getAnnotationGroup(), policyBankRight + 0.08,
-        policyOutputStartX - filterCubeSize / 2,
-        policyInput.centerY, policyInput.centerZ,
-        null, 0.58, 'policy-conv1-to-policy-output',
-      );
+      if (!policyOutputAnnotationsBuilt) {
+        addAnnotationLabel(
+          'Policy Conv₁ output · 24×24×2',
+          [outputOriginX + outputChannelStep / 2, 5, policyInput.centerZ],
+          24, '#ffffff', 90,
+        );
+        addXArrow(
+          getAnnotationGroup(), policyBankRight + 0.08,
+          outputOriginX - filterCubeSize / 2,
+          policyInput.centerY, policyInput.centerZ,
+          null, 0.58, 'policy-conv1-to-policy-output',
+        );
+        policyOutputAnnotationsBuilt = true;
+      }
     }
 
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
