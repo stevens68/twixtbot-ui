@@ -1,5 +1,5 @@
 import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-tanh-colour-v2';
-import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-tanh-colour-v2';
+import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-input-tanh-v1';
 import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-tanh-colour-v2';
 import { createResidualRenderer } from './residual-renderer.js?v=20261031-tanh-colour-v2';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
@@ -42,10 +42,12 @@ export function createTensorRenderer({
   }
 
   function locationHeatMapColor(value) {
-    // Coordinates are nonnegative: start at green for 0, then progress
-    // through yellow to red as the coordinate approaches 1.
+    // Location coordinates are nonnegative. Apply the same endpoint-preserving
+    // tanh scaling as the convolution weights and feature tensors.
     const normalized = Math.max(0, Math.min(1, Number(value)));
-    return new THREE.Color().setHSL((1 / 3) * (1 - normalized), 1, 0.5);
+    const a = Math.max(0, Math.min(2, Number(getColorTanhA?.()) || 0));
+    const scaled = a < 1e-8 ? normalized : Math.tanh(a * normalized) / Math.tanh(a);
+    return new THREE.Color().setHSL((1 / 3) * (1 - scaled), 1, 0.5);
   }
   const featureOutputRenderer = createFeatureOutputRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -444,7 +446,9 @@ export function createTensorRenderer({
 
 
   function refreshTensorColors() {
-    // Force filter and residual meshes to rebuild on the next full render.
+    // Recolour persistent location input instances and rebuild colour-coded
+    // convolution/filter meshes using the current tanh scale.
+    inputRenderer.refreshLocationColors();
     cachedFilterWeights = null;
   }
 
