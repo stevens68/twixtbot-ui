@@ -10,7 +10,7 @@ export function createInputTensorRenderer({
   const inputStaticGroup = getInputStaticGroup();
   const inputDynamicGroup = getInputDynamicGroup();
   const inputDepthStep = inputCellSize + INPUT_CHANNEL_GAP;
-  const inputOriginY = -4;
+  const inputOriginY = -4.082; // Centre each input tensor on the NN Y axis.
   let inputGeometryBuilt = false;
   const inputMeshes = new Map();
 
