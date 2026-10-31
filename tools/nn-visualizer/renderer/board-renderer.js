@@ -7,9 +7,9 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   const game = createSampleGame();
   const spacing = 0.34;
   const boardSize = (BOARD_SIZE - 1) * spacing;
-  const boardCenterZ = 0;
+  const boardCenterZ = -0.2545; // Centreline shared with the feature and residual tensors.
   const boardStartZ = boardCenterZ - boardSize / 2;
-  const boardStartY = -boardSize / 2;
+  const boardStartY = -0.287 - boardSize / 2;
   const boardX = -26.675; // Match the gap from the effective board to the links tensor.
   const pointAt = (row, col, x = boardX) => [
     x,
@@ -231,13 +231,14 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   const boardSize = (BOARD_SIZE - 1) * spacing;
   // Keep the effective board twice as far from the input tensor layer.
   const boardX = -15.2;
-  const start = -boardSize / 2;
+  const startY = -0.287 - boardSize / 2;
+  const startZ = -0.2545 - boardSize / 2;
   // Board and tensor share the same orientation: [0][0] is A1 (top-left).
   // Perspective, player remapping and link shifts are applied by the encoder.
   const pointAt = (row, col, x = boardX) => [
     x,
-    start + (BOARD_SIZE - 1 - row) * spacing,
-    start + col * spacing,
+    startY + (BOARD_SIZE - 1 - row) * spacing,
+    startZ + col * spacing,
   ];
 
   if (!effectiveStaticBuilt) {
@@ -450,14 +451,14 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   for (let col = 0; col < BOARD_SIZE; col += 1) {
     addStaticLabel(
       String.fromCharCode(65 + col),
-      [boardX - 0.12, start + (BOARD_SIZE - 1) * spacing + 0.34, start + col * spacing],
+      [boardX - 0.12, startY + (BOARD_SIZE - 1) * spacing + 0.34, startZ + col * spacing],
       14, '#e0e8e2', 150,
     );
   }
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     addStaticLabel(
       String(row + 1),
-      [boardX - 0.12, start + (BOARD_SIZE - 1 - row) * spacing, start - 0.34],
+      [boardX - 0.12, startY + (BOARD_SIZE - 1 - row) * spacing, startZ - 0.34],
       14, '#e0e8e2', 150,
     );
   }
@@ -465,7 +466,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     [
       { text: 'Effective board - black to move', color: '#ffffff' },
     ],
-    [boardX, 5.25, 0],
+    [boardX, 5.25 - 0.287, -0.2545],
     19,
     90,
     'center',
