@@ -120,7 +120,7 @@ const nnPerf = {
 };
 window.nnPerf = nnPerf;
 
-const { requestSnapshot } = createSnapshotClient({
+const { requestSnapshot, requestPosition } = createSnapshotClient({
   recordPerf: (label, metrics) => nnPerf.record(label, metrics),
 });
 
@@ -520,7 +520,10 @@ async function loadGamePosition(ply) {
   // Rebuild the authoritative backend position from the move prefix. This
   // makes Back an undo and Forward a redo, including captures/links and the
   // model's perspective-dependent input encoding.
-  const result = await requestSnapshot(gameMoves.slice(0, ply));
+  const position = demoModel.weights.residualBlock0
+    ? await requestPosition(gameMoves.slice(0, ply))
+    : { snapshot: await requestSnapshot(gameMoves.slice(0, ply)), residualBlock0Output: null };
+  const result = position.snapshot;
   backendSnapshot = result;
   currentPlayerName = result.next_player === 1 ? 'Red' : 'Black';
 
@@ -545,68 +548,15 @@ async function loadGamePosition(ply) {
   residualBlock0OutputError = null;
   if (demoModel.weights.residualBlock0) {
     const residualStarted = performance.now();
-    let cacheHit = false;
-    let fetchMs = 0;
-    let bodyMs = 0;
-    let jsonParseMs = 0;
-    let validationMs = 0;
-    let responseBytes = 0;
-    let wireResponseBytes = 0;
     try {
-      let values = residualOutputCache.get(result);
-      if (values) {
-        cacheHit = true;
-      } else {
-        const fetchStarted = performance.now();
-        const outputResponse = await fetch('/api/residual-output', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tensors: result.tensors }),
-        });
-        fetchMs = performance.now() - fetchStarted;
-
-        const bodyStarted = performance.now();
-        const reader = outputResponse.body.getReader();
-        const chunks = [];
-        let responseLength = 0;
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          responseLength += value.length;
-        }
-        const responseBuffer = new Uint8Array(responseLength);
-        let offset = 0;
-        for (const chunk of chunks) {
-          responseBuffer.set(chunk, offset);
-          offset += chunk.length;
-        }
-        const responseText = new TextDecoder().decode(responseBuffer);
-        bodyMs = performance.now() - bodyStarted;
-        responseBytes = new TextEncoder().encode(responseText).length;
-        wireResponseBytes = Number(outputResponse.headers.get('content-length')) || responseBytes;
-
-        const parseStarted = performance.now();
-        let outputPayload;
-        try {
-          outputPayload = JSON.parse(responseText);
-        } catch (error) {
-          throw new Error('The residual-output API returned invalid JSON: ' + error.message);
-        }
-        jsonParseMs = performance.now() - parseStarted;
-        if (!outputResponse.ok) throw new Error(outputPayload.error || outputResponse.statusText);
-
-        const validationStarted = performance.now();
-        values = outputPayload.values;
-        if (outputPayload.shape?.join('x') !== '24x24x48' ||
-            !Array.isArray(values) || values.length !== 24 ||
-            values.some(row => !Array.isArray(row) || row.length !== 24 ||
-              row.some(cell => !Array.isArray(cell) || cell.length !== 48 ||
-                cell.some(value => !Number.isFinite(Number(value)))))) {
-          throw new Error('The backend returned an invalid 24×24×48 output tensor.');
-        }
-        validationMs = performance.now() - validationStarted;
-        residualOutputCache.set(result, values);
+      const outputPayload = position.residualBlock0Output;
+      const values = outputPayload.values;
+      if (outputPayload.shape?.join('x') !== '24x24x48' ||
+          !Array.isArray(values) || values.length !== 24 ||
+          values.some(row => !Array.isArray(row) || row.length !== 24 ||
+            row.some(cell => !Array.isArray(cell) || cell.length !== 48 ||
+              cell.some(value => !Number.isFinite(Number(value)))))) {
+        throw new Error('The backend returned an invalid 24×24×48 output tensor.');
       }
       residualBlock0Output = values;
       data.residualBlock0Output = values;
@@ -616,15 +566,16 @@ async function loadGamePosition(ply) {
     } finally {
       nnPerf.record('residualOutput', {
         ply,
-        cacheHit,
-        fetchMs: Number(fetchMs.toFixed(2)),
-        bodyMs: Number(bodyMs.toFixed(2)),
-        jsonParseMs: Number(jsonParseMs.toFixed(2)),
-        validationMs: Number(validationMs.toFixed(2)),
-        responseBytes,
-        wireResponseBytes,
+        cacheHit: false,
+        fetchMs: 0,
+        bodyMs: 0,
+        jsonParseMs: 0,
+        validationMs: Number((performance.now() - residualStarted).toFixed(2)),
+        responseBytes: position.responseBytes || 0,
+        wireResponseBytes: position.wireResponseBytes || 0,
         totalMs: Number((performance.now() - residualStarted).toFixed(2)),
         failed: Boolean(residualBlock0OutputError),
+        includedInPositionRequest: true,
       });
     }
   }
