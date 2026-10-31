@@ -1,6 +1,6 @@
 import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-tanh-colour-v2';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-input-tanh-v1';
-import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-tanh-colour-v2';
+import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-location-glass-v3';
 import { createResidualRenderer } from './residual-renderer.js?v=20261031-tanh-colour-v2';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
