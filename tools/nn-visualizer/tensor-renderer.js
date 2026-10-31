@@ -711,13 +711,17 @@ function addResidualOutputGlass(group, layout, blockIndex) {
   );
   // Use an open wireframe enclosure: solid transparent faces obscured the
   // tensor when orbiting the camera inside the box.
+  const edgesGeometry = new THREE.EdgesGeometry(geometry);
+  geometry.dispose();
   const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geometry),
+    edgesGeometry,
     new THREE.LineBasicMaterial({
       color: 0xb9d5e8, transparent: true, opacity: 0.9,
     }),
   );
-  edges.position.copy(glass.position);
+  edges.position.set(
+    layout.outputCenterX, layout.outputCenterY, layout.outputCenterZ,
+  );
   edges.name = 'residual-block-' + blockIndex + '-output-tensor-outline';
   group.add(edges);
 }
