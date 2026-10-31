@@ -436,7 +436,7 @@ export function createTensorRenderer({
       const policyArrow = new THREE.ArrowHelper(
         new THREE.Vector3(1, 0, 0),
         new THREE.Vector3(arrowStartX, policyInput.centerY, policyInput.centerZ),
-        arrowLength,
+        arrowLength * 0.84,
         0x71879b,
         Math.min(0.14, arrowLength * 0.38),
         Math.min(0.10, arrowLength * 0.26),
@@ -473,6 +473,68 @@ export function createTensorRenderer({
       );
     }
 
+    // Policy Conv1 applies a 1×1 convolution to the final residual output,
+    // followed by its own inference-mode BatchNorm and absolute activation.
+    // Keep the displayed tensor at the full 24×24×2 shape (before policy Conv2
+    // removes the first/last rows for the flattened move-policy output).
+    let policyOutputStats = null;
+    const policyInputTensor = getData().residualBlockLastOutput;
+    const policyBn = getData().policyBn;
+    if (policyInputTensor && policyBn &&
+        Array.isArray(policyBn.weight) && policyBn.weight.length === 2 &&
+        Array.isArray(weights.policyConv1) && weights.policyConv1.length === 2) {
+      const policyValues = [];
+      for (let outputChannel = 0; outputChannel < 2; outputChannel += 1) {
+        for (let row = 0; row < BOARD_SIZE; row += 1) {
+          for (let col = 0; col < BOARD_SIZE; col += 1) {
+            let sum = 0;
+            for (let inputChannel = 0; inputChannel < FILTER_COUNT; inputChannel += 1) {
+              sum += Number(policyInputTensor[row][col][inputChannel]) *
+                Number(weights.policyConv1[outputChannel][0][0][inputChannel]);
+            }
+            const normalized = (sum - Number(policyBn.running_mean[outputChannel])) /
+              Math.sqrt(Number(policyBn.running_var[outputChannel]) + Number(policyBn.eps ?? 1e-3));
+            policyValues.push(Math.abs(
+              normalized * Number(policyBn.weight[outputChannel]) +
+              Number(policyBn.bias[outputChannel])
+            ));
+          }
+        }
+      }
+      const policyColorMax = Math.max(...policyBn.weight.map((weight, channel) =>
+        Math.abs(Number(policyBn.bias[channel])) + 3 * Math.abs(Number(weight))));
+      const policyBankRight = policyStartX +
+        (policyChannels - 1) * filterSpacing + filterCubeSize / 2;
+      const policyOutputGap = 4.2;
+      const policyOutputStartX = policyBankRight + policyOutputGap + filterCubeSize / 2;
+      const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
+      const outputOriginX = policyOutputStartX - outputChannelStep / 2;
+      const outputOriginY = policyInput.centerY - (BOARD_SIZE - 1) * filterSpacing / 2;
+      const outputOriginZ = policyInput.centerZ - (BOARD_SIZE - 1) * filterSpacing / 2;
+      policyOutputStats = featureOutputRenderer.addValueCubes(
+        policyValues, BOARD_SIZE, BOARD_SIZE, 2,
+        [outputOriginX, outputOriginY, outputOriginZ],
+        COLORS.output,
+        {
+          spacing: filterSpacing,
+          cellSize: filterCubeSize / 0.9,
+          channelGap: filterSpacing - filterCubeSize,
+          colorMax: policyColorMax,
+        },
+      );
+      addAnnotationLabel(
+        'Policy Conv₁ output · 24×24×2',
+        [policyOutputStartX + outputChannelStep / 2, 5, policyInput.centerZ],
+        24, '#ffffff', 90,
+      );
+      addXArrow(
+        getAnnotationGroup(), policyBankRight + 0.08,
+        policyOutputStartX - filterCubeSize / 2,
+        policyInput.centerY, policyInput.centerZ,
+        null, 0.58, 'policy-conv1-to-policy-output',
+      );
+    }
+
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
     const selectedResidualBlockIndex = residualRenderer.draw(rebuild, blockCount);
     cachedFilterWeights = weights;
@@ -483,8 +545,12 @@ export function createTensorRenderer({
       shape: 'Locations ' + locationInfo.kernelHeight + ' × ' + locationInfo.kernelWidth + ' × ' + locationInfo.channels +
         '; pegs ' + pegInfo.kernelHeight + ' × ' + pegInfo.kernelWidth + ' × ' + pegInfo.channels +
         '; links ' + linkInfo.kernelHeight + ' × ' + linkInfo.kernelWidth + ' × ' + linkInfo.channels,
-      range: 'Trained signed weights; policy Conv1 has two 1×1×48 filters and no bias.',
-      count: locationInfo.count + ' location filters + ' + pegInfo.count + ' peg filters + ' + linkInfo.count + ' link filters + ' + policyInfo.count + ' policy filters',
+      range: 'Trained signed weights; policy Conv1 has two 1×1×48 filters and no bias.' +
+        (policyOutputStats ? ' Policy Conv1 output ' + policyOutputStats.min.toFixed(4) +
+          ' … ' + policyOutputStats.max.toFixed(4) + ' (colour scale 0 … ' +
+          policyOutputStats.colorMax.toFixed(4) + ').' : ''),
+      count: locationInfo.count + ' location filters + ' + pegInfo.count + ' peg filters + ' + linkInfo.count + ' link filters + ' + policyInfo.count + ' policy filters' +
+        (policyOutputStats ? ' · ' + policyOutputStats.count.toLocaleString() + ' policy output cells' : ''),
       residualCount: 2 * FILTER_COUNT,
       residualBlockCount: blockCount,
       selectedResidualBlockIndex,
