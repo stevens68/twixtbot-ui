@@ -1,6 +1,6 @@
-import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261031-tanh-colour-v2';
+import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261101-policy-positive-colour-v1';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-input-tanh-v1';
-import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-location-glass-v3';
+import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261101-1x1-glass-alignment-v1';
 import { createResidualRenderer } from './residual-renderer.js?v=20261031-collapse-residuals-v1';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
@@ -536,6 +536,7 @@ export function createTensorRenderer({
           cellSize: filterCubeSize / 0.9,
           channelGap: filterSpacing - filterCubeSize,
           colorMax: policyColorMax,
+          positiveOnly: true,
         },
       );
       if (!policyOutputAnnotationsBuilt) {
