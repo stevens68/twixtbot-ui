@@ -564,7 +564,7 @@ async function loadGamePosition(ply) {
       residualBlock0OutputError = error.message;
       console.error('[NN visualizer] Could not calculate residual block 0 output:', error);
     } finally {
-      nnPerf.record('residualOutput', {
+      nnPerf.record('positionResidualValidation', {
         ply,
         cacheHit: false,
         fetchMs: 0,
