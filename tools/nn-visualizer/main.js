@@ -603,6 +603,7 @@ async function loadGamePosition(ply) {
     pegConvMetadata: demoModel.pegConvMetadata,
     locationConvMetadata: demoModel.locationConvMetadata,
     primaryBn: demoModel.primaryBn,
+    policyBn: demoModel.policyBn,
     residualBlock0Output: null,
     residualBlockLastOutput: null,
     residualBlockCount: demoModel.residualBlockCount,
