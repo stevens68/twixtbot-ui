@@ -86,6 +86,11 @@
           <input id="toggle-big-labels" type="checkbox" checked>
           Show large block labels
         </label>
+        <div class="colour-scale-control">
+          <label for="tanh-a">Colour scaling · a = <output id="tanh-a-value">0.00</output></label>
+          <input id="tanh-a" type="range" min="0" max="2" step="0.05" value="0">
+          <p class="control-help">0 = linear (tanh off); higher values compress large magnitudes.</p>
+        </div>
       </section>
       <div id="camera-coordinates" class="camera-coordinates" aria-live="polite">Camera  x —  y —  z —
 Target  x —  y —  z —</div>
@@ -129,6 +134,6 @@ Target  x —  y —  z —</div>
       </details>
     </aside>
   </main>
-  <script type="module" src="./main.js?v=20261031-performance-v1"></script>
+  <script type="module" src="./main.js?v=20261031-tanh-colour-v1"></script>
 </body>
 </html>
