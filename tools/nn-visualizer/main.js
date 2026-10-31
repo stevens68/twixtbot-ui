@@ -329,6 +329,20 @@ const {
     addAnnotationLabel, addAnnotationFormulaLabel,
   });
 
+// Render only when the scene or camera changes. OrbitControls emits "change"
+// during damping as well, so scheduling another frame from that event keeps
+// inertia smooth without a permanent requestAnimationFrame loop.
+let renderFramePending = false;
+function requestRender() {
+  if (renderFramePending) return;
+  renderFramePending = true;
+  requestAnimationFrame(() => {
+    renderFramePending = false;
+    controls.update();
+    renderer.render(scene, camera);
+  });
+}
+
 function renderStep() {
   const renderStarted = performance.now();
   staticSceneGroup.visible = true;
@@ -355,6 +369,8 @@ function renderStep() {
 
   loading.style.display = 'none';
 
+  requestRender();
+
   if (nnPerf.enabled) {
   const objects = countSceneObjects(sceneGroup);
   nnPerf.record('renderStep', {
@@ -370,8 +386,7 @@ function renderStep() {
     persistentFilterGeometry: countSceneObjects(filterStaticGroup),
   });
 
-  // Read renderer.info after the next normal animation-frame render, not from
-  // the previous frame (renderStep itself only constructs the new scene).
+  // Read renderer.info after the requested on-demand frame.
   requestAnimationFrame(() => {
     nnPerf.record('renderFrameStats', {
       step: activeStep,
@@ -453,6 +468,7 @@ function deferResidualFilterRestore() {
   residualRestoreTimer = setTimeout(() => {
     setResidualFiltersVisible(true);
     residualRestoreTimer = null;
+    requestRender();
   }, 180);
 }
 controls.addEventListener('start', () => {
@@ -461,8 +477,12 @@ controls.addEventListener('start', () => {
     residualRestoreTimer = null;
   }
   setResidualFiltersVisible(false);
+  requestRender();
 });
-controls.addEventListener('change', updateCameraCoordinates);
+controls.addEventListener('change', () => {
+  updateCameraCoordinates();
+  requestRender();
+});
 // OrbitControls emits "change" throughout damping, not just while the user is
 // dragging. Do not restart the visibility timer on every such frame: that can
 // postpone the residual banks for seconds after motion is no longer noticeable.
@@ -473,6 +493,7 @@ function setCameraPreset(position, target) {
   controls.target.set(target[0], target[1], target[2]);
   controls.update();
   updateCameraCoordinates();
+  requestRender();
 }
 
 function resetCamera() {
@@ -480,6 +501,7 @@ function resetCamera() {
   controls.target.copy(INITIAL_CAMERA_TARGET);
   controls.update();
   updateCameraCoordinates();
+  requestRender();
 }
 
 function resizeRenderer() {
@@ -491,6 +513,7 @@ function resizeRenderer() {
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
+  requestRender();
 }
 
 createBoardInteraction({
@@ -766,35 +789,9 @@ bigLabelsToggle.addEventListener('change', () => {
   setBigLabelsVisible(bigLabelsToggle.checked);
   setStaticBigLabelsVisible(bigLabelsToggle.checked);
   setAnnotationBigLabelsVisible(bigLabelsToggle.checked);
+  requestRender();
 });
 window.addEventListener('resize', resizeRenderer);
-
-function animate() {
-  requestAnimationFrame(animate);
-  const frameStarted = performance.now();
-  const controlsStarted = frameStarted;
-  controls.update();
-  const controlsMs = performance.now() - controlsStarted;
-  const renderStarted = performance.now();
-  renderer.render(scene, camera);
-  const renderMs = performance.now() - renderStarted;
-  const frameMs = performance.now() - frameStarted;
-
-  // Keep the normal animation loop lightweight; only retain unusually slow
-  // frames so the diagnostic does not itself create significant overhead.
-  if (nnPerf.enabled && (frameMs >= 50 || controlsMs >= 20 || renderMs >= 20)) {
-    nnPerf.record('slowAnimationFrame', {
-      frameMs: Number(frameMs.toFixed(2)),
-      controlsMs: Number(controlsMs.toFixed(2)),
-      renderMs: Number(renderMs.toFixed(2)),
-      drawCalls: renderer.info.render.calls,
-      triangles: renderer.info.render.triangles,
-      geometries: renderer.info.memory.geometries,
-      textures: renderer.info.memory.textures,
-      dampingEnabled: controls.enableDamping,
-    });
-  }
-}
 
 async function initializeVisualizer() {
   // Load the trained peg, link, and location convolution weights before rendering.
@@ -803,7 +800,7 @@ async function initializeVisualizer() {
   updateCameraCoordinates();
   renderStep();
   updateGameNavigation();
-  animate();
+  requestRender();
   // Start with the demo game fully played out at the end of its trajectory.
   await loadTrajectoryFromEditor(true);
   if (gameLoaded) {
