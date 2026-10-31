@@ -28,12 +28,13 @@ export function createTensorRenderer({
   const minimumCubeScale = 0.08;
 
   function heatMapColor(value, minValue, maxValue) {
-    const range = maxValue - minValue;
-    const normalized = range > 1e-8
-      ? Math.max(0, Math.min(1, (value - minValue) / range))
-      : 0.5;
-    // Blue → cyan → green → yellow → red across the full value range.
-    return new THREE.Color().setHSL((2 / 3) * (1 - normalized), 1, 0.5);
+    // Green is the neutral zero point for every tensor. Negative values move
+    // toward blue; positive values move toward yellow/red. Using a symmetric
+    // magnitude scale also keeps zero green when the supplied range is 0…max.
+    const magnitude = Math.max(Math.abs(minValue), Math.abs(maxValue), 1e-8);
+    const normalized = Math.max(-1, Math.min(1, Number(value) / magnitude));
+    const hue = 1 / 3 - normalized / 3;
+    return new THREE.Color().setHSL(hue, 1, 0.5);
   }
 
   function locationHeatMapColor(value) {
