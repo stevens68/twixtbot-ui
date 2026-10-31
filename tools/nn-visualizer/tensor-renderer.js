@@ -431,9 +431,27 @@ export function createTensorRenderer({
     const startX = 12 + inputTensorSpecs[1].x - ((channels - 1) * filterSpacing) / 2;
     const startY = bankHeight / 2 - filterHeight;
     const startZ = -5 + kernelWidth * inputSpacing;
+    // Open glass-style wireframe around each complete first-layer filter bank.
+    function addFirstLayerBankGlass(name, x, y, z, sizeX, sizeY, sizeZ) {
+      const geometry = new THREE.BoxGeometry(sizeX * 1.08, sizeY * 1.08, sizeZ * 1.08);
+      const edges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry),
+        new THREE.LineBasicMaterial({ color: 0x9eabb9, transparent: true, opacity: 0.48 }),
+      );
+      geometry.dispose();
+      edges.position.set(x + sizeX / 2, y + sizeY / 2, z + sizeZ / 2);
+      edges.name = name + '-convolution-glass-outline';
+      filterStaticGroup.add(edges);
+    }
+
     const metadata = getData().linkConvMetadata;
     // Missing checkpoint metadata must not invent bias cubes.
     const showBias = Boolean(metadata?.has_bias);
+    addFirstLayerBankGlass(
+      'links', startX, startY - (rows - 1) * (filterHeight + gapY),
+      startZ, channels * filterSpacing,
+      bankHeight, columns * (filterWidth + gapZ) - gapZ + filterWidth,
+    );
 
     // Peg filters use their own 5×5×2 geometry in an 8-column × 6-row bank.
     const pegWeights = weights.pegs;
@@ -450,6 +468,13 @@ export function createTensorRenderer({
     const pegStartY = rows * (pegFilterHeight + pegGapY) / 2 - pegFilterHeight;
     const pegStartZ = startZ - 12;
     const pegShowBias = Boolean(pegMetadata?.has_bias);
+    const pegRows = Math.ceil(pegCount / columns);
+    const pegBankHeight = pegRows * pegFilterHeight + (pegRows - 1) * pegGapY;
+    addFirstLayerBankGlass(
+      'pegs', pegStartX, pegStartY - (pegRows - 1) * (pegFilterHeight + pegGapY),
+      pegStartZ, pegChannels * filterSpacing,
+      pegBankHeight, columns * (pegFilterWidth + pegGapZ) - pegGapZ + pegFilterWidth,
+    );
     for (let filter = 0; filter < pegCount; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
@@ -482,6 +507,13 @@ export function createTensorRenderer({
     const locationStartY = rows * (locationSlotHeight + locationGapY) / 2 - locationSlotHeight;
     const locationStartZ = startZ + 10;
     const locationShowBias = Boolean(locationMetadata?.has_bias);
+    const locationRows = Math.ceil(locationCount / columns);
+    const locationBankHeight = locationRows * locationSlotHeight + (locationRows - 1) * locationGapY;
+    addFirstLayerBankGlass(
+      'locations', locationStartX, locationStartY - (locationRows - 1) * (locationSlotHeight + locationGapY),
+      locationStartZ, locationChannels * filterSpacing,
+      locationBankHeight, columns * (locationSlotWidth + locationGapZ) - locationGapZ + locationSlotWidth,
+    );
     for (let filter = 0; filter < locationCount; filter += 1) {
       const column = filter % columns;
       const row = Math.floor(filter / columns);
@@ -630,7 +662,7 @@ function residualLayout(blockIndex) {
   const outputMaxX =
     20 + (channels - 1) * outputChannelStep + outputCubeSize / 2;
   const firstResidualGapX = 5.0;
-  const convGapZ = 2.0 * 3;
+  const convGapZ = 2.0 * 3 * 3;
   const outputGapX = 1.25 * 1.15 * 3;
   const blockPitchX =
     bankSizeX + outputGapX + outputCubeSize / 2 +
@@ -872,10 +904,12 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         const arrowY = layout.outputCenterY + layout.outputSizeY / 2 + 1.2;
         const arrowStartX = layout.outputCenterX + layout.outputSizeX / 2 + 0.12;
         const arrowEndX = nextLayout.outputCenterX - nextLayout.outputSizeX / 2 - 0.12;
+        const fullArrowLength = Math.max(0.1, arrowEndX - arrowStartX);
+        const shortenedArrowLength = fullArrowLength * 0.8;
         const arrow = new THREE.ArrowHelper(
           new THREE.Vector3(1, 0, 0),
-          new THREE.Vector3(arrowStartX, arrowY, layout.outputCenterZ),
-          Math.max(0.1, arrowEndX - arrowStartX),
+          new THREE.Vector3(arrowStartX + (fullArrowLength - shortenedArrowLength) / 2, arrowY, layout.outputCenterZ),
+          shortenedArrowLength,
           0xaeb7c2,
           0.48,
           0.26,
