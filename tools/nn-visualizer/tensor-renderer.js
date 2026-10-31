@@ -545,7 +545,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block is represented by two full-size wireframe volumes, one per convolution; select either volume to inspect both 48-filter 5×5×48 convolution banks.',
+      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block contains two convolution banks aligned along X, followed by a glass 24×24×48 output tensor; select either convolution volume to inspect both 48-filter 5×5×48 banks.',
       shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
         '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
         '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
@@ -628,7 +628,7 @@ function residualLayout(blockIndex) {
   const outputGapX = 1.25;
   const blockStartX =
     outputMaxX + firstResidualGapX + filterCubeSize / 2 +
-    blockIndex * (2 * bankSizeX + convGapX + outputSizeX + outputGapX);
+    blockIndex * (2 * bankSizeX + convGapX + outputGapX +\n      outputCubeSize / 2 + outputSizeX + 1.25 + filterCubeSize / 2);
   const conv2StartX = blockStartX + bankSizeX + convGapX;
   const outputStartX =
     conv2StartX + bankSizeX + outputGapX + outputCubeSize / 2;
