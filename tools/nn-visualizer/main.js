@@ -7,9 +7,9 @@ import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-mod
 import { createBoardInteraction } from './board-interaction.js?v=20261031-board-interaction-v1';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
 import { createLabelHelpers } from './labels.js?v=20261031-formula-labels-v1';
-import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v1';
+import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-axis-alignment-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-axis-alignment-v2';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
