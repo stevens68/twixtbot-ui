@@ -511,8 +511,8 @@ export function createTensorRenderer({
         metadata?.bias || null,
       );
     }
-    // Residual blocks start as glass volumes. Full trained filter weights
-    // are fetched and rendered only after the user selects a block.
+    // Residual blocks retain their glass enclosures. The selected block's
+    // trained weights are rendered inside the corresponding glass volumes.
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
     if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
       if (residualPlaceholderGroup) {
@@ -546,7 +546,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained first-layer kernels plus an interactive residual stack. Each residual block contains two convolution banks side by side along Z, followed by a glass 24×24×48 output tensor; select either convolution volume to inspect both 48-filter 5×5×48 banks.',
+      description: 'Trained first-layer kernels plus an interactive residual stack. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. The output includes batch normalization, absolute-value activations, and the skip connection.',
       shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
         '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
         '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
@@ -647,10 +647,57 @@ function residualLayout(blockIndex) {
     bankStartXs: [blockStartX, blockStartX],
     bankStartZs: [bankPairStartZ, bankPairStartZ + bankSizeZ + convGapZ],
     bankPairSizeZ,
-    outputStartX, outputCenterX,
+    outputStartX, outputCenterX, outputChannelStep,
     outputSizeX, outputSizeY, outputSizeZ,
     outputCenterY, outputCenterZ, outputCubeSize,
   };
+}
+
+function addResidualOutputValues(group, layout, blockIndex, tensor) {
+  const count = FILTER_COUNT * BOARD_SIZE * BOARD_SIZE;
+  const mesh = new THREE.InstancedMesh(
+    cubeGeometry,
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff, roughness: 0.55, transparent: true, opacity: 0.96,
+    }),
+    count,
+  );
+  mesh.name = 'residual-block-' + blockIndex + '-actual-output-values';
+  const values = [];
+  for (let channel = 0; channel < FILTER_COUNT; channel += 1) {
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        values.push(Number(tensor[row][col][channel]));
+      }
+    }
+  }
+  const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
+  const transform = new THREE.Object3D();
+  let instance = 0;
+  for (let channel = 0; channel < FILTER_COUNT; channel += 1) {
+    for (let row = 0; row < BOARD_SIZE; row += 1) {
+      for (let col = 0; col < BOARD_SIZE; col += 1) {
+        const value = Number(tensor[row][col][channel]);
+        transform.position.set(
+          layout.outputStartX + channel * layout.outputChannelStep,
+          layout.outputCenterY + (BOARD_SIZE - 1 - row) * filterSpacing -
+            (BOARD_SIZE - 1) * filterSpacing / 2,
+          layout.outputCenterZ + col * filterSpacing -
+            (BOARD_SIZE - 1) * filterSpacing / 2,
+        );
+        transform.scale.setScalar(layout.outputCubeSize * 0.72);
+        transform.updateMatrix();
+        mesh.setMatrixAt(instance, transform.matrix);
+        mesh.setColorAt(instance, heatMapColor(value, 0, maxAbs));
+        instance += 1;
+      }
+    }
+  }
+  mesh.count = instance;
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  group.add(mesh);
+  mesh.userData.valueRange = { min: Math.min(...values), max: maxAbs };
 }
 
 function addResidualOutputGlass(group, layout, blockIndex) {
@@ -783,7 +830,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
     for (let index = 0; index < blockCount; index += 1) {
       const layout = residualLayout(index);
-      if (index !== selectedResidualBlockIndex) {
+      {
         for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
           const position = new THREE.Vector3(
             layout.bankStartXs[bankIndex] + (layout.bankSizeX - filterCubeSize) / 2,
@@ -793,7 +840,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
             layout.bankStartZs[bankIndex] + (layout.bankSizeZ - filterCubeSize) / 2,
           );
           const glassGeometry = new THREE.BoxGeometry(
-            layout.bankSizeX, layout.bankSizeY, layout.bankSizeZ,
+            layout.bankSizeX * 1.08, layout.bankSizeY * 1.08, layout.bankSizeZ * 1.08,
           );
           const glass = new THREE.Mesh(
             glassGeometry,
@@ -833,9 +880,11 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         }
       }
 
-      // Every block, including the selected one, has a glass output tensor
-      // between it and the next residual block.
+      // Keep the output enclosure visible and show actual values for block 0.
       addResidualOutputGlass(residualPlaceholderGroup, layout, index);
+      if (index === 0 && getData().residualBlock0Output) {
+        addResidualOutputValues(residualPlaceholderGroup, layout, index, getData().residualBlock0Output);
+      }
 
       addLabel(
         'residual ' + index,
