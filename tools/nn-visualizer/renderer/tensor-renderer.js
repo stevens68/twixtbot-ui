@@ -61,6 +61,29 @@ export function createTensorRenderer({
     heatMapColor,
   });
 
+  function addXArrow(group, startX, endX, y, z, label = null, labelOffset = 0.58, name = 'tensor-flow-arrow') {
+    const fullLength = endX - startX;
+    if (fullLength <= 0.15) return;
+    const length = fullLength * 0.78;
+    const arrow = new THREE.ArrowHelper(
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(startX + (fullLength - length) / 2, y, z),
+      length,
+      0xaeb7c2,
+      0.42,
+      0.22,
+    );
+    arrow.name = name;
+    group.add(arrow);
+    if (label) {
+      addFormulaLabel(label, [
+        (startX + endX) / 2,
+        y + labelOffset,
+        z,
+      ], 25, '#f2f4f8', 92);
+    }
+  }
+
   let cachedFilterWeights = null;
 
   // Dispose the current filter scene before rebuilding it with new weights.
@@ -149,6 +172,62 @@ export function createTensorRenderer({
     // alongside the game encoding, rather than switching between separate tabs.
     const filterInfo = drawFilters();
     const featureInfo = featureOutputRenderer.drawOutput();
+
+    // Keep every connection parallel to X and centered on the corresponding
+    // tensor/filter-bank pair. The three first-layer banks converge on one
+    // feature tensor; their sum is represented by the shared target.
+    const arrowGroup = getSceneGroup();
+    const inputY = -4 + (BOARD_SIZE - 1) * inputSpacing / 2;
+    const featureY = -2.5 + (BOARD_SIZE - 1) * filterSpacing / 2;
+    const featureZ = -((FILTER_COUNT - 1) * 0.105) / 2 +
+      (BOARD_SIZE - 1) * filterSpacing / 2;
+    const featureLeftX = 20 - filterCubeSize / 2;
+    const firstLayerBanks = [
+      {
+        key: 'pegs', tensorZ: -13, tensorChannels: 2,
+        startX, startY: pegStartY, startZ: pegStartZ,
+        rows: pegRows, slotHeight: pegFilterHeight, gapY: pegGapY,
+        bankHeight: pegBankHeight, bankWidth: columns * pegFilterWidth + (columns - 1) * pegGapZ,
+        channels: pegChannels,
+      },
+      {
+        key: 'links', tensorZ: -3.5, tensorChannels: 8,
+        startX, startY, startZ, rows, slotHeight: filterHeight, gapY,
+        bankHeight, bankWidth: columns * filterWidth + (columns - 1) * gapZ,
+        channels,
+      },
+      {
+        key: 'locations', tensorZ: 6, tensorChannels: 2,
+        startX, startY: locationStartY, startZ: locationStartZ,
+        rows: locationRows, slotHeight: pegFilterHeight, gapY: locationGapY,
+        bankHeight: locationBankHeight,
+        bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 0.1,
+        channels: locationChannels,
+      },
+    ];
+    firstLayerBanks.forEach((bank) => {
+      const tensorLeft = -1.8 - ((bank.tensorChannels - 1) * inputDepthStep) / 2 - inputCellSize / 2;
+      const tensorRight = -1.8 + ((bank.tensorChannels - 1) * inputDepthStep) / 2 + inputCellSize / 2;
+      const bankLeft = bank.startX - filterCubeSize / 2;
+      const bankRight = bank.startX + (bank.channels - 1) * filterSpacing + filterCubeSize / 2;
+      const bankBottomY = bank.startY - (bank.rows - 1) * (bank.slotHeight + bank.gapY);
+      const bankCenterY = bankBottomY + bank.bankHeight / 2;
+      const bankCenterZ = bank.startZ + bank.bankWidth / 2;
+      const tensorCenterZ = bank.tensorZ + (BOARD_SIZE - 1) * inputSpacing / 2;
+      const arrowY = (inputY + bankCenterY) / 2;
+      const arrowZ = (tensorCenterZ + bankCenterZ) / 2;
+      addXArrow(
+        arrowGroup, tensorRight, bankLeft, arrowY, arrowZ, null, 0.58,
+        bank.key + '-input-to-filter-bank',
+      );
+      addXArrow(
+        arrowGroup, bankRight, featureLeftX,
+        (bankCenterY + featureY) / 2,
+        (bankCenterZ + featureZ) / 2,
+        'y = |BN(Conv(x))|', 0.62,
+        bank.key + '-filter-bank-to-feature-output',
+      );
+    });
 
     return {
       title: 'First-layer network view',
