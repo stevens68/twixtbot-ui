@@ -17,6 +17,7 @@ export function createResidualRenderer({
   let residualGeometryDirty = false;
   let residualFiltersVisible = true;
   let lastRenderedOutputTensor = null;
+  let lastRenderedLastOutputTensor = null;
   function disposeResidualDetail(blockIndex) {
     const group = residualFilterGroups.get(blockIndex);
     if (!group) return;
@@ -307,6 +308,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     residualPlaceholderDirty = false;
     residualLabelsBuilt = false;
     lastRenderedOutputTensor = null;
+    lastRenderedLastOutputTensor = null;
     residualHitTargets = [];
     residualWeightsByIndex.clear();
   }
@@ -319,7 +321,10 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       lastRenderedOutputTensor = outputTensor;
       updateResidualOutput(0, outputTensor);
     }
-    updateResidualOutput(blockCount - 1, lastOutputTensor);
+    if (lastOutputTensor !== lastRenderedLastOutputTensor) {
+      lastRenderedLastOutputTensor = lastOutputTensor;
+      updateResidualOutput(blockCount - 1, lastOutputTensor);
+    }
     if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
       if (residualPlaceholderGroup) {
         filterStaticGroup.remove(residualPlaceholderGroup);
