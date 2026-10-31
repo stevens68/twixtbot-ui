@@ -1,3 +1,4 @@
+import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261031-filter-bank-v1';
 import { createResidualRenderer } from './residual-renderer.js?v=20261031-residual-renderer-v1';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
@@ -39,6 +40,10 @@ export function createTensorRenderer({
     const normalized = Math.max(0, Math.min(1, Number(value)));
     return new THREE.Color().setHSL((1 / 3) * (1 - normalized), 1, 0.5);
   }
+  const filterBankRenderer = createFilterBankRenderer({
+    THREE, cubeGeometry, filterStaticGroup, flattenTensor, addLabel,
+    heatMapColor, filterSpacing, filterCubeSize, inputSpacing, inputCellSize,
+  });
   const residualRenderer = createResidualRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, cubeGeometry, filterSpacing,
     filterCubeSize, filterStaticGroup, flattenTensor, addLabel, getData,
@@ -244,91 +249,6 @@ export function createTensorRenderer({
     residualRenderer.reset();
   }
 
-  function drawFilterKernel(
-    filterIndex, originX, originY, originZ, weights,
-    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null,
-  ) {
-    // Reduce convolution-filter dimensions and internal gaps by a further 20%.
-    // Keep these dimensions consistent across peg/link filters.
-    const spacing = filterSpacing;
-    const cubeSize = filterCubeSize;
-    const channelDepth = filterSpacing;
-    if (buildGeometry) {
-      // Weights are stored [row][column][channel], so preserve that layout
-      // with channels along X, rows along Y, and columns along Z.
-      const values = flattenTensor(weights[filterIndex]);
-      const maxAbs = Math.max(1e-8, ...values.map(Math.abs));
-      const mesh = new THREE.InstancedMesh(
-        cubeGeometry,
-        new THREE.MeshStandardMaterial({
-          color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.9,
-        }),
-        values.length,
-      );
-      mesh.name = 'filter-' + filterIndex + '-' + label;
-      const transform = new THREE.Object3D();
-      let index = 0;
-      for (let row = 0; row < kernelHeight; row += 1) {
-        for (let col = 0; col < kernelWidth; col += 1) {
-          for (let channel = 0; channel < channels; channel += 1) {
-            const value = Number(weights[filterIndex][row][col][channel]);
-            transform.position.set(
-              originX + channel * channelDepth,
-              originY + (kernelHeight - 1 - row) * spacing,
-              originZ + col * spacing,
-            );
-            transform.scale.set(cubeSize, cubeSize, cubeSize);
-            transform.updateMatrix();
-            mesh.setMatrixAt(index, transform.matrix);
-            mesh.setColorAt(index, heatMapColor(value, -maxAbs, maxAbs));
-            index += 1;
-          }
-        }
-      }
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      filterStaticGroup.add(mesh);
-
-      if (showBias) {
-        const biasValue = Number(biasValues?.[filterIndex] ?? 0);
-        const biasMaxAbs = Math.max(
-          1e-8,
-          ...(biasValues || []).map((value) => Math.abs(Number(value) || 0)),
-        );
-        const biasMagnitudeScale = 0.25 + 0.75 * Math.abs(biasValue) / biasMaxAbs;
-        const biasCube = new THREE.Mesh(
-          cubeGeometry,
-          new THREE.MeshStandardMaterial({
-            color: heatMapColor(biasValue, -biasMaxAbs, biasMaxAbs),
-          }),
-        );
-        // Bias sits beside the channel stack, with twice the normal gap.
-        const doubleGap = 2 * (inputSpacing - inputCellSize) * filterScale;
-        biasCube.position.set(
-          originX,
-          originY + ((kernelHeight - 1) * spacing) / 2,
-          originZ + kernelWidth * spacing + doubleGap,
-        );
-        // Color shows sign; side length also reflects absolute magnitude.
-        biasCube.scale.setScalar(cubeSize * biasMagnitudeScale);
-        biasCube.name = 'filter-' + filterIndex + '-bias';
-        biasCube.userData.biasValue = biasValue;
-        filterStaticGroup.add(biasCube);
-      }
-    }
-
-    // A simple numeric filter label, centered above the kernel face.
-    addLabel(
-      String(filterIndex + 1),
-      [
-        originX + ((channels - 1) * channelDepth) / 2,
-        originY + kernelHeight * spacing + 0.096,
-        originZ + ((kernelWidth - 1) * spacing) / 2,
-      ],
-      10,
-    );
-  }
-
   function drawInputs() {
     const game = createSampleGame();
     drawSampleBoard();
@@ -409,13 +329,13 @@ export function createTensorRenderer({
   function drawFilters() {
     const weights = getData().weights;
     const rebuild = cachedFilterWeights !== weights;
-    if (rebuild) {
-      clearFilterGeometry();
-    }
+    if (rebuild) clearFilterGeometry();
 
-    // Use the exact dimensions of the trained links convolution. The bank
-    // stays 8 columns wide along Z and grows downward along Y as needed.
+    // Shared bank geometry; the individual banks retain their model-specific
+    // spacing and placement while using one generic rendering implementation.
     const columns = 8;
+    const gapY = 0.3;
+    const gapZ = 0.3;
     const filterCount = weights.links.length;
     const kernelHeight = weights.links[0].length;
     const kernelWidth = weights.links[0][0].length;
@@ -423,42 +343,25 @@ export function createTensorRenderer({
     const rows = Math.ceil(filterCount / columns);
     const filterWidth = kernelWidth * filterSpacing;
     const filterHeight = kernelHeight * filterSpacing;
-    const gapZ = 0.3;
-    const gapY = 0.3;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
-    // Center the link filter's channel stack exactly on the links input's
-    // X center (-1.8), using the same reduced channel spacing as the kernels.
     const startX = 12 + inputTensorSpecs[1].x - ((channels - 1) * filterSpacing) / 2;
     const startY = bankHeight / 2 - filterHeight;
     const startZ = -5 + kernelWidth * inputSpacing;
-    // Open glass-style wireframe around each complete first-layer filter bank.
-    function addFirstLayerBankGlass(name, x, y, z, sizeX, sizeY, sizeZ) {
-      const geometry = new THREE.BoxGeometry(sizeX * 1.08, sizeY * 1.08, sizeZ * 1.08);
-      const edges = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry),
-        new THREE.LineBasicMaterial({ color: 0x9eabb9, transparent: true, opacity: 0.48 }),
-      );
-      geometry.dispose();
-      edges.position.set(x + sizeX / 2, y + sizeY / 2, z + sizeZ / 2);
-      edges.name = name + '-convolution-glass-outline';
-      filterStaticGroup.add(edges);
-    }
 
-    const metadata = getData().linkConvMetadata;
-    // Missing checkpoint metadata must not invent bias cubes.
-    const showBias = Boolean(metadata?.has_bias);
-    if (rebuild) {
-      addFirstLayerBankGlass(
-        'links', startX, startY - (rows - 1) * (filterHeight + gapY),
-        startZ, channels * filterSpacing,
-        bankHeight, columns * filterWidth + (columns - 1) * gapZ,
-      );
-    }
+    const linkMetadata = getData().linkConvMetadata;
+    const linkInfo = filterBankRenderer.drawBank({
+      name: 'links', weights: weights.links,
+      startX, startY, startZ, columns, gapY, gapZ,
+      showBias: Boolean(linkMetadata?.has_bias),
+      biasValues: linkMetadata?.bias || null,
+      buildGeometry: rebuild,
+      slotWidth: filterWidth, slotHeight: filterHeight,
+      bankWidth: columns * filterWidth + (columns - 1) * gapZ,
+      bankHeight,
+    });
 
-    // Peg filters use their own 5×5×2 geometry in an 8-column × 6-row bank.
+    // Peg kernels use a wider row/column separation than link kernels.
     const pegWeights = weights.pegs;
-    const pegMetadata = getData().pegConvMetadata;
-    const pegCount = pegWeights.length;
     const pegHeight = pegWeights[0].length;
     const pegWidth = pegWeights[0][0].length;
     const pegChannels = pegWeights[0][0][0].length;
@@ -466,107 +369,59 @@ export function createTensorRenderer({
     const pegGapZ = gapZ * 1.4;
     const pegFilterWidth = pegWidth * filterSpacing;
     const pegFilterHeight = pegHeight * filterSpacing;
-    const pegStartX = startX;
     const pegStartY = rows * (pegFilterHeight + pegGapY) / 2 - pegFilterHeight;
     const pegStartZ = startZ - 12;
-    const pegShowBias = Boolean(pegMetadata?.has_bias);
-    const pegRows = Math.ceil(pegCount / columns);
+    const pegRows = Math.ceil(pegWeights.length / columns);
     const pegBankHeight = pegRows * pegFilterHeight + (pegRows - 1) * pegGapY;
-    if (rebuild) {
-      addFirstLayerBankGlass(
-        'pegs', pegStartX, pegStartY - (pegRows - 1) * (pegFilterHeight + pegGapY),
-        pegStartZ, pegChannels * filterSpacing,
-        pegBankHeight, columns * pegFilterWidth + (columns - 1) * pegGapZ,
-      );
-    }
-    for (let filter = 0; filter < pegCount; filter += 1) {
-      const column = filter % columns;
-      const row = Math.floor(filter / columns);
-      drawFilterKernel(
-        filter,
-        pegStartX,
-        pegStartY - row * (pegFilterHeight + pegGapY),
-        pegStartZ + column * (pegFilterWidth + pegGapZ),
-        pegWeights,
-        pegHeight, pegWidth, pegChannels,
-        String(filter + 1),
-        pegShowBias,
-        rebuild,
-        pegMetadata?.bias || null,
-      );
-    }
+    const pegMetadata = getData().pegConvMetadata;
+    const pegInfo = filterBankRenderer.drawBank({
+      name: 'pegs', weights: pegWeights,
+      startX, startY: pegStartY, startZ: pegStartZ, columns,
+      gapY: pegGapY, gapZ: pegGapZ,
+      showBias: Boolean(pegMetadata?.has_bias),
+      biasValues: pegMetadata?.bias || null,
+      buildGeometry: rebuild,
+      slotWidth: pegFilterWidth, slotHeight: pegFilterHeight,
+      bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 1.4,
+      bankHeight: pegBankHeight,
+    });
 
-    // Location filters are 1×1×2 and have no bias in the trained model.
+    // Location kernels share the peg-sized slots but are tightly packed.
     const locationWeights = weights.locations;
-    const locationMetadata = getData().locationConvMetadata;
-    const locationCount = locationWeights.length;
     const locationHeight = locationWeights[0].length;
     const locationWidth = locationWeights[0][0].length;
     const locationChannels = locationWeights[0][0][0].length;
     const locationGapY = gapY * 0.1;
     const locationGapZ = gapZ * 0.1;
-    const locationSlotWidth = pegFilterWidth;
-    const locationSlotHeight = pegFilterHeight;
-    const locationStartX = startX;
-    const locationStartY = rows * (locationSlotHeight + locationGapY) / 2 - locationSlotHeight;
+    const locationStartY = rows * (pegFilterHeight + locationGapY) / 2 - pegFilterHeight;
     const locationStartZ = startZ + 10;
-    const locationShowBias = Boolean(locationMetadata?.has_bias);
-    const locationRows = Math.ceil(locationCount / columns);
-    const locationBankHeight = locationRows * locationSlotHeight + (locationRows - 1) * locationGapY;
-    if (rebuild) {
-      addFirstLayerBankGlass(
-        'locations', locationStartX, locationStartY - (locationRows - 1) * (locationSlotHeight + locationGapY),
-        locationStartZ, locationChannels * filterSpacing,
-        locationBankHeight, columns * locationSlotWidth + (columns - 1) * locationGapZ,
-      );
-    }
-    for (let filter = 0; filter < locationCount; filter += 1) {
-      const column = filter % columns;
-      const row = Math.floor(filter / columns);
-      drawFilterKernel(
-        filter,
-        locationStartX,
-        locationStartY - row * (locationSlotHeight + locationGapY),
-        locationStartZ + column * (locationSlotWidth + locationGapZ),
-        locationWeights,
-        locationHeight, locationWidth, locationChannels,
-        String(filter + 1),
-        locationShowBias,
-        rebuild,
-        locationMetadata?.bias || null,
-      );
-    }
+    const locationRows = Math.ceil(locationWeights.length / columns);
+    const locationBankHeight = locationRows * pegFilterHeight + (locationRows - 1) * locationGapY;
+    const locationMetadata = getData().locationConvMetadata;
+    const locationInfo = filterBankRenderer.drawBank({
+      name: 'locations', weights: locationWeights,
+      startX, startY: locationStartY, startZ: locationStartZ, columns,
+      gapY: locationGapY, gapZ: locationGapZ,
+      showBias: Boolean(locationMetadata?.has_bias),
+      biasValues: locationMetadata?.bias || null,
+      buildGeometry: rebuild,
+      slotWidth: pegFilterWidth, slotHeight: pegFilterHeight,
+      bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 0.1,
+      bankHeight: locationBankHeight,
+    });
 
-    for (let filter = 0; filter < filterCount; filter += 1) {
-      const column = filter % columns;
-      const row = Math.floor(filter / columns);
-      drawFilterKernel(
-        filter,
-        startX,
-        startY - row * (filterHeight + gapY),
-        startZ + column * (filterWidth + gapZ),
-        weights.links,
-        kernelHeight, kernelWidth, channels,
-        String(filter + 1),
-        showBias,
-        rebuild,
-        metadata?.bias || null,
-      );
-    }
-    // Keep the residual stack independent from first-layer filter rendering.
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
     const selectedResidualBlockIndex = residualRenderer.draw(rebuild, blockCount);
-
     cachedFilterWeights = weights;
 
     return {
       title: 'Trained convolution filters',
       description: 'Trained first-layer kernels plus an interactive residual stack. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. The output includes batch normalization, absolute-value activations, and the skip connection.',
-      shape: 'Locations ' + locationHeight + ' × ' + locationWidth + ' × ' + locationChannels +
-        '; pegs ' + pegHeight + ' × ' + pegWidth + ' × ' + pegChannels +
-        '; links ' + kernelHeight + ' × ' + kernelWidth + ' × ' + channels,
+      shape: 'Locations ' + locationInfo.kernelHeight + ' × ' + locationInfo.kernelWidth + ' × ' + locationInfo.channels +
+        '; pegs ' + pegInfo.kernelHeight + ' × ' + pegInfo.kernelWidth + ' × ' + pegInfo.channels +
+        '; links ' + linkInfo.kernelHeight + ' × ' + linkInfo.kernelWidth + ' × ' + linkInfo.channels,
       range: 'Trained signed weights; all three convolutions have no bias in this checkpoint.',
-      count: locationCount + ' location filters + ' + pegCount + ' peg filters + ' + filterCount + ' link filters',
+      count: locationInfo.count + ' location filters + ' + pegInfo.count + ' peg filters + ' + linkInfo.count + ' link filters',
       residualCount: 2 * FILTER_COUNT,
       residualBlockCount: blockCount,
       selectedResidualBlockIndex,
