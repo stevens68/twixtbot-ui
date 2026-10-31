@@ -5,6 +5,8 @@ export function createResidualRenderer({
   heatMapColor,
 }) {
   let residualFilterGroup = null;
+  let residualOutputGroup = null;
+  let residualLabelsBuilt = false;
   let residualPlaceholderGroup = null;
   let residualPlaceholderDirty = false;
   let residualHitTargets = [];
@@ -190,7 +192,6 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
        addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,'block-1-conv2-to-merge','y = |BN(Conv(x))|');
        addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,'block-1-identity-skip','y = x');
        addResidualArrow(residualPlaceholderGroup,merge,outLeft,0,cz,'block-1-merged-output');
-       if(getData().residualBlock0Output)addResidualOutputValues(residualPlaceholderGroup,layout,index,getData().residualBlock0Output);
        const outRight=layout.outputCenterX+layout.outputSizeX/2,nextLeft=residualLayout(1).bankStartXs[0]-filterCubeSize/2;
        addResidualArrow(residualPlaceholderGroup,outRight,nextLeft,cy,cz,'block-1-output-to-block-2');
       }else if(index<blockCount-1){
@@ -210,7 +211,6 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     selectedResidualBlockIndex = blockIndex;
     selectedResidualWeights = weights;
     residualGeometryDirty = true;
-    residualPlaceholderDirty = true;
   }
 
   function pickResidualBlock(event, camera, domElement) {
@@ -233,10 +233,35 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
   }
 
 
+  function disposeResidualOutput() {
+    if (!residualOutputGroup) return;
+    filterStaticGroup.remove(residualOutputGroup);
+    residualOutputGroup.traverse((object) => {
+      if (object.geometry && object.geometry !== cubeGeometry) object.geometry.dispose();
+      if (object.material) {
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((material) => material?.dispose());
+      }
+    });
+    residualOutputGroup = null;
+  }
+
+  function updateResidualOutput(tensor) {
+    disposeResidualOutput();
+    if (!tensor) return;
+    residualOutputGroup = new THREE.Group();
+    residualOutputGroup.name = 'residual-block-1-output-values';
+    addResidualOutputValues(residualOutputGroup, residualLayout(0), 0, tensor);
+    filterStaticGroup.add(residualOutputGroup);
+  }
+
   function reset() {
     residualFilterGroup = null;
     residualPlaceholderGroup = null;
+    residualOutputGroup = null;
     residualPlaceholderDirty = false;
+    residualLabelsBuilt = false;
+    lastRenderedOutputTensor = null;
     residualHitTargets = [];
   }
 
@@ -244,7 +269,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     const outputTensor = getData().residualBlock0Output || null;
     if (outputTensor !== lastRenderedOutputTensor) {
       lastRenderedOutputTensor = outputTensor;
-      residualPlaceholderDirty = true;
+      updateResidualOutput(outputTensor);
     }
     if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
       if (residualPlaceholderGroup) {
@@ -259,6 +284,10 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       }
       createResidualBlockPlaceholders(blockCount);
       residualPlaceholderDirty = false;
+      if (!residualLabelsBuilt) {
+        drawResidualPlaceholderLabels(blockCount);
+        residualLabelsBuilt = true;
+      }
     }
     if (selectedResidualBlockIndex >= 0 && selectedResidualWeights) {
       if (rebuild || residualGeometryDirty) {
@@ -272,7 +301,6 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       disposeResidualDetail();
       residualGeometryDirty = false;
     }
-    drawResidualPlaceholderLabels(blockCount);
     return selectedResidualBlockIndex;
   }
 
