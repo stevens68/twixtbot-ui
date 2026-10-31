@@ -425,9 +425,16 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     return selectedResidualBlockIndex;
   }
 
+  function getLastOutputRightEdge() {
+    const lastIndex = Number(getData().residualBlockCount || 20) - 1;
+    const layout = residualLayout(lastIndex, true);
+    return layout.outputCenterX + layout.outputSizeX / 2;
+  }
+
   return {
     draw,
     reset,
+    getLastOutputRightEdge,
     setResidualFiltersVisible,
     setShowIntermediateResidualBlocks,
     getBlock20CameraOffset,

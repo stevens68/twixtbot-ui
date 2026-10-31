@@ -392,7 +392,10 @@ export function createTensorRenderer({
     const policyGapY = gapY * 0.1;
     const policyGapZ = gapZ * 0.1;
     const policySlot = filterSpacing;
-    const policyStartX = 12 + inputTensorSpecs[1].x - ((policyChannels - 1) * filterSpacing) / 2;
+    // Policy Conv1 consumes the final residual-stack output, not the first-layer
+    // feature tensor. Place its bank directly downstream of block 20's output.
+    const policyInputRight = residualRenderer.getLastOutputRightEdge();
+    const policyStartX = policyInputRight + 2.5 + filterCubeSize / 2;
     const policyStartY = -0.287;
     const policyStartZ = -0.2545 + 22 - (policyColumns - 1) * (policySlot + policyGapZ) / 2;
     const policyInfo = filterBankRenderer.drawBank({
@@ -435,6 +438,13 @@ export function createTensorRenderer({
           policyStartZ + (policyColumns * policySlot + (policyColumns - 1) * policyGapZ) / 2],
         24, '#ffffff', 90,
       );
+      addAnnotationFormulaLabel(
+        'p₁ = |BN(Conv₁(h₂₀))|',
+        [policyStartX + (policyChannels - 1) * filterSpacing / 2,
+          policyStartY - 0.85,
+          policyStartZ + (policyColumns * policySlot + (policyColumns - 1) * policyGapZ) / 2],
+        22, '#f2f4f8', 92,
+      );
     }
 
     const blockCount = Math.max(1, Number(getData().residualBlockCount) || 20);
@@ -443,7 +453,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained input convolutions, the two-filter policy Conv1 bank, and an interactive residual stack. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. The output includes batch normalization, absolute-value activations, and the skip connection.',
+      description: 'Trained input convolutions and an interactive residual stack feed the two-filter policy Conv1 bank placed after the final residual output. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
       shape: 'Locations ' + locationInfo.kernelHeight + ' × ' + locationInfo.kernelWidth + ' × ' + locationInfo.channels +
         '; pegs ' + pegInfo.kernelHeight + ' × ' + pegInfo.kernelWidth + ' × ' + pegInfo.channels +
         '; links ' + linkInfo.kernelHeight + ' × ' + linkInfo.kernelWidth + ' × ' + linkInfo.channels,
