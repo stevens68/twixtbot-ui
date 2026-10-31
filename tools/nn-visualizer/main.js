@@ -3,13 +3,13 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/exampl
 import { createTensor3, flattenTensor } from './tensor-utils.js';
 import { encodeGameInputs } from './game-encoding.js?v=20261031-game-encoding-v1';
 import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-client-v2';
-import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-policy-conv1-v1';
+import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-policy-conv1-v2';
 import { createBoardInteraction } from './board-interaction.js?v=20261031-grid-origin-v2';
-import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-policy-conv1-v1';
+import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-policy-conv1-v2';
 import { createLabelHelpers } from './labels.js?v=20261031-formula-upright-v6';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-policy-conv1-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-policy-conv1-v2';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -811,11 +811,12 @@ function setResidualBlock20CameraPreset() {
 }
 document.querySelector('#camera-residual-block-20').addEventListener('click', setResidualBlock20CameraPreset);
 function setPolicyConv1CameraPreset() {
-  // Policy Conv1 sits immediately to the right of the final residual output.
-  // Keep the same viewing direction as the block-20 preset, but center the
-  // camera on the two-filter policy bank and its annotations.
+  // Keep the policy camera aligned with block 20 when intermediate blocks
+  // are collapsed; both the output anchor and camera use the compact layout.
+  const offset = getBlock20CameraOffset();
   setCameraPreset(
-    [901.83, 27.43, -43.67], [900.09, -4.86, 21.7],
+    [901.83 - offset, 27.43, -43.67],
+    [900.09 - offset, -4.86, 21.7],
   );
   lastCameraPreset = 'policy-conv1';
 }
