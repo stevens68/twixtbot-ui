@@ -1,3 +1,6 @@
+/** Shared spacing between adjacent input tensor channel blades. */
+export const INPUT_CHANNEL_GAP = 0.28;
+
 /** Incremental rendering of the persistent input tensor layers. */
 export function createInputTensorRenderer({
   THREE, BOARD_SIZE, COLORS, cubeGeometry, getData,
@@ -6,8 +9,7 @@ export function createInputTensorRenderer({
 }) {
   const inputStaticGroup = getInputStaticGroup();
   const inputDynamicGroup = getInputDynamicGroup();
-  const inputChannelGap = 0.28;
-  const inputDepthStep = inputCellSize + inputChannelGap;
+  const inputDepthStep = inputCellSize + INPUT_CHANNEL_GAP;
   const inputOriginY = -4;
   let inputGeometryBuilt = false;
   const inputMeshes = new Map();
