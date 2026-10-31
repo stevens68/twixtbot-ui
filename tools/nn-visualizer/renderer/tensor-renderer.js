@@ -223,8 +223,8 @@ export function createTensorRenderer({
         (bank.channels - 1) * filterSpacing + filterCubeSize / 2;
       const bankBottomY = bank.startY -
         (bank.rows - 1) * (bank.slotHeight + bank.gapY);
-      const bankCenterY = bankBottomY + bank.bankHeight / 2;
-      const bankCenterZ = bank.startZ + bank.bankWidth / 2;
+      const bankCenterY = bank.startY - (bank.rows - 1) * (bank.slotHeight + bank.gapY) / 2 + (bank.slotHeight - filterSpacing) / 2;
+      const bankCenterZ = bank.startZ + (8 - 1) * (bank.slotWidth + bank.gapZ) / 2 + (bank.slotWidth - filterSpacing) / 2;
       const tensorCenterY = -4 + (BOARD_SIZE - 1) * inputSpacing / 2;
       const tensorCenterZ = bank.tensorZ + (BOARD_SIZE - 1) * inputSpacing / 2;
 
@@ -290,8 +290,8 @@ export function createTensorRenderer({
     const filterHeight = kernelHeight * filterSpacing;
     const bankHeight = rows * filterHeight + (rows - 1) * gapY;
     const startX = 12 + inputTensorSpecs[1].x - ((channels - 1) * filterSpacing) / 2;
-    const startY = bankHeight / 2 - filterHeight;
-    const startZ = -5 + kernelWidth * inputSpacing;
+    const startY = -0.287 + (rows - 1) * (filterHeight + gapY) / 2 - (kernelHeight - 1) * filterSpacing / 2;
+    const startZ = -0.2545 - (columns - 1) * (filterWidth + gapZ) / 2 - (filterWidth - filterSpacing) / 2;
 
     const linkMetadata = getData().linkConvMetadata;
     const linkInfo = filterBankRenderer.drawBank({
@@ -314,8 +314,8 @@ export function createTensorRenderer({
     const pegGapZ = gapZ * 1.4;
     const pegFilterWidth = pegWidth * filterSpacing;
     const pegFilterHeight = pegHeight * filterSpacing;
-    const pegStartY = rows * (pegFilterHeight + pegGapY) / 2 - pegFilterHeight;
-    const pegStartZ = startZ - 12;
+    const pegStartY = -0.287 + (pegRows - 1) * (pegFilterHeight + pegGapY) / 2 - (pegHeight - 1) * filterSpacing / 2;
+    const pegStartZ = startZ - 11;
     const pegRows = Math.ceil(pegWeights.length / columns);
     const pegBankHeight = pegRows * pegFilterHeight + (pegRows - 1) * pegGapY;
     const pegMetadata = getData().pegConvMetadata;
@@ -338,8 +338,8 @@ export function createTensorRenderer({
     const locationChannels = locationWeights[0][0][0].length;
     const locationGapY = gapY * 0.1;
     const locationGapZ = gapZ * 0.1;
-    const locationStartY = rows * (pegFilterHeight + locationGapY) / 2 - pegFilterHeight;
-    const locationStartZ = startZ + 10;
+    const locationStartY = -0.287 + (locationRows - 1) * (pegFilterHeight + locationGapY) / 2 - (locationHeight - 1) * filterSpacing / 2;
+    const locationStartZ = startZ + 11;
     const locationRows = Math.ceil(locationWeights.length / columns);
     const locationBankHeight = locationRows * pegFilterHeight + (locationRows - 1) * locationGapY;
     const locationMetadata = getData().locationConvMetadata;
@@ -374,14 +374,14 @@ export function createTensorRenderer({
         {
           key: 'pegs', tensorZ: -13, tensorChannels: 2,
           startX, startY: pegStartY, startZ: pegStartZ,
-          rows: pegRows, slotHeight: pegFilterHeight, gapY: pegGapY,
+          rows: pegRows, slotHeight: pegFilterHeight, gapY: pegGapY, slotWidth: pegFilterWidth, gapZ: pegGapZ,
           bankHeight: pegBankHeight,
           bankWidth: columns * pegFilterWidth + (columns - 1) * pegGapZ,
           channels: pegChannels,
         },
         {
           key: 'links', tensorZ: -3.5, tensorChannels: 8,
-          startX, startY, startZ, rows, slotHeight: filterHeight, gapY,
+          startX, startY, startZ, rows, slotHeight: filterHeight, gapY, slotWidth: filterWidth, gapZ,
           bankHeight,
           bankWidth: columns * filterWidth + (columns - 1) * gapZ,
           channels,
@@ -389,7 +389,7 @@ export function createTensorRenderer({
         {
           key: 'locations', tensorZ: 6, tensorChannels: 2,
           startX, startY: locationStartY, startZ: locationStartZ,
-          rows: locationRows, slotHeight: pegFilterHeight, gapY: locationGapY,
+          rows: locationRows, slotHeight: pegFilterHeight, gapY: locationGapY, slotWidth: pegFilterWidth, gapZ: locationGapZ,
           bankHeight: locationBankHeight,
           bankWidth: columns * pegFilterWidth + (columns - 1) * gapZ * 0.1,
           channels: locationChannels,
