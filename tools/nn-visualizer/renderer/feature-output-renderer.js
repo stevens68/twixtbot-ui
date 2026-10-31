@@ -14,7 +14,9 @@ export function createFeatureOutputRenderer({
       ? Math.max(...bn.weight.map((weight, channel) =>
           Math.abs(Number(bn.bias[channel])) + 3 * Math.abs(Number(weight))))
       : 1;
-    const colorMax = Math.max(1e-8, Number.isFinite(bnScale) ? bnScale : 1);
+    const colorMax = Math.max(1e-8, Number.isFinite(Number(options.colorMax))
+      ? Number(options.colorMax)
+      : (Number.isFinite(bnScale) ? bnScale : 1));
     const spacing = options.spacing || 0.34;
     const cellSize = options.cellSize || 0.26;
     const channelGap = options.channelGap ?? 0.2;
