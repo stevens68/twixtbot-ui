@@ -373,7 +373,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "[NN perf server] "
                 f"endpoint={endpoint} moves={len(moves)} "
                 f"read_ms={(read_done - started) * 1000:.1f} "
-                f"request_parse_ms={(parsed_done - read_done) * 1000 - snapshot_ms:.1f} "
+                f"request_parse_ms={(parsed_done - read_done) * 1000 - snapshot_ms - residual_ms:.1f} "
                 f"snapshot_ms={snapshot_ms:.1f} "
                 f"residual_ms={residual_ms:.1f} "
                 f"serialize_ms={(serialized_done - parsed_done) * 1000:.1f} "
