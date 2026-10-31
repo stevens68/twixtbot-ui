@@ -1,7 +1,7 @@
 /** Shared rendering primitives for trained convolution filter banks. */
 export function createFilterBankRenderer({
   THREE, cubeGeometry, filterStaticGroup, flattenTensor, addLabel,
-  heatMapColor, filterSpacing, filterCubeSize, inputSpacing, inputCellSize,
+  heatMapColor, filterSpacing, filterCubeSize, inputSpacing, inputCellSize, filterScale,
 }) {
   function drawFilterKernel(
     filterIndex, originX, originY, originZ, weights,
