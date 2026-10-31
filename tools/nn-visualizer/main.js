@@ -616,12 +616,10 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gameMoves = moves;
     gamePly = 0;
     gameLoaded = true;
-    backendSnapshot = null;
-    data = { ...createDemoData({ BOARD_SIZE, FILTER_COUNT, encodeGameInputs }), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata, primaryBn: demoModel.primaryBn, residualBlock0Output: null };
-    cachedOutput = null;
-    updateGameNavigation();
-    renderStep();
-    if (showEnd) await loadGamePosition(gameMoves.length);
+    // Always load the backend's real position at the selected ply. In
+    // particular, ply 0 must use the empty-board tensors from NetInputs,
+    // not the generated demo tensors (which contain illustrative values).
+    await loadGamePosition(showEnd ? gameMoves.length : 0);
     status.textContent = showEnd
       ? 'Demo game loaded at the end of the trajectory. ' + modelWeightStatus
       : 'Trajectory loaded at the starting position. ' + modelWeightStatus;
@@ -631,6 +629,26 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     status.textContent = 'Could not load trajectory: ' + error.message;
   }
 }
+
+document.querySelector('#reset-game').addEventListener('click', async () => {
+  // Invalidate any navigation response already in flight, then load the
+  // authoritative empty backend position so all three input tensors refresh.
+  navigationRequest += 1;
+  gameMoves = [];
+  trajectoryEditor.value = '';
+  appliedTrajectory = '';
+  updateApplyButtonState();
+  document.querySelector('#reset-game').disabled = true;
+  try {
+    await loadGamePosition(0);
+    status.textContent = 'Game reset. Empty-board inputs loaded. ' + modelWeightStatus;
+  } catch (error) {
+    status.textContent = 'Could not reset game: ' + error.message;
+  } finally {
+    document.querySelector('#reset-game').disabled = false;
+    updateGameNavigation();
+  }
+});
 
 document.querySelector('#game-start').addEventListener('click', () => navigateGame(-gamePly));
 document.querySelector('#game-back').addEventListener('click', () => navigateGame(-1));
