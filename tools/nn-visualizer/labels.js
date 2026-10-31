@@ -92,6 +92,34 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     );
   }
 
+  function addFormulaLabel(
+    text,
+    position,
+    fontSize = 26,
+    color = '#f2f4f8',
+    scaleDivisor = 90,
+  ) {
+    const font = 'italic 500 ' + fontSize + 'px "Cambria Math", "STIX Two Math", "Times New Roman", serif';
+    const key = JSON.stringify(['formula', text, fontSize, color, scaleDivisor]);
+    const texture = getTexture(key, (context) => {
+      context.font = font;
+      const width = Math.max(160, context.measureText(text).width + 32);
+      const height = fontSize + 30;
+      context.font = font;
+      context.fillStyle = color;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(text, width / 2, height / 2);
+      return { width, height };
+    });
+    acquireSprite(
+      texture,
+      position,
+      [texture.image.width / scaleDivisor, texture.image.height / scaleDivisor],
+      'center',
+    );
+  }
+
   // Render a whole move-list column as one canvas texture and one sprite.
   // This preserves the 20-row column layout while avoiding one draw call per move.
   function addMoveColumnLabel(moves, position, fontSize = 14, scaleDivisor = (fontSize + 8) / 0.38) {
@@ -149,5 +177,5 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     );
   }
 
-  return { addLabel, addRichLabel, addMoveColumnLabel, beginFrame };
+  return { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame };
 }
