@@ -603,7 +603,10 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   const gapY = 0.3 * 1.4;
   const gapZ = 0.3 * 1.4;
 
-  const startX = 34 - ((channels - 1) * filterSpacing) / 2;
+  const channelSpan = (channels - 1) * filterSpacing + filterCubeSize;
+  const gapX = 0.3 * 1.4;
+  const combinedWidth = 2 * channelSpan + gapX;
+  const firstBankStartX = 34 - combinedWidth / 2;
   const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
   const bankStartZ = [14, 28];
 
@@ -614,6 +617,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     residualFilterGroup.visible = residualFiltersVisible;
 
     for (const [bankIndex, name] of ['conv1', 'conv2'].entries()) {
+      const bankStartX = firstBankStartX + bankIndex * (channelSpan + gapX);
       const bank = residualWeights[name];
       const instancesPerFilter =
         kernelHeight * kernelWidth * channels;
@@ -654,7 +658,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
               );
 
               transform.position.set(
-                startX + channel * filterSpacing,
+                bankStartX + channel * filterSpacing,
                 originY + (kernelHeight - 1 - kernelRow) * filterSpacing,
                 originZ + kernelCol * filterSpacing,
               );
@@ -694,6 +698,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
   // Labels for both convolution banks.
   for (const [index, name] of ['conv1', 'conv2'].entries()) {
+    const bankStartX = firstBankStartX + index * (channelSpan + gapX);
     addLabel(
       'Residual block ' + blockIndex + ' · ' + name + ' · 48 × 5×5×48 filters',
       [
@@ -711,7 +716,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       addLabel(
         String(filter + 1),
         [
-          startX + ((channels - 1) * filterSpacing) / 2,
+          bankStartX + ((channels - 1) * filterSpacing) / 2,
           startY -
             row * (filterHeight + gapY) +
             kernelHeight * filterSpacing +
