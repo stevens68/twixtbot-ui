@@ -4,6 +4,7 @@ export function createResidualRenderer({
   filterCubeSize, filterStaticGroup, flattenTensor, addLabel, getData,
   heatMapColor,
 }) {
+  let cachedResidualOutput = null;
   let residualFilterGroup = null;
   let residualPlaceholderGroup = null;
   let residualPlaceholderDirty = false;
