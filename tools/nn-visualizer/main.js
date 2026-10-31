@@ -4,7 +4,7 @@ import { createRandomGenerator, createTensor3, createTensor4, flattenTensor } fr
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './tensor-renderer.js?v=20261031-network-light-glass-v6';
+import { createTensorRenderer } from './tensor-renderer.js?v=20261031-night-uniform-light-v7';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -23,8 +23,10 @@ const loading = document.querySelector('#loading');
 const status = document.querySelector('#status');
 
 const scene = new THREE.Scene();
-// Keep the full 20-block network readable at depth; no distance fog.
-scene.background = new THREE.Color(0xdce5ed);
+// Restore the night scene. Ambient illumination keeps standard-material
+// objects equally bright throughout the deep network, regardless of camera
+// distance or their orientation.
+scene.background = new THREE.Color(0x0b1018);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
 // Frame the boards, inputs, filter banks, and feature tensor together. Keep
@@ -47,17 +49,9 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.3;
 controls.target.copy(INITIAL_CAMERA_TARGET);
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa9b8, 2.6));
-
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
-keyLight.position.set(20, 40, 30);
-scene.add(keyLight);
-const fillLight = new THREE.DirectionalLight(0xffffff, 1.8);
-fillLight.position.set(-45, 25, -35);
-scene.add(fillLight);
-const networkFillLight = new THREE.DirectionalLight(0xffffff, 1.4);
-networkFillLight.position.set(100, 15, 10);
-scene.add(networkFillLight);
+// AmbientLight has no positional or directional falloff: it illuminates
+// every standard-material object uniformly across the full network depth.
+scene.add(new THREE.AmbientLight(0xffffff, 1.65));
 
 const activeStep = 'inputs';
 let sceneGroup = new THREE.Group();
