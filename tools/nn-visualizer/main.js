@@ -169,8 +169,8 @@ function countSceneObjects(root) {
 }
 
 const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-const { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame: beginLabelFrame } = createLabelHelpers(THREE, () => sceneGroup);
-const { addLabel: addStaticLabel, addRichLabel: addStaticRichLabel } =
+const { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame: beginLabelFrame, setBigLabelsVisible } = createLabelHelpers(THREE, () => sceneGroup);
+const { addLabel: addStaticLabel, addRichLabel: addStaticRichLabel, setBigLabelsVisible: setStaticBigLabelsVisible } =
   createLabelHelpers(THREE, () => staticSceneGroup);
 
 /**
@@ -423,6 +423,13 @@ controls.addEventListener('change', updateCameraCoordinates);
 // postpone the residual banks for seconds after motion is no longer noticeable.
 controls.addEventListener('end', deferResidualFilterRestore);
 
+function setCameraPreset(position, target) {
+  camera.position.set(position[0], position[1], position[2]);
+  controls.target.set(target[0], target[1], target[2]);
+  controls.update();
+  updateCameraCoordinates();
+}
+
 function resetCamera() {
   camera.position.copy(INITIAL_CAMERA_POSITION);
   controls.target.copy(INITIAL_CAMERA_TARGET);
@@ -640,6 +647,23 @@ document.querySelector('#toggle-explanation').addEventListener('click', () => {
   requestAnimationFrame(resizeRenderer);
 });
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
+document.querySelector('#camera-effective-board').addEventListener('click', () => setCameraPreset(
+  [-25.33, 3.09, -1.30], [-2.14, -3.39, -0.86],
+));
+document.querySelector('#camera-input-front').addEventListener('click', () => setCameraPreset(
+  [-25.10, 23.78, -3.62], [6.28, 1.20, -3.19],
+));
+document.querySelector('#camera-input-top').addEventListener('click', () => setCameraPreset(
+  [-1.65, 28.72, -1.83], [4.81, -2.66, -1.77],
+));
+document.querySelector('#camera-residual-block').addEventListener('click', () => setCameraPreset(
+  [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
+));
+const bigLabelsToggle = document.querySelector('#toggle-big-labels');
+bigLabelsToggle.addEventListener('change', () => {
+  setBigLabelsVisible(bigLabelsToggle.checked);
+  setStaticBigLabelsVisible(bigLabelsToggle.checked);
+});
 window.addEventListener('resize', resizeRenderer);
 
 function animate() {
