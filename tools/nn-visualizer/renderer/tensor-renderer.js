@@ -84,6 +84,47 @@ export function createTensorRenderer({
     }
   }
 
+  function addCurvedXArrow(group, startX, endX, startY, startZ, endY, endZ, options = {}) {
+    const { name = 'curved-tensor-flow-arrow', label = null, labelOffset = 0.7,
+      amplitude = 1.15, waves = 1 } = options;
+    if (endX - startX <= 0.2) return;
+    const points = [];
+    const segments = waves === 2 ? 8 : 4;
+    for (let i = 0; i <= segments; i += 1) {
+      const t = i / segments;
+      const envelope = Math.sin(Math.PI * t);
+      const oscillation = waves === 2
+        ? Math.sin(2 * Math.PI * t)
+        : Math.sin(Math.PI * t);
+      points.push(new THREE.Vector3(
+        startX + (endX - startX) * t,
+        startY + (endY - startY) * t + amplitude * envelope * oscillation,
+        startZ + (endZ - startZ) * t,
+      ));
+    }
+    const curve = new THREE.CatmullRomCurve3(points);
+    const shaft = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 48, 0.045, 8, false),
+      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+    );
+    shaft.name = name + '-shaft';
+    group.add(shaft);
+    const tip = curve.getPoint(1);
+    const tangent = curve.getTangent(1).normalize();
+    const head = new THREE.Mesh(
+      new THREE.ConeGeometry(0.2, 0.48, 10),
+      new THREE.MeshBasicMaterial({ color: 0xaeb7c2 }),
+    );
+    head.position.copy(tip).addScaledVector(tangent, -0.18);
+    head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+    head.name = name + '-head';
+    group.add(head);
+    if (label) {
+      const point = curve.getPoint(0.5);
+      addFormulaLabel(label, [point.x, point.y + labelOffset, point.z], 25, '#f2f4f8', 92);
+    }
+  }
+
   let cachedFilterWeights = null;
 
   // Dispose the current filter scene before rebuilding it with new weights.
@@ -200,14 +241,25 @@ export function createTensorRenderer({
         (tensorCenterZ + bankCenterZ) / 2,
         null, 0.58, bank.key + '-input-to-filter-bank',
       );
-      addXArrow(
-        arrowGroup, bankRight, featureLeftX,
-        (bankCenterY + featureY) / 2,
-        (bankCenterZ + featureZ) / 2,
-        'y = |BN(Conv(x))|', 0.62,
-        bank.key + '-filter-bank-to-feature-output',
+      const mergeX = featureLeftX - 1.35;
+      addCurvedXArrow(
+        arrowGroup, bankRight, mergeX,
+        bankCenterY, bankCenterZ, featureY, featureZ,
+        {
+          name: bank.key + '-filter-bank-to-merge',
+          label: 'y = |BN(Conv(x))|',
+          labelOffset: 0.62,
+          amplitude: 1.0,
+        },
       );
     }
+    // The three convolution outputs meet at one merge point before the
+    // shared post-BN feature tensor.
+    const mergeX = featureLeftX - 1.35;
+    addXArrow(
+      arrowGroup, mergeX, featureLeftX,
+      featureY, featureZ, null, 0.58, 'merged-convolutions-to-feature-output',
+    );
 
     return {
       title: 'First-layer network view',
