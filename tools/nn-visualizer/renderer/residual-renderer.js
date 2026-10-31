@@ -203,7 +203,7 @@ function addResidualBypass(group,x1,x2,z,offset,name){const dx=x2-x1;if(dx<=1)re
 
   function drawResidualPlaceholderLabels(blockCount){
    for(let index=0;index<blockCount;index++){const layout=residualLayout(index),cx=layout.blockStartX+layout.blockSpanX/2,y=layout.bankStartY+layout.bankSizeY/2+2,z=layout.bankStartZ+layout.bankSizeZ/2;
-    addLabel('Residual block '+(index+1),[cx,y,z],20,'#dce7f5',110);}
+    addLabel('Residual block '+(index+1),[cx,y,z],24,'#ffffff',70);}
   }
 
   function setSelectedResidualBlock(blockIndex, weights) {
