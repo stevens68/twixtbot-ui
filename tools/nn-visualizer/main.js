@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
 import { createTensor3, flattenTensor } from './tensor-utils.js';
-import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js';
+import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
 import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
 import { createBoardRenderer } from './board-renderer.js?v=20261029-link-cube-depth';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
@@ -399,101 +399,6 @@ function renderStep() {
     });
   });
 }
-
-function validateTensor(tensor, channels, name) {
-  const valid =
-    Array.isArray(tensor) &&
-    tensor.length === BOARD_SIZE &&
-    tensor.every(
-      (row) =>
-        Array.isArray(row) &&
-        row.length === BOARD_SIZE &&
-        row.every(
-          (cell) =>
-            Array.isArray(cell) &&
-            cell.length === channels &&
-            cell.every((value) => Number.isFinite(Number(value))),
-        ),
-    );
-
-  if (!valid) {
-    throw new Error(
-      name +
-        ' must be a numeric [' +
-        BOARD_SIZE +
-        '][' +
-        BOARD_SIZE +
-        '][' +
-        channels +
-        '] tensor.',
-    );
-  }
-}
-
-function validateWeights(weights, name, kernelHeight, kernelWidth, channels) {
-  const valid =
-    Array.isArray(weights) &&
-    weights.length === FILTER_COUNT &&
-    weights.every(
-      (filter) =>
-        Array.isArray(filter) &&
-        filter.length === kernelHeight &&
-        filter.every(
-          (row) =>
-            Array.isArray(row) &&
-            row.length === kernelWidth &&
-            row.every(
-              (cell) =>
-                Array.isArray(cell) &&
-                cell.length === channels &&
-                cell.every((value) => Number.isFinite(Number(value))),
-            ),
-        ),
-    );
-
-  if (!valid) {
-    throw new Error(
-      'weights.' +
-        name +
-        ' must have shape [' +
-        FILTER_COUNT +
-        '][' +
-        kernelHeight +
-        '][' +
-        kernelWidth +
-        '][' +
-        channels +
-        '].',
-    );
-  }
-}
-
-function validateData(input) {
-  validateTensor(input.pegs, 2, 'pegs');
-  validateTensor(input.links, 8, 'links');
-  validateTensor(input.locations, 2, 'locations');
-
-  if (!input.weights) {
-    input.weights = createDemoData().weights;
-    status.textContent = 'Weights omitted: using generated demo weights.';
-  } else {
-    validateWeights(input.weights.pegs, 'pegs', 5, 5, 2);
-    validateWeights(input.weights.links, 'links', 4, 4, 8);
-    validateWeights(input.weights.locations, 'locations', 1, 1, 2);
-  }
-
-  if (
-    !Array.isArray(input.bias) ||
-    input.bias.length !== FILTER_COUNT ||
-    input.bias.some((value) => !Number.isFinite(Number(value)))
-  ) {
-    input.bias = Array(FILTER_COUNT).fill(0);
-  }
-
-  input.isDemo = false;
-  return input;
-}
-
 
 async function loadTrainedLinkWeights() {
   try {
@@ -1020,7 +925,7 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     gamePly = 0;
     gameLoaded = true;
     backendSnapshot = null;
-    data = { ...createDemoData(), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata, primaryBn: demoModel.primaryBn, residualBlock0Output: null };
+    data = { ...createDemoData({ BOARD_SIZE, FILTER_COUNT, encodeGameInputs }), weights: demoModel.weights, bias: demoModel.bias, linkConvMetadata: demoModel.linkConvMetadata, pegConvMetadata: demoModel.pegConvMetadata, locationConvMetadata: demoModel.locationConvMetadata, primaryBn: demoModel.primaryBn, residualBlock0Output: null };
     cachedOutput = null;
     updateGameNavigation();
     renderStep();
