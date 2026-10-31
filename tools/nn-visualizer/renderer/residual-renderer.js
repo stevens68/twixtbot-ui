@@ -1,7 +1,7 @@
 /** Rendering and interaction for the residual-block stack. */
 export function createResidualRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, cubeGeometry, filterSpacing,
-  filterCubeSize, filterStaticGroup, flattenTensor, addLabel, getData,
+  filterCubeSize, filterStaticGroup, flattenTensor, addLabel, addFormulaLabel, getData,
   heatMapColor,
 }) {
   let cachedResidualOutput = null;
@@ -240,6 +240,25 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   }
 }
 
+  function addResidualArrow(group, startX, endX, y, z, label, name, labelYOffset = 0.58) {
+    const gap = endX - startX;
+    if (gap <= 0.15) return;
+    const length = gap * 0.78;
+    const arrow = new THREE.ArrowHelper(
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(startX + (gap - length) / 2, y, z),
+      length,
+      0xaeb7c2,
+      0.42,
+      0.22,
+    );
+    arrow.name = name;
+    group.add(arrow);
+    if (label) {
+      addFormulaLabel(label, [(startX + endX) / 2, y + labelYOffset, z], 25, '#f2f4f8', 92);
+    }
+  }
+
   function createResidualBlockPlaceholders(blockCount) {
     residualPlaceholderGroup = new THREE.Group();
     residualPlaceholderGroup.name = 'residual-block-placeholders';
@@ -296,52 +315,72 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
         }
       }
 
-      // Connect the initial post-BN feature tensor to residual block 0.
+      // Connect each neighbouring stage along X. The first arrow carries
+      // the input into Conv1; the two convolution arrows show their transforms.
+      const bankLeft1 = layout.bankStartXs[0] - filterCubeSize / 2;
+      const bankRight1 = layout.bankStartXs[0] +
+        (layout.channels - 1) * filterSpacing + filterCubeSize / 2;
+      const bankLeft2 = layout.bankStartXs[1] - filterCubeSize / 2;
+      const bankRight2 = layout.bankStartXs[1] +
+        (layout.channels - 1) * filterSpacing + filterCubeSize / 2;
+      const bankCenterY = layout.outputCenterY;
+      const bankCenterZ = layout.outputCenterZ;
+      const outputLeftX = layout.outputCenterX - layout.outputSizeX / 2;
+      const outputRightX = layout.outputCenterX + layout.outputSizeX / 2;
+
       if (index === 0) {
-        const initialOutputRightX =
-          20 + (FILTER_COUNT - 1) * layout.outputChannelStep +
-          filterCubeSize / 2;
-        const residualBankLeftX = layout.blockStartX - filterCubeSize / 2;
-        const fullArrowLength = Math.max(0.1, residualBankLeftX - initialOutputRightX);
-        // Match the inter-block arrows: use 80% of the available gap and
-        // center the shortened arrow exactly between source and target.
-        const shortenedArrowLength = fullArrowLength * 0.8;
-        const arrowY = layout.outputCenterY + layout.outputSizeY / 2 + 1.2;
-        const arrow = new THREE.ArrowHelper(
-          new THREE.Vector3(1, 0, 0),
-          new THREE.Vector3(
-            initialOutputRightX + (fullArrowLength - shortenedArrowLength) / 2,
-            arrowY,
-            layout.outputCenterZ,
-          ),
-          shortenedArrowLength,
-          0xaeb7c2,
-          0.48,
-          0.26,
+        const inputRightX = 20 +
+          (FILTER_COUNT - 1) * layout.outputChannelStep +
+          layout.outputCubeSize / 2;
+        addResidualArrow(
+          residualPlaceholderGroup, inputRightX, bankLeft1,
+          bankCenterY, bankCenterZ, null,
+          'feature-output-to-residual-0-conv1',
         );
-        arrow.name = 'initial-feature-output-to-residual-0';
-        residualPlaceholderGroup.add(arrow);
+      } else {
+        const previous = residualLayout(index - 1);
+        const previousRightX = previous.outputCenterX + previous.outputSizeX / 2;
+        addResidualArrow(
+          residualPlaceholderGroup, previousRightX, bankLeft1,
+          bankCenterY, bankCenterZ, null,
+          'residual-output-' + (index - 1) + '-to-conv1-' + index,
+        );
       }
 
-      // Connect consecutive residual output tensors with a straight grey
-      // arrow. Raise it above the filter banks so it remains visible.
+      addResidualArrow(
+        residualPlaceholderGroup, bankRight1, bankLeft2,
+        bankCenterY, bankCenterZ,
+        'y = |BN(Conv(x))|',
+        'residual-' + index + '-conv1-to-conv2',
+      );
+      addResidualArrow(
+        residualPlaceholderGroup, bankRight2, outputLeftX,
+        bankCenterY, bankCenterZ,
+        'y = |BN(Conv(x))|',
+        'residual-' + index + '-conv2-to-output',
+      );
+
+      // Identity skip path: it joins the main path at the output. Keep it
+      // slightly offset in Y so both incoming arrows remain distinguishable.
+      const skipStartX = index === 0
+        ? 20 + (FILTER_COUNT - 1) * layout.outputChannelStep + layout.outputCubeSize / 2
+        : residualLayout(index - 1).outputCenterX + residualLayout(index - 1).outputSizeX / 2;
+      const skipY = bankCenterY + 0.72;
+      addResidualArrow(
+        residualPlaceholderGroup, skipStartX, outputLeftX,
+        skipY, bankCenterZ, 'y = x',
+        'residual-' + index + '-identity-skip',
+        0.48,
+      );
+
       if (index < blockCount - 1) {
         const nextLayout = residualLayout(index + 1);
-        const arrowY = layout.outputCenterY + layout.outputSizeY / 2 + 1.2;
-        const arrowStartX = layout.outputCenterX + layout.outputSizeX / 2 + 0.12;
-        const arrowEndX = nextLayout.outputCenterX - nextLayout.outputSizeX / 2 - 0.12;
-        const fullArrowLength = Math.max(0.1, arrowEndX - arrowStartX);
-        const shortenedArrowLength = fullArrowLength * 0.8;
-        const arrow = new THREE.ArrowHelper(
-          new THREE.Vector3(1, 0, 0),
-          new THREE.Vector3(arrowStartX + (fullArrowLength - shortenedArrowLength) / 2, arrowY, layout.outputCenterZ),
-          shortenedArrowLength,
-          0xaeb7c2,
-          0.48,
-          0.26,
+        const nextBankLeftX = nextLayout.bankStartXs[0] - filterCubeSize / 2;
+        addResidualArrow(
+          residualPlaceholderGroup, outputRightX, nextBankLeftX,
+          bankCenterY, bankCenterZ, null,
+          'residual-output-' + index + '-to-conv1-' + (index + 1),
         );
-        arrow.name = 'residual-output-' + index + '-to-output-' + (index + 1);
-        residualPlaceholderGroup.add(arrow);
       }
 
       // Output tensors remain unenclosed; show actual values for block 0.
