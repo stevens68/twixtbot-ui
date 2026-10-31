@@ -168,7 +168,7 @@ function countSceneObjects(root) {
 }
 
 const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-const { addLabel, addRichLabel, addMoveColumnLabel, beginFrame: beginLabelFrame } = createLabelHelpers(THREE, () => sceneGroup);
+const { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame: beginLabelFrame } = createLabelHelpers(THREE, () => sceneGroup);
 const { addLabel: addStaticLabel, addRichLabel: addStaticRichLabel } =
   createLabelHelpers(THREE, () => staticSceneGroup);
 
