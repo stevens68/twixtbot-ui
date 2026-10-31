@@ -79,6 +79,8 @@ const residualBlockWeightCache = new Map();
 let selectedResidualBlockIndex = 0;
 let residualSelectionPending = false;
 let cachedOutput = null;
+const convolutionOutputCache = new WeakMap();
+const residualOutputCache = new WeakMap();
 let gameMoves = [];
 let gamePly = 0;
 let gameLoaded = false;
@@ -97,8 +99,10 @@ scene.add(annotationGroup);
 // Temporary baseline instrumentation for the performance work. This is
 // observational only: it does not alter scene construction or game state.
 const nnPerf = {
+  enabled: false,
   samples: [],
   record(label, metrics) {
+    if (!this.enabled) return null;
     const sample = { at: new Date().toISOString(), label, ...metrics };
     this.samples.push(sample);
     console.debug('[NN perf]', sample);
@@ -187,9 +191,12 @@ const {
  */
 
 function calculateConvolutionOutput() {
-  if (cachedOutput && cachedOutput.source === data) return cachedOutput.tensor;
+  const source = data.snapshot || data;
+  if (data.snapshot && convolutionOutputCache.has(source)) return convolutionOutputCache.get(source);
+  if (cachedOutput && cachedOutput.source === source) return cachedOutput.tensor;
   const tensor = calculateConvolution({ data, BOARD_SIZE, FILTER_COUNT, createTensor3 });
-  cachedOutput = { source: data, tensor };
+  if (data.snapshot) convolutionOutputCache.set(source, tensor);
+  cachedOutput = { source, tensor };
   return tensor;
 }
 
@@ -322,6 +329,7 @@ function renderStep() {
 
   loading.style.display = 'none';
 
+  if (nnPerf.enabled) {
   const objects = countSceneObjects(sceneGroup);
   nnPerf.record('renderStep', {
     step: activeStep,
@@ -349,6 +357,7 @@ function renderStep() {
       rendererTextures: renderer.info.memory.textures,
     });
   });
+  }
 }
 
 async function loadTrainedLinkWeights() {
@@ -514,6 +523,7 @@ async function loadGamePosition(ply) {
   currentPlayerName = result.next_player === 1 ? 'Red' : 'Black';
 
   data = {
+    snapshot: result,
     pegs: result.tensors.pegs,
     links: result.tensors.links,
     locations: result.tensors.locations,
@@ -529,25 +539,28 @@ async function loadGamePosition(ply) {
 
   gamePly = ply;
   gameLoaded = true;
-  cachedOutput = null;
   residualBlock0Output = null;
   residualBlock0OutputError = null;
   if (demoModel.weights.residualBlock0) {
     try {
-      const outputResponse = await fetch('/api/residual-output', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tensors: result.tensors }),
-      });
-      const outputPayload = await outputResponse.json();
-      if (!outputResponse.ok) throw new Error(outputPayload.error || outputResponse.statusText);
-      const values = outputPayload.values;
-      if (outputPayload.shape?.join('x') !== '24x24x48' ||
-          !Array.isArray(values) || values.length !== 24 ||
-          values.some(row => !Array.isArray(row) || row.length !== 24 ||
-            row.some(cell => !Array.isArray(cell) || cell.length !== 48 ||
-              cell.some(value => !Number.isFinite(Number(value)))))) {
-        throw new Error('The backend returned an invalid 24×24×48 output tensor.');
+      let values = residualOutputCache.get(result);
+      if (!values) {
+        const outputResponse = await fetch('/api/residual-output', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tensors: result.tensors }),
+        });
+        const outputPayload = await outputResponse.json();
+        if (!outputResponse.ok) throw new Error(outputPayload.error || outputResponse.statusText);
+        values = outputPayload.values;
+        if (outputPayload.shape?.join('x') !== '24x24x48' ||
+            !Array.isArray(values) || values.length !== 24 ||
+            values.some(row => !Array.isArray(row) || row.length !== 24 ||
+              row.some(cell => !Array.isArray(cell) || cell.length !== 48 ||
+                cell.some(value => !Number.isFinite(Number(value)))))) {
+          throw new Error('The backend returned an invalid 24×24×48 output tensor.');
+        }
+        residualOutputCache.set(result, values);
       }
       residualBlock0Output = values;
       data.residualBlock0Output = values;
