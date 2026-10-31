@@ -64,10 +64,12 @@ export function createTensorRenderer({
   function addXArrow(group, startX, endX, y, z, label = null, labelOffset = 0.58, name = 'tensor-flow-arrow') {
     const fullLength = endX - startX;
     if (fullLength <= 0.15) return;
-    const length = fullLength * 0.78;
+    // Double the clearance between the source object and the arrow shaft.
+    const startClearance = fullLength * 0.22;
+    const length = fullLength * 0.67;
     const arrow = new THREE.ArrowHelper(
       new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(startX + (fullLength - length) / 2, y, z),
+      new THREE.Vector3(startX + startClearance, y, z),
       length,
       0xaeb7c2,
       0.42,
