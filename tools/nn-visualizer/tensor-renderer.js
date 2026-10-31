@@ -603,12 +603,31 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
   const gapY = 0.3 * 1.4;
   const gapZ = 0.3 * 1.4;
 
-  // Both convolutions occupy the same Y level and are separated along Z.
-  // Center the complete residual block on the output tensor's channel axis.
-  const outputCenterX = 20 + ((channels - 1) * filterSpacing) / 2;
-  const startX = outputCenterX - ((channels - 1) * filterSpacing) / 2;
+  // Continue the network as a chain along X: output tensor first, then
+  // residual block 0, block 1, and so on. Keep each bank's channels on X.
+  const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
+  const outputMaxX =
+    20 + (channels - 1) * outputChannelStep + filterCubeSize / 2;
+  const chainGapX = 1.25;
+  const blockWidthX =
+    (channels - 1) * filterSpacing + filterCubeSize;
+  const startX =
+    outputMaxX + chainGapX + filterCubeSize / 2 +
+    blockIndex * (blockWidthX + chainGapX);
   const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
-  const bankStartZ = [14, 28];
+
+  // Center both convolution banks together on the output tensor's Z center.
+  // Their separation along Z is retained, but the pair is moved behind the
+  // output rather than being offset far away from the rest of the network.
+  const outputCenterZ =
+    -((channels - 1) * 0.105) / 2 + ((BOARD_SIZE - 1) * filterSpacing) / 2;
+  const originalBankStartZ = [14, 28];
+  const bankPairMinZ = originalBankStartZ[0];
+  const bankPairMaxZ =
+    originalBankStartZ[1] + (columns - 1) * (filterWidth + gapZ) +
+    (kernelWidth - 1) * filterSpacing + filterCubeSize / 2;
+  const bankPairShiftZ = outputCenterZ - (bankPairMinZ + bankPairMaxZ) / 2;
+  const bankStartZ = originalBankStartZ.map((z) => z + bankPairShiftZ);
 
   if (buildGeometry) {
     residualFilterGroup = new THREE.Group();
@@ -700,7 +719,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     addLabel(
       'Residual block ' + blockIndex + ' · ' + name + ' · 48 × 5×5×48 filters',
       [
-        outputCenterX,
+        startX + ((channels - 1) * filterSpacing) / 2,
         startY + filterHeight + 0.8,
         bankStartZ[index] + 3.5 * (filterWidth + gapZ),
       ],
@@ -714,7 +733,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       addLabel(
         String(filter + 1),
         [
-          outputCenterX,
+          startX + ((channels - 1) * filterSpacing) / 2,
           startY -
             row * (filterHeight + gapY) +
             kernelHeight * filterSpacing +
@@ -751,23 +770,39 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
     const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
     boxGeometry.dispose();
 
-    // Match the selected convolution banks exactly: same Y level, same Z
-    // centers, and the same outer dimensions. The residual stack is centered
-    // on the output tensor's channel axis.
+    // Use the same Y/Z placement and X-chain spacing as the selected
+    // residual block's full convolution banks.
     const startY = rows * (filterHeight + gapY) / 2 - filterHeight;
     const centerY =
       (startY + (rows - 1) * (filterHeight + gapY) * -1 +
         (kernelHeight - 1) * filterSpacing) / 2;
-    const bankStartZ = [14, 28];
+    const outputChannelStep = filterCubeSize / 0.9 + filterSpacing - filterCubeSize;
+    const outputMaxX =
+      20 + (FILTER_COUNT - 1) * outputChannelStep + filterCubeSize / 2;
+    const chainGapX = 1.25;
+    const blockWidthX =
+      (FILTER_COUNT - 1) * filterSpacing + filterCubeSize;
+    const outputCenterZ =
+      -((FILTER_COUNT - 1) * 0.105) / 2 +
+      ((BOARD_SIZE - 1) * filterSpacing) / 2;
+    const originalBankStartZ = [14, 28];
+    const bankPairMinZ = originalBankStartZ[0];
+    const bankPairMaxZ =
+      originalBankStartZ[1] + (columns - 1) * (filterWidth + gapZ) +
+      (kernelWidth - 1) * filterSpacing + filterCubeSize / 2;
+    const bankPairShiftZ = outputCenterZ - (bankPairMinZ + bankPairMaxZ) / 2;
+    const bankStartZ = originalBankStartZ.map((z) => z + bankPairShiftZ);
     const bankCentersZ = bankStartZ.map(
       (z) => z + (columns - 1) * (filterWidth + gapZ) / 2 +
         (kernelWidth - 1) * filterSpacing / 2
     );
-    const outputCenterX = 20 + ((FILTER_COUNT - 1) * filterSpacing) / 2;
 
     for (let index = 0; index < blockCount; index += 1) {
       if (index === selectedResidualBlockIndex) continue;
-      const layerX = outputCenterX + (index - selectedResidualBlockIndex) * 2.05;
+      const blockStartX =
+        outputMaxX + chainGapX + filterCubeSize / 2 +
+        index * (blockWidthX + chainGapX);
+      const layerX = blockStartX + ((FILTER_COUNT - 1) * filterSpacing) / 2;
 
       for (let bankIndex = 0; bankIndex < 2; bankIndex += 1) {
         const position = new THREE.Vector3(layerX, centerY, bankCentersZ[bankIndex]);
@@ -802,7 +837,7 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
       if (index === selectedResidualBlockIndex) continue;
       addLabel(
         'Block ' + index,
-        [39 + (index - 1) * 2.05, 1.0, 26.5],
+        [25.6 + 1.25 + filterCubeSize / 2 + index * (((FILTER_COUNT - 1) * filterSpacing + filterCubeSize) + 1.25) + ((FILTER_COUNT - 1) * filterSpacing) / 2, 1.0, 1.3],
         12,
         '#dce7f5',
         80,
