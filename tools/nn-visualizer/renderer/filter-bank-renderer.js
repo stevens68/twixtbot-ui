@@ -84,7 +84,7 @@ export function createFilterBankRenderer({
         originY + kernelHeight * spacing + 0.096,
         originZ + ((kernelWidth - 1) * spacing) / 2,
       ],
-      10,
+      10, '#e7edf6', 90,
     );
   }
 
