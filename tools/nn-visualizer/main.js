@@ -9,7 +9,7 @@ import { createDemoData, calculateConvolutionOutput as calculateConvolution, val
 import { createLabelHelpers } from './labels.js?v=20261031-big-label-toggle-v5';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-static-annotations-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-static-annotations-v2';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -175,8 +175,11 @@ const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const { addLabel, addRichLabel, addFormulaLabel, addMoveColumnLabel, beginFrame: beginLabelFrame, setBigLabelsVisible } = createLabelHelpers(THREE, () => sceneGroup);
 const { addLabel: addStaticLabel, addRichLabel: addStaticRichLabel, setBigLabelsVisible: setStaticBigLabelsVisible } =
   createLabelHelpers(THREE, () => staticSceneGroup);
-const { addLabel: addAnnotationLabel, addFormulaLabel: addAnnotationFormulaLabel } =
-  createLabelHelpers(THREE, () => annotationGroup);
+const {
+  addLabel: addAnnotationLabel,
+  addFormulaLabel: addAnnotationFormulaLabel,
+  setBigLabelsVisible: setAnnotationBigLabelsVisible,
+} = createLabelHelpers(THREE, () => annotationGroup);
 
 /**
  * Convert a [row][column][channel] tensor into channel-major order.
@@ -691,6 +694,7 @@ const bigLabelsToggle = document.querySelector('#toggle-big-labels');
 bigLabelsToggle.addEventListener('change', () => {
   setBigLabelsVisible(bigLabelsToggle.checked);
   setStaticBigLabelsVisible(bigLabelsToggle.checked);
+  setAnnotationBigLabelsVisible(bigLabelsToggle.checked);
 });
 window.addEventListener('resize', resizeRenderer);
 
