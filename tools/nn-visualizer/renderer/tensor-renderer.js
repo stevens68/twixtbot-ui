@@ -389,7 +389,6 @@ export function createTensorRenderer({
     const policyStartX = 12 + inputTensorSpecs[1].x - ((policyChannels - 1) * filterSpacing) / 2;
     const policyStartY = -0.287;
     const policyStartZ = -0.2545 + 22 - (policyColumns - 1) * (policySlot + policyGapZ) / 2;
-    const policyMetadata = getData().policyConv1Metadata;
     const policyInfo = filterBankRenderer.drawBank({
       name: 'policy-conv1', weights: policyWeights,
       startX: policyStartX, startY: policyStartY, startZ: policyStartZ,
@@ -438,11 +437,11 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained first-layer kernels plus an interactive residual stack. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. The output includes batch normalization, absolute-value activations, and the skip connection.',
+      description: 'Trained input convolutions, the two-filter policy Conv1 bank, and an interactive residual stack. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. The output includes batch normalization, absolute-value activations, and the skip connection.',
       shape: 'Locations ' + locationInfo.kernelHeight + ' × ' + locationInfo.kernelWidth + ' × ' + locationInfo.channels +
         '; pegs ' + pegInfo.kernelHeight + ' × ' + pegInfo.kernelWidth + ' × ' + pegInfo.channels +
         '; links ' + linkInfo.kernelHeight + ' × ' + linkInfo.kernelWidth + ' × ' + linkInfo.channels,
-      range: 'Trained signed weights; all three convolutions have no bias in this checkpoint.',
+      range: 'Trained signed weights; policy Conv1 has two 1×1×48 filters and no bias.',
       count: locationInfo.count + ' location filters + ' + pegInfo.count + ' peg filters + ' + linkInfo.count + ' link filters + ' + policyInfo.count + ' policy filters',
       residualCount: 2 * FILTER_COUNT,
       residualBlockCount: blockCount,
