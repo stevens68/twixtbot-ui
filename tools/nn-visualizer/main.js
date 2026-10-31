@@ -6,10 +6,10 @@ import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-c
 import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-model-weight-client-v1';
 import { createBoardInteraction } from './board-interaction.js?v=20261031-board-interaction-v1';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-model-data-v1';
-import { createLabelHelpers } from './labels.js?v=20261028-move-columns';
+import { createLabelHelpers } from './labels.js?v=20261031-formula-labels-v1';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-renderer-folder-v1';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-renderer-folder-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-arrow-redesign-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -282,7 +282,7 @@ const {
     createSampleGame, getBackendSnapshot: () => backendSnapshot,
     drawSampleBoard, drawEffectiveBoard,
     logLinkEncodingDiagnostic, logFullInputTensorValidation,
-    calculateConvolutionOutput, addLabel,
+    calculateConvolutionOutput, addLabel, addFormulaLabel,
   });
 
 function renderStep() {
