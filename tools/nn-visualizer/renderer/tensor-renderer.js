@@ -483,6 +483,7 @@ export function createTensorRenderer({
       bankHeight: policyBankHeight,
       glassPadding: [1.04, 1.25, 1.25],
       targetGroup: policyBranchFilterGroup,
+      targetLabel: addPolicyLabel,
     });
 
     if (rebuild) {
@@ -657,6 +658,7 @@ export function createTensorRenderer({
           // the spacing between the two Policy Conv1 filters.
           channelSpacing: filterSpacing + 0.3,
           targetGroup: policyBranchFilterGroup,
+          targetLabel: addPolicyLabel,
         });
         const policyConv2BankRight = policyConv2StartX + filterSpacing + 0.3 +
           filterCubeSize / 2;
@@ -814,7 +816,7 @@ export function createTensorRenderer({
             Math.min(0.10, length * 0.26),
           );
           arrow.name = 'policy-logits-to-softmax';
-          getAnnotationGroup().add(arrow);
+          policyBranchFilterGroup.add(arrow);
           addPolicyFormulaLabel(
             'pᵢ = exp(zᵢ) / Σ exp(z)',
             [
