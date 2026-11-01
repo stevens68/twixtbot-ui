@@ -125,6 +125,7 @@ export function createTensorRenderer({
   let cachedFilterWeights = null;
   let policyOutputAnnotationsBuilt = false;
   let policyConv2AnnotationsBuilt = false;
+  let policySoftmaxAnnotationsBuilt = false;
 
   // Dispose the current filter scene before rebuilding it with new weights.
   function clearFilterGeometry() {
@@ -292,19 +293,24 @@ export function createTensorRenderer({
       description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and both policy convolutions with their outputs are shown together.",
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48' +
         (policyOutputStats ? ' · Policy Conv₁: 24 × 24 × 2' +
-          (policyOutputStats.policyConv2 ? ' · Policy Conv₂: 22 × 24 × 1 (528 logits)' : '') : ''),
+          (policyOutputStats.policyConv2 ? ' · Policy Conv₂: 22 × 24 logits · Softmax: 22 × 24 probabilities' : '') : ''),
       range: 'Feature range ' + featureInfo.range +
         (policyOutputStats ? ' · Policy Conv₁ range ' + policyOutputStats.min.toFixed(4) +
           ' … ' + policyOutputStats.max.toFixed(4) +
           (policyOutputStats.policyConv2 ? ' · Policy Conv₂ range ' +
             policyOutputStats.policyConv2.min.toFixed(4) + ' … ' +
-            policyOutputStats.policyConv2.max.toFixed(4) : '') : ''),
+            policyOutputStats.policyConv2.max.toFixed(4) : '') +
+          (policyOutputStats.policySoftmax ? ' · maximum move probability ' +
+            policyOutputStats.policySoftmax.max.toFixed(4) : '') : ''),
       count: '3 input tensors · ' + filterInfo.count + ' · ' + filterInfo.residualBlockCount + ' residual blocks · selected block ' + filterInfo.selectedResidualBlockIndex + ' (' + featureInfo.residualCount + ' detailed filters) · ' + filterInfo.count + ' feature values' +
         (policyOutputStats ? ' · ' + policyOutputStats.count.toLocaleString() +
           ' Policy Conv₁ values' +
           (policyOutputStats.policyConv2 ? ' · ' +
             policyOutputStats.policyConv2.count.toLocaleString() +
-            ' Policy Conv₂ output values' : '') : ''),
+            ' Policy Conv₂ logits' +
+            (policyOutputStats.policySoftmax ? ' · ' +
+              policyOutputStats.policySoftmax.count.toLocaleString() +
+              ' move probabilities' : '') : '') : ''),
     };
   }
 
@@ -569,8 +575,9 @@ export function createTensorRenderer({
       }
 
       // Policy Conv2 is a 1×1 convolution from the two Policy Conv1
-      // activation channels to one policy-logit channel. The model then
-      // removes the first and last rows and flattens the remaining 22×24.
+      // activation channels to one policy-logit channel. Since Black moves
+      // and the first/last rows are illegal, retain only the 22×24 playable
+      // board. Softmax below normalizes probabilities across those 528 cells.
       const policyConv2Weights = weights.policyConv2;
       if (Array.isArray(policyConv2Weights) &&
           policyConv2Weights.length === 1 &&
@@ -625,12 +632,18 @@ export function createTensorRenderer({
             policyConv2Values.push(sum);
           }
         }
+        const policyBoardRows = BOARD_SIZE - 2;
+        const policyBoardCols = BOARD_SIZE;
+        const policyBoardOriginY =
+          policyInput.centerY - (policyBoardRows - 1) * filterSpacing / 2;
+        const policyBoardOriginZ =
+          policyInput.centerZ - (policyBoardCols - 1) * filterSpacing / 2;
         const policyConv2Stats = featureOutputRenderer.addValueCubes(
-          policyConv2Values, BOARD_SIZE - 2, BOARD_SIZE, 1,
+          policyConv2Values, policyBoardRows, policyBoardCols, 1,
           [
             policyConv2OutputOriginX,
-            policyInput.centerY - (BOARD_SIZE - 3) * filterSpacing / 2,
-            policyInput.centerZ - (BOARD_SIZE - 1) * filterSpacing / 2,
+            policyBoardOriginY,
+            policyBoardOriginZ,
           ],
           COLORS.output,
           {
@@ -641,6 +654,34 @@ export function createTensorRenderer({
             // negative and positive values are represented proportionally.
             colorMax: Math.max(1e-8, ...policyConv2Values.map((value) =>
               Math.abs(Number(value)))),
+          },
+        );
+
+        // Stable softmax over all 528 playable intersections. The cropped
+        // 22×24 board remains two-dimensional; no flattening layer is shown.
+        const maxLogit = Math.max(...policyConv2Values);
+        const exponentials = policyConv2Values.map((value) =>
+          Math.exp(Number(value) - maxLogit));
+        const exponentialSum = exponentials.reduce((sum, value) => sum + value, 0);
+        const policyProbabilities = exponentials.map((value) =>
+          value / exponentialSum);
+        const policySoftmaxOutputGap = policyOutputGap;
+        const policySoftmaxOriginX = policyConv2OutputOriginX +
+          policySoftmaxOutputGap + filterCubeSize;
+        const policySoftmaxStats = featureOutputRenderer.addValueCubes(
+          policyProbabilities, policyBoardRows, policyBoardCols, 1,
+          [
+            policySoftmaxOriginX,
+            policyBoardOriginY,
+            policyBoardOriginZ,
+          ],
+          COLORS.output,
+          {
+            spacing: filterSpacing,
+            cellSize: filterCubeSize / 0.9,
+            // Probability colour runs from green (zero) to red (highest).
+            positiveOnly: true,
+            colorMax: Math.max(1e-8, ...policyProbabilities),
           },
         );
         if (!policyConv2AnnotationsBuilt) {
@@ -702,7 +743,48 @@ export function createTensorRenderer({
           );
           policyConv2AnnotationsBuilt = true;
         }
+        if (!policySoftmaxAnnotationsBuilt) {
+          addAnnotationLabel(
+            'Softmax output · 22×24×1',
+            [
+              policySoftmaxOriginX,
+              5,
+              policyInput.centerZ,
+            ],
+            24, '#ffffff', 90,
+          );
+          const arrowLeft = policyConv2OutputOriginX +
+            filterCubeSize / 2 + 0.08;
+          const arrowRight = policySoftmaxOriginX - filterCubeSize / 2;
+          const gap = arrowRight - arrowLeft;
+          const length = gap * 0.58;
+          const arrow = new THREE.ArrowHelper(
+            new THREE.Vector3(1, 0, 0),
+            new THREE.Vector3(
+              (arrowLeft + arrowRight - length) / 2,
+              policyInput.centerY,
+              policyInput.centerZ,
+            ),
+            length,
+            0x71879b,
+            Math.min(0.14, length * 0.38),
+            Math.min(0.10, length * 0.26),
+          );
+          arrow.name = 'policy-logits-to-softmax';
+          getAnnotationGroup().add(arrow);
+          addAnnotationFormulaLabel(
+            'pᵢ = exp(zᵢ) / Σ exp(z)',
+            [
+              (arrowLeft + arrowRight) / 2,
+              policyInput.centerY + 0.62,
+              policyInput.centerZ,
+            ],
+            23, '#f2f4f8', 92,
+          );
+          policySoftmaxAnnotationsBuilt = true;
+        }
         policyOutputStats.policyConv2 = policyConv2Stats;
+        policyOutputStats.policySoftmax = policySoftmaxStats;
         policyOutputStats.policyConv2FilterCount = policyConv2Info.count;
       }
     }
@@ -713,7 +795,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained input convolutions and an interactive residual stack feed the two-filter policy Conv1 bank placed after the final residual output. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
+      description: 'Trained input convolutions and an interactive residual stack feed the policy branch. Policy Conv₂ produces logits for the cropped 22×24 Black-to-move board; Softmax converts those 528 logits into move probabilities while preserving the two-dimensional board layout. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
       shape: 'Locations Conv 1×1×2×48; Pegs Conv 5×5×2×48; Links Conv 4×4×8×48; Policy Conv₁ 1×1×48×2; Policy Conv₂ 1×1×2×1',
       range: 'Trained signed weights; Policy Conv₁ is 1×1×48×2 (two output filters, 48 input features each) and has no bias.' +
         (policyOutputStats ? ' Policy Conv1 output ' + policyOutputStats.min.toFixed(4) +
