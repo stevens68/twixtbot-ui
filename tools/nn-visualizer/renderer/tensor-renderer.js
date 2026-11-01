@@ -126,6 +126,35 @@ export function createTensorRenderer({
   let policyOutputAnnotationsBuilt = false;
   let policyConv2AnnotationsBuilt = false;
   let policySoftmaxAnnotationsBuilt = false;
+  let policyBranchFilterGroup = null;
+  let lastPolicyInputRight = null;
+  const policyAnnotationSprites = [];
+
+  function trackPolicyAnnotation(sprite) {
+    if (sprite) policyAnnotationSprites.push(sprite);
+    return sprite;
+  }
+
+  function addPolicyLabel(...args) {
+    return trackPolicyAnnotation(addAnnotationLabel(...args));
+  }
+
+  function addPolicyFormulaLabel(...args) {
+    return trackPolicyAnnotation(addAnnotationFormulaLabel(...args));
+  }
+
+  function updatePolicyBranchPosition(policyInput) {
+    if (lastPolicyInputRight !== null && policyBranchFilterGroup) {
+      const deltaX = policyInput.right - lastPolicyInputRight;
+      if (Math.abs(deltaX) > 1e-8) {
+        policyBranchFilterGroup.position.x += deltaX;
+        for (const sprite of policyAnnotationSprites) {
+          sprite.position.x += deltaX;
+        }
+      }
+    }
+    lastPolicyInputRight = policyInput.right;
+  }
 
   // Dispose the current filter scene before rebuilding it with new weights.
   function clearFilterGeometry() {
@@ -143,6 +172,12 @@ export function createTensorRenderer({
     }
     geometries.forEach((geometry) => geometry.dispose());
     materials.forEach((material) => material.dispose());
+    policyBranchFilterGroup = null;
+    lastPolicyInputRight = null;
+    policyAnnotationSprites.length = 0;
+    policyOutputAnnotationsBuilt = false;
+    policyConv2AnnotationsBuilt = false;
+    policySoftmaxAnnotationsBuilt = false;
     residualRenderer.reset();
   }
 
@@ -420,6 +455,12 @@ export function createTensorRenderer({
     // Policy Conv1 consumes the final residual-stack output, not the first-layer
     // feature tensor. Place its bank directly downstream of block 20's output.
     const policyInput = residualRenderer.getLastOutputAnchor();
+    updatePolicyBranchPosition(policyInput);
+    if (!policyBranchFilterGroup) {
+      policyBranchFilterGroup = new THREE.Group();
+      policyBranchFilterGroup.name = 'policy-branch-static-geometry';
+      filterStaticGroup.add(policyBranchFilterGroup);
+    }
     const policyInputRight = policyInput.right;
     // Leave a clearly visible processing gap between the residual output and
     // the policy bank; the arrow spans this full separation.
@@ -441,6 +482,7 @@ export function createTensorRenderer({
       bankWidth: policyColumns * policySlotWidth + (policyColumns - 1) * policyGapZ,
       bankHeight: policyBankHeight,
       glassPadding: [1.04, 1.25, 1.25],
+      targetGroup: policyBranchFilterGroup,
     });
 
     if (rebuild) {
@@ -456,7 +498,7 @@ export function createTensorRenderer({
         Math.min(0.10, arrowLength * 0.26),
       );
       policyArrow.name = 'final-residual-output-to-policy-conv1';
-      filterStaticGroup.add(policyArrow);
+      policyBranchFilterGroup.add(policyArrow);
       addAnnotationLabel(
         'Pegs Conv₁ · 5×5×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
@@ -478,7 +520,7 @@ export function createTensorRenderer({
           locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
         24, '#ffffff', 90,
       );
-      addAnnotationLabel(
+      addPolicyLabel(
         'Policy Conv₁ · 1×1×48×2',
         [policyStartX + (policyInputChannels - 1) * filterSpacing / 2,
           policyStartY + policySlotHeight + 0.75,
@@ -539,7 +581,7 @@ export function createTensorRenderer({
         },
       );
       if (!policyOutputAnnotationsBuilt) {
-        addAnnotationLabel(
+        addPolicyLabel(
           'Policy Conv₁ output · 24×24×2',
           [outputOriginX + outputChannelStep / 2, 5, policyInput.centerZ],
           24, '#ffffff', 90,
@@ -561,8 +603,8 @@ export function createTensorRenderer({
           Math.min(0.10, centeredArrowLength * 0.26),
         );
         policyArrow.name = 'policy-conv1-to-policy-output';
-        getAnnotationGroup().add(policyArrow);
-        addAnnotationFormulaLabel(
+        policyBranchFilterGroup.add(policyArrow);
+        addPolicyFormulaLabel(
           'y = |BN(Conv(x))|',
           [
             (arrowLeft + arrowRight) / 2,
@@ -614,6 +656,7 @@ export function createTensorRenderer({
           // Separate the two input-channel weights by a visible gap, matching
           // the spacing between the two Policy Conv1 filters.
           channelSpacing: filterSpacing + 0.3,
+          targetGroup: policyBranchFilterGroup,
         });
         const policyConv2BankRight = policyConv2StartX + filterSpacing + 0.3 +
           filterCubeSize / 2;
@@ -685,7 +728,7 @@ export function createTensorRenderer({
           },
         );
         if (!policyConv2AnnotationsBuilt) {
-          addAnnotationLabel(
+          addPolicyLabel(
             'Policy Conv₂ · 1×1×2×1',
             [
               policyConv2StartX + filterSpacing / 2,
@@ -694,7 +737,7 @@ export function createTensorRenderer({
             ],
             24, '#ffffff', 90,
           );
-          addAnnotationLabel(
+          addPolicyLabel(
             'Policy Conv₂ output · 22×24×1',
             [
               policyConv2OutputOriginX,
@@ -719,7 +762,7 @@ export function createTensorRenderer({
               Math.min(0.10, length * 0.26),
             );
             arrow.name = name;
-            getAnnotationGroup().add(arrow);
+            policyBranchFilterGroup.add(arrow);
           };
           addCenteredPolicyArrow(
             policyOutputRight + 0.08,
@@ -731,7 +774,7 @@ export function createTensorRenderer({
             policyConv2OutputOriginX - filterCubeSize / 2,
             'policy-conv2-to-policy-logits',
           );
-          addAnnotationFormulaLabel(
+          addPolicyFormulaLabel(
             'y = Conv(x)',
             [
               (policyConv2BankRight + 0.08 +
@@ -744,7 +787,7 @@ export function createTensorRenderer({
           policyConv2AnnotationsBuilt = true;
         }
         if (!policySoftmaxAnnotationsBuilt) {
-          addAnnotationLabel(
+          addPolicyLabel(
             'Softmax output · 22×24×1',
             [
               policySoftmaxOriginX,
@@ -772,7 +815,7 @@ export function createTensorRenderer({
           );
           arrow.name = 'policy-logits-to-softmax';
           getAnnotationGroup().add(arrow);
-          addAnnotationFormulaLabel(
+          addPolicyFormulaLabel(
             'pᵢ = exp(zᵢ) / Σ exp(z)',
             [
               (arrowLeft + arrowRight) / 2,
