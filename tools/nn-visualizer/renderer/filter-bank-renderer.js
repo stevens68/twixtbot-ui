@@ -5,7 +5,7 @@ export function createFilterBankRenderer({
 }) {
   function drawFilterKernel(
     filterIndex, originX, originY, originZ, weights,
-    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null, cubeScale = 1, channelSpacing = filterSpacing,
+    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null, cubeScale = 1, channelSpacing = filterSpacing, targetGroup = filterStaticGroup,
   ) {
     // Reduce convolution-filter dimensions and internal gaps by a further 20%.
     // Keep these dimensions consistent across peg/link filters.
@@ -46,7 +46,7 @@ export function createFilterBankRenderer({
       }
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      filterStaticGroup.add(mesh);
+      targetGroup.add(mesh);
 
       if (showBias) {
         const biasValue = Number(biasValues?.[filterIndex] ?? 0);
@@ -72,7 +72,7 @@ export function createFilterBankRenderer({
         biasCube.scale.setScalar(cubeSize * biasMagnitudeScale);
         biasCube.name = 'filter-' + filterIndex + '-bias';
         biasCube.userData.biasValue = biasValue;
-        filterStaticGroup.add(biasCube);
+        targetGroup.add(biasCube);
       }
     }
 
@@ -89,7 +89,7 @@ export function createFilterBankRenderer({
   }
 
 
-  function addBankGlass(name, x, y, z, sizeX, sizeY, sizeZ, padding = [1.08, 1.08, 1.08]) {
+  function addBankGlass(targetGroup, name, x, y, z, sizeX, sizeY, sizeZ, padding = [1.08, 1.08, 1.08]) {
     const geometry = new THREE.BoxGeometry(sizeX * padding[0], sizeY * padding[1], sizeZ * padding[2]);
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
@@ -98,13 +98,14 @@ export function createFilterBankRenderer({
     geometry.dispose();
     edges.position.set(x + sizeX / 2, y + sizeY / 2, z + sizeZ / 2);
     edges.name = name + '-convolution-glass-outline';
-    filterStaticGroup.add(edges);
+    targetGroup.add(edges);
   }
 
   function drawBank({
     name, weights, startX, startY, startZ, columns, gapY, gapZ,
     showBias = false, biasValues = null, buildGeometry = true,
     slotWidth, slotHeight, bankWidth, bankHeight, glassPadding, cubeScale = 1, channelSpacing = filterSpacing,
+    targetGroup = filterStaticGroup,
   }) {
     const count = weights.length;
     const kernelHeight = weights[0].length;
@@ -125,12 +126,12 @@ export function createFilterBankRenderer({
         const glassHeight = (rows - 1) * (slotHeight + gapY) + actualCubeSize;
         const glassDepth = (columns - 1) * (slotWidth + gapZ) + actualCubeSize;
         addBankGlass(
-          name, glassX, glassY, glassZ,
+          targetGroup, name, glassX, glassY, glassZ,
           glassWidth, glassHeight, glassDepth, glassPadding,
         );
       } else {
         addBankGlass(
-          name, startX, startY - (rows - 1) * (slotHeight + gapY),
+          targetGroup, name, startX, startY - (rows - 1) * (slotHeight + gapY),
           startZ, channels * filterSpacing, bankHeight,
           columns * slotWidth + (columns - 1) * gapZ,
           glassPadding,
@@ -146,7 +147,7 @@ export function createFilterBankRenderer({
         startY - row * (slotHeight + gapY),
         startZ + column * (slotWidth + gapZ),
         weights, kernelHeight, kernelWidth, channels,
-        String(filter + 1), showBias, buildGeometry, biasValues, cubeScale, channelSpacing,
+        String(filter + 1), showBias, buildGeometry, biasValues, cubeScale, channelSpacing, targetGroup,
       );
     }
     return { count, kernelHeight, kernelWidth, channels, rows };
