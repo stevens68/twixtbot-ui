@@ -393,30 +393,24 @@ export function createTensorRenderer({
       glassPadding: [1.02, 1.0, 1.0],
     });
 
-    // Policy Conv1 maps 48 residual feature maps to two output channels.
-    // The location tensor's filter count is 48; its per-filter input depth is 2.
-    const policyChannels = weights.locations.length;
-    // Keep the visualizer renderable if an older cached/demo data object is
-    // supplied. The normal initialization path replaces this zero fallback
-    // with the trained policy_conv1 checkpoint weights.
+    // Policy Conv1 has two output filters, each with 48 input-channel
+    // weights. Keep the model's [out_channels][1][1][in_channels] layout:
+    // two filters side by side, with each filter's 48 blades along X.
+    const policyInputChannels = weights.policyConv1?.[0]?.[0]?.[0]?.length ||
+      weights.locations.length;
+    // Keep the visualizer renderable if older cached/demo data is supplied.
     const policyWeights = Array.isArray(weights.policyConv1) &&
-      weights.policyConv1.length === 2 && Array.isArray(weights.policyConv1[0]?.[0]?.[0])
+      weights.policyConv1.length === 2 &&
+      Array.isArray(weights.policyConv1[0]?.[0]?.[0])
       ? weights.policyConv1
-      : Array.from({ length: 2 }, () => [[Array(policyChannels).fill(0)]]);
-    // Render the [2 output filters, 48 input channels] weights as 48
-    // two-value cells. This gives Policy Conv1 the same 8×6 filter-bank
-    // arrangement as the location convolution: 48 cells, each containing
-    // the two weights for its corresponding channel.
-    const policyDisplayWeights = Array.from({ length: policyChannels }, (_, channel) => [[[
-      Number(policyWeights[0][0][0][channel]),
-      Number(policyWeights[1][0][0][channel]),
-    ]]]);
-    const policyRows = Math.ceil(policyDisplayWeights.length / columns);
-    const policyGapY = locationGapY;
-    const policyGapZ = locationGapZ;
-    const policySlotWidth = pegFilterWidth;
-    const policySlotHeight = pegFilterHeight;
-    const policyBankHeight = policyRows * policySlotHeight + (policyRows - 1) * policyGapY;
+      : Array.from({ length: 2 }, () => [[Array(policyInputChannels).fill(0)]]);
+    const policyColumns = 2;
+    const policyRows = 1;
+    const policyGapY = 0;
+    const policyGapZ = 0.3;
+    const policySlotWidth = filterSpacing;
+    const policySlotHeight = filterSpacing;
+    const policyBankHeight = policySlotHeight;
     // Policy Conv1 consumes the final residual-stack output, not the first-layer
     // feature tensor. Place its bank directly downstream of block 20's output.
     const policyInput = residualRenderer.getLastOutputAnchor();
@@ -428,20 +422,20 @@ export function createTensorRenderer({
     // Use the same row/column layout and vertical centering convention as Conv3.
     const policyStartY = policyInput.centerY +
       (policyRows - 1) * (policySlotHeight + policyGapY) / 2;
-    const policyBankDepth = columns * policySlotWidth + (columns - 1) * policyGapZ;
-    // Match the location bank's exact first-cell placement convention.
+    const policyBankDepth = policyColumns * policySlotWidth + (policyColumns - 1) * policyGapZ;
+    // Center the two output filters around the residual-output centerline.
     const policyStartZ = policyInput.centerZ -
-      (columns - 1) * (policySlotWidth + policyGapZ) / 2 -
+      (policyColumns - 1) * (policySlotWidth + policyGapZ) / 2 -
       (policySlotWidth - filterSpacing) / 2;
     const policyInfo = filterBankRenderer.drawBank({
-      name: 'policy-conv1', weights: policyDisplayWeights,
+      name: 'policy-conv1', weights: policyWeights,
       startX: policyStartX, startY: policyStartY, startZ: policyStartZ,
-      columns, gapY: policyGapY, gapZ: policyGapZ,
+      columns: policyColumns, gapY: policyGapY, gapZ: policyGapZ,
       showBias: false, buildGeometry: rebuild,
       slotWidth: policySlotWidth, slotHeight: policySlotHeight,
-      bankWidth: columns * policySlotWidth + (columns - 1) * policyGapZ,
+      bankWidth: policyColumns * policySlotWidth + (policyColumns - 1) * policyGapZ,
       bankHeight: policyBankHeight,
-      glassPadding: [1.02, 1.0, 1.0],
+      glassPadding: [1.04, 1.25, 1.25],
     });
 
     if (rebuild) {
@@ -459,31 +453,31 @@ export function createTensorRenderer({
       policyArrow.name = 'final-residual-output-to-policy-conv1';
       filterStaticGroup.add(policyArrow);
       addAnnotationLabel(
-        'Conv₁ · 5×5×2×48',
+        'Pegs Conv · 5×5×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
           pegStartY + pegHeight * filterSpacing + 0.75,
           pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Conv₂ · 4×4×8×48',
+        'Links Conv · 4×4×8×48',
         [startX + (channels - 1) * filterSpacing / 2,
           startY + kernelHeight * filterSpacing + 0.75,
           startZ + (columns * filterWidth + (columns - 1) * gapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Conv₃ · 1×1×2×48',
+        'Locations Conv · 1×1×2×48',
         [startX + (locationChannels - 1) * filterSpacing / 2,
           locationStartY + locationHeight * filterSpacing + 0.75,
           locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Policy Conv₁ · 1×1×2×48',
-        [policyStartX + filterSpacing / 2,
+        'Policy Conv₁ · 1×1×48×2',
+        [policyStartX + (policyInputChannels - 1) * filterSpacing / 2,
           policyStartY + policySlotHeight + 0.75,
-          policyStartZ + (columns * policySlotWidth + (columns - 1) * policyGapZ) / 2],
+          policyStartZ + (policyColumns - 1) * (policySlotWidth + policyGapZ) / 2],
         24, '#ffffff', 90,
       );
     }
@@ -519,7 +513,7 @@ export function createTensorRenderer({
       const policyColorMax = Math.max(...policyBn.weight.map((weight, channel) =>
         Math.abs(Number(policyBn.bias[channel])) + 3 * Math.abs(Number(weight))));
       const policyBankRight = policyStartX +
-        (policyChannels - 1) * filterSpacing + filterCubeSize / 2;
+        (policyInputChannels - 1) * filterSpacing + filterCubeSize / 2;
       // Reduce the Policy Conv1 → output separation by 20%.
       const policyOutputGap = 4.2 * 0.8;
       const policyOutputStartX = policyBankRight + policyOutputGap + filterCubeSize / 2;
@@ -632,7 +626,7 @@ export function createTensorRenderer({
         );
         if (!policyConv2AnnotationsBuilt) {
           addAnnotationLabel(
-            'Policy Conv₂ · 1×1×2',
+            'Policy Conv₂ · 1×1×2×1',
             [
               policyConv2StartX + filterSpacing / 2,
               policyConv2StartY + 1.0,
@@ -691,9 +685,7 @@ export function createTensorRenderer({
     return {
       title: 'Trained convolution filters',
       description: 'Trained input convolutions and an interactive residual stack feed the two-filter policy Conv1 bank placed after the final residual output. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
-      shape: 'Locations ' + locationInfo.kernelHeight + ' × ' + locationInfo.kernelWidth + ' × ' + locationInfo.channels +
-        '; pegs ' + pegInfo.kernelHeight + ' × ' + pegInfo.kernelWidth + ' × ' + pegInfo.channels +
-        '; links ' + linkInfo.kernelHeight + ' × ' + linkInfo.kernelWidth + ' × ' + linkInfo.channels,
+      shape: 'Locations Conv 1×1×2×48; Pegs Conv 5×5×2×48; Links Conv 4×4×8×48; Policy Conv₁ 1×1×48×2; Policy Conv₂ 1×1×2×1',
       range: 'Trained signed weights; policy Conv1 has two 1×1×48 filters and no bias.' +
         (policyOutputStats ? ' Policy Conv1 output ' + policyOutputStats.min.toFixed(4) +
           ' … ' + policyOutputStats.max.toFixed(4) + ' (colour scale 0 … ' +
