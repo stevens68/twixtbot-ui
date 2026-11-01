@@ -5,13 +5,13 @@ export function createFilterBankRenderer({
 }) {
   function drawFilterKernel(
     filterIndex, originX, originY, originZ, weights,
-    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null, cubeScale = 1,
+    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null, cubeScale = 1, channelSpacing = filterSpacing,
   ) {
     // Reduce convolution-filter dimensions and internal gaps by a further 20%.
     // Keep these dimensions consistent across peg/link filters.
     const spacing = filterSpacing;
     const cubeSize = filterCubeSize * cubeScale;
-    const channelDepth = filterSpacing;
+    const channelDepth = channelSpacing;
     if (buildGeometry) {
       // Weights are stored [row][column][channel], so preserve that layout
       // with channels along X, rows along Y, and columns along Z.
@@ -104,7 +104,7 @@ export function createFilterBankRenderer({
   function drawBank({
     name, weights, startX, startY, startZ, columns, gapY, gapZ,
     showBias = false, biasValues = null, buildGeometry = true,
-    slotWidth, slotHeight, bankWidth, bankHeight, glassPadding, cubeScale = 1,
+    slotWidth, slotHeight, bankWidth, bankHeight, glassPadding, cubeScale = 1, channelSpacing = filterSpacing,
   }) {
     const count = weights.length;
     const kernelHeight = weights[0].length;
@@ -121,7 +121,7 @@ export function createFilterBankRenderer({
         const glassX = startX - cubeHalf;
         const glassY = startY - (rows - 1) * (slotHeight + gapY) - cubeHalf;
         const glassZ = startZ - cubeHalf;
-        const glassWidth = (channels - 1) * filterSpacing + actualCubeSize;
+        const glassWidth = (channels - 1) * channelSpacing + actualCubeSize;
         const glassHeight = (rows - 1) * (slotHeight + gapY) + actualCubeSize;
         const glassDepth = (columns - 1) * (slotWidth + gapZ) + actualCubeSize;
         addBankGlass(
@@ -146,7 +146,7 @@ export function createFilterBankRenderer({
         startY - row * (slotHeight + gapY),
         startZ + column * (slotWidth + gapZ),
         weights, kernelHeight, kernelWidth, channels,
-        String(filter + 1), showBias, buildGeometry, biasValues, cubeScale,
+        String(filter + 1), showBias, buildGeometry, biasValues, cubeScale, channelSpacing,
       );
     }
     return { count, kernelHeight, kernelWidth, channels, rows };
