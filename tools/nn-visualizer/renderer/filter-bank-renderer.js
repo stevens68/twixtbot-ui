@@ -5,7 +5,7 @@ export function createFilterBankRenderer({
 }) {
   function drawFilterKernel(
     filterIndex, originX, originY, originZ, weights,
-    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null, cubeScale = 1, channelSpacing = filterSpacing, targetGroup = filterStaticGroup,
+    kernelHeight, kernelWidth, channels, label, showBias = false, buildGeometry = true, biasValues = null, cubeScale = 1, channelSpacing = filterSpacing, targetGroup = filterStaticGroup, targetLabel = addAnnotationLabel,
   ) {
     // Reduce convolution-filter dimensions and internal gaps by a further 20%.
     // Keep these dimensions consistent across peg/link filters.
@@ -77,7 +77,7 @@ export function createFilterBankRenderer({
     }
 
     // A simple numeric filter label, centered above the kernel face.
-    if (buildGeometry) addAnnotationLabel(
+    if (buildGeometry) targetLabel(
       String(filterIndex + 1),
       [
         originX + ((channels - 1) * channelDepth) / 2,
@@ -105,7 +105,7 @@ export function createFilterBankRenderer({
     name, weights, startX, startY, startZ, columns, gapY, gapZ,
     showBias = false, biasValues = null, buildGeometry = true,
     slotWidth, slotHeight, bankWidth, bankHeight, glassPadding, cubeScale = 1, channelSpacing = filterSpacing,
-    targetGroup = filterStaticGroup,
+    targetGroup = filterStaticGroup, targetLabel = addAnnotationLabel,
   }) {
     const count = weights.length;
     const kernelHeight = weights[0].length;
@@ -147,7 +147,7 @@ export function createFilterBankRenderer({
         startY - row * (slotHeight + gapY),
         startZ + column * (slotWidth + gapZ),
         weights, kernelHeight, kernelWidth, channels,
-        String(filter + 1), showBias, buildGeometry, biasValues, cubeScale, channelSpacing, targetGroup,
+        String(filter + 1), showBias, buildGeometry, biasValues, cubeScale, channelSpacing, targetGroup, targetLabel,
       );
     }
     return { count, kernelHeight, kernelWidth, channels, rows };
