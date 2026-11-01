@@ -572,6 +572,12 @@ export function createTensorRenderer({
           filterCubeSize / 2;
         const policyConv2StartY = policyInput.centerY;
         const policyConv2StartZ = policyInput.centerZ;
+        // The policy weights can become available after the first filter-scene
+        // build. In that case the output and arrows are drawn on later passes,
+        // but a rebuild-only guard would leave the Conv2 bank (and glass) absent.
+        const policyConv2GlassExists = filterStaticGroup.children.some(
+          (child) => child.name === 'policy-conv2-convolution-glass-outline',
+        );
         const policyConv2Info = filterBankRenderer.drawBank({
           name: 'policy-conv2',
           weights: policyConv2Weights,
@@ -582,7 +588,7 @@ export function createTensorRenderer({
           gapY: 0,
           gapZ: 0,
           showBias: false,
-          buildGeometry: rebuild,
+          buildGeometry: rebuild || !policyConv2GlassExists,
           slotWidth: filterSpacing,
           slotHeight: filterSpacing,
           bankWidth: filterSpacing,
