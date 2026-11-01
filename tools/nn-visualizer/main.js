@@ -825,8 +825,10 @@ document.querySelector('#camera-policy-conv1').addEventListener('click', setPoli
 document.querySelector('#toggle-residual-blocks-2-19').addEventListener('change', (event) => {
   setShowIntermediateResidualBlocks(event.target.checked);
   renderStep();
-  // If the block-20 preset is active, keep it framed after the stack changes.
+  // Keep either downstream camera preset aligned with the compact/expanded
+  // residual stack after its layout changes.
   if (lastCameraPreset === 'residual-block-20') setResidualBlock20CameraPreset();
+  else if (lastCameraPreset === 'policy-conv1') setPolicyConv1CameraPreset();
 });
 const tanhSlider = document.querySelector('#tanh-a');
 const tanhValue = document.querySelector('#tanh-a-value');
