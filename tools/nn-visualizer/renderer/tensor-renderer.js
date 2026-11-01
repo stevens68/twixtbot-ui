@@ -556,6 +556,15 @@ export function createTensorRenderer({
         );
         policyArrow.name = 'policy-conv1-to-policy-output';
         getAnnotationGroup().add(policyArrow);
+        addAnnotationFormulaLabel(
+          'y = |BN(Conv(x))|',
+          [
+            (arrowLeft + arrowRight) / 2,
+            policyInput.centerY + 0.62,
+            policyInput.centerZ,
+          ],
+          23, '#f2f4f8', 92,
+        );
         policyOutputAnnotationsBuilt = true;
       }
 
@@ -595,8 +604,11 @@ export function createTensorRenderer({
           bankHeight: filterSpacing,
           glassPadding: [1.32, 1.55, 1.55],
           cubeScale: 1.8,
+          // Separate the two input-channel weights by a visible gap, matching
+          // the spacing between the two Policy Conv1 filters.
+          channelSpacing: filterSpacing + 0.3,
         });
-        const policyConv2BankRight = policyConv2StartX + filterSpacing +
+        const policyConv2BankRight = policyConv2StartX + filterSpacing + 0.3 +
           filterCubeSize / 2;
         const policyConv2OutputGap = policyOutputGap;
         const policyConv2OutputOriginX = policyConv2BankRight +
@@ -624,9 +636,11 @@ export function createTensorRenderer({
           {
             spacing: filterSpacing,
             cellSize: filterCubeSize / 0.9,
-            colorMax: Math.max(1e-8, policyConv2Weights[0][0][0].reduce(
-              (sum, value) => sum + Math.abs(Number(value)), 0)) *
-              Math.max(1e-8, policyColorMax),
+            // Conv2 has no BatchNorm or absolute activation: these are
+            // signed policy logits. Use their actual symmetric range so
+            // negative and positive values are represented proportionally.
+            colorMax: Math.max(1e-8, ...policyConv2Values.map((value) =>
+              Math.abs(Number(value)))),
           },
         );
         if (!policyConv2AnnotationsBuilt) {
@@ -675,6 +689,16 @@ export function createTensorRenderer({
             policyConv2BankRight + 0.08,
             policyConv2OutputOriginX - filterCubeSize / 2,
             'policy-conv2-to-policy-logits',
+          );
+          addAnnotationFormulaLabel(
+            'y = Conv(x)',
+            [
+              (policyConv2BankRight + 0.08 +
+                policyConv2OutputOriginX - filterCubeSize / 2) / 2,
+              policyInput.centerY + 0.62,
+              policyInput.centerZ,
+            ],
+            23, '#f2f4f8', 92,
           );
           policyConv2AnnotationsBuilt = true;
         }
