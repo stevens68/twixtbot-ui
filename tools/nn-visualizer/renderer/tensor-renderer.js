@@ -422,7 +422,6 @@ export function createTensorRenderer({
     // Use the same row/column layout and vertical centering convention as Conv3.
     const policyStartY = policyInput.centerY +
       (policyRows - 1) * (policySlotHeight + policyGapY) / 2;
-    const policyBankDepth = policyColumns * policySlotWidth + (policyColumns - 1) * policyGapZ;
     // Center the two output filters around the residual-output centerline.
     const policyStartZ = policyInput.centerZ -
       (policyColumns - 1) * (policySlotWidth + policyGapZ) / 2 -
@@ -453,21 +452,21 @@ export function createTensorRenderer({
       policyArrow.name = 'final-residual-output-to-policy-conv1';
       filterStaticGroup.add(policyArrow);
       addAnnotationLabel(
-        'Pegs Conv · 5×5×2×48',
+        'Pegs Conv₁ · 5×5×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
           pegStartY + pegHeight * filterSpacing + 0.75,
           pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Links Conv · 4×4×8×48',
+        'Links Conv₂ · 4×4×8×48',
         [startX + (channels - 1) * filterSpacing / 2,
           startY + kernelHeight * filterSpacing + 0.75,
           startZ + (columns * filterWidth + (columns - 1) * gapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Locations Conv · 1×1×2×48',
+        'Locations Conv₃ · 1×1×2×48',
         [startX + (locationChannels - 1) * filterSpacing / 2,
           locationStartY + locationHeight * filterSpacing + 0.75,
           locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
@@ -686,7 +685,7 @@ export function createTensorRenderer({
       title: 'Trained convolution filters',
       description: 'Trained input convolutions and an interactive residual stack feed the two-filter policy Conv1 bank placed after the final residual output. Residual block 0 shows both trained convolution banks inside glass enclosures and its actual 24×24×48 output tensor. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
       shape: 'Locations Conv 1×1×2×48; Pegs Conv 5×5×2×48; Links Conv 4×4×8×48; Policy Conv₁ 1×1×48×2; Policy Conv₂ 1×1×2×1',
-      range: 'Trained signed weights; policy Conv1 has two 1×1×48 filters and no bias.' +
+      range: 'Trained signed weights; Policy Conv₁ is 1×1×48×2 (two output filters, 48 input features each) and has no bias.' +
         (policyOutputStats ? ' Policy Conv1 output ' + policyOutputStats.min.toFixed(4) +
           ' … ' + policyOutputStats.max.toFixed(4) + ' (colour scale 0 … ' +
           policyOutputStats.colorMax.toFixed(4) + ').' : ''),
