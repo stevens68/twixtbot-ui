@@ -877,14 +877,22 @@ export function createTensorRenderer({
         const actualNextPlayer = getBackendSnapshot()?.next_player ??
           getData().snapshot?.next_player ?? 0;
         const redToMove = Number(actualNextPlayer) === 1;
-        const markerRow = redToMove ? bestMoveCol : bestMoveRow;
-        const markerCol = redToMove ? bestMoveRow : bestMoveCol;
+        // The yellow ring always marks the canonical (black-perspective)
+        // best-move coordinate. Only the red peg is transposed for red's turn.
+        const markerRow = bestMoveRow;
+        const markerCol = bestMoveCol;
+        const pegRow = redToMove ? bestMoveCol : bestMoveRow;
+        const pegCol = redToMove ? bestMoveRow : bestMoveCol;
         const boardSpacing = 0.34;
         const boardSize = (BOARD_SIZE - 1) * boardSpacing;
         const markerY = policyInput.centerY - boardSize / 2 +
           (BOARD_SIZE - 1 - markerRow) * boardSpacing;
         const markerZ = policyInput.centerZ - boardSize / 2 +
           markerCol * boardSpacing;
+        const pegY = policyInput.centerY - boardSize / 2 +
+          (BOARD_SIZE - 1 - pegRow) * boardSpacing;
+        const pegZ = policyInput.centerZ - boardSize / 2 +
+          pegCol * boardSpacing;
 
         for (const name of ['canonical-best-move-marker', 'canonical-best-move-peg']) {
           const previous = canonicalBestMoveBoard.getObjectByName(name);
@@ -931,8 +939,8 @@ export function createTensorRenderer({
         canonicalBestMoveBoard.add(canonicalBestMovePeg);
 
         // Also show the predicted move on the actual Twixt board.
-        const actualBestMoveRow = markerRow;
-        const actualBestMoveCol = markerCol;
+        const actualBestMoveRow = pegRow;
+        const actualBestMoveCol = pegCol;
         const previousActualPeg = getSceneGroup().getObjectByName('actual-best-move-peg');
         if (previousActualPeg) {
           getSceneGroup().remove(previousActualPeg);
