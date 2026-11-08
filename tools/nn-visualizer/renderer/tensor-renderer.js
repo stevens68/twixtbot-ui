@@ -1,7 +1,7 @@
-import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261101-policy-positive-colour-v1';
+import { createFeatureOutputRenderer } from './feature-output-renderer.js?v=20261108-dense-tensor-visibility-v1';
 import { INPUT_CHANNEL_GAP, createInputTensorRenderer } from './input-tensor-renderer.js?v=20261031-input-tanh-v1';
 import { createFilterBankRenderer } from './filter-bank-renderer.js?v=20261101-1x1-glass-alignment-v1';
-import { createResidualRenderer } from './residual-renderer.js?v=20261108-block20-camera-offset-v1';
+import { createResidualRenderer } from './residual-renderer.js?v=20261108-dense-output-visibility-v1';
 /** Rendering helpers for input tensors, convolution kernels, and feature outputs. */
 export function createTensorRenderer({
   THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
