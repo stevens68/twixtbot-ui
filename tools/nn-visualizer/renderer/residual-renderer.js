@@ -8,6 +8,8 @@ export function createResidualRenderer({
   const residualWeightsByIndex = new Map();
   const residualOutputGroups = new Map();
   const residualOutputMeshes = new Map();
+  const residualIntermediateGroups = new Map();
+  const residualIntermediateMeshes = new Map();
   let residualLabelsBuilt = false;
   // These labels are attached to the persistent annotation group, so retain
   // their sprites and explicitly hide them when blocks 2–19 are collapsed.
@@ -22,6 +24,8 @@ export function createResidualRenderer({
   let showIntermediateResidualBlocks = false;
   let lastRenderedOutputTensor = null;
   let lastRenderedLastOutputTensor = null;
+  let lastRenderedIntermediateTensor = null;
+  let lastRenderedLastIntermediateTensor = null;
   function disposeResidualDetail(blockIndex) {
     const group = residualFilterGroups.get(blockIndex);
     if (!group) return;
@@ -53,7 +57,7 @@ function residualLayout(blockIndex, forceExpanded = false) {
  const outputSizeX=(channels-1)*outputChannelStep+outputCubeSize,outputSizeY=(BOARD_SIZE-1)*filterSpacing+outputCubeSize;
  const outputCenterY=-2.5+(BOARD_SIZE-1)*filterSpacing/2,outputCenterZ=-((channels-1)*.105)/2+(BOARD_SIZE-1)*filterSpacing/2;
  const bankStartY=outputCenterY-(bankMinYOffset+bankMaxYOffset)/2,bankStartZ=outputCenterZ-bankSizeZ/2+filterCubeSize/2;
- const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2,firstConvGap=9;
+ const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2,firstConvGap=16;
  const firstPitch=(2*bankSizeX+firstConvGap+1.25*1.15*3+outputCubeSize/2+outputSizeX+1.25+filterCubeSize/2)*1.2;
  const nextLeft=firstX+firstPitch-filterCubeSize/2,right=firstX-filterCubeSize/2+2*bankSizeX+firstConvGap;
  const outputCenterX=(right+nextLeft)/2,outputStartX=outputCenterX-(channels-1)*outputChannelStep/2;
@@ -65,9 +69,15 @@ function residualLayout(blockIndex, forceExpanded = false) {
  const blockStartX=layoutIndex===0?firstX:nextLeft+filterCubeSize/2+(layoutIndex-1)*compactPitch;
  const isEndpoint=blockIndex===0 || blockIndex===actualLastIndex;
  const convGap=isEndpoint?firstConvGap:compactConvGap;
+ const bankStartXs=[blockStartX,blockStartX+bankSizeX+convGap];
+ const firstConvRight=bankStartXs[0]+(channels-1)*filterSpacing+filterCubeSize/2;
+ const secondConvLeft=bankStartXs[1]-filterCubeSize/2;
+ const intermediateCenterX=(firstConvRight+secondConvLeft)/2;
+ const intermediateStartX=intermediateCenterX-(channels-1)*outputChannelStep/2;
  const shift=blockStartX-firstX;
  return {channels,kernelHeight,kernelWidth,columns,rows,filterWidth,filterHeight,gapY,gapZ,bankSizeX,bankSizeY,bankSizeZ,bankStartY,bankStartZ,
- bankStartXs:[blockStartX,blockStartX+bankSizeX+convGap],bankStartZs:[bankStartZ,bankStartZ],blockStartX,blockSpanX:2*bankSizeX+convGap,
+ bankStartXs,bankStartZs:[bankStartZ,bankStartZ],blockStartX,blockSpanX:2*bankSizeX+convGap,
+ intermediateCenterX,intermediateStartX,
  outputStartX:outputStartX+shift,outputCenterX:outputCenterX+shift,outputChannelStep,outputSizeX,outputSizeY,outputSizeZ:outputSizeY,outputCenterY,outputCenterZ,outputCubeSize};
 }
 
@@ -141,14 +151,14 @@ function drawSelectedResidualBlock(residualWeights, buildGeometry, blockIndex) {
 
 }
 
-function addResidualOutputValues(group,layout,index,tensor,mesh=null){
+function addResidualOutputValues(group,layout,index,tensor,mesh=null,originX=null){
  const count=FILTER_COUNT*BOARD_SIZE*BOARD_SIZE;
  if(!mesh){mesh=new THREE.InstancedMesh(cubeGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55,transparent:true,opacity:.96}),count);mesh.name='residual-block-'+(index+1)+'-actual-output-values';group.add(mesh);}
  let max=1e-8;
  for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++)max=Math.max(max,Math.abs(Number(tensor[r][col][c])));
  const o=new THREE.Object3D();let i=0;
  for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++){
- const v=Number(tensor[r][col][c]);o.position.set(layout.outputStartX+c*layout.outputChannelStep,layout.outputCenterY+(BOARD_SIZE-1-r)*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2,layout.outputCenterZ+col*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2);
+ const v=Number(tensor[r][col][c]);o.position.set((originX??layout.outputStartX)+c*layout.outputChannelStep,layout.outputCenterY+(BOARD_SIZE-1-r)*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2,layout.outputCenterZ+col*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2);
  o.scale.setScalar(layout.outputCubeSize*.72);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);mesh.setColorAt(i,heatMapColor(v,0,max));i++;}
  mesh.count=i;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;return mesh;
 }
@@ -211,7 +221,26 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
         inputRight=previousGapCenter+layout.outputSizeX/2;
        }
        addResidualArrow(residualPlaceholderGroup,inputRight,layout.bankStartXs[0]-filterCubeSize/2,cy,cz,prefix+'-input-to-block');
-       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,prefix+'-conv1-to-conv2','y₁ = |BN(Conv₁(x))|');
+       const activationLeft=layout.intermediateCenterX-layout.outputSizeX/2;
+       const activationRight=layout.intermediateCenterX+layout.outputSizeX/2;
+       const activationGlass=new THREE.Mesh(
+         new THREE.BoxGeometry(layout.outputSizeX,layout.outputSizeY,layout.outputSizeZ),
+         new THREE.MeshPhysicalMaterial({
+           color:0x00ff00,transparent:true,opacity:0.16,transmission:0.72,
+           roughness:0.08,metalness:0,depthWrite:false,side:THREE.DoubleSide,
+         }),
+       );
+       activationGlass.position.set(layout.intermediateCenterX,cy,cz);
+       activationGlass.name='residual-block-'+(index+1)+'-conv1-activation-tensor-glass';
+       residualPlaceholderGroup.add(activationGlass);
+       addResidualArrow(
+         residualPlaceholderGroup,br1,activationLeft,cy,cz,
+         prefix+'-conv1-to-activation','y₁ = |BN(Conv₁(x))|',
+       );
+       addResidualArrow(
+         residualPlaceholderGroup,activationRight,bl2,cy,cz,
+         prefix+'-activation-to-conv2',
+       );
        const outLeft=layout.outputCenterX-layout.outputSizeX/2,merge=outLeft-1.35;
        addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,prefix+'-conv2-to-merge','y₂ = |BN(Conv₂(y₁))|');
        addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,prefix+'-identity-skip','y₃ = x');
@@ -281,6 +310,14 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
       if (sprite) {
         intermediateResidualLabelSprites.push(sprite);
       }
+      if (index === 0 || index === blockCount - 1) {
+        const activationLabel = addLabel(
+          'Conv₁ activation · 24×24×48',
+          [layout.intermediateCenterX, y, z],
+          21, '#b9efcf', 76,
+        );
+        if (activationLabel) intermediateResidualLabelSprites.push(activationLabel);
+      }
     }
   }
 
@@ -299,6 +336,9 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     for(const index of [...residualOutputGroups.keys()]) updateResidualOutput(index,null);
     lastRenderedOutputTensor=null;
     lastRenderedLastOutputTensor=null;
+    for (const index of [...residualIntermediateGroups.keys()]) updateResidualIntermediateOutput(index,null);
+    lastRenderedIntermediateTensor=null;
+    lastRenderedLastIntermediateTensor=null;
   }
 
   function getBlock20CameraOffset() {
@@ -361,9 +401,40 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     ));
   }
 
+  function updateResidualIntermediateOutput(index, tensor) {
+    let group = residualIntermediateGroups.get(index);
+    if (!tensor) {
+      if (group) {
+        filterStaticGroup.remove(group);
+        group.traverse((object) => {
+          if (object.geometry && object.geometry !== cubeGeometry) object.geometry.dispose();
+          if (object.material) (Array.isArray(object.material) ? object.material : [object.material])
+            .forEach((material) => material?.dispose());
+        });
+        residualIntermediateGroups.delete(index);
+        residualIntermediateMeshes.delete(index);
+      }
+      return;
+    }
+    if (!group) {
+      group = new THREE.Group();
+      group.name = 'residual-block-' + (index + 1) + '-conv1-activation-values';
+      residualIntermediateGroups.set(index, group);
+      filterStaticGroup.add(group);
+    }
+    const layout = residualLayout(index);
+    const mesh = addResidualOutputValues(
+      group, layout, index, tensor, residualIntermediateMeshes.get(index),
+      layout.intermediateStartX,
+    );
+    mesh.name = 'residual-block-' + (index + 1) + '-conv1-activation-values';
+    residualIntermediateMeshes.set(index, mesh);
+  }
+
   function reset() {
     for (const index of [...residualFilterGroups.keys()]) disposeResidualDetail(index);
     for (const index of [...residualOutputGroups.keys()]) updateResidualOutput(index, null);
+    for (const index of [...residualIntermediateGroups.keys()]) updateResidualIntermediateOutput(index, null);
     residualPlaceholderGroup = null;
     residualPlaceholderDirty = false;
     for (const sprite of intermediateResidualLabelSprites) sprite.visible = false;
@@ -371,6 +442,8 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     residualLabelsBuilt = false;
     lastRenderedOutputTensor = null;
     lastRenderedLastOutputTensor = null;
+    lastRenderedIntermediateTensor = null;
+    lastRenderedLastIntermediateTensor = null;
     residualHitTargets = [];
     // clearFilterGeometry() calls reset() before rebuilding the filter scene.
     // Keep the trained payloads: draw() needs them to recreate both endpoint
@@ -382,6 +455,8 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     const data = getData();
     const outputTensor = data.residualBlock0Output || null;
     const lastOutputTensor = data.residualBlockLastOutput || null;
+    const intermediateTensor = data.residualBlock0IntermediateOutput || null;
+    const lastIntermediateTensor = data.residualBlockLastIntermediateOutput || null;
     if (outputTensor !== lastRenderedOutputTensor) {
       lastRenderedOutputTensor = outputTensor;
       updateResidualOutput(0, outputTensor);
@@ -389,6 +464,14 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     if (lastOutputTensor !== lastRenderedLastOutputTensor) {
       lastRenderedLastOutputTensor = lastOutputTensor;
       updateResidualOutput(blockCount - 1, lastOutputTensor);
+    }
+    if (intermediateTensor !== lastRenderedIntermediateTensor) {
+      lastRenderedIntermediateTensor = intermediateTensor;
+      updateResidualIntermediateOutput(0, intermediateTensor);
+    }
+    if (lastIntermediateTensor !== lastRenderedLastIntermediateTensor) {
+      lastRenderedLastIntermediateTensor = lastIntermediateTensor;
+      updateResidualIntermediateOutput(blockCount - 1, lastIntermediateTensor);
     }
     if (rebuild || residualPlaceholderDirty || !residualPlaceholderGroup) {
       if (residualPlaceholderGroup) {
