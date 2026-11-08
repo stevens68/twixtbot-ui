@@ -7,9 +7,9 @@ import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-pol
 import { createBoardInteraction } from './board-interaction.js?v=20261031-grid-origin-v2';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-policy-conv1-v2';
 import { createLabelHelpers } from './labels.js?v=20261108-multiline-policy-labels-v1';
-import { createBoardRenderer } from './renderer/board-renderer.js?v=20261108-twixt-board-label-v1';
+import { createBoardRenderer } from './renderer/board-renderer.js?v=20261108-canonical-board-label-v1';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261108-output-camera-softmax-labels-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261108-canonical-best-move-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
