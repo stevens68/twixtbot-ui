@@ -1,10 +1,59 @@
 // Board geometry and labels for the Twixt neural-network visualizer.
 // Scene state and board data are supplied by main.js to keep this module isolated.
+
+// The backend may expose a newly completed link one turn late. Reconstruct
+// any missing same-colour knight-move links from the current peg list so the
+// board shows a link as soon as its second endpoint is placed.
+function completeBoardLinks(game) {
+  const links = Array.isArray(game.links) ? [...game.links] : [];
+  const pegs = Array.isArray(game.pegs) ? game.pegs : [];
+  const pointKey = (peg) => peg.row + ',' + peg.col;
+  const linkKey = (link) => [pointKey(link.from), pointKey(link.to)].sort().join('|');
+  const known = new Set(links.map(linkKey));
+  const accepted = [...links];
+
+  const segmentsCross = (first, second) => {
+    const a = first.from;
+    const b = first.to;
+    const c = second.from;
+    const d = second.to;
+    // Links sharing a peg are allowed to meet at that endpoint.
+    if ([pointKey(a), pointKey(b)].some((key) =>
+      key === pointKey(c) || key === pointKey(d))) return false;
+    const orient = (p, q, r) =>
+      (q.row - p.row) * (r.col - p.col) -
+      (q.col - p.col) * (r.row - p.row);
+    return orient(a, b, c) * orient(a, b, d) < 0 &&
+      orient(c, d, a) * orient(c, d, b) < 0;
+  };
+
+  for (let currentIndex = 0; currentIndex < pegs.length; currentIndex += 1) {
+    const current = pegs[currentIndex];
+    for (let previousIndex = 0; previousIndex < currentIndex; previousIndex += 1) {
+      const previous = pegs[previousIndex];
+      if (previous.player !== current.player) continue;
+      const rowDistance = Math.abs(previous.row - current.row);
+      const colDistance = Math.abs(previous.col - current.col);
+      if (!((rowDistance === 1 && colDistance === 2) ||
+            (rowDistance === 2 && colDistance === 1))) continue;
+
+      const candidate = { from: previous, to: current, player: current.player };
+      const key = linkKey(candidate);
+      if (known.has(key) || accepted.some((link) => segmentsCross(candidate, link))) continue;
+      links.push(candidate);
+      accepted.push(candidate);
+      known.add(key);
+    }
+  }
+  return links;
+}
+
 export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup, BOARD_SIZE, addLabel, addRichLabel, addStaticLabel, addStaticRichLabel, addMoveColumnLabel, createSampleGame, getData }) {
   let sampleStaticBuilt = false;
   let effectiveStaticBuilt = false;
   function drawSampleBoard() {
   const game = createSampleGame();
+  const boardLinks = completeBoardLinks(game);
   const spacing = 0.34;
   const boardSize = (BOARD_SIZE - 1) * spacing;
   const boardCenterZ = -0.2545; // Centreline shared with the feature and residual tensors.
@@ -113,7 +162,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   };
   const up = new THREE.Vector3(0, 1, 0);
   for (const player of [0, 1]) {
-    const playerLinks = game.links.filter((link) => link.player === player);
+    const playerLinks = boardLinks.filter((link) => link.player === player);
     if (!playerLinks.length) continue;
     const mesh = new THREE.InstancedMesh(linkGeometry, linkMaterials[player], playerLinks.length);
     const transform = new THREE.Object3D();
