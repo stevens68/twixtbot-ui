@@ -840,7 +840,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained input convolutions and an interactive residual stack feed the policy branch. Policy Conv₂ produces logits for the cropped 22×24 Black-to-move board; Softmax converts those 528 logits into move probabilities while preserving the two-dimensional board layout. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
+      description: 'Trained input convolutions and an interactive residual stack feed the policy branch. Residual blocks 1 and 20 show the actual 24×24×48 Conv₁ → BN → abs activation tensor between their convolution banks, followed by the residual sum output. Policy Conv₂ produces logits for the cropped 22×24 Black-to-move board; Softmax converts those 528 logits into move probabilities.',
       shape: 'Locations Conv 1×1×2×48; Pegs Conv 5×5×2×48; Links Conv 4×4×8×48; Policy Conv₁ 1×1×48×2; Policy Conv₂ 1×1×2×1',
       range: 'Trained signed weights; Policy Conv₁ is 1×1×48×2 (two output filters, 48 input features each) and has no bias.' +
         (policyOutputStats ? ' Policy Conv1 output ' + policyOutputStats.min.toFixed(4) +
