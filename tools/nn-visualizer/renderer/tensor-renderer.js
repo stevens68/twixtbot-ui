@@ -943,7 +943,7 @@ export function createTensorRenderer({
         const actualBestPeg = actualBestMoveBoard.getObjectByName('actual-best-move-peg');
         actualBestPeg.material.color.set(redToMove ? 0xe0525d : 0x20252d);
         actualBestPeg.position.set(
-          actualBestMoveBoardOffsetX + canonicalBestMoveBoardLocalX - 0.16,
+          canonicalBestMoveBoardLocalX - 0.16,
           policyInput.centerY - boardSize / 2 +
             (BOARD_SIZE - 1 - actualBestMoveRow) * boardSpacing,
           policyInput.centerZ - boardSize / 2 + actualBestMoveCol * boardSpacing,
