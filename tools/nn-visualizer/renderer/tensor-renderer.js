@@ -126,6 +126,7 @@ export function createTensorRenderer({
   let policyOutputAnnotationsBuilt = false;
   let policyConv2AnnotationsBuilt = false;
   let policySoftmaxAnnotationsBuilt = false;
+  let canonicalBestMoveBoard = null;
   let policyBranchFilterGroup = null;
   let lastPolicyInputRight = null;
   const policyAnnotationSprites = [];
@@ -178,6 +179,7 @@ export function createTensorRenderer({
     policyOutputAnnotationsBuilt = false;
     policyConv2AnnotationsBuilt = false;
     policySoftmaxAnnotationsBuilt = false;
+    canonicalBestMoveBoard = null;
     residualRenderer.reset();
   }
 
@@ -744,6 +746,148 @@ export function createTensorRenderer({
             colorMax: Math.max(1e-8, ...policyProbabilities),
           },
         );
+
+        // The canonical best-move board sits just beyond the Softmax blade
+        // along X. Its board uses the same 24×24 Twixt coordinates; the black
+        // peg marks the highest-probability playable intersection.
+        let bestMoveIndex = 0;
+        for (let index = 1; index < policyProbabilities.length; index += 1) {
+          if (policyProbabilities[index] > policyProbabilities[bestMoveIndex]) {
+            bestMoveIndex = index;
+          }
+        }
+        const bestMoveRow = Math.floor(bestMoveIndex / BOARD_SIZE) + 1;
+        const bestMoveCol = bestMoveIndex % BOARD_SIZE;
+        const bestMoveBoardX = policySoftmaxOriginX + 2.8;
+        if (!canonicalBestMoveBoard) {
+          canonicalBestMoveBoard = new THREE.Group();
+          canonicalBestMoveBoard.name = 'canonical-best-move-board';
+          policyBranchFilterGroup.add(canonicalBestMoveBoard);
+
+          const boardSpacing = 0.34;
+          const boardSize = (BOARD_SIZE - 1) * boardSpacing;
+          const boardCenterY = policyInput.centerY;
+          const boardCenterZ = policyInput.centerZ;
+          const boardStartY = boardCenterY - boardSize / 2;
+          const boardStartZ = boardCenterZ - boardSize / 2;
+          const boardPoint = (row, col, x) => [
+            x,
+            boardStartY + (BOARD_SIZE - 1 - row) * boardSpacing,
+            boardStartZ + col * boardSpacing,
+          ];
+          const backing = new THREE.Mesh(
+            new THREE.PlaneGeometry(boardSize + 0.42, boardSize + 0.42),
+            new THREE.MeshStandardMaterial({
+              color: 0xc8cacc, roughness: 0.88, side: THREE.DoubleSide,
+            }),
+          );
+          backing.rotation.y = -Math.PI / 2;
+          backing.position.set(bestMoveBoardX + 0.035, boardCenterY, boardCenterZ);
+          canonicalBestMoveBoard.add(backing);
+
+          const holeGeometry = new THREE.CircleGeometry(0.035, 12);
+          const holes = new THREE.InstancedMesh(
+            holeGeometry,
+            new THREE.MeshBasicMaterial({ color: 0x080a0d, side: THREE.DoubleSide }),
+            BOARD_SIZE * BOARD_SIZE,
+          );
+          const holeTransform = new THREE.Object3D();
+          let holeIndex = 0;
+          for (let row = 0; row < BOARD_SIZE; row += 1) {
+            for (let col = 0; col < BOARD_SIZE; col += 1) {
+              holeTransform.position.set(...boardPoint(row, col, bestMoveBoardX + 0.027));
+              holeTransform.rotation.set(0, Math.PI / 2, 0);
+              holeTransform.updateMatrix();
+              holes.setMatrixAt(holeIndex++, holeTransform.matrix);
+            }
+          }
+          holes.instanceMatrix.needsUpdate = true;
+          canonicalBestMoveBoard.add(holes);
+
+          const makeFinishLine = (start, end, color) => {
+            const geometry = new THREE.BoxGeometry(
+              0.008,
+              Math.abs(end[1] - start[1]) || 0.065,
+              Math.abs(end[2] - start[2]) || 0.065,
+            );
+            const line = new THREE.Mesh(
+              geometry, new THREE.MeshBasicMaterial({ color }),
+            );
+            line.position.set(
+              (start[0] + end[0]) / 2,
+              (start[1] + end[1]) / 2,
+              (start[2] + end[2]) / 2,
+            );
+            canonicalBestMoveBoard.add(line);
+          };
+          const rowY = row => boardPoint(row, 0, bestMoveBoardX + 0.026)[1];
+          const colZ = col => boardPoint(0, col, bestMoveBoardX + 0.026)[2];
+          for (const row of [0, 23]) {
+            makeFinishLine(
+              [bestMoveBoardX + 0.026, rowY(row), colZ(1)],
+              [bestMoveBoardX + 0.026, rowY(row), colZ(22)],
+              0xe0525d,
+            );
+          }
+          for (const col of [0, 23]) {
+            makeFinishLine(
+              [bestMoveBoardX + 0.026, rowY(1), colZ(col)],
+              [bestMoveBoardX + 0.026, rowY(22), colZ(col)],
+              0x20252d,
+            );
+          }
+          for (let col = 0; col < BOARD_SIZE; col += 1) {
+            addPolicyLabel(
+              String.fromCharCode(65 + col),
+              [bestMoveBoardX - 0.12, boardCenterY + boardSize / 2 + 0.34,
+                boardStartZ + col * boardSpacing],
+              14, '#e0e8e2', 150,
+            );
+          }
+          for (let row = 0; row < BOARD_SIZE; row += 1) {
+            addPolicyLabel(
+              String(row + 1),
+              [bestMoveBoardX - 0.12,
+                boardStartY + (BOARD_SIZE - 1 - row) * boardSpacing,
+                boardStartZ - 0.34],
+              14, '#e0e8e2', 150,
+            );
+          }
+          addPolicyLabel(
+            'Canonical best move',
+            [bestMoveBoardX - 0.12, boardCenterY + boardSize / 2 + 1.15,
+              boardCenterZ],
+            19, '#ffffff', 90,
+          );
+        } else {
+          canonicalBestMoveBoard.position.x = bestMoveBoardX -
+            (policySoftmaxOriginX + 2.8);
+        }
+        const previousBestPeg = canonicalBestMoveBoard.getObjectByName(
+          'canonical-best-move-peg',
+        );
+        if (previousBestPeg) {
+          canonicalBestMoveBoard.remove(previousBestPeg);
+          previousBestPeg.geometry.dispose();
+          previousBestPeg.material.dispose();
+        }
+        const bestPeg = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16),
+          new THREE.MeshStandardMaterial({
+            color: 0x20252d, roughness: 0.38, metalness: 0.08,
+          }),
+        );
+        bestPeg.name = 'canonical-best-move-peg';
+        const boardSpacing = 0.34;
+        const boardSize = (BOARD_SIZE - 1) * boardSpacing;
+        bestPeg.position.set(
+          bestMoveBoardX - 0.16,
+          policyInput.centerY - boardSize / 2 +
+            (BOARD_SIZE - 1 - bestMoveRow) * boardSpacing,
+          policyInput.centerZ - boardSize / 2 + bestMoveCol * boardSpacing,
+        );
+        bestPeg.rotation.z = Math.PI / 2;
+        canonicalBestMoveBoard.add(bestPeg);
         if (!policyConv2AnnotationsBuilt) {
           addPolicyLabel(
             'Policy Conv₂\n1×1×2×1',
