@@ -9,7 +9,7 @@ import { createDemoData, calculateConvolutionOutput as calculateConvolution, val
 import { createLabelHelpers } from './labels.js?v=20261031-formula-upright-v6';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-policy-conv1-v3';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261108-block20-camera-offset-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
