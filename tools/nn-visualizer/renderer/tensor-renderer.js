@@ -327,7 +327,7 @@ export function createTensorRenderer({
 
     return {
       title: 'First-layer network view',
-      description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and both policy convolutions with their outputs are shown together.",
+      description: "Sample/canonical boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and both policy convolutions with their outputs are shown together.",
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48' +
         (policyOutputStats ? ' · Policy Conv₁: 24 × 24 × 2' +
           (policyOutputStats.policyConv2 ? ' · Policy Conv₂: 24 × 24 logits · Softmax: 22 × 24 probabilities' : '') : ''),
@@ -859,9 +859,6 @@ export function createTensorRenderer({
               boardCenterZ],
             19, '#ffffff', 90,
           );
-        } else {
-          canonicalBestMoveBoard.position.x = bestMoveBoardX -
-            (policySoftmaxOriginX + 2.8);
         }
         const previousBestPeg = canonicalBestMoveBoard.getObjectByName(
           'canonical-best-move-peg',
