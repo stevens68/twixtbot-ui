@@ -210,12 +210,22 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
         const previousGapCenter=(previousRight+currentLeft)/2;
         inputRight=previousGapCenter+layout.outputSizeX/2;
        }
-       addResidualArrow(residualPlaceholderGroup,inputRight,layout.bankStartXs[0]-filterCubeSize/2,cy,cz,prefix+'-input-to-block');
-       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,prefix+'-conv1-to-conv2','y₁ = |BN(Conv₁(x))|');
-       const outLeft=layout.outputCenterX-layout.outputSizeX/2,merge=outLeft-1.35;
-       addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,prefix+'-conv2-to-merge','y₂ = |BN(Conv₂(y₁))|');
-       addResidualBypass(residualPlaceholderGroup,inputRight,merge,cz,layout.bankSizeZ*1.08/2+1,prefix+'-identity-skip','y₃ = x');
-       addResidualArrow(residualPlaceholderGroup,merge,outLeft,0,cz,prefix+'-merged-output','Σ');
+       const currentLeft=layout.bankStartXs[0]-filterCubeSize/2;
+       addResidualArrow(residualPlaceholderGroup,inputRight,currentLeft,cy,cz,prefix+'-input-to-block');
+       addResidualArrow(residualPlaceholderGroup,br1,bl2,cy,cz,prefix+'-conv1-to-conv2');
+       const outLeft=layout.outputCenterX-layout.outputSizeX/2;
+       const bypassStartX=(inputRight+currentLeft)/2;
+       const merge=(br2+outLeft)/2;
+       addResidualBypass(
+         residualPlaceholderGroup,
+         bypassStartX,
+         merge,
+         cz,
+         layout.bankSizeZ*1.08/2+1,
+         prefix+'-identity-skip',
+       );
+       addResidualCurvedArrow(residualPlaceholderGroup,br2,merge,0,cz,0,cz,prefix+'-conv2-to-merge');
+       addResidualArrow(residualPlaceholderGroup,merge,outLeft,0,cz,prefix+'-merged-output');
        if(index===0){
         const outRight=layout.outputCenterX+layout.outputSizeX/2,nextIndex=showIntermediateResidualBlocks?1:blockCount-1,nextLeft=residualLayout(nextIndex).bankStartXs[0]-filterCubeSize/2;
         addResidualArrow(residualPlaceholderGroup,outRight,nextLeft,cy,cz,'block-1-output-to-block-2');
