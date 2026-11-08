@@ -932,8 +932,8 @@ export function createTensorRenderer({
         canonicalBestMovePeg.name = 'canonical-best-move-peg';
         canonicalBestMovePeg.position.set(
           canonicalBestMoveBoardLocalX - 0.025,
-          markerY,
-          markerZ,
+          pegY,
+          pegZ,
         );
         canonicalBestMovePeg.rotation.z = Math.PI / 2;
         canonicalBestMoveBoard.add(canonicalBestMovePeg);
