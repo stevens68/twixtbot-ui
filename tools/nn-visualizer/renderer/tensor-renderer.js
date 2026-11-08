@@ -760,7 +760,11 @@ export function createTensorRenderer({
         }
         const bestMoveRow = Math.floor(bestMoveIndex / BOARD_SIZE) + 1;
         const bestMoveCol = bestMoveIndex % BOARD_SIZE;
-        const bestMoveBoardX = policySoftmaxOriginX + 2.8;
+        // Match the Softmax-to-board gap to the output-to-output gap
+        // between Policy Conv2 and Softmax. The board's nearest surface is
+        // bestMoveBoardX + 0.031 (backing plane center + half thickness).
+        const bestMoveBoardX = policySoftmaxOriginX + filterCubeSize / 2 +
+          policySoftmaxOutputGap - 0.031;
         if (!canonicalBestMoveBoard) {
           canonicalBestMoveBoard = new THREE.Group();
           canonicalBestMoveBoard.name = 'canonical-best-move-board';
