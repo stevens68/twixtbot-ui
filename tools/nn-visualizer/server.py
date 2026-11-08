@@ -195,6 +195,13 @@ def last_residual_output(checkpoint, tensors):
             prefix = f"blocks.{index}"
             h = F.conv2d(x, parameter(prefix + ".conv1.weight"), padding=2)
             h = torch.abs(batch_norm(h, prefix + ".bn1"))
+            # Preserve the actual Conv1 -> BN -> abs activation for the two
+            # endpoint blocks so the visualizer can show the tensor between
+            # their convolution banks.
+            if index == 0:
+                first_conv1 = h[0].permute(1, 2, 0).contiguous()
+            if index == block_count - 1:
+                last_conv1 = h[0].permute(1, 2, 0).contiguous()
             h = F.conv2d(h, parameter(prefix + ".conv2.weight"), padding=2)
             h = torch.abs(batch_norm(h, prefix + ".bn2"))
             x = h + x
@@ -207,7 +214,12 @@ def last_residual_output(checkpoint, tensors):
                 "shape": list(tensor.shape), "values": tensor.tolist(),
                 "min": float(tensor.min()), "max": float(tensor.max()),
             }
-        return {"first": serialize(first), "last": serialize(output)}
+        return {
+            "first": serialize(first),
+            "last": serialize(output),
+            "firstConv1": serialize(first_conv1),
+            "lastConv1": serialize(last_conv1),
+        }
 
 
 class Handler(SimpleHTTPRequestHandler):
