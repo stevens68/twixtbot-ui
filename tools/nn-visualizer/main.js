@@ -2,14 +2,14 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.m
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
 import { createTensor3, flattenTensor } from './tensor-utils.js';
 import { encodeGameInputs } from './game-encoding.js?v=20261031-game-encoding-v1';
-import { createSnapshotClient } from './snapshot-client.js?v=20261108-residual-activations-v1';
+import { createSnapshotClient } from './snapshot-client.js?v=20261031-snapshot-client-v2';
 import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-policy-conv1-v2';
 import { createBoardInteraction } from './board-interaction.js?v=20261031-grid-origin-v2';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-policy-conv1-v2';
 import { createLabelHelpers } from './labels.js?v=20261031-formula-upright-v6';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261031-axis-alignment-v2';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261108-residual-intermediate-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261031-policy-conv1-v3';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
@@ -606,8 +606,6 @@ async function loadGamePosition(ply) {
     policyBn: demoModel.policyBn,
     residualBlock0Output: null,
     residualBlockLastOutput: null,
-    residualBlock0IntermediateOutput: null,
-    residualBlockLastIntermediateOutput: null,
     residualBlockCount: demoModel.residualBlockCount,
   };
 
@@ -632,15 +630,6 @@ async function loadGamePosition(ply) {
       }
       residualBlock0Output = values;
       data.residualBlock0Output = values;
-      const intermediatePayload = position.residualBlock0IntermediateOutput;
-      if (intermediatePayload?.shape?.join('x') !== '24x24x48' ||
-          !Array.isArray(intermediatePayload.values) || intermediatePayload.values.length !== 24 ||
-          !intermediatePayload.values.every(row => Array.isArray(row) && row.length === 24 &&
-            row.every(cell => Array.isArray(cell) && cell.length === 48 &&
-              cell.every(value => Number.isFinite(Number(value)))))) {
-        throw new Error('The backend returned an invalid 24×24×48 block 1 Conv₁ activation tensor.');
-      }
-      data.residualBlock0IntermediateOutput = intermediatePayload.values;
       const finalPayload = position.residualBlockLastOutput;
       if (finalPayload?.shape?.join('x') === '24x24x48' &&
           Array.isArray(finalPayload.values) && finalPayload.values.length === 24 &&
@@ -649,15 +638,6 @@ async function loadGamePosition(ply) {
               cell.every(value => Number.isFinite(Number(value)))))) {
         residualBlockLastOutput = finalPayload.values;
         data.residualBlockLastOutput = finalPayload.values;
-        const finalIntermediatePayload = position.residualBlockLastIntermediateOutput;
-        if (finalIntermediatePayload?.shape?.join('x') !== '24x24x48' ||
-            !Array.isArray(finalIntermediatePayload.values) || finalIntermediatePayload.values.length !== 24 ||
-            !finalIntermediatePayload.values.every(row => Array.isArray(row) && row.length === 24 &&
-              row.every(cell => Array.isArray(cell) && cell.length === 48 &&
-                cell.every(value => Number.isFinite(Number(value)))))) {
-          throw new Error('The backend returned an invalid 24×24×48 final-block Conv₁ activation tensor.');
-        }
-        data.residualBlockLastIntermediateOutput = finalIntermediatePayload.values;
       }
     } catch (error) {
       residualBlock0OutputError = error.message;
@@ -820,13 +800,13 @@ document.querySelector('#camera-input-top').addEventListener('click', () => setC
   [-1.65, 28.72, -1.83], [4.81, -2.66, -1.77],
 ));
 document.querySelector('#camera-residual-block').addEventListener('click', () => setCameraPreset(
-  [51.19, 27.75, -41.17], [49.49, -0.37, 7.98],
+  [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
 ));
 function setResidualBlock20CameraPreset() {
   const offset = getBlock20CameraOffset();
   setCameraPreset(
-    [905.33 - offset, 27.43, -43.67],
-    [903.59 - offset, -14.86, 29.37],
+    [901.83 - offset, 27.43, -43.67],
+    [900.09 - offset, -14.86, 29.37],
   );
   lastCameraPreset = 'residual-block-20';
 }
@@ -836,8 +816,8 @@ function setPolicyConv1CameraPreset() {
   // are collapsed; both the output anchor and camera use the compact layout.
   const offset = getBlock20CameraOffset();
   setCameraPreset(
-    [905.33 - offset, 27.43, -43.67],
-    [903.59 - offset, -4.86, 21.7],
+    [901.83 - offset, 27.43, -43.67],
+    [900.09 - offset, -4.86, 21.7],
   );
   lastCameraPreset = 'policy-conv1';
 }
