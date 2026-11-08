@@ -606,6 +606,8 @@ async function loadGamePosition(ply) {
     policyBn: demoModel.policyBn,
     residualBlock0Output: null,
     residualBlockLastOutput: null,
+    residualBlock0IntermediateOutput: null,
+    residualBlockLastIntermediateOutput: null,
     residualBlockCount: demoModel.residualBlockCount,
   };
 
@@ -630,6 +632,15 @@ async function loadGamePosition(ply) {
       }
       residualBlock0Output = values;
       data.residualBlock0Output = values;
+      const intermediatePayload = position.residualBlock0IntermediateOutput;
+      if (intermediatePayload?.shape?.join('x') !== '24x24x48' ||
+          !Array.isArray(intermediatePayload.values) || intermediatePayload.values.length !== 24 ||
+          !intermediatePayload.values.every(row => Array.isArray(row) && row.length === 24 &&
+            row.every(cell => Array.isArray(cell) && cell.length === 48 &&
+              cell.every(value => Number.isFinite(Number(value)))))) {
+        throw new Error('The backend returned an invalid 24×24×48 block 1 Conv₁ activation tensor.');
+      }
+      data.residualBlock0IntermediateOutput = intermediatePayload.values;
       const finalPayload = position.residualBlockLastOutput;
       if (finalPayload?.shape?.join('x') === '24x24x48' &&
           Array.isArray(finalPayload.values) && finalPayload.values.length === 24 &&
@@ -638,6 +649,15 @@ async function loadGamePosition(ply) {
               cell.every(value => Number.isFinite(Number(value)))))) {
         residualBlockLastOutput = finalPayload.values;
         data.residualBlockLastOutput = finalPayload.values;
+        const finalIntermediatePayload = position.residualBlockLastIntermediateOutput;
+        if (finalIntermediatePayload?.shape?.join('x') !== '24x24x48' ||
+            !Array.isArray(finalIntermediatePayload.values) || finalIntermediatePayload.values.length !== 24 ||
+            !finalIntermediatePayload.values.every(row => Array.isArray(row) && row.length === 24 &&
+              row.every(cell => Array.isArray(cell) && cell.length === 48 &&
+                cell.every(value => Number.isFinite(Number(value)))))) {
+          throw new Error('The backend returned an invalid 24×24×48 final-block Conv₁ activation tensor.');
+        }
+        data.residualBlockLastIntermediateOutput = finalIntermediatePayload.values;
       }
     } catch (error) {
       residualBlock0OutputError = error.message;
