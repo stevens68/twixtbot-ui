@@ -820,13 +820,13 @@ document.querySelector('#camera-input-top').addEventListener('click', () => setC
   [-1.65, 28.72, -1.83], [4.81, -2.66, -1.77],
 ));
 document.querySelector('#camera-residual-block').addEventListener('click', () => setCameraPreset(
-  [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
+  [51.19, 27.75, -41.17], [49.49, -0.37, 7.98],
 ));
 function setResidualBlock20CameraPreset() {
   const offset = getBlock20CameraOffset();
   setCameraPreset(
-    [901.83 - offset, 27.43, -43.67],
-    [900.09 - offset, -14.86, 29.37],
+    [905.33 - offset, 27.43, -43.67],
+    [903.59 - offset, -14.86, 29.37],
   );
   lastCameraPreset = 'residual-block-20';
 }
@@ -836,8 +836,8 @@ function setPolicyConv1CameraPreset() {
   // are collapsed; both the output anchor and camera use the compact layout.
   const offset = getBlock20CameraOffset();
   setCameraPreset(
-    [901.83 - offset, 27.43, -43.67],
-    [900.09 - offset, -4.86, 21.7],
+    [905.33 - offset, 27.43, -43.67],
+    [903.59 - offset, -4.86, 21.7],
   );
   lastCameraPreset = 'policy-conv1';
 }
