@@ -328,7 +328,7 @@ export function createTensorRenderer({
       description: "Sample/effective boards, the three input tensors, trained first-layer filters, the selected residual block's two 48-channel convolution filter banks, the first-layer feature tensor, and both policy convolutions with their outputs are shown together.",
       shape: 'Inputs: 24 × 24 × (2 + 8 + 2) · Features: 24 × 24 × 48' +
         (policyOutputStats ? ' · Policy Conv₁: 24 × 24 × 2' +
-          (policyOutputStats.policyConv2 ? ' · Policy Conv₂: 22 × 24 logits · Softmax: 22 × 24 probabilities' : '') : ''),
+          (policyOutputStats.policyConv2 ? ' · Policy Conv₂: 24 × 24 logits · Softmax: 22 × 24 probabilities' : '') : ''),
       range: 'Feature range ' + featureInfo.range +
         (policyOutputStats ? ' · Policy Conv₁ range ' + policyOutputStats.min.toFixed(4) +
           ' … ' + policyOutputStats.max.toFixed(4) +
