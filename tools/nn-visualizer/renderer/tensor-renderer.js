@@ -130,6 +130,10 @@ export function createTensorRenderer({
   let canonicalBestMoveBoardLocalX = null;
   let actualBestMoveBoard = null;
   let actualBestMoveBoardOffsetX = 1.0;
+  let actualBestMoveTitleCanvas = null;
+  let actualBestMoveTitleContext = null;
+  let actualBestMoveTitleTexture = null;
+  let actualBestMoveTitleSprite = null;
   let policyBranchFilterGroup = null;
   let lastPolicyInputRight = null;
   const policyAnnotationSprites = [];
@@ -190,6 +194,10 @@ export function createTensorRenderer({
     canonicalBestMoveBoard = null;
     canonicalBestMoveBoardLocalX = null;
     actualBestMoveBoard = null;
+    actualBestMoveTitleCanvas = null;
+    actualBestMoveTitleContext = null;
+    actualBestMoveTitleTexture = null;
+    actualBestMoveTitleSprite = null;
     residualRenderer.reset();
   }
 
@@ -911,9 +919,28 @@ export function createTensorRenderer({
           policyBranchFilterGroup.add(actualBestMoveBoard);
           const actualPeg = actualBestMoveBoard.getObjectByName('canonical-best-move-peg');
           actualPeg.name = 'actual-best-move-peg';
+          // The canonical peg is replaced on every render; give this cloned
+          // peg its own geometry so that replacement cannot dispose it.
+          actualPeg.geometry = actualPeg.geometry.clone();
           actualPeg.material = new THREE.MeshStandardMaterial({
             color: 0x20252d, roughness: 0.38, metalness: 0.08,
           });
+
+          actualBestMoveTitleCanvas = document.createElement('canvas');
+          actualBestMoveTitleCanvas.width = 420;
+          actualBestMoveTitleCanvas.height = 64;
+          actualBestMoveTitleContext = actualBestMoveTitleCanvas.getContext('2d');
+          actualBestMoveTitleTexture = new THREE.CanvasTexture(actualBestMoveTitleCanvas);
+          actualBestMoveTitleTexture.colorSpace = THREE.SRGBColorSpace;
+          actualBestMoveTitleSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: actualBestMoveTitleTexture, transparent: true, depthTest: false,
+          }));
+          actualBestMoveTitleSprite.position.set(
+            canonicalBestMoveBoardLocalX + actualBestMoveBoardOffsetX - 0.12,
+            boardCenterY + boardSize / 2 + 1.15, boardCenterZ,
+          );
+          actualBestMoveTitleSprite.scale.set(420 / 90, 64 / 90, 1);
+          actualBestMoveBoard.add(actualBestMoveTitleSprite);
 
           const actualLabelX = bestMoveBoardX + actualBestMoveBoardOffsetX - 0.12;
           for (let col = 0; col < BOARD_SIZE; col += 1) {
@@ -948,12 +975,19 @@ export function createTensorRenderer({
             (BOARD_SIZE - 1 - actualBestMoveRow) * boardSpacing,
           policyInput.centerZ - boardSize / 2 + actualBestMoveCol * boardSpacing,
         );
-        addPolicyLabel(
-          'Actual best move for ' + (redToMove ? 'Red' : 'Black'),
-          [bestMoveBoardX + actualBestMoveBoardOffsetX - 0.12,
-            boardCenterY + boardSize / 2 + 1.15, boardCenterZ],
-          19, redToMove ? '#ff666e' : '#ffffff', 90,
+        actualBestMoveTitleContext.clearRect(
+          0, 0, actualBestMoveTitleCanvas.width, actualBestMoveTitleCanvas.height,
         );
+        actualBestMoveTitleContext.font = '600 24px Arial';
+        actualBestMoveTitleContext.fillStyle = redToMove ? '#ff666e' : '#ffffff';
+        actualBestMoveTitleContext.textAlign = 'center';
+        actualBestMoveTitleContext.textBaseline = 'middle';
+        actualBestMoveTitleContext.fillText(
+          'Actual best move for ' + (redToMove ? 'Red' : 'Black'),
+          actualBestMoveTitleCanvas.width / 2,
+          actualBestMoveTitleCanvas.height / 2,
+        );
+        actualBestMoveTitleTexture.needsUpdate = true;
 
         if (!policyConv2AnnotationsBuilt) {
           addPolicyLabel(
