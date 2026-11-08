@@ -787,6 +787,10 @@ document.querySelector('#toggle-explanation').addEventListener('click', () => {
   requestAnimationFrame(resizeRenderer);
 });
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
+document.querySelector('#camera-deep-nn-side').addEventListener('click', () => setCameraPreset(
+  [437.68, 18.19, -590.15],
+  [455.42, -4.67, -170.01],
+));
 document.querySelector('#camera-input-board').addEventListener('click', () => setCameraPreset(
   [-42.02, 1.34, -0.73], [1.00, -1.00, -0.00],
 ));
