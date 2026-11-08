@@ -429,6 +429,8 @@ class Handler(SimpleHTTPRequestHandler):
                         "snapshot": snapshot_result,
                         "residualBlock0Output": residual_results["first"],
                         "residualBlockLastOutput": residual_results["last"],
+                        "residualBlock0IntermediateOutput": residual_results["firstConv1"],
+                        "residualBlockLastIntermediateOutput": residual_results["lastConv1"],
                     }
                 else:
                     result = snapshot_result
