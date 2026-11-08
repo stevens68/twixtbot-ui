@@ -61,10 +61,10 @@ function residualLayout(blockIndex, forceExpanded = false) {
  // Match the clear space after block 1 (which contains its output tensor),
  // while retaining the compact conv1-to-conv2 gap inside every later block.
  const firstInterBlockGap=firstPitch-(2*bankSizeX+firstConvGap);
- const compactPitch=2*bankSizeX+compactConvGap+firstInterBlockGap;
+ const compactPitch=2*bankSizeX+firstConvGap+firstInterBlockGap;
  const blockStartX=layoutIndex===0?firstX:nextLeft+filterCubeSize/2+(layoutIndex-1)*compactPitch;
  const isEndpoint=blockIndex===0 || blockIndex===actualLastIndex;
- const convGap=isEndpoint?firstConvGap:compactConvGap;
+ const convGap=firstConvGap;
  const shift=blockStartX-firstX;
  return {channels,kernelHeight,kernelWidth,columns,rows,filterWidth,filterHeight,gapY,gapZ,bankSizeX,bankSizeY,bankSizeZ,bankStartY,bankStartZ,
  bankStartXs:[blockStartX,blockStartX+bankSizeX+convGap],bankStartZs:[bankStartZ,bankStartZ],blockStartX,blockSpanX:2*bankSizeX+convGap,
