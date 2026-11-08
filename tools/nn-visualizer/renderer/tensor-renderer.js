@@ -874,37 +874,71 @@ export function createTensorRenderer({
             19, '#ffffff', 90,
           );
         }
-        const previousBestMarker = canonicalBestMoveBoard.getObjectByName(
-          'canonical-best-move-marker',
-        );
-        if (previousBestMarker) {
-          canonicalBestMoveBoard.remove(previousBestMarker);
-          previousBestMarker.geometry.dispose();
-          previousBestMarker.material.dispose();
-        }
+        const actualNextPlayer = getBackendSnapshot()?.next_player ??
+          getData().snapshot?.next_player ?? 0;
+        const redToMove = Number(actualNextPlayer) === 1;
+        const markerRow = redToMove ? bestMoveCol : bestMoveRow;
+        const markerCol = redToMove ? bestMoveRow : bestMoveCol;
         const boardSpacing = 0.34;
         const boardSize = (BOARD_SIZE - 1) * boardSpacing;
+        const markerY = policyInput.centerY - boardSize / 2 +
+          (BOARD_SIZE - 1 - markerRow) * boardSpacing;
+        const markerZ = policyInput.centerZ - boardSize / 2 +
+          markerCol * boardSpacing;
+
+        for (const name of ['canonical-best-move-marker', 'canonical-best-move-peg']) {
+          const previous = canonicalBestMoveBoard.getObjectByName(name);
+          if (previous) {
+            canonicalBestMoveBoard.remove(previous);
+            previous.geometry.dispose();
+            if (Array.isArray(previous.material)) {
+              previous.material.forEach((material) => material.dispose());
+            } else {
+              previous.material.dispose();
+            }
+          }
+        }
+
+        // A hollow yellow ring surrounds the predicted peg. Red's board
+        // perspective is transposed relative to the canonical black view.
         const bestMoveMarker = new THREE.Mesh(
-          new THREE.CircleGeometry(0.075, 20),
-          new THREE.MeshBasicMaterial({ color: 0xffdf32, side: THREE.DoubleSide }),
+          new THREE.TorusGeometry(0.13, 0.018, 8, 32),
+          new THREE.MeshBasicMaterial({ color: 0xffdf32 }),
         );
         bestMoveMarker.name = 'canonical-best-move-marker';
         bestMoveMarker.rotation.y = Math.PI / 2;
         bestMoveMarker.position.set(
           canonicalBestMoveBoardLocalX - 0.025,
-          policyInput.centerY - boardSize / 2 +
-            (BOARD_SIZE - 1 - bestMoveRow) * boardSpacing,
-          policyInput.centerZ - boardSize / 2 + bestMoveCol * boardSpacing,
+          markerY,
+          markerZ,
         );
         canonicalBestMoveBoard.add(bestMoveMarker);
 
-        // Show the predicted move on the actual Twixt board, using the
-        // current player's colour and the inverse canonical perspective map.
-        const actualNextPlayer = getBackendSnapshot()?.next_player ??
-          getData().snapshot?.next_player ?? 0;
-        const redToMove = Number(actualNextPlayer) === 1;
-        const actualBestMoveRow = redToMove ? bestMoveCol : bestMoveRow;
-        const actualBestMoveCol = redToMove ? bestMoveRow : bestMoveCol;
+        const canonicalBestMovePeg = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.082, 0.082, 0.36, 20),
+          new THREE.MeshStandardMaterial({
+            color: redToMove ? 0xe0525d : 0x20252d,
+            roughness: 0.38, metalness: 0.08,
+          }),
+        );
+        canonicalBestMovePeg.name = 'canonical-best-move-peg';
+        canonicalBestMovePeg.position.set(
+          canonicalBestMoveBoardLocalX - 0.025,
+          markerY,
+          markerZ,
+        );
+        canonicalBestMovePeg.rotation.z = Math.PI / 2;
+        canonicalBestMoveBoard.add(canonicalBestMovePeg);
+
+        // Also show the predicted move on the actual Twixt board.
+        const actualBestMoveRow = markerRow;
+        const actualBestMoveCol = markerCol;
+        const previousActualPeg = getSceneGroup().getObjectByName('actual-best-move-peg');
+        if (previousActualPeg) {
+          getSceneGroup().remove(previousActualPeg);
+          previousActualPeg.geometry.dispose();
+          previousActualPeg.material.dispose();
+        }
         const actualBoardPeg = new THREE.Mesh(
           new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16),
           new THREE.MeshStandardMaterial({
