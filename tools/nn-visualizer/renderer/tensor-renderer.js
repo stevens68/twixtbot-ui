@@ -746,9 +746,9 @@ export function createTensorRenderer({
         const policyConv2OutputLeft = policyConv2OutputOriginX - filterCubeSize / 2;
         const policySoftmaxOutputGap = policyConv2OutputLeft -
           policyConv1OutputRight;
-        // Keep the surface-to-surface spacing between the two best-move
-        // boards identical to the Softmax-to-canonical-board spacing.
-        actualBestMoveBoardOffsetX = policySoftmaxOutputGap;
+        // Double the surface-to-surface spacing between the canonical and
+        // actual best-move boards relative to the Softmax-to-canonical gap.
+        actualBestMoveBoardOffsetX = 2 * policySoftmaxOutputGap;
         const policySoftmaxOriginX = policyConv2OutputOriginX +
           policySoftmaxOutputGap + filterCubeSize;
         const policySoftmaxStats = featureOutputRenderer.addValueCubes(
@@ -848,14 +848,16 @@ export function createTensorRenderer({
           };
           const rowY = row => boardPoint(row, 0, canonicalBestMoveBoardLocalX + 0.026)[1];
           const colZ = col => boardPoint(0, col, canonicalBestMoveBoardLocalX + 0.026)[2];
-          for (const row of [0, 23]) {
+          // Twixt endlines sit halfway between the outer coordinate pairs,
+          // not directly on the edge rows or columns.
+          for (const row of [0.5, 22.5]) {
             makeFinishLine(
               [canonicalBestMoveBoardLocalX + 0.026, rowY(row), colZ(1)],
               [canonicalBestMoveBoardLocalX + 0.026, rowY(row), colZ(22)],
               0xe0525d,
             );
           }
-          for (const col of [0, 23]) {
+          for (const col of [0.5, 22.5]) {
             makeFinishLine(
               [canonicalBestMoveBoardLocalX + 0.026, rowY(1), colZ(col)],
               [canonicalBestMoveBoardLocalX + 0.026, rowY(22), colZ(col)],
