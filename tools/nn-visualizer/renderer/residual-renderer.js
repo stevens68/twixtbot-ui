@@ -226,11 +226,18 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
        const outputWidth=layout.outputSizeX;
        const glassLeft=gapCenterX-outputWidth/2;
        const glassRight=gapCenterX+outputWidth/2;
-       // Pull both ends of the intermediate bypass back by the same
-       // amount so its X placement is symmetric around the block.
-       const bypassInset=1.35;
-       const bypassStartX=layout.bankStartXs[0]-filterCubeSize/2-bypassInset;
-       const mergeX=glassLeft-1.35-bypassInset;
+       // Start halfway between the previous output tensor and Conv1;
+       // merge halfway between Conv2 and this block's output tensor.
+       const previous=residualLayout(index-1);
+       const currentLeft=layout.bankStartXs[0]-filterCubeSize/2;
+       const previousRight=previous.bankStartXs[1]+
+         (previous.channels-1)*filterSpacing+filterCubeSize/2;
+       const previousOutputCenter=index===1
+         ? previous.outputCenterX
+         : (previousRight+currentLeft)/2;
+       const previousOutputRight=previousOutputCenter+previous.outputSizeX/2;
+       const bypassStartX=(previousOutputRight+currentLeft)/2;
+       const mergeX=(br2+glassLeft)/2;
        addResidualBypass(
          residualPlaceholderGroup,
          bypassStartX,
