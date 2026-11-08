@@ -9,7 +9,7 @@ import { createDemoData, calculateConvolutionOutput as calculateConvolution, val
 import { createLabelHelpers } from './labels.js?v=20261108-softmax-two-line-v1';
 import { createBoardRenderer } from './renderer/board-renderer.js?v=20261108-twixt-board-label-v1';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
-import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261108-softmax-crop-label-v1';
+import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261108-policy-full-output-coordinates-v1';
 
 const BOARD_SIZE = 24;
 const FILTER_COUNT = 48;
