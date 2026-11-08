@@ -710,7 +710,13 @@ export function createTensorRenderer({
         const exponentialSum = exponentials.reduce((sum, value) => sum + value, 0);
         const policyProbabilities = exponentials.map((value) =>
           value / exponentialSum);
-        const policySoftmaxOutputGap = policyOutputGap;
+        // Match the Softmax spacing to the full output-tensor-to-output-tensor
+        // gap from Policy Conv1 to Policy Conv2 (including the Conv2 filter bank).
+        const policyConv1OutputRight = outputOriginX + outputChannelStep +
+          filterCubeSize / 2;
+        const policyConv2OutputLeft = policyConv2OutputOriginX - filterCubeSize / 2;
+        const policySoftmaxOutputGap = policyConv2OutputLeft -
+          policyConv1OutputRight;
         const policySoftmaxOriginX = policyConv2OutputOriginX +
           policySoftmaxOutputGap + filterCubeSize;
         const policySoftmaxStats = featureOutputRenderer.addValueCubes(
