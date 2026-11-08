@@ -150,7 +150,8 @@ function addResidualOutputValues(group,layout,index,tensor,mesh=null){
  for(let c=0;c<FILTER_COUNT;c++)for(let r=0;r<BOARD_SIZE;r++)for(let col=0;col<BOARD_SIZE;col++){
  const v=Number(tensor[r][col][c]);o.position.set(layout.outputStartX+c*layout.outputChannelStep,layout.outputCenterY+(BOARD_SIZE-1-r)*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2,layout.outputCenterZ+col*filterSpacing-(BOARD_SIZE-1)*filterSpacing/2);
  o.scale.setScalar(layout.outputCubeSize*.72);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);mesh.setColorAt(i,heatMapColor(v,0,max));i++;}
- mesh.count=i;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;return mesh;
+ // Full 24×24×48 outputs span all 48 channels along X; avoid stale instanced bounds culling the tensor after layout changes.
+ mesh.count=i;mesh.frustumCulled=false;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;return mesh;
 }
 function addTrackedResidualFormula(label, position){const sprite=addFormulaLabel(label,position,25,'#f2f4f8',92);if(sprite)intermediateResidualLabelSprites.push(sprite);return sprite;}
 function addResidualArrow(group,x1,x2,y,z,name,label=null){const gap=x2-x1;if(gap<=.15)return;const arrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(x1+gap*.22,y,z),gap*.67,0x71879b,.42,.22);arrow.name=name;group.add(arrow);if(label)addTrackedResidualFormula(label,[(x1+x2)/2,y+1.15,z]);}
