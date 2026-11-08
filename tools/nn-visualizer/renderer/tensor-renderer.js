@@ -936,7 +936,7 @@ export function createTensorRenderer({
             map: actualBestMoveTitleTexture, transparent: true, depthTest: false,
           }));
           actualBestMoveTitleSprite.position.set(
-            canonicalBestMoveBoardLocalX + actualBestMoveBoardOffsetX - 0.12,
+            canonicalBestMoveBoardLocalX - 0.12,
             boardCenterY + boardSize / 2 + 1.15, boardCenterZ,
           );
           actualBestMoveTitleSprite.scale.set(420 / 90, 64 / 90, 1);
