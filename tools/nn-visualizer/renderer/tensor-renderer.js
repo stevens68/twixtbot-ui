@@ -501,21 +501,21 @@ export function createTensorRenderer({
       policyArrow.name = 'final-residual-output-to-policy-conv1';
       policyBranchFilterGroup.add(policyArrow);
       addAnnotationLabel(
-        'Pegs Conv₁ · 5×5×2×48',
+        'Pegs Conv₁\n5×5×2×48',
         [startX + (pegChannels - 1) * filterSpacing / 2,
           pegStartY + pegHeight * filterSpacing + 0.75,
           pegStartZ + (columns * pegFilterWidth + (columns - 1) * pegGapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Links Conv₂ · 4×4×8×48',
+        'Links Conv₂\n4×4×8×48',
         [startX + (channels - 1) * filterSpacing / 2,
           startY + kernelHeight * filterSpacing + 0.75,
           startZ + (columns * filterWidth + (columns - 1) * gapZ) / 2],
         24, '#ffffff', 90,
       );
       addAnnotationLabel(
-        'Locations Conv₃ · 1×1×2×48',
+        'Locations Conv₃\n1×1×2×48',
         [startX + (locationChannels - 1) * filterSpacing / 2,
           locationStartY + locationHeight * filterSpacing + 0.75,
           locationStartZ + (columns * pegFilterWidth + (columns - 1) * locationGapZ) / 2],
@@ -583,7 +583,7 @@ export function createTensorRenderer({
       );
       if (!policyOutputAnnotationsBuilt) {
         addPolicyLabel(
-          'Policy Conv₁ output · 24×24×2',
+          'Policy Conv₁ output\n24×24×2',
           [outputOriginX + outputChannelStep / 2, 4.5, policyInput.centerZ],
           24, '#ffffff', 90,
         );
@@ -746,7 +746,7 @@ export function createTensorRenderer({
         );
         if (!policyConv2AnnotationsBuilt) {
           addPolicyLabel(
-            'Policy Conv₂ · 1×1×2×1',
+            'Policy Conv₂\n1×1×2×1',
             [
               policyConv2StartX + filterSpacing / 2,
               policyConv2StartY + 1.0,
@@ -755,7 +755,7 @@ export function createTensorRenderer({
             24, '#ffffff', 90,
           );
           addPolicyLabel(
-            'Policy Conv₂ output · 24×24×1',
+            'Policy Conv₂ output\n24×24×1',
             [
               policyConv2OutputOriginX,
               4.5,
@@ -805,7 +805,7 @@ export function createTensorRenderer({
         }
         if (!policySoftmaxAnnotationsBuilt) {
           addPolicyLabel(
-            'Softmax output · 22×24×1',
+            'Softmax output\n22×24×1',
             [
               policySoftmaxOriginX,
               4.5,
