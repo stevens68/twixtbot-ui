@@ -827,8 +827,8 @@ function setPolicyConv1CameraPreset() {
 }
 document.querySelector('#camera-policy-conv1').addEventListener('click', setPolicyConv1CameraPreset);
 document.querySelector('#camera-output').addEventListener('click', () => setCameraPreset(
-  [151.68, 0.41, 0.79],
-  [181.80, -1.89, 2.50],
+  [152.88, 0.82, -8.79],
+  [189.27, -2.02, 8.15],
 ));
 document.querySelector('#toggle-residual-blocks-2-19').addEventListener('change', (event) => {
   setShowIntermediateResidualBlocks(event.target.checked);
