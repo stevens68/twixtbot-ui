@@ -407,7 +407,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
     mesh.instanceMatrix.needsUpdate = true;
     getSceneGroup().add(mesh);
   }
-  console.debug('[Effective board] active encoded link cells:', activeLinks);
+  console.debug('[Canonical board] active encoded link cells:', activeLinks);
 
   // Render pegs from the same encoded tensor used by the input blades.
   // Tensor channel 0 is the opponent (red); channel 1 is the side to move (black).
@@ -464,7 +464,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   }
   addStaticRichLabel(
     [
-      { text: 'Effective board - black to move', color: '#ffffff' },
+      { text: 'Canonical board - black to move', color: '#ffffff' },
     ],
     [boardX, 5.25 - 0.287, -0.2545],
     19,
