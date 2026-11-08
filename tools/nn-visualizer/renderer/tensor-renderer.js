@@ -824,7 +824,7 @@ export function createTensorRenderer({
           arrow.name = 'policy-logits-to-softmax';
           policyBranchFilterGroup.add(arrow);
           addPolicyFormulaLabel(
-            'crop rows 1 and 24\\npᵢ = exp(zᵢ) / Σ exp(z)',
+            'crop rows 1 and 24\npᵢ = exp(zᵢ) / Σ exp(z)',
             [
               (arrowLeft + arrowRight) / 2,
               policyInput.centerY + 0.62,
