@@ -314,7 +314,7 @@ const { logLinkEncodingDiagnostic, logFullInputTensorValidation } =
 
 const {
   drawInputs, drawFilters, drawOutput, refreshTensorColors, setResidualFiltersVisible,
-  setShowIntermediateResidualBlocks, getBlock20CameraOffset,
+  setShowIntermediateResidualBlocks, getBlock20CameraOffset, getCompactBlock20CameraOffset,
   setSelectedResidualBlock, pickResidualBlock,
 } = createTensorRenderer({
     THREE, BOARD_SIZE, FILTER_COUNT, COLORS, cubeGeometry, flattenTensor,
@@ -805,8 +805,8 @@ document.querySelector('#camera-residual-block').addEventListener('click', () =>
 function setResidualBlock20CameraPreset() {
   const offset = getBlock20CameraOffset();
   setCameraPreset(
-    [95.63 - offset, 17.58, -35.62],
-    [95.46 - offset, -16.98, 31.31],
+    [95.63 + offset, 17.58, -35.62],
+    [95.46 + offset, -16.98, 31.31],
   );
   lastCameraPreset = 'residual-block-20';
 }
@@ -814,7 +814,7 @@ document.querySelector('#camera-residual-block-20').addEventListener('click', se
 function setPolicyConv1CameraPreset() {
   // Keep the policy camera aligned with block 20 when intermediate blocks
   // are collapsed; both the output anchor and camera use the compact layout.
-  const offset = getBlock20CameraOffset();
+  const offset = getCompactBlock20CameraOffset();
   setCameraPreset(
     [901.83 - offset, 27.43, -43.67],
     [900.09 - offset, -4.86, 21.7],
