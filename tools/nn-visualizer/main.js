@@ -7,7 +7,7 @@ import { loadTrainedModelWeights } from './model-weight-client.js?v=20261031-pol
 import { createBoardInteraction } from './board-interaction.js?v=20261031-grid-origin-v2';
 import { createDemoData, calculateConvolutionOutput as calculateConvolution, validateResidualBlockPayload } from './model-data.js?v=20261031-policy-conv1-v2';
 import { createLabelHelpers } from './labels.js?v=20261108-multiline-policy-labels-v1';
-import { createBoardRenderer } from './renderer/board-renderer.js?v=20261108-canonical-board-label-v1';
+import { createBoardRenderer } from './renderer/board-renderer.js?v=20261108-immediate-link-rendering-v1';
 import { createLinkEncodingDiagnostics } from './link-encoding-diagnostics.js';
 import { createTensorRenderer } from './renderer/tensor-renderer.js?v=20261108-best-move-ring-peg-v1';
 
