@@ -221,22 +221,22 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
         addResidualArrow(residualPlaceholderGroup,outRight,nextLeft,cy,cz,'block-1-output-to-block-2');
        }
       }else if(index<blockCount-1){
-       const mergeX=br2+1.1;
-       const intermediateSkipLabel = addResidualBypass(
+       const next=residualLayout(index+1),nextLeft=next.bankStartXs[0]-filterCubeSize/2;
+       const gapCenterX=(br2+nextLeft)/2;
+       const outputWidth=layout.outputSizeX;
+       const glassLeft=gapCenterX-outputWidth/2;
+       const glassRight=gapCenterX+outputWidth/2;
+       // Match the endpoint blocks' bypass route: run from the block input
+       // to the merge just before its output tensor, with the same clearance.
+       const mergeX=glassLeft-1.35;
+       addResidualBypass(
          residualPlaceholderGroup,
          layout.bankStartXs[0] - filterCubeSize / 2,
          mergeX,
          cz,
          layout.bankSizeZ * 1.08 / 2 + 1,
          'block-' + (index + 1) + '-identity-skip',
-         'y₃ = x',
        );
-       if (intermediateSkipLabel) intermediateResidualLabelSprites.push(intermediateSkipLabel);
-       const next=residualLayout(index+1),nextLeft=next.bankStartXs[0]-filterCubeSize/2;
-       const gapCenterX=(br2+nextLeft)/2;
-       const outputWidth=layout.outputSizeX;
-       const glassLeft=gapCenterX-outputWidth/2;
-       const glassRight=gapCenterX+outputWidth/2;
 
        // A borderless green glass volume represents the 24x24x48 tensor
        // produced by this residual block.
