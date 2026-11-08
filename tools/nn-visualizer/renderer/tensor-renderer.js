@@ -904,6 +904,7 @@ export function createTensorRenderer({
     setResidualFiltersVisible: residualRenderer.setResidualFiltersVisible,
     setShowIntermediateResidualBlocks: residualRenderer.setShowIntermediateResidualBlocks,
     getBlock20CameraOffset: residualRenderer.getBlock20CameraOffset,
+    getCompactBlock20CameraOffset: residualRenderer.getCompactBlock20CameraOffset,
     setSelectedResidualBlock: residualRenderer.setSelectedResidualBlock,
     pickResidualBlock: residualRenderer.pickResidualBlock,
   };
