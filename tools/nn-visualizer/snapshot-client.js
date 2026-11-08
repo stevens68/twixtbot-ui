@@ -137,8 +137,11 @@ export function createSnapshotClient({ recordPerf, cacheLimit = 128 }) {
     }
     const jsonParseMs = performance.now() - parseStarted;
     if (!response.ok) throw new Error(result.error || response.statusText);
-    if (!result.snapshot || !result.residualBlock0Output) {
-      throw new Error('The visualizer position API returned an incomplete position.');
+    if (!result.snapshot || !result.residualBlock0Output ||
+        !result.residualBlockLastOutput ||
+        !result.residualBlock0IntermediateOutput ||
+        !result.residualBlockLastIntermediateOutput) {
+      throw new Error('The visualizer position API returned an incomplete residual position.');
     }
     const responseBytes = new TextEncoder().encode(responseText).length;
     const wireResponseBytes = Number(response.headers.get('content-length')) || responseBytes;
