@@ -127,6 +127,7 @@ export function createTensorRenderer({
   let policyConv2AnnotationsBuilt = false;
   let policySoftmaxAnnotationsBuilt = false;
   let canonicalBestMoveBoard = null;
+  let canonicalBestMoveBoardLocalX = null;
   let policyBranchFilterGroup = null;
   let lastPolicyInputRight = null;
   const policyAnnotationSprites = [];
@@ -180,6 +181,7 @@ export function createTensorRenderer({
     policyConv2AnnotationsBuilt = false;
     policySoftmaxAnnotationsBuilt = false;
     canonicalBestMoveBoard = null;
+    canonicalBestMoveBoardLocalX = null;
     residualRenderer.reset();
   }
 
@@ -762,6 +764,7 @@ export function createTensorRenderer({
         if (!canonicalBestMoveBoard) {
           canonicalBestMoveBoard = new THREE.Group();
           canonicalBestMoveBoard.name = 'canonical-best-move-board';
+          canonicalBestMoveBoardLocalX = bestMoveBoardX - policyBranchFilterGroup.position.x;
           policyBranchFilterGroup.add(canonicalBestMoveBoard);
 
           const boardSpacing = 0.34;
@@ -782,7 +785,7 @@ export function createTensorRenderer({
             }),
           );
           backing.rotation.y = -Math.PI / 2;
-          backing.position.set(bestMoveBoardX + 0.035, boardCenterY, boardCenterZ);
+          backing.position.set(canonicalBestMoveBoardLocalX + 0.035, boardCenterY, boardCenterZ);
           canonicalBestMoveBoard.add(backing);
 
           const holeGeometry = new THREE.CircleGeometry(0.035, 12);
@@ -795,7 +798,7 @@ export function createTensorRenderer({
           let holeIndex = 0;
           for (let row = 0; row < BOARD_SIZE; row += 1) {
             for (let col = 0; col < BOARD_SIZE; col += 1) {
-              holeTransform.position.set(...boardPoint(row, col, bestMoveBoardX + 0.027));
+              holeTransform.position.set(...boardPoint(row, col, canonicalBestMoveBoardLocalX + 0.027));
               holeTransform.rotation.set(0, Math.PI / 2, 0);
               holeTransform.updateMatrix();
               holes.setMatrixAt(holeIndex++, holeTransform.matrix);
@@ -820,19 +823,19 @@ export function createTensorRenderer({
             );
             canonicalBestMoveBoard.add(line);
           };
-          const rowY = row => boardPoint(row, 0, bestMoveBoardX + 0.026)[1];
-          const colZ = col => boardPoint(0, col, bestMoveBoardX + 0.026)[2];
+          const rowY = row => boardPoint(row, 0, canonicalBestMoveBoardLocalX + 0.026)[1];
+          const colZ = col => boardPoint(0, col, canonicalBestMoveBoardLocalX + 0.026)[2];
           for (const row of [0, 23]) {
             makeFinishLine(
-              [bestMoveBoardX + 0.026, rowY(row), colZ(1)],
-              [bestMoveBoardX + 0.026, rowY(row), colZ(22)],
+              [canonicalBestMoveBoardLocalX + 0.026, rowY(row), colZ(1)],
+              [canonicalBestMoveBoardLocalX + 0.026, rowY(row), colZ(22)],
               0xe0525d,
             );
           }
           for (const col of [0, 23]) {
             makeFinishLine(
-              [bestMoveBoardX + 0.026, rowY(1), colZ(col)],
-              [bestMoveBoardX + 0.026, rowY(22), colZ(col)],
+              [canonicalBestMoveBoardLocalX + 0.026, rowY(1), colZ(col)],
+              [canonicalBestMoveBoardLocalX + 0.026, rowY(22), colZ(col)],
               0x20252d,
             );
           }
@@ -878,7 +881,7 @@ export function createTensorRenderer({
         const boardSpacing = 0.34;
         const boardSize = (BOARD_SIZE - 1) * boardSpacing;
         bestPeg.position.set(
-          bestMoveBoardX - 0.16,
+          canonicalBestMoveBoardLocalX - 0.16,
           policyInput.centerY - boardSize / 2 +
             (BOARD_SIZE - 1 - bestMoveRow) * boardSpacing,
           policyInput.centerZ - boardSize / 2 + bestMoveCol * boardSpacing,
