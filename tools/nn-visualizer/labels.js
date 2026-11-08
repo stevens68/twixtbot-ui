@@ -116,7 +116,7 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     const key = JSON.stringify(['formula', text, fontSize, color, scaleDivisor]);
     const texture = getTexture(key, (context) => {
       context.font = font;
-      const lines = String(text).split('\\n');
+      const lines = String(text).split('\n');
       const width = Math.max(160, ...lines.map((line) => context.measureText(line).width + 32));
       const lineHeight = fontSize + 6;
       const height = lines.length * lineHeight + 24;
