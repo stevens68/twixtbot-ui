@@ -746,6 +746,9 @@ export function createTensorRenderer({
         const policyConv2OutputLeft = policyConv2OutputOriginX - filterCubeSize / 2;
         const policySoftmaxOutputGap = policyConv2OutputLeft -
           policyConv1OutputRight;
+        // Keep the surface-to-surface spacing between the two best-move
+        // boards identical to the Softmax-to-canonical-board spacing.
+        actualBestMoveBoardOffsetX = policySoftmaxOutputGap;
         const policySoftmaxOriginX = policyConv2OutputOriginX +
           policySoftmaxOutputGap + filterCubeSize;
         const policySoftmaxStats = featureOutputRenderer.addValueCubes(
