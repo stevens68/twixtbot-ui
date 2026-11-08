@@ -58,13 +58,15 @@ function residualLayout(blockIndex, forceExpanded = false) {
  const outputCenterY=-2.5+(BOARD_SIZE-1)*filterSpacing/2,outputCenterZ=-((channels-1)*.105)/2+(BOARD_SIZE-1)*filterSpacing/2;
  const bankStartY=outputCenterY-(bankMinYOffset+bankMaxYOffset)/2,bankStartZ=outputCenterZ-bankSizeZ/2+filterCubeSize/2;
  const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2,firstConvGap=16;
- const firstPitch=(2*bankSizeX+firstConvGap+1.25*1.15*3+outputCubeSize/2+outputSizeX+1.25+filterCubeSize/2)*1.2;
+ // Keep the existing inter-block pitch unchanged; only the space inside
+ // endpoint blocks grows to make room for their Conv1 activation tensors.
+ const firstPitch=(2*bankSizeX+9+1.25*1.15*3+outputCubeSize/2+outputSizeX+1.25+filterCubeSize/2)*1.2;
  const nextLeft=firstX+firstPitch-filterCubeSize/2,right=firstX-filterCubeSize/2+2*bankSizeX+firstConvGap;
  const outputCenterX=(right+nextLeft)/2,outputStartX=outputCenterX-(channels-1)*outputChannelStep/2;
  const compactConvGap=2.5;
  // Match the clear space after block 1 (which contains its output tensor),
  // while retaining the compact conv1-to-conv2 gap inside every later block.
- const firstInterBlockGap=firstPitch-(2*bankSizeX+firstConvGap);
+ const firstInterBlockGap=firstPitch-(2*bankSizeX+9);
  const compactPitch=2*bankSizeX+compactConvGap+firstInterBlockGap;
  const blockStartX=layoutIndex===0?firstX:nextLeft+filterCubeSize/2+(layoutIndex-1)*compactPitch;
  const isEndpoint=blockIndex===0 || blockIndex===actualLastIndex;
