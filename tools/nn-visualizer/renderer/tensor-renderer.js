@@ -522,7 +522,7 @@ export function createTensorRenderer({
         24, '#ffffff', 90,
       );
       addPolicyLabel(
-        'Policy Conv₁ · 1×1×48×2',
+        'Policy Conv₁\n1×1×48×2',
         [policyStartX + (policyInputChannels - 1) * filterSpacing / 2,
           policyStartY + policySlotHeight + 0.75,
           policyStartZ + (policyColumns - 1) * (policySlotWidth + policyGapZ) / 2],
@@ -584,7 +584,7 @@ export function createTensorRenderer({
       if (!policyOutputAnnotationsBuilt) {
         addPolicyLabel(
           'Policy Conv₁ output · 24×24×2',
-          [outputOriginX + outputChannelStep / 2, 5, policyInput.centerZ],
+          [outputOriginX + outputChannelStep / 2, 4.5, policyInput.centerZ],
           24, '#ffffff', 90,
         );
         const arrowLeft = policyBankRight + 0.08;
@@ -606,7 +606,7 @@ export function createTensorRenderer({
         policyArrow.name = 'policy-conv1-to-policy-output';
         policyBranchFilterGroup.add(policyArrow);
         addPolicyFormulaLabel(
-          'y = |BN(Conv(x))|',
+          'Policy Conv₁\ny = |BN(Conv(x))|',
           [
             (arrowLeft + arrowRight) / 2,
             policyInput.centerY + 0.62,
@@ -666,7 +666,7 @@ export function createTensorRenderer({
         const policyConv2OutputOriginX = policyConv2BankRight +
           policyConv2OutputGap + filterCubeSize / 2;
         const policyConv2Values = [];
-        for (let row = 1; row < BOARD_SIZE - 1; row += 1) {
+        for (let row = 0; row < BOARD_SIZE; row += 1) {
           for (let col = 0; col < BOARD_SIZE; col += 1) {
             let sum = 0;
             for (let channel = 0; channel < 2; channel += 1) {
@@ -679,12 +679,14 @@ export function createTensorRenderer({
         }
         const policyBoardRows = BOARD_SIZE - 2;
         const policyBoardCols = BOARD_SIZE;
+        const policyConv2OriginY =
+          policyInput.centerY - (BOARD_SIZE - 1) * filterSpacing / 2;
         const policyBoardOriginY =
           policyInput.centerY - (policyBoardRows - 1) * filterSpacing / 2;
         const policyBoardOriginZ =
           policyInput.centerZ - (policyBoardCols - 1) * filterSpacing / 2;
         const policyConv2Stats = featureOutputRenderer.addValueCubes(
-          policyConv2Values, policyBoardRows, policyBoardCols, 1,
+          policyConv2Values, BOARD_SIZE, BOARD_SIZE, 1,
           [
             policyConv2OutputOriginX,
             policyBoardOriginY,
@@ -702,10 +704,17 @@ export function createTensorRenderer({
           },
         );
 
-        // Stable softmax over all 528 playable intersections. The cropped
-        // 22×24 board remains two-dimensional; no flattening layer is shown.
-        const maxLogit = Math.max(...policyConv2Values);
-        const exponentials = policyConv2Values.map((value) =>
+        // Crop only after the full 24×24 Policy Conv2 output has been
+        // rendered. Softmax then normalizes the 22×24 playable intersections.
+        const policyPlayableLogits = [];
+        for (let row = 1; row < BOARD_SIZE - 1; row += 1) {
+          const rowStart = row * BOARD_SIZE;
+          policyPlayableLogits.push(...policyConv2Values.slice(
+            rowStart, rowStart + BOARD_SIZE,
+          ));
+        }
+        const maxLogit = Math.max(...policyPlayableLogits);
+        const exponentials = policyPlayableLogits.map((value) =>
           Math.exp(Number(value) - maxLogit));
         const exponentialSum = exponentials.reduce((sum, value) => sum + value, 0);
         const policyProbabilities = exponentials.map((value) =>
@@ -746,10 +755,10 @@ export function createTensorRenderer({
             24, '#ffffff', 90,
           );
           addPolicyLabel(
-            'Policy Conv₂ output · 22×24×1',
+            'Policy Conv₂ output · 24×24×1',
             [
               policyConv2OutputOriginX,
-              5,
+              4.5,
               policyInput.centerZ,
             ],
             24, '#ffffff', 90,
@@ -783,7 +792,7 @@ export function createTensorRenderer({
             'policy-conv2-to-policy-logits',
           );
           addPolicyFormulaLabel(
-            'y = Conv(x)',
+            'Policy Conv₂\ny = Conv(x)',
             [
               (policyConv2BankRight + 0.08 +
                 policyConv2OutputOriginX - filterCubeSize / 2) / 2,
@@ -799,11 +808,32 @@ export function createTensorRenderer({
             'Softmax output · 22×24×1',
             [
               policySoftmaxOriginX,
-              5,
+              4.5,
               policyInput.centerZ,
             ],
             24, '#ffffff', 90,
           );
+          // Label the playable Softmax board using Twixt coordinates:
+          // columns A–X and rows 2–23 (the two edge rows were cropped).
+          const softmaxTopY = policyBoardOriginY +
+            (policyBoardRows - 1) * filterSpacing;
+          for (let col = 0; col < policyBoardCols; col += 1) {
+            addPolicyLabel(
+              String.fromCharCode(65 + col),
+              [policySoftmaxOriginX, softmaxTopY + 0.58,
+                policyBoardOriginZ + col * filterSpacing],
+              16, '#dce7f5', 145,
+            );
+          }
+          for (let row = 0; row < policyBoardRows; row += 1) {
+            addPolicyLabel(
+              String(row + 2),
+              [policySoftmaxOriginX,
+                softmaxTopY - row * filterSpacing,
+                policyBoardOriginZ - 0.58],
+              16, '#dce7f5', 145,
+            );
+          }
           const arrowLeft = policyConv2OutputOriginX +
             filterCubeSize / 2 + 0.08;
           const arrowRight = policySoftmaxOriginX - filterCubeSize / 2;
@@ -846,7 +876,7 @@ export function createTensorRenderer({
 
     return {
       title: 'Trained convolution filters',
-      description: 'Trained input convolutions and an interactive residual stack feed the policy branch. Policy Conv₂ produces logits for the cropped 22×24 Black-to-move board; Softmax converts those 528 logits into move probabilities while preserving the two-dimensional board layout. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
+      description: 'Trained input convolutions and an interactive residual stack feed the policy branch. Policy Conv₂ produces a full 24×24 logit board; the two edge rows are cropped before Softmax converts the remaining 528 logits into move probabilities while preserving the two-dimensional board layout. Residual outputs include batch normalization, absolute-value activations, and the skip connection.',
       shape: 'Locations Conv 1×1×2×48; Pegs Conv 5×5×2×48; Links Conv 4×4×8×48; Policy Conv₁ 1×1×48×2; Policy Conv₂ 1×1×2×1',
       range: 'Trained signed weights; Policy Conv₁ is 1×1×48×2 (two output filters, 48 input features each) and has no bias.' +
         (policyOutputStats ? ' Policy Conv1 output ' + policyOutputStats.min.toFixed(4) +
