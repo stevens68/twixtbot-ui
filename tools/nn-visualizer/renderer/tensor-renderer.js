@@ -128,12 +128,6 @@ export function createTensorRenderer({
   let policySoftmaxAnnotationsBuilt = false;
   let canonicalBestMoveBoard = null;
   let canonicalBestMoveBoardLocalX = null;
-  let actualBestMoveBoard = null;
-  let actualBestMoveBoardOffsetX = 1.0;
-  let actualBestMoveTitleCanvas = null;
-  let actualBestMoveTitleContext = null;
-  let actualBestMoveTitleTexture = null;
-  let actualBestMoveTitleSprite = null;
   let policyBranchFilterGroup = null;
   let lastPolicyInputRight = null;
   const policyAnnotationSprites = [];
@@ -193,11 +187,6 @@ export function createTensorRenderer({
     policySoftmaxAnnotationsBuilt = false;
     canonicalBestMoveBoard = null;
     canonicalBestMoveBoardLocalX = null;
-    actualBestMoveBoard = null;
-    actualBestMoveTitleCanvas = null;
-    actualBestMoveTitleContext = null;
-    actualBestMoveTitleTexture = null;
-    actualBestMoveTitleSprite = null;
     residualRenderer.reset();
   }
 
@@ -746,9 +735,6 @@ export function createTensorRenderer({
         const policyConv2OutputLeft = policyConv2OutputOriginX - filterCubeSize / 2;
         const policySoftmaxOutputGap = policyConv2OutputLeft -
           policyConv1OutputRight;
-        // Double the surface-to-surface spacing between the canonical and
-        // actual best-move boards relative to the Softmax-to-canonical gap.
-        actualBestMoveBoardOffsetX = 2 * policySoftmaxOutputGap;
         const policySoftmaxOriginX = policyConv2OutputOriginX +
           policySoftmaxOutputGap + filterCubeSize;
         const policySoftmaxStats = featureOutputRenderer.addValueCubes(
@@ -882,117 +868,59 @@ export function createTensorRenderer({
             );
           }
           addPolicyLabel(
-            'Canonical best move',
+            'Best move',
             [bestMoveBoardX - 0.12, boardCenterY + boardSize / 2 + 1.15,
               boardCenterZ],
             19, '#ffffff', 90,
           );
         }
-        const previousBestPeg = canonicalBestMoveBoard.getObjectByName(
-          'canonical-best-move-peg',
+        const previousBestMarker = canonicalBestMoveBoard.getObjectByName(
+          'canonical-best-move-marker',
         );
-        if (previousBestPeg) {
-          canonicalBestMoveBoard.remove(previousBestPeg);
-          previousBestPeg.geometry.dispose();
-          previousBestPeg.material.dispose();
+        if (previousBestMarker) {
+          canonicalBestMoveBoard.remove(previousBestMarker);
+          previousBestMarker.geometry.dispose();
+          previousBestMarker.material.dispose();
         }
-        const bestPeg = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16),
-          new THREE.MeshStandardMaterial({
-            color: 0x20252d, roughness: 0.38, metalness: 0.08,
-          }),
-        );
-        bestPeg.name = 'canonical-best-move-peg';
         const boardSpacing = 0.34;
         const boardSize = (BOARD_SIZE - 1) * boardSpacing;
-        bestPeg.position.set(
-          canonicalBestMoveBoardLocalX - 0.16,
+        const bestMoveMarker = new THREE.Mesh(
+          new THREE.CircleGeometry(0.075, 20),
+          new THREE.MeshBasicMaterial({ color: 0xffdf32, side: THREE.DoubleSide }),
+        );
+        bestMoveMarker.name = 'canonical-best-move-marker';
+        bestMoveMarker.rotation.y = Math.PI / 2;
+        bestMoveMarker.position.set(
+          canonicalBestMoveBoardLocalX - 0.025,
           policyInput.centerY - boardSize / 2 +
             (BOARD_SIZE - 1 - bestMoveRow) * boardSpacing,
           policyInput.centerZ - boardSize / 2 + bestMoveCol * boardSpacing,
         );
-        bestPeg.rotation.z = Math.PI / 2;
-        canonicalBestMoveBoard.add(bestPeg);
+        canonicalBestMoveBoard.add(bestMoveMarker);
 
-        // The actual-game board is a second view of the same predicted move.
-        // It sits farther along X and is transposed for Red-to-move positions,
-        // reversing the canonical Black-to-move perspective transform.
-        if (!actualBestMoveBoard) {
-          actualBestMoveBoard = canonicalBestMoveBoard.clone(true);
-          actualBestMoveBoard.name = 'actual-best-move-board';
-          actualBestMoveBoard.position.x = actualBestMoveBoardOffsetX;
-          policyBranchFilterGroup.add(actualBestMoveBoard);
-          const actualPeg = actualBestMoveBoard.getObjectByName('canonical-best-move-peg');
-          actualPeg.name = 'actual-best-move-peg';
-          // The canonical peg is replaced on every render; give this cloned
-          // peg its own geometry so that replacement cannot dispose it.
-          actualPeg.geometry = actualPeg.geometry.clone();
-          actualPeg.material = new THREE.MeshStandardMaterial({
-            color: 0x20252d, roughness: 0.38, metalness: 0.08,
-          });
-
-          actualBestMoveTitleCanvas = document.createElement('canvas');
-          actualBestMoveTitleCanvas.width = 420;
-          actualBestMoveTitleCanvas.height = 64;
-          actualBestMoveTitleContext = actualBestMoveTitleCanvas.getContext('2d');
-          actualBestMoveTitleTexture = new THREE.CanvasTexture(actualBestMoveTitleCanvas);
-          actualBestMoveTitleTexture.colorSpace = THREE.SRGBColorSpace;
-          actualBestMoveTitleSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-            map: actualBestMoveTitleTexture, transparent: true, depthTest: false,
-          }));
-          actualBestMoveTitleSprite.position.set(
-            canonicalBestMoveBoardLocalX - 0.12,
-            boardCenterY + boardSize / 2 + 1.15, boardCenterZ,
-          );
-          actualBestMoveTitleSprite.scale.set(420 / 90, 64 / 90, 1);
-          actualBestMoveBoard.add(actualBestMoveTitleSprite);
-
-          const actualLabelX = bestMoveBoardX + actualBestMoveBoardOffsetX - 0.12;
-          for (let col = 0; col < BOARD_SIZE; col += 1) {
-            addPolicyLabel(
-              String.fromCharCode(65 + col),
-              [actualLabelX, boardCenterY + boardSize / 2 + 0.34,
-                boardStartZ + col * boardSpacing],
-              14, '#e0e8e2', 150,
-            );
-          }
-          for (let row = 0; row < BOARD_SIZE; row += 1) {
-            addPolicyLabel(
-              String(row + 1),
-              [actualLabelX,
-                boardStartY + (BOARD_SIZE - 1 - row) * boardSpacing,
-                boardStartZ - 0.34],
-              14, '#e0e8e2', 150,
-            );
-          }
-        }
-
+        // Show the predicted move on the actual Twixt board, using the
+        // current player's colour and the inverse canonical perspective map.
         const actualNextPlayer = getBackendSnapshot()?.next_player ??
           getData().snapshot?.next_player ?? 0;
         const redToMove = Number(actualNextPlayer) === 1;
         const actualBestMoveRow = redToMove ? bestMoveCol : bestMoveRow;
         const actualBestMoveCol = redToMove ? bestMoveRow : bestMoveCol;
-        const actualBestPeg = actualBestMoveBoard.getObjectByName('actual-best-move-peg');
-        actualBestPeg.material.color.set(redToMove ? 0xe0525d : 0x20252d);
-        actualBestPeg.position.set(
-          canonicalBestMoveBoardLocalX - 0.16,
-          policyInput.centerY - boardSize / 2 +
+        const actualBoardPeg = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.082, 0.082, 0.36, 16),
+          new THREE.MeshStandardMaterial({
+            color: redToMove ? 0xe0525d : 0x20252d,
+            roughness: 0.38, metalness: 0.08,
+          }),
+        );
+        actualBoardPeg.name = 'actual-best-move-peg';
+        actualBoardPeg.position.set(
+          -27.8225 - 0.16,
+          -0.287 - boardSize / 2 +
             (BOARD_SIZE - 1 - actualBestMoveRow) * boardSpacing,
-          policyInput.centerZ - boardSize / 2 + actualBestMoveCol * boardSpacing,
+          -0.2545 - boardSize / 2 + actualBestMoveCol * boardSpacing,
         );
-        actualBestMoveTitleContext.clearRect(
-          0, 0, actualBestMoveTitleCanvas.width, actualBestMoveTitleCanvas.height,
-        );
-        actualBestMoveTitleContext.font = '600 24px Arial';
-        actualBestMoveTitleContext.fillStyle = redToMove ? '#ff666e' : '#ffffff';
-        actualBestMoveTitleContext.textAlign = 'center';
-        actualBestMoveTitleContext.textBaseline = 'middle';
-        actualBestMoveTitleContext.fillText(
-          'Actual best move for ' + (redToMove ? 'Red' : 'Black'),
-          actualBestMoveTitleCanvas.width / 2,
-          actualBestMoveTitleCanvas.height / 2,
-        );
-        actualBestMoveTitleTexture.needsUpdate = true;
+        actualBoardPeg.rotation.z = Math.PI / 2;
+        getSceneGroup().add(actualBoardPeg);
 
         if (!policyConv2AnnotationsBuilt) {
           addPolicyLabel(
