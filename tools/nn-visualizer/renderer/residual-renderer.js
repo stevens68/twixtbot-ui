@@ -53,7 +53,7 @@ function residualLayout(blockIndex, forceExpanded = false) {
  const outputSizeX=(channels-1)*outputChannelStep+outputCubeSize,outputSizeY=(BOARD_SIZE-1)*filterSpacing+outputCubeSize;
  const outputCenterY=-2.5+(BOARD_SIZE-1)*filterSpacing/2,outputCenterZ=-((channels-1)*.105)/2+(BOARD_SIZE-1)*filterSpacing/2;
  const bankStartY=outputCenterY-(bankMinYOffset+bankMaxYOffset)/2,bankStartZ=outputCenterZ-bankSizeZ/2+filterCubeSize/2;
- const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2,firstConvGap=9;
+ const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2,firstConvGap=9*0.8;
  const firstPitch=(2*bankSizeX+firstConvGap+1.25*1.15*3+outputCubeSize/2+outputSizeX+1.25+filterCubeSize/2)*1.2;
  const nextLeft=firstX+firstPitch-filterCubeSize/2,right=firstX-filterCubeSize/2+2*bankSizeX+firstConvGap;
  const outputCenterX=(right+nextLeft)/2,outputStartX=outputCenterX-(channels-1)*outputChannelStep/2;
