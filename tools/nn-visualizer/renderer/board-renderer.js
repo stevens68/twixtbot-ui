@@ -10,7 +10,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   const boardCenterZ = -0.2545; // Centreline shared with the feature and residual tensors.
   const boardStartZ = boardCenterZ - boardSize / 2;
   const boardStartY = -0.287 - boardSize / 2;
-  const boardX = -26.675; // Match the gap from the effective board to the links tensor.
+  const boardX = -27.8225; // Move the input board 10% farther from the effective board.
   const pointAt = (row, col, x = boardX) => [
     x,
     boardStartY + (BOARD_SIZE - 1 - row) * spacing,
