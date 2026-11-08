@@ -816,8 +816,8 @@ function setPolicyConv1CameraPreset() {
   // are collapsed; both the output anchor and camera use the compact layout.
   const offset = getCompactBlock20CameraOffset();
   setCameraPreset(
-    [901.83 - offset, 27.43, -43.67],
-    [900.09 - offset, -4.86, 21.7],
+    [1016.67 - offset, 16.17, -27.11],
+    [1016.51 - offset, -14.66, 32.61],
   );
   lastCameraPreset = 'policy-conv1';
 }
