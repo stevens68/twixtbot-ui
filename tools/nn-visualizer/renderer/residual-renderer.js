@@ -322,8 +322,16 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
 
   function getBlock20CameraOffset() {
     const lastIndex=Number(getData().residualBlockCount || 20)-1;
-    // The preset coordinates describe the expanded stack. When blocks 2–19
-    // are hidden, shift the camera by the distance the final block moved left.
+    // The Block 20 preset is anchored to the compact layout. When the full
+    // stack is visible, move the camera right by the expanded-stack offset.
+    if (!showIntermediateResidualBlocks) return 0;
+    return residualLayout(lastIndex, true).blockStartX-residualLayout(1, true).blockStartX;
+  }
+
+  function getCompactBlock20CameraOffset() {
+    const lastIndex=Number(getData().residualBlockCount || 20)-1;
+    // Policy camera coordinates are anchored to the expanded layout, so only
+    // shift them left when the intermediate residual blocks are collapsed.
     if (showIntermediateResidualBlocks) return 0;
     return residualLayout(lastIndex, true).blockStartX-residualLayout(1, true).blockStartX;
   }
@@ -461,6 +469,7 @@ function addResidualBypass(group,x1,x2,z,offset,name,label=null){const dx=x2-x1;
     setResidualFiltersVisible,
     setShowIntermediateResidualBlocks,
     getBlock20CameraOffset,
+    getCompactBlock20CameraOffset,
     setSelectedResidualBlock,
     pickResidualBlock,
   };
