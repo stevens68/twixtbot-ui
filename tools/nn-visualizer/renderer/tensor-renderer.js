@@ -938,10 +938,92 @@ export function createTensorRenderer({
         canonicalBestMovePeg.rotation.z = Math.PI / 2;
         canonicalBestMoveBoard.add(canonicalBestMovePeg);
 
-        // Also show the predicted move on the actual Twixt board.
+        // Also show the predicted move on the actual Twixt board, including
+        // any links that this newly placed peg would immediately create.
         const actualBestMoveRow = pegRow;
         const actualBestMoveCol = pegCol;
-        const previousActualPeg = getSceneGroup().getObjectByName('actual-best-move-peg');
+        const actualSnapshotBoard = getBackendSnapshot()?.board ??
+          getData().snapshot?.board;
+        const actualBoardPegs = actualSnapshotBoard?.pegs ?? [];
+        const actualBoardLinks = actualSnapshotBoard?.links ?? [];
+        const predictedLinks = actualBoardPegs.filter((peg) => {
+          if (Number(peg.player) !== Number(actualNextPlayer)) return false;
+          const rowDistance = Math.abs(Number(peg.row) - actualBestMoveRow);
+          const colDistance = Math.abs(Number(peg.col) - actualBestMoveCol);
+          return (rowDistance === 1 && colDistance === 2) ||
+            (rowDistance === 2 && colDistance === 1);
+        }).map((peg) => ({
+          from: { row: Number(peg.row), col: Number(peg.col) },
+          to: { row: actualBestMoveRow, col: actualBestMoveCol },
+          player: Number(actualNextPlayer),
+        }));
+
+        const linkSegmentsCross = (first, second) => {
+          const a = first.from;
+          const b = first.to;
+          const c = second.from;
+          const d = second.to;
+          const key = (point) => point.row + ',' + point.col;
+          if ([key(a), key(b)].some((point) => point === key(c) || point === key(d))) {
+            return false;
+          }
+          const orient = (p, q, r) =>
+            (q.row - p.row) * (r.col - p.col) -
+            (q.col - p.col) * (r.row - p.row);
+          return orient(a, b, c) * orient(a, b, d) < 0 &&
+            orient(c, d, a) * orient(c, d, b) < 0;
+        };
+        const visiblePredictedLinks = predictedLinks.filter((candidate) =>
+          !actualBoardLinks.some((existing) => linkSegmentsCross(candidate, existing)),
+        );
+
+        const sceneGroup = getSceneGroup();
+        const previousPredictedLinks = sceneGroup.getObjectByName('actual-best-move-links');
+        if (previousPredictedLinks) {
+          sceneGroup.remove(previousPredictedLinks);
+          previousPredictedLinks.traverse((object) => {
+            if (object.geometry) object.geometry.dispose();
+            if (object.material) {
+              if (Array.isArray(object.material)) object.material.forEach((material) => material.dispose());
+              else object.material.dispose();
+            }
+          });
+        }
+        const predictedLinkGroup = new THREE.Group();
+        predictedLinkGroup.name = 'actual-best-move-links';
+        const predictedLinkGeometry = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
+        const predictedLinkMaterial = new THREE.MeshStandardMaterial({
+          color: redToMove ? 0xe0525d : 0x20252d,
+          roughness: 0.55,
+        });
+        const linkUp = new THREE.Vector3(0, 1, 0);
+        const linkStartY = -0.287 - boardSize / 2;
+        const linkStartZ = -0.2545 - boardSize / 2;
+        for (const link of visiblePredictedLinks) {
+          const start = new THREE.Vector3(
+            -27.8225 - 0.32,
+            linkStartY + (BOARD_SIZE - 1 - link.from.row) * boardSpacing,
+            linkStartZ + link.from.col * boardSpacing,
+          );
+          const end = new THREE.Vector3(
+            -27.8225 - 0.32,
+            linkStartY + (BOARD_SIZE - 1 - link.to.row) * boardSpacing,
+            linkStartZ + link.to.col * boardSpacing,
+          );
+          const direction = new THREE.Vector3().subVectors(end, start);
+          const mesh = new THREE.Mesh(predictedLinkGeometry, predictedLinkMaterial);
+          mesh.position.copy(start).add(end).multiplyScalar(0.5);
+          mesh.quaternion.setFromUnitVectors(linkUp, direction.clone().normalize());
+          mesh.scale.set(1, direction.length(), 1);
+          predictedLinkGroup.add(mesh);
+        }
+        if (visiblePredictedLinks.length) sceneGroup.add(predictedLinkGroup);
+        else {
+          predictedLinkGeometry.dispose();
+          predictedLinkMaterial.dispose();
+        }
+
+        const previousActualPeg = sceneGroup.getObjectByName('actual-best-move-peg');
         if (previousActualPeg) {
           getSceneGroup().remove(previousActualPeg);
           previousActualPeg.geometry.dispose();
