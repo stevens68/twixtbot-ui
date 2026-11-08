@@ -85,14 +85,23 @@ export function createLabelHelpers(THREE, getSceneGroup) {
   ) {
     const key = JSON.stringify(['label', text, fontSize, color, scaleDivisor, alignment]);
     const texture = getTexture(key, (context) => {
+      const lines = String(text).split('\n');
+      const lineHeight = fontSize + 6;
       context.font = '600 ' + fontSize + 'px Arial';
-      const width = Math.max(128, context.measureText(text).width + 28);
-      const height = fontSize + 26;
+      const width = Math.max(128, ...lines.map((line) =>
+        context.measureText(line).width + 28));
+      const height = lines.length * lineHeight + 20;
       context.font = '600 ' + fontSize + 'px Arial';
       context.fillStyle = color;
       context.textAlign = alignment;
       context.textBaseline = 'middle';
-      context.fillText(text, alignment === 'left' ? 12 : width / 2, height / 2);
+      lines.forEach((line, index) => {
+        context.fillText(
+          line,
+          alignment === 'left' ? 12 : width / 2,
+          10 + lineHeight * (index + 0.5),
+        );
+      });
       return { width, height };
     });
 
