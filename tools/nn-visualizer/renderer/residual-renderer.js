@@ -53,7 +53,10 @@ function residualLayout(blockIndex, forceExpanded = false) {
  const outputSizeX=(channels-1)*outputChannelStep+outputCubeSize,outputSizeY=(BOARD_SIZE-1)*filterSpacing+outputCubeSize;
  const outputCenterY=-2.5+(BOARD_SIZE-1)*filterSpacing/2,outputCenterZ=-((channels-1)*.105)/2+(BOARD_SIZE-1)*filterSpacing/2;
  const bankStartY=outputCenterY-(bankMinYOffset+bankMaxYOffset)/2,bankStartZ=outputCenterZ-bankSizeZ/2+filterCubeSize/2;
- const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2,firstConvGap=9;
+ // Reserve enough room between block 1's convolution banks for a full
+ // 24x24x48 Conv1 activation tensor, with 1.25 units of clearance on each side.
+ const firstConvGap=outputSizeX+2.5;
+ const firstX=20+(channels-1)*outputChannelStep+outputCubeSize/2+5+filterCubeSize/2;
  const firstPitch=(2*bankSizeX+firstConvGap+1.25*1.15*3+outputCubeSize/2+outputSizeX+1.25+filterCubeSize/2)*1.2;
  const nextLeft=firstX+firstPitch-filterCubeSize/2,right=firstX-filterCubeSize/2+2*bankSizeX+firstConvGap;
  const outputCenterX=(right+nextLeft)/2,outputStartX=outputCenterX-(channels-1)*outputChannelStep/2;
@@ -64,7 +67,7 @@ function residualLayout(blockIndex, forceExpanded = false) {
  const compactPitch=2*bankSizeX+compactConvGap+firstInterBlockGap;
  const blockStartX=layoutIndex===0?firstX:nextLeft+filterCubeSize/2+(layoutIndex-1)*compactPitch;
  const isEndpoint=blockIndex===0 || blockIndex===actualLastIndex;
- const convGap=isEndpoint?firstConvGap:compactConvGap;
+ const convGap=blockIndex===0?firstConvGap:(isEndpoint?9:compactConvGap);
  const shift=blockStartX-firstX;
  return {channels,kernelHeight,kernelWidth,columns,rows,filterWidth,filterHeight,gapY,gapZ,bankSizeX,bankSizeY,bankSizeZ,bankStartY,bankStartZ,
  bankStartXs:[blockStartX,blockStartX+bankSizeX+convGap],bankStartZs:[bankStartZ,bankStartZ],blockStartX,blockSpanX:2*bankSizeX+convGap,
