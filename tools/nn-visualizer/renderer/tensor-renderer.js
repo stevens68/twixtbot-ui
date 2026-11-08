@@ -689,7 +689,7 @@ export function createTensorRenderer({
           policyConv2Values, BOARD_SIZE, BOARD_SIZE, 1,
           [
             policyConv2OutputOriginX,
-            policyBoardOriginY,
+            policyConv2OriginY,
             policyBoardOriginZ,
           ],
           COLORS.output,
