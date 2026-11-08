@@ -184,7 +184,7 @@ export function createBoardRenderer({ THREE, getSceneGroup, getStaticSceneGroup,
   const nextPlayerLabel = game.nextPlayer === 1 ? 'red' : 'black';
   addRichLabel(
     [
-      { text: 'Last Move: ' + lastMove + ' - ', color: '#ffffff' },
+      { text: 'Twixt board · Last Move: ' + lastMove + ' - ', color: '#ffffff' },
       { text: nextPlayerLabel, color: nextPlayerLabel === 'red' ? '#ff4545' : '#e7edf6' },
       { text: ' to move', color: '#ffffff' },
     ],
