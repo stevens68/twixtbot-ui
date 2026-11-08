@@ -128,12 +128,18 @@ export function createTensorRenderer({
   let policySoftmaxAnnotationsBuilt = false;
   let canonicalBestMoveBoard = null;
   let canonicalBestMoveBoardLocalX = null;
+  let actualBestMoveBoard = null;
+  let actualBestMoveBoardOffsetX = 1.0;
   let policyBranchFilterGroup = null;
   let lastPolicyInputRight = null;
   const policyAnnotationSprites = [];
+  const policyAnnotationSpriteSet = new Set();
 
   function trackPolicyAnnotation(sprite) {
-    if (sprite) policyAnnotationSprites.push(sprite);
+    if (sprite && !policyAnnotationSpriteSet.has(sprite)) {
+      policyAnnotationSpriteSet.add(sprite);
+      policyAnnotationSprites.push(sprite);
+    }
     return sprite;
   }
 
@@ -177,11 +183,13 @@ export function createTensorRenderer({
     policyBranchFilterGroup = null;
     lastPolicyInputRight = null;
     policyAnnotationSprites.length = 0;
+    policyAnnotationSpriteSet.clear();
     policyOutputAnnotationsBuilt = false;
     policyConv2AnnotationsBuilt = false;
     policySoftmaxAnnotationsBuilt = false;
     canonicalBestMoveBoard = null;
     canonicalBestMoveBoardLocalX = null;
+    actualBestMoveBoard = null;
     residualRenderer.reset();
   }
 
@@ -892,6 +900,61 @@ export function createTensorRenderer({
         );
         bestPeg.rotation.z = Math.PI / 2;
         canonicalBestMoveBoard.add(bestPeg);
+
+        // The actual-game board is a second view of the same predicted move.
+        // It sits farther along X and is transposed for Red-to-move positions,
+        // reversing the canonical Black-to-move perspective transform.
+        if (!actualBestMoveBoard) {
+          actualBestMoveBoard = canonicalBestMoveBoard.clone(true);
+          actualBestMoveBoard.name = 'actual-best-move-board';
+          actualBestMoveBoard.position.x = actualBestMoveBoardOffsetX;
+          policyBranchFilterGroup.add(actualBestMoveBoard);
+          const actualPeg = actualBestMoveBoard.getObjectByName('canonical-best-move-peg');
+          actualPeg.name = 'actual-best-move-peg';
+          actualPeg.material = new THREE.MeshStandardMaterial({
+            color: 0x20252d, roughness: 0.38, metalness: 0.08,
+          });
+
+          const actualLabelX = bestMoveBoardX + actualBestMoveBoardOffsetX - 0.12;
+          for (let col = 0; col < BOARD_SIZE; col += 1) {
+            addPolicyLabel(
+              String.fromCharCode(65 + col),
+              [actualLabelX, boardCenterY + boardSize / 2 + 0.34,
+                boardStartZ + col * boardSpacing],
+              14, '#e0e8e2', 150,
+            );
+          }
+          for (let row = 0; row < BOARD_SIZE; row += 1) {
+            addPolicyLabel(
+              String(row + 1),
+              [actualLabelX,
+                boardStartY + (BOARD_SIZE - 1 - row) * boardSpacing,
+                boardStartZ - 0.34],
+              14, '#e0e8e2', 150,
+            );
+          }
+        }
+
+        const actualNextPlayer = getBackendSnapshot()?.next_player ??
+          getData().snapshot?.next_player ?? 0;
+        const redToMove = Number(actualNextPlayer) === 1;
+        const actualBestMoveRow = redToMove ? bestMoveCol : bestMoveRow;
+        const actualBestMoveCol = redToMove ? bestMoveRow : bestMoveCol;
+        const actualBestPeg = actualBestMoveBoard.getObjectByName('actual-best-move-peg');
+        actualBestPeg.material.color.set(redToMove ? 0xe0525d : 0x20252d);
+        actualBestPeg.position.set(
+          actualBestMoveBoardOffsetX + canonicalBestMoveBoardLocalX - 0.16,
+          policyInput.centerY - boardSize / 2 +
+            (BOARD_SIZE - 1 - actualBestMoveRow) * boardSpacing,
+          policyInput.centerZ - boardSize / 2 + actualBestMoveCol * boardSpacing,
+        );
+        addPolicyLabel(
+          'Actual best move for ' + (redToMove ? 'Red' : 'Black'),
+          [bestMoveBoardX + actualBestMoveBoardOffsetX - 0.12,
+            boardCenterY + boardSize / 2 + 1.15, boardCenterZ],
+          19, redToMove ? '#ff666e' : '#ffffff', 90,
+        );
+
         if (!policyConv2AnnotationsBuilt) {
           addPolicyLabel(
             'Policy Conv₂\n1×1×2×1',
