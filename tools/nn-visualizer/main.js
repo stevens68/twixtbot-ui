@@ -33,7 +33,7 @@ const scene = new THREE.Scene();
 // distance or their orientation.
 scene.background = new THREE.Color(0x0b1018);
 
-const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 5000);
 // Frame the boards, inputs, filter banks, and feature tensor together. Keep
 // this preset shared with Reset camera so both views show the complete scene.
 const INITIAL_CAMERA_POSITION = new THREE.Vector3(-60, 17, -24);
