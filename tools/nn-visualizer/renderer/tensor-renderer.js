@@ -820,7 +820,7 @@ export function createTensorRenderer({
           for (let col = 0; col < policyBoardCols; col += 1) {
             addPolicyLabel(
               String.fromCharCode(65 + col),
-              [policySoftmaxOriginX, softmaxTopY + 0.58,
+              [policySoftmaxOriginX, softmaxTopY + 0.30,
                 policyBoardOriginZ + col * filterSpacing],
               16, '#dce7f5', 145,
             );
@@ -830,38 +830,10 @@ export function createTensorRenderer({
               String(row + 2),
               [policySoftmaxOriginX,
                 softmaxTopY - row * filterSpacing,
-                policyBoardOriginZ - 0.58],
+                policyBoardOriginZ - 0.30],
               16, '#dce7f5', 145,
             );
           }
-          const arrowLeft = policyConv2OutputOriginX +
-            filterCubeSize / 2 + 0.08;
-          const arrowRight = policySoftmaxOriginX - filterCubeSize / 2;
-          const gap = arrowRight - arrowLeft;
-          const length = gap * 0.58;
-          const arrow = new THREE.ArrowHelper(
-            new THREE.Vector3(1, 0, 0),
-            new THREE.Vector3(
-              (arrowLeft + arrowRight - length) / 2,
-              policyInput.centerY,
-              policyInput.centerZ,
-            ),
-            length,
-            0x71879b,
-            Math.min(0.14, length * 0.38),
-            Math.min(0.10, length * 0.26),
-          );
-          arrow.name = 'policy-logits-to-softmax';
-          policyBranchFilterGroup.add(arrow);
-          addPolicyFormulaLabel(
-            '',
-            [
-              (arrowLeft + arrowRight) / 2,
-              policyInput.centerY + 0.62,
-              policyInput.centerZ,
-            ],
-            23, '#f2f4f8', 92,
-          );
           policySoftmaxAnnotationsBuilt = true;
         }
         policyOutputStats.policyConv2 = policyConv2Stats;
