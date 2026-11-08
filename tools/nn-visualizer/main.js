@@ -33,7 +33,7 @@ const scene = new THREE.Scene();
 // distance or their orientation.
 scene.background = new THREE.Color(0x0b1018);
 
-const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 5000);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 10000);
 // Frame the boards, inputs, filter banks, and feature tensor together. Keep
 // this preset shared with Reset camera so both views show the complete scene.
 const INITIAL_CAMERA_POSITION = new THREE.Vector3(-60, 17, -24);
@@ -788,10 +788,10 @@ document.querySelector('#toggle-explanation').addEventListener('click', () => {
 });
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
 document.querySelector('#camera-input-board').addEventListener('click', () => setCameraPreset(
-  [-39.64, 1.21, -0.69], [1.00, -1.00, 0.00],
+  [-42.02, 1.34, -0.73], [1.00, -1.00, -0.00],
 ));
 document.querySelector('#camera-effective-board').addEventListener('click', () => setCameraPreset(
-  [-25.33, 3.09, -1.30], [-2.14, -3.39, -0.86],
+  [-27.83, 1.27, -0.51], [1.04, -0.30, -0.02],
 ));
 document.querySelector('#camera-input-front').addEventListener('click', () => setCameraPreset(
   [-25.10, 23.78, -3.62], [6.28, 1.20, -3.19],
@@ -800,13 +800,13 @@ document.querySelector('#camera-input-top').addEventListener('click', () => setC
   [-1.65, 28.72, -1.83], [4.81, -2.66, -1.77],
 ));
 document.querySelector('#camera-residual-block').addEventListener('click', () => setCameraPreset(
-  [47.69, 27.75, -41.17], [45.99, -0.37, 7.98],
+  [45.85, 23.42, -39.95], [45.99, -0.37, 7.98],
 ));
 function setResidualBlock20CameraPreset() {
   const offset = getBlock20CameraOffset();
   setCameraPreset(
-    [901.83 - offset, 27.43, -43.67],
-    [900.09 - offset, -14.86, 29.37],
+    [95.63 - offset, 17.58, -35.62],
+    [95.46 - offset, -16.98, 31.31],
   );
   lastCameraPreset = 'residual-block-20';
 }
