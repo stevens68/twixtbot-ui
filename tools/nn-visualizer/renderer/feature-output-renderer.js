@@ -58,6 +58,11 @@ export function createFeatureOutputRenderer({
         }
       }
     }
+    // These dense 24×24×48 tensors span a long distance along X.
+    // Disable frustum culling: the generic instanced-mesh bounds can otherwise
+    // be stale or too small when the full channel stack is rebuilt.
+    mesh.count = values.length;
+    mesh.frustumCulled = false;
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     getSceneGroup().add(mesh);
