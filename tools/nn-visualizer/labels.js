@@ -116,13 +116,17 @@ export function createLabelHelpers(THREE, getSceneGroup) {
     const key = JSON.stringify(['formula', text, fontSize, color, scaleDivisor]);
     const texture = getTexture(key, (context) => {
       context.font = font;
-      const width = Math.max(160, context.measureText(text).width + 32);
-      const height = fontSize + 30;
+      const lines = String(text).split('\\n');
+      const width = Math.max(160, ...lines.map((line) => context.measureText(line).width + 32));
+      const lineHeight = fontSize + 6;
+      const height = lines.length * lineHeight + 24;
       context.font = font;
       context.fillStyle = color;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillText(text, width / 2, height / 2);
+      lines.forEach((line, index) => {
+        context.fillText(line, width / 2, 12 + lineHeight * (index + 0.5));
+      });
       return { width, height };
     });
     return acquireSprite(
