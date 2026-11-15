@@ -36,8 +36,8 @@ scene.background = new THREE.Color(0x0b1018);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 10000);
 // Frame the boards, inputs, filter banks, and feature tensor together. Keep
 // this preset shared with Reset camera so both views show the complete scene.
-const INITIAL_CAMERA_POSITION = new THREE.Vector3(-60, 17, -24);
-const INITIAL_CAMERA_TARGET = new THREE.Vector3(1, -1, 0);
+const INITIAL_CAMERA_POSITION = new THREE.Vector3(-50.94, 21.84, 35.21);
+const INITIAL_CAMERA_TARGET = new THREE.Vector3(5.46, 0.36, 3.92);
 camera.position.copy(INITIAL_CAMERA_POSITION);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -814,8 +814,8 @@ document.querySelector('#toggle-explanation').addEventListener('click', () => {
 });
 document.querySelector('#reset-camera').addEventListener('click', resetCamera);
 document.querySelector('#camera-deep-nn-side').addEventListener('click', () => setCameraPreset(
-  [437.68, 18.19, -590.15],
-  [455.42, -4.67, -170.01],
+  [-50.94, 21.84, 35.21],
+  [5.46, 0.36, 3.92],
 ));
 document.querySelector('#camera-input-board').addEventListener('click', () => setCameraPreset(
   [-42.02, 1.34, -0.73], [1.00, -1.00, -0.00],
