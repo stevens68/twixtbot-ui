@@ -151,6 +151,7 @@ const { requestSnapshot, requestPosition } = createSnapshotClient({
 
 async function playInteractiveMove(coordinate) {
   if (!gameLoaded || interactiveMovePending) return;
+  const operationId = gameOperationRequest;
 
   // Clicking after navigating backward branches from that position and drops
   // the old future, just as editing the trajectory would.
@@ -159,6 +160,7 @@ async function playInteractiveMove(coordinate) {
   try {
     // Let the backend validate the move before changing the displayed game.
     await requestSnapshot(nextMoves);
+    if (operationId !== gameOperationRequest) return;
     gameMoves = nextMoves;
     trajectoryEditor.value = gameMoves.join(' ');
     appliedTrajectory = trajectoryEditor.value.trim();
@@ -716,6 +718,7 @@ function updateGameNavigation() {
 
 let navigationRequest = 0;
 let positionLoadRequest = 0;
+let gameOperationRequest = 0;
 async function navigateGame(delta) {
   if (!gameLoaded) return;
   const ply = Math.max(0, Math.min(gameMoves.length, gamePly + delta));
@@ -736,6 +739,7 @@ async function navigateGame(delta) {
   }
 }
 async function loadTrajectoryFromEditor(showEnd = false) {
+  const operationId = gameOperationRequest;
   const moves = document.querySelector('#trajectory').value
     .split(/[\s,]+/)
     .map((move) => move.trim())
@@ -748,6 +752,7 @@ async function loadTrajectoryFromEditor(showEnd = false) {
   try {
     // Validate the entire trajectory before changing the active game.
     await requestSnapshot(moves);
+    if (operationId !== gameOperationRequest) return;
     gameMoves = moves;
     gamePly = 0;
     gameLoaded = true;
@@ -766,9 +771,11 @@ async function loadTrajectoryFromEditor(showEnd = false) {
 }
 
 document.querySelector('#reset-game').addEventListener('click', async () => {
-  // Invalidate any navigation response already in flight, then load the
+  // Invalidate pending game edits and navigation responses, then load the
   // authoritative empty backend position so all three input tensors refresh.
   navigationRequest += 1;
+  gameOperationRequest += 1;
+  gameLoaded = false;
   gameMoves = [];
   trajectoryEditor.value = '';
   appliedTrajectory = '';
