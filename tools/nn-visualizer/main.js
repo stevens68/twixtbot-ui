@@ -577,6 +577,10 @@ applyChangesButton.addEventListener('click', async () => {
 });
 
 async function loadGamePosition(ply) {
+  // A position request may still be in flight when Reset Game or another
+  // navigation action starts. Only the newest request may update the scene;
+  // otherwise an older response can restore pegs after the board was cleared.
+  const requestId = ++positionLoadRequest;
   const loadStarted = performance.now();
   const requestStarted = performance.now();
   // Rebuild the authoritative backend position from the move prefix. This
@@ -586,6 +590,14 @@ async function loadGamePosition(ply) {
     ? await requestPosition(gameMoves.slice(0, ply))
     : { snapshot: await requestSnapshot(gameMoves.slice(0, ply)), residualBlock0Output: null };
   const requestWaitMs = performance.now() - requestStarted;
+  if (requestId !== positionLoadRequest) {
+    nnPerf.record('discardStalePosition', {
+      ply,
+      requestId,
+      latestRequestId: positionLoadRequest,
+    });
+    return false;
+  }
   const result = position.snapshot;
   const stateSetupStarted = performance.now();
   backendSnapshot = result;
@@ -703,6 +715,7 @@ function updateGameNavigation() {
 }
 
 let navigationRequest = 0;
+let positionLoadRequest = 0;
 async function navigateGame(delta) {
   if (!gameLoaded) return;
   const ply = Math.max(0, Math.min(gameMoves.length, gamePly + delta));
