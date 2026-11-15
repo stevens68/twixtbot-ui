@@ -166,13 +166,15 @@ async function playInteractiveMove(coordinate) {
     appliedTrajectory = trajectoryEditor.value.trim();
     updateApplyButtonState();
     await loadGamePosition(gameMoves.length);
+    if (operationId !== gameOperationRequest) return;
     status.textContent = 'Played ' + coordinate + '. ' + currentPlayerName.toLowerCase() +
       ' to move; board and input tensors updated.';
   } catch (error) {
+    if (operationId !== gameOperationRequest) return;
     status.textContent = 'Cannot play ' + coordinate + ': ' + error.message;
   } finally {
     interactiveMovePending = false;
-    updateGameNavigation();
+    if (operationId === gameOperationRequest) updateGameNavigation();
   }
 }
 
@@ -760,10 +762,12 @@ async function loadTrajectoryFromEditor(showEnd = false) {
     // particular, ply 0 must use the empty-board tensors from NetInputs,
     // not the generated demo tensors (which contain illustrative values).
     await loadGamePosition(showEnd ? gameMoves.length : 0);
+    if (operationId !== gameOperationRequest) return;
     status.textContent = showEnd
       ? 'Demo game loaded at the end of the trajectory. ' + modelWeightStatus
       : 'Trajectory loaded at the starting position. ' + modelWeightStatus;
   } catch (error) {
+    if (operationId !== gameOperationRequest) return;
     gameLoaded = false;
     updateGameNavigation();
     status.textContent = 'Could not load trajectory: ' + error.message;
@@ -775,7 +779,9 @@ document.querySelector('#reset-game').addEventListener('click', async () => {
   // authoritative empty backend position so all three input tensors refresh.
   navigationRequest += 1;
   gameOperationRequest += 1;
+  interactiveMovePending = false;
   gameLoaded = false;
+  gamePly = 0;
   gameMoves = [];
   trajectoryEditor.value = '';
   appliedTrajectory = '';
